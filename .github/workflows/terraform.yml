@@ -7,12 +7,18 @@ on:
     paths:
       - 'terraform/**.tf'
       - 'terraform/**.tfvars'
+
 jobs:
   plan:
     name: 'Terraform Plan'
-    # Run this job on any branch that is NOT main.
     if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Set environment variables for the entire job
+    env:
+      OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+      OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+      OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+      OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
 
     steps:
       - name: 'Checkout'
@@ -25,11 +31,6 @@ jobs:
 
       - name: 'Terraform Init'
         working-directory: ./terraform/oci
-        env:
-          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
-          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
-          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: terraform init
 
       - name: 'Terraform Plan'
@@ -38,9 +39,14 @@ jobs:
 
   apply:
     name: 'Terraform Apply'
-    # Run this job only when code is pushed to the main branch.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Set environment variables for the entire job
+    env:
+      OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+      OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+      OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+      OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
 
     steps:
       - name: 'Checkout'
@@ -53,11 +59,6 @@ jobs:
 
       - name: 'Terraform Init'
         working-directory: ./terraform/oci
-        env:
-          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
-          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
-          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: terraform init
 
       - name: 'Terraform Apply'
