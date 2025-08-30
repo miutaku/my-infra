@@ -7,6 +7,11 @@ resource "oci_containerengine_cluster" "oke_cluster" {
   kubernetes_version = "v1.33.1" # update latest version if needed
   name               = var.cluster_name
   vcn_id             = oci_core_vcn.oke_vcn.id
+  endpoint_config {
+    is_public_ip_enabled = true
+    subnet_id            = oci_core_subnet.oke_lb_subnet.id
+  }
+
   options {
     service_lb_subnet_ids = [oci_core_subnet.oke_lb_subnet.id]
     add_ons {
