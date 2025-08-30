@@ -1,12 +1,27 @@
-
 variable "tenancy_ocid" {
   description = "The OCID of the tenancy."
-  default     = "ocid1.tenancy.oc1..aaaaaaaaiplrci236xnoyraexbkwtbhx7k75wuvx32yuqruai2q4i6jouebq"
+  type        = string
 }
 
 variable "compartment_ocid" {
   description = "The OCID of the compartment where resources will be created."
-  default     = "ocid1.tenancy.oc1..aaaaaaaaiplrci236xnoyraexbkwtbhx7k75wuvx32yuqruai2q4i6jouebq"
+  type        = string
+}
+
+variable "user_ocid" {
+  description = "The OCID of the user for API authentication."
+  type        = string
+}
+
+variable "fingerprint" {
+  description = "The fingerprint of the API key."
+  type        = string
+}
+
+variable "private_key_base64" {
+  description = "The base64-encoded private key for API authentication."
+  type        = string
+  sensitive   = true
 }
 
 variable "ssh_public_key" {
