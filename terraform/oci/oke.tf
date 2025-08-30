@@ -8,6 +8,7 @@ resource "oci_containerengine_cluster" "oke_cluster" {
   name               = var.cluster_name
   vcn_id             = oci_core_vcn.oke_vcn.id
   options {
+    service_lb_subnet_ids = [oci_core_subnet.oke_lb_subnet.id]
     add_ons {
       is_kubernetes_dashboard_enabled = false
       is_tiller_enabled               = false
