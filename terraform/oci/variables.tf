@@ -22,7 +22,7 @@ variable "region" {
 
 variable "cluster_name" {
   description = "The name of the OKE cluster."
-  default     = "oke-cluster-free"
+  default     = "oke-free-cluster"
 }
 
 variable "vcn_cidr" {
