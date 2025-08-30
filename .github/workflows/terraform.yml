@@ -1,27 +1,18 @@
-name: 'Terraform CI/CD'
+name: 'Terraform CI/CD with Terraform Cloud'
 
 on:
   push:
     branches:
-      - '**' # Trigger on pushes to all branches
+      - '**'
     paths:
       - 'terraform/**.tf'
       - 'terraform/**.tfvars'
 
 jobs:
-  plan:
-    name: 'Terraform Plan'
-    if: github.ref != 'refs/heads/main'
+  plan_job:
+    name: 'Terraform Plan (TFC)'
+    if: github.ref != 'refs/heads/main' # Run only on non-main branches
     runs-on: ubuntu-latest
-    env:
-      # Credentials for the OCI Provider
-      OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
-      OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
-      OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-      OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
-      # Credentials for the S3 Backend (OCI S3 Compatibility)
-      AWS_ACCESS_KEY_ID: ${{ secrets.OCI_BUCKET_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.OCI_BUCKET_SECRET_ACCESS_KEY }}
 
     steps:
       - name: 'Checkout'
@@ -30,43 +21,20 @@ jobs:
       - name: 'Set up Terraform'
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: '1.5.0'
-
-      - name: 'Create Backend Config'
-        working-directory: ./terraform/oci
-        run: |
-          cat > backend.conf <<EOF
-          bucket                      = "${{ secrets.TF_STATE_BUCKET }}"
-          key                         = "oci/terraform.tfstate"
-          region                      = "${{ vars.TF_STATE_REGION }}"
-          endpoint                    = "https://${{ secrets.TF_STATE_NAMESPACE }}.compat.objectstorage.${{ vars.TF_STATE_REGION }}.oraclecloud.com"
-          skip_region_validation      = true
-          skip_credentials_validation = true
-          skip_metadata_api_check     = true
-          force_path_style            = true
-          EOF
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: 'Terraform Init'
         working-directory: ./terraform/oci
-        run: terraform init -backend-config=backend.conf
+        run: terraform init
 
-      - name: 'Terraform Plan'
+      - name: 'Terraform Plan (triggers run in TFC)'
         working-directory: ./terraform/oci
-        run: terraform plan -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" -no-color
+        run: terraform plan -no-color
 
-  apply:
-    name: 'Terraform Apply'
-    if: github.ref == 'refs/heads/main'
+  apply_job:
+    name: 'Terraform Apply (TFC)'
+    if: github.ref == 'refs/heads/main' # Run only on main branch
     runs-on: ubuntu-latest
-    env:
-      # Credentials for the OCI Provider
-      OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
-      OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
-      OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-      OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
-      # Credentials for the S3 Backend (OCI S3 Compatibility)
-      AWS_ACCESS_KEY_ID: ${{ secrets.OCI_BUCKET_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.OCI_BUCKET_SECRET_ACCESS_KEY }}
 
     steps:
       - name: 'Checkout'
@@ -75,26 +43,12 @@ jobs:
       - name: 'Set up Terraform'
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: '1.5.0'
-
-      - name: 'Create Backend Config'
-        working-directory: ./terraform/oci
-        run: |
-          cat > backend.conf <<EOF
-          bucket                      = "${{ secrets.TF_STATE_BUCKET }}"
-          key                         = "oci/terraform.tfstate"
-          region                      = "${{ vars.TF_STATE_REGION }}"
-          endpoint                    = "https://${{ secrets.TF_STATE_NAMESPACE }}.compat.objectstorage.${{ vars.TF_STATE_REGION }}.oraclecloud.com"
-          skip_region_validation      = true
-          skip_credentials_validation = true
-          skip_metadata_api_check     = true
-          force_path_style            = true
-          EOF
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: 'Terraform Init'
         working-directory: ./terraform/oci
-        run: terraform init -backend-config=backend.conf
+        run: terraform init
 
-      - name: 'Terraform Apply'
+      - name: 'Terraform Apply (triggers run in TFC)'
         working-directory: ./terraform/oci
-        run: terraform apply -auto-approve -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" -no-color
+        run: terraform apply -auto-approve -no-color
