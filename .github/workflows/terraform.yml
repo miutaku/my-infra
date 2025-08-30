@@ -1,0 +1,65 @@
+name: 'Terraform CI/CD'
+
+on:
+  push:
+    branches:
+      - '**' # Trigger on pushes to all branches
+    paths:
+      - 'terraform/**.tf'
+      - 'terraform/**.tfvars'
+jobs:
+  plan:
+    name: 'Terraform Plan'
+    # Run this job on any branch that is NOT main.
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+
+      - name: 'Terraform Init'
+        working-directory: ./terraform/oci
+        env:
+          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        run: terraform init
+
+      - name: 'Terraform Plan'
+        working-directory: ./terraform/oci
+        run: terraform plan -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" -no-color
+
+  apply:
+    name: 'Terraform Apply'
+    # Run this job only when code is pushed to the main branch.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+
+      - name: 'Terraform Init'
+        working-directory: ./terraform/oci
+        env:
+          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        run: terraform init
+
+      - name: 'Terraform Apply'
+        working-directory: ./terraform/oci
+        run: terraform apply -auto-approve -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" -no-color
