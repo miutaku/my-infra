@@ -13,7 +13,6 @@ jobs:
     name: 'Terraform Plan'
     if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Set environment variables for the entire job
     env:
       OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
       OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
@@ -29,9 +28,23 @@ jobs:
         with:
           terraform_version: '1.5.0'
 
+      - name: 'Create Backend Config'
+        working-directory: ./terraform/oci
+        run: |
+          cat > backend.conf <<EOF
+          bucket                      = "${{ secrets.TF_STATE_BUCKET }}"
+          key                         = "oci/terraform.tfstate"
+          region                      = "${{ vars.TF_STATE_REGION }}"
+          endpoint                    = "https://${{ secrets.TF_STATE_NAMESPACE }}.compat.objectstorage.${{ vars.TF_STATE_REGION }}.oraclecloud.com"
+          skip_region_validation      = true
+          skip_credentials_validation = true
+          skip_metadata_api_check     = true
+          force_path_style            = true
+          EOF
+
       - name: 'Terraform Init'
         working-directory: ./terraform/oci
-        run: terraform init
+        run: terraform init -backend-config=backend.conf
 
       - name: 'Terraform Plan'
         working-directory: ./terraform/oci
@@ -41,7 +54,6 @@ jobs:
     name: 'Terraform Apply'
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Set environment variables for the entire job
     env:
       OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
       OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
@@ -57,9 +69,23 @@ jobs:
         with:
           terraform_version: '1.5.0'
 
+      - name: 'Create Backend Config'
+        working-directory: ./terraform/oci
+        run: |
+          cat > backend.conf <<EOF
+          bucket                      = "${{ secrets.TF_STATE_BUCKET }}"
+          key                         = "oci/terraform.tfstate"
+          region                      = "${{ vars.TF_STATE_REGION }}"
+          endpoint                    = "https://${{ secrets.TF_STATE_NAMESPACE }}.compat.objectstorage.${{ vars.TF_STATE_REGION }}.oraclecloud.com"
+          skip_region_validation      = true
+          skip_credentials_validation = true
+          skip_metadata_api_check     = true
+          force_path_style            = true
+          EOF
+
       - name: 'Terraform Init'
         working-directory: ./terraform/oci
-        run: terraform init
+        run: terraform init -backend-config=backend.conf
 
       - name: 'Terraform Apply'
         working-directory: ./terraform/oci
