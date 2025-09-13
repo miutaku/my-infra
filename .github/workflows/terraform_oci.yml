@@ -1,12 +1,12 @@
-name: 'Terraform CI/CD with Terraform Cloud'
+name: 'Terraform CI/CD with Terraform Cloud for OCI'
 
 on:
   push:
     branches:
       - '**'
     paths:
-      - 'terraform/**.tf'
-      - 'terraform/**.tfvars'
+      - 'terraform/oci/**.tf'
+      - 'terraform/oci/**.tfvars'
 
 jobs:
   plan_job:
