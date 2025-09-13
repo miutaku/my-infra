@@ -1,0 +1,39 @@
+global_defs {
+}
+
+vrrp_script chk_haproxy {
+    script "killall -0 haproxy"
+    interval 2
+    weight 2
+}
+
+vrrp_instance VI_1 {
+    {% if keepalived_priority == (groups['rke2-lb'] | map('extract', hostvars, 'keepalived_priority') | max) -%}
+    state MASTER
+    {%- else -%}
+    state BACKUP
+    {%- endif %}
+
+    interface {{ ansible_default_ipv4.interface }}
+    virtual_router_id {{ keepalived.vrrp_id }}
+    priority {{ keepalived_priority }}
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass {{ keepalived_auth_pass.stdout }}
+    }
+
+    unicast_src_ip {{ ansible_default_ipv4.address }}
+    unicast_peer {
+        {{ other_rke2_lb_ips }}
+    }
+
+    virtual_ipaddress {
+        {{ lb.vip }}
+    }
+
+    track_script {
+        chk_haproxy
+    }
+}

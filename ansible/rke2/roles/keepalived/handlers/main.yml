@@ -1,0 +1,15 @@
+---
+- name: Restarted keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: restarted
+  when: not (install_keepalived.changed and ansible_check_mode)
+
+- name: Locked bitwarden vault
+  ansible.builtin.shell:
+    cmd: "bw lock"
+    executable: "/bin/bash"
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  changed_when: false
