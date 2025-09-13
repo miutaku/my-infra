@@ -1,12 +1,12 @@
-name: 'Terraform CI/CD with Terraform Cloud'
+name: 'Terraform CI/CD with Terraform Cloud for home PVE'
 
 on:
   push:
     branches:
       - '**'
     paths:
-      - 'terraform/**.tf'
-      - 'terraform/**.tfvars'
+      - 'terraform/pve/**.tf'
+      - 'terraform/pve/**.tfvars'
 
 jobs:
   plan_job:
@@ -24,11 +24,11 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: 'Terraform Init'
-        working-directory: ./terraform/oci
+        working-directory: ./terraform/pve
         run: terraform init
 
       - name: 'Terraform Plan (triggers run in TFC)'
-        working-directory: ./terraform/oci
+        working-directory: ./terraform/pve
         run: terraform plan -no-color > /dev/null
 
   apply_job:
@@ -46,9 +46,9 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: 'Terraform Init'
-        working-directory: ./terraform/oci
+        working-directory: ./terraform/pve
         run: terraform init
 
       - name: 'Terraform Apply (triggers run in TFC)'
-        working-directory: ./terraform/oci
+        working-directory: ./terraform/pve
         run: terraform apply -auto-approve -no-color > /dev/null

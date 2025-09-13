@@ -1,0 +1,54 @@
+name: 'Terraform CI/CD with Terraform Cloud for OCI'
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'terraform/oci/**.tf'
+      - 'terraform/oci/**.tfvars'
+
+jobs:
+  plan_job:
+    name: 'Terraform Plan (TFC)'
+    if: github.ref != 'refs/heads/main' # Run only on non-main branches
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: 'Terraform Init'
+        working-directory: ./terraform/oci
+        run: terraform init
+
+      - name: 'Terraform Plan (triggers run in TFC)'
+        working-directory: ./terraform/oci
+        run: terraform plan -no-color > /dev/null
+
+  apply_job:
+    name: 'Terraform Apply (TFC)'
+    if: github.ref == 'refs/heads/main' # Run only on main branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: 'Terraform Init'
+        working-directory: ./terraform/oci
+        run: terraform init
+
+      - name: 'Terraform Apply (triggers run in TFC)'
+        working-directory: ./terraform/oci
+        run: terraform apply -auto-approve -no-color > /dev/null
