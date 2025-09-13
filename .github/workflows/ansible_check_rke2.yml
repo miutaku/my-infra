@@ -11,7 +11,7 @@ on:
     branches:
       - '*'
     paths:
-      - 'ansible/**'
+      - 'ansible/rke2/**'
 
 env:
   PYTHON_VERSION: 3.13.2
@@ -20,7 +20,7 @@ jobs:
   site-ansible-check:
     defaults:
       run:
-        working-directory: ansible
+        working-directory: ansible/rke2
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
