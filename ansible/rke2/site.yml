@@ -1,0 +1,7 @@
+---
+- name: Import Load Balancer Playbook
+  import_playbook: rke2-lb.yml
+- name: Import RKE2 Server Playbook
+  import_playbook: rke2-server.yml
+- name: Import RKE2 Agent Playbook
+  import_playbook: rke2-agent.yml

@@ -1,0 +1,5 @@
+---
+bw_credentials:
+  keepalived: "{{ bw_cred_keepalived }}"
+  rke2_server_token: "{{ bw_cred_rke2_server_token }}"
+  ssh: '18bb5920-fef9-4a47-ad66-b2bc013c6002'
