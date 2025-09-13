@@ -9,18 +9,23 @@
     owner: root
     group: root
 
-- name: Get latest Calico release URL
-  ansible.builtin.shell: >
-    set -o pipefail; curl -s https://api.github.com/repos/projectcalico/calico/releases |
-    jq -r '.[0].assets[] | select(.name | test("calicoctl-linux-amd64")) | .browser_download_url'
+- name: Get latest Calico release data
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/projectcalico/calico/releases
+    return_content: true
+    body_format: json
   delegate_to: localhost
   run_once: true
-  register: calico_url
+  register: calico_releases
+  until: calico_releases.status == 200
+  retries: 5
+  delay: 2
   changed_when: false
+  check_mode: false
 
 - name: Install calicoctl
   ansible.builtin.get_url:
-    url: "{{ calico_url.stdout }}"
+    url: "{{ (calico_releases.json[0].assets | selectattr('name', 'search', 'calicoctl-linux-amd64') | map(attribute='browser_download_url') | first) }}"
     dest: /usr/local/bin/calicoctl
     mode: '0755'
     owner: root
