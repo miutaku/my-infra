@@ -20,11 +20,11 @@ ansibleで各ノードを構成する。
 
 ```shell
 # lint
-pipenv run ansible-playbook -i hosts/inventory playbook.yml --syntax-check
+pipenv run ansible-playbook -i hosts/<inventory_file> <playboo_file.yml> --syntax-check
 # dry-run
-pipenv run ansible-playbook -i hosts/inventory playbook.yml -e bw_passwd=BW_MASTER_PASSWORD --ask-become-pass --check
+pipenv run ansible-playbook -i hosts/<inventory_file> <playboo_file.yml> -e bw_passwd=BW_MASTER_PASSWORD --ask-become-pass --check
 # run
-pipenv run ansible-playbook -i hosts/inventory playbook.yml -e bw_passwd=BW_MASTER_PASSWORD --ask-become-pass
+pipenv run ansible-playbook -i hosts/<inventory_file> <playboo_file.yml> -e bw_passwd=BW_MASTER_PASSWORD --ask-become-pass
 ```
 
 # deploy
