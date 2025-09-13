@@ -29,7 +29,7 @@ jobs:
 
       - name: 'Terraform Plan (triggers run in TFC)'
         working-directory: ./terraform/pve
-        run: terraform plan -no-color
+        run: terraform plan -no-color > /dev/null
 
   apply_job:
     name: 'Terraform Apply (TFC)'
@@ -51,4 +51,4 @@ jobs:
 
       - name: 'Terraform Apply (triggers run in TFC)'
         working-directory: ./terraform/pve
-        run: terraform apply -auto-approve -no-color
+        run: terraform apply -auto-approve -no-color > /dev/null
