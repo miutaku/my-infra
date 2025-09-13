@@ -1,188 +1,43 @@
-locals {
-  rke2_lb_vm_names = [for i in range(var.lb_vm_count) : format("lb-%02d-rke2-haproxy-keepalived-ubuntu-24-04-home-amd64", i + 1)]
-  rke2_lb_macaddrs = [for i in range(var.lb_vm_count) : format("%s%02X", substr(var.rke2_base_lb_macaddr, 0, length(var.rke2_base_lb_macaddr) - 2), i + 1)]
-  rke2_lb_vmids    = [for i in range(var.lb_vm_count) : 10001 + i]
+module "rke2_lb" {
+  source = "./modules/proxmox_vm"
+
+  vm_count      = var.lb_vm_count
+  name_prefix   = "lb"
+  name_suffix   = "rke2-haproxy-keepalived-ubuntu-24-04-home-amd64"
+  base_macaddr  = var.rke2_base_lb_macaddr
+  vmid_start    = 10001
+  tags          = ["ubuntu_2404", "rke2", "lb", "haproxy", "keepalived"]
+  cpu_cores     = 2
+  memory        = 2048
+  proxmox_nodes = var.proxmox_nodes
 }
 
-resource "proxmox_vm_qemu" "rke2_lb" {
-  for_each = { for idx, name in local.rke2_lb_vm_names : name => { macaddr = local.rke2_lb_macaddrs[idx], vmid = local.rke2_lb_vmids[idx], idx = idx } }
+module "rke2_server" {
+  source = "./modules/proxmox_vm"
 
-  # options
-  vmid             = each.value.vmid
-  protection       = false
-  name             = each.key
-  tags             = "ubuntu_2404;rke2;lb;haproxy;keepalived"
-  agent            = 1 # qemu-guest-agent
-  onboot           = true
-  automatic_reboot = true
-
-  # hardware
-  ## boot
-  bios        = "seabios"
-  boot        = "order=scsi0"
-  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
-  clone       = "template-ubuntu-24-04-home-amd64"
-  full_clone  = false
-  scsihw      = "virtio-scsi-single"
-
-  # cpu
-  cpu {
-    vcores = 0 # this is set automatically by Proxmox to sockets * cores. https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/resources/vm_qemu
-    cores = 2
-    sockets = 1
-    type = "host"
-  }
-
-  ## memory
-  memory = 2048
-  balloon = 1
-
-  # network
-  network {
-    id = 0
-    model  = "virtio"
-    bridge = "vmbr0"
-    firewall = false
-    macaddr = each.value.macaddr
-  }
-  # disk
-  disks {
-    scsi {
-        scsi0 {
-            disk {
-                backup = true
-                emulatessd = true
-                size = "20G"
-                storage = "local-zfs"
-            }
-        }
-    }
-  }
+  vm_count      = var.server_vm_count
+  name_prefix   = "master"
+  name_suffix   = "rke2-server-ubuntu-24-04-home-amd64"
+  base_macaddr  = var.rke2_base_server_macaddr
+  vmid_start    = 11001
+  tags          = ["ubuntu_2404", "rke2", "server", "master"]
+  cpu_cores     = 2
+  memory        = 5120
+  proxmox_nodes = var.proxmox_nodes
 }
 
+module "rke2_worker" {
+  source = "./modules/proxmox_vm"
 
-locals {
-  rke2_server_vm_names = [for i in range(var.server_vm_count) : format("master-%02d-rke2-server-ubuntu-24-04-home-amd64", i + 1)]
-  rke2_server_macaddrs = [for i in range(var.server_vm_count) : format("%s%02X", substr(var.rke2_base_server_macaddr, 0, length(var.rke2_base_server_macaddr) - 2), i + 1)]
-  rke2_server_vmids    = [for i in range(var.server_vm_count) : 11001 + i]
-}
-
-resource "proxmox_vm_qemu" "rke2_server" {
-  for_each = { for idx, name in local.rke2_server_vm_names : name => { macaddr = local.rke2_server_macaddrs[idx], vmid = local.rke2_server_vmids[idx], idx = idx } }
-
-  # options
-  vmid             = each.value.vmid
-  protection       = false
-  name             = each.key
-  tags             = "ubuntu_2404;rke2;server;master"
-  agent            = 1 # qemu-guest-agent
-  onboot           = true
-  automatic_reboot = true
-
-  # hardware
-  ## boot
-  bios        = "seabios"
-  boot        = "order=scsi0"
-  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
-  clone       = "template-ubuntu-24-04-home-amd64"
-  full_clone  = false
-  scsihw      = "virtio-scsi-single"
-
-  # cpu
-  cpu {
-    vcores = 0 # this is set automatically by Proxmox to sockets * cores. https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/resources/vm_qemu
-    cores = 2
-    sockets = 1
-    type = "host"
-  }
-
-  ## memory
-  memory = 5120
-  balloon = 1
-
-  # network
-  network {
-    id = 0
-    model  = "virtio"
-    bridge = "vmbr0"
-    firewall = false
-    macaddr = each.value.macaddr
-  }
-  # disk
-  disks {
-    scsi {
-        scsi0 {
-            disk {
-                backup = true
-                emulatessd = true
-                size = "20G"
-                storage = "local-zfs"
-            }
-        }
-    }
-  }
-}
-
-locals {
-  rke2_worker_vm_names = [for i in range(var.worker_vm_count) : format("worker-%02d-rke2-agent-ubuntu-24-04-home-amd64", i + 1)]
-  rke2_worker_macaddrs = [for i in range(var.worker_vm_count) : format("%s%02X", substr(var.rke2_base_worker_macaddr, 0, length(var.rke2_base_worker_macaddr) - 2), i + 1)]
-  rke2_worker_vmids    = [for i in range(var.worker_vm_count) : 12001 + i]
-}
-
-resource "proxmox_vm_qemu" "rke2_worker" {
-  for_each = { for idx, name in local.rke2_worker_vm_names : name => { macaddr = local.rke2_worker_macaddrs[idx], vmid = local.rke2_worker_vmids[idx], idx = idx } }
-  # options
-  vmid             = each.value.vmid
-  protection       = false
-  name             = each.key
-  tags             = "ubuntu_2404;rke2;agent;worker"
-  agent            = 1 # qemu-guest-agent
-  onboot           = true
-  automatic_reboot = true
-
-  # hardware
-  ## boot
-  bios        = "seabios"
-  boot        = "order=scsi0"
-  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
-  clone       = "template-ubuntu-24-04-home-amd64"
-  full_clone  = false
-  scsihw      = "virtio-scsi-single"
-
-  # cpu
-  cpu {
-    vcores = 0 # this is set automatically by Proxmox to sockets * cores. https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/resources/vm_qemu
-    cores = 1
-    sockets = 1
-    type = "host"
-  }
-
-  # memory
-  memory = 2048
-  balloon = 1
-
-  # network
-  network {
-    id = 0
-    model  = "virtio"
-    bridge = "vmbr0"
-    firewall = false
-    macaddr = each.value.macaddr
-  }
-
-  # disk
-  disks {
-    scsi {
-        scsi0 {
-            disk {
-                backup = true
-                emulatessd = true
-                size = "20G"
-                storage = "local-zfs"
-            }
-        }
-    }
-  }
+  vm_count      = var.worker_vm_count
+  name_prefix   = "worker"
+  name_suffix   = "rke2-agent-ubuntu-24-04-home-amd64"
+  base_macaddr  = var.rke2_base_worker_macaddr
+  vmid_start    = 12001
+  tags          = ["ubuntu_2404", "rke2", "agent", "worker"]
+  cpu_cores     = 1
+  memory        = 2048
+  proxmox_nodes = var.proxmox_nodes
 }
 
 #resource "proxmox_vm_qemu" "tuner" {
