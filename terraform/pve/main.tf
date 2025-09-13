@@ -74,7 +74,7 @@ resource "proxmox_vm_qemu" "rke2_server" {
   vmid             = each.value.vmid
   protection       = false
   name             = each.key
-  tags             = "ubuntu_2404;rke2;server"
+  tags             = "ubuntu_2404;rke2;server;master"
   agent            = 1 # qemu-guest-agent
   onboot           = true
   automatic_reboot = true
@@ -135,7 +135,7 @@ resource "proxmox_vm_qemu" "rke2_worker" {
   vmid             = each.value.vmid
   protection       = false
   name             = each.key
-  tags             = "ubuntu_2404;rke2;worker"
+  tags             = "ubuntu_2404;rke2;agent;worker"
   agent            = 1 # qemu-guest-agent
   onboot           = true
   automatic_reboot = true
