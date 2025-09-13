@@ -1,0 +1,67 @@
+---
+- name: Installed keepalived
+  ansible.builtin.apt:
+    name: keepalived
+    state: present
+    update_cache: true
+  register: install_keepalived
+  retries: 100
+  delay: 5
+
+- name: Initialized bitwarden vault
+  ansible.builtin.shell:
+    cmd: "bw sync"
+    executable: "/bin/bash"
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  changed_when: false
+
+- name: Unlocked bitwarden vault with generated session key
+  ansible.builtin.shell:
+    cmd: "bw unlock {{ bw_passwd }} --raw"
+    executable: "/bin/bash"
+  environment:
+    PATH: "{{ lookup('env', 'PATH') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: bw_session_key
+  check_mode: false
+  changed_when: false
+  notify:
+    - Locked bitwarden vault
+
+- name: Got keepalived auth_pass from bitwarden
+  ansible.builtin.shell:
+    cmd: "set -o pipefail && bw get item {{ bw_credentials.keepalived }} --session {{ bw_session_key.stdout }} | jq -r .login.password"
+    executable: "/bin/bash"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: keepalived_auth_pass
+  check_mode: false
+  changed_when: false
+
+- name: Set other rke2-lb IPs (exclude self)
+  ansible.builtin.set_fact:
+    other_rke2_lb_ips: |
+      {%- set my_ip = ansible_default_ipv4.address -%}
+      {%- set ips = [] -%}
+      {%- for host in groups['rke2-lb'] -%}
+        {%- set ip = hostvars[host]['ansible_default_ipv4']['address'] -%}
+        {%- if ip != my_ip -%}
+          {%- set _ = ips.append(ip) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ips | join('\n        ') }}
+
+- name: Prepared keepalived configuration
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restarted keepalived

@@ -1,0 +1,110 @@
+---
+- name: Check if RKE2 binary exists
+  ansible.builtin.stat:
+    path: /local/bin/rke2
+  register: rke2_binary
+
+- name: Download RKE2 install script
+  ansible.builtin.get_url:
+    url: https://get.rke2.io
+    dest: /tmp/install-rke2.sh
+    mode: '0755'
+  when: not rke2_binary.stat.exists
+
+- name: Run RKE2 install script as server
+  ansible.builtin.shell:
+    cmd: 'set -o pipefail && INSTALL_RKE2_TYPE="server" /tmp/install-rke2.sh'
+    creates: /usr/local/bin/rke2
+  when: not rke2_binary.stat.exists
+  vars:
+    ansible_shell_executable: /bin/bash
+
+- name: Create KUBECONFIG env setting for all users
+  ansible.builtin.lineinfile:
+    path: /etc/profile.d/rke2-kubeconfig.sh
+    line: 'export KUBECONFIG=/etc/rancher/rke2/rke2.yaml'
+    create: true
+    state: present
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Created config directory
+  ansible.builtin.file:
+    path: /etc/rancher/rke2
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create temporary config file for primary server
+  ansible.builtin.template:
+    src: rke2_config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    temporary_config: true
+  when: inventory_hostname in groups['rke2-server-primary']
+
+- name: Started first master
+  ansible.builtin.service:
+    name: rke2-server
+    state: started
+    enabled: true
+  when:
+    - inventory_hostname in groups['rke2-server-primary']
+    - not ansible_check_mode
+
+- name: Read RKE2 server token
+  ansible.builtin.slurp:
+    src: /var/lib/rancher/rke2/server/token
+  register: rke2_token
+  retries: 5
+  delay: 5
+  when:
+    - inventory_hostname in groups['rke2-server-primary']
+    - not ansible_check_mode
+
+- name: Set dummy token
+  ansible.builtin.set_fact:
+    rke2_token:
+      content: "{{ 'dummy_token' | b64encode }}"
+  when: ansible_check_mode
+
+- name: Set cluster facts on all nodes
+  ansible.builtin.set_fact:
+    rke2_node_token: "{{ rke2_token.content | b64decode }}"
+  delegate_to: rke2-server-primary
+  run_once: true
+  when:
+    - inventory_hostname in groups['rke2-server-primary']
+    - not ansible_check_mode
+
+- name: Create config dir
+  ansible.builtin.file:
+    path: /etc/rancher/rke2
+    state: directory
+    mode: '0755'
+
+- name: Create cluster config file
+  ansible.builtin.template:
+    src: rke2_config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restarted rke2-server with enabled
+  vars:
+    temporary_config: false
+  when: not ansible_check_mode
+
+- name: Restarted primary RKE2 server when config changed
+  ansible.builtin.service:
+    name: rke2-server
+    state: restarted
+  when:
+    - inventory_hostname in groups['rke2-server-primary']
+    - not ansible_check_mode

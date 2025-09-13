@@ -1,0 +1,36 @@
+---
+- name: Added k8s bin directory to system-wide PATH
+  ansible.builtin.lineinfile:
+    path: /etc/profile.d/999-rke2-path.sh
+    line: 'PATH=$PATH:/var/lib/rancher/rke2/bin'
+    create: true
+    state: present
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Get latest Calico release URL
+  ansible.builtin.shell: >
+    set -o pipefail; curl -s https://api.github.com/repos/projectcalico/calico/releases |
+    jq -r '.[0].assets[] | select(.name | test("calicoctl-linux-amd64")) | .browser_download_url'
+  delegate_to: localhost
+  run_once: true
+  register: calico_url
+  changed_when: false
+
+- name: Install calicoctl
+  ansible.builtin.get_url:
+    url: "{{ calico_url.stdout }}"
+    dest: /usr/local/bin/calicoctl
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Installed iptables
+  ansible.builtin.apt:
+    name: iptables
+    state: present
+    update_cache: true
+    autoremove: true
+  retries: 100
+  delay: 5

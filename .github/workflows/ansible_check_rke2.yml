@@ -1,0 +1,36 @@
+---
+name: ansible CI
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - 'ansible/rke2/**'
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'ansible/**'
+
+env:
+  PYTHON_VERSION: 3.13.2
+
+jobs:
+  site-ansible-check:
+    defaults:
+      run:
+        working-directory: ansible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: |
+          pip3 install pipenv
+          pipenv install --dev
+      - run: pipenv run ansible-galaxy install -r requirements.yml
+      - run: pipenv run ansible-galaxy collection install -r requirements.yml
+      - run: pipenv run ansible-lint site.yml
+      - run: pipenv run ansible-playbook site.yml --syntax-check

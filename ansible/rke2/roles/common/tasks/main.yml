@@ -1,0 +1,100 @@
+---
+- name: Changed hostname
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"
+    use: systemd
+
+- name: Set timezone to Asia/Tokyo
+  community.general.timezone:
+    name: Asia/Tokyo
+
+- name: Disabled install-recommends
+  ansible.builtin.lineinfile:
+    path: "/etc/apt/apt.conf.d/00-no-install-recommends"
+    line: "{{ item }}"
+    create: true
+    state: present
+    mode: "0644"
+    owner: root
+    group: root
+  with_items:
+    - 'APT::Install-Suggests 0;'
+    - 'APT::Install-Recommends 0;'
+
+- name: Upgraded apt packages
+  ansible.builtin.apt:
+    name: '*'
+    state: present
+    update_cache: true
+    autoremove: true
+  retries: 300 # wait for dpkg lock
+  delay: 5
+
+- name: Installed packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  with_items:
+    - vim
+  retries: 100
+  delay: 5
+
+- name: Initialized bitwarden vault
+  ansible.builtin.shell:
+    cmd: "bw sync"
+    executable: "/bin/bash"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  check_mode: false
+  changed_when: false
+
+- name: Unlocked bitwarden vault with generated session key
+  ansible.builtin.shell:
+    cmd: "bw unlock {{ bw_passwd }} --raw"
+    executable: "/bin/bash"
+  environment:
+    PATH: "{{ lookup('env', 'PATH') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: bw_session_key
+  check_mode: false
+  changed_when: false
+  notify:
+    - Locked bitwarden vault
+
+- name: Get ssh public key from bitwarden
+  ansible.builtin.shell:
+    cmd: "set -o pipefail && bw get item {{ bw_credentials.ssh }} --session {{ bw_session_key.stdout }} | jq -r .sshKey.publicKey"
+    executable: "/bin/bash"
+  delegate_to: localhost
+  run_once: true
+  become: false
+  register: ssh_public_key
+  check_mode: false
+  changed_when: false
+
+- name: Pushed ssh public key
+  ansible.posix.authorized_key:
+    user: "{{ ansible_ssh_user }}"
+    state: present
+    key: "{{ ssh_public_key.stdout }}"
+  register: ssh_key
+
+- name: Disabled ssh password authentication
+  ansible.builtin.lineinfile:
+    path: "/etc/ssh/sshd_config"
+    line: "{{ item }}"
+    create: true
+    state: present
+    mode: "0644"
+    owner: root
+    group: root
+    validate: "/usr/sbin/sshd -t -f %s"
+  with_items:
+    - "PasswordAuthentication no"
+    - "PermitRootLogin yes"
+  notify:
+    - Restarted ssh
