@@ -51,3 +51,11 @@ variable "rke2_base_worker_macaddr" {
 #    type        = string
 #    default     = "mirakurun-ubuntu-24-04-home-amd64"
 #}
+
+variable "proxmox_nodes" {
+  description = "A list of Proxmox nodes to distribute VMs across."
+  type        = list(string)
+  default     = ["pve-x570"]
+#  default     = ["pve-x570", "pve-b550m"]
+}
+

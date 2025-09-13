@@ -5,7 +5,7 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "rke2_lb" {
-  for_each = { for idx, name in local.rke2_lb_vm_names : name => { macaddr = local.rke2_lb_macaddrs[idx], vmid = local.rke2_lb_vmids[idx] } }
+  for_each = { for idx, name in local.rke2_lb_vm_names : name => { macaddr = local.rke2_lb_macaddrs[idx], vmid = local.rke2_lb_vmids[idx], idx = idx } }
 
   # options
   vmid             = each.value.vmid
@@ -20,7 +20,7 @@ resource "proxmox_vm_qemu" "rke2_lb" {
   ## boot
   bios        = "seabios"
   boot        = "order=scsi0"
-  target_node = "pve-x570"
+  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
   clone       = "template-ubuntu-24-04-home-amd64"
   full_clone  = false
   scsihw      = "virtio-scsi-single"
@@ -68,7 +68,7 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "rke2_server" {
-  for_each = { for idx, name in local.rke2_server_vm_names : name => { macaddr = local.rke2_server_macaddrs[idx], vmid = local.rke2_server_vmids[idx] } }
+  for_each = { for idx, name in local.rke2_server_vm_names : name => { macaddr = local.rke2_server_macaddrs[idx], vmid = local.rke2_server_vmids[idx], idx = idx } }
 
   # options
   vmid             = each.value.vmid
@@ -83,7 +83,7 @@ resource "proxmox_vm_qemu" "rke2_server" {
   ## boot
   bios        = "seabios"
   boot        = "order=scsi0"
-  target_node = "pve-x570"
+  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
   clone       = "template-ubuntu-24-04-home-amd64"
   full_clone  = false
   scsihw      = "virtio-scsi-single"
@@ -130,7 +130,7 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "rke2_worker" {
-  for_each = { for idx, name in local.rke2_worker_vm_names : name => { macaddr = local.rke2_worker_macaddrs[idx], vmid = local.rke2_worker_vmids[idx] } }
+  for_each = { for idx, name in local.rke2_worker_vm_names : name => { macaddr = local.rke2_worker_macaddrs[idx], vmid = local.rke2_worker_vmids[idx], idx = idx } }
   # options
   vmid             = each.value.vmid
   protection       = false
@@ -144,7 +144,7 @@ resource "proxmox_vm_qemu" "rke2_worker" {
   ## boot
   bios        = "seabios"
   boot        = "order=scsi0"
-  target_node = "pve-x570"
+  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
   clone       = "template-ubuntu-24-04-home-amd64"
   full_clone  = false
   scsihw      = "virtio-scsi-single"
