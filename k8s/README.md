@@ -1,8 +1,6 @@
 # helmでmetallbを入れる(Loadbalancer)
 
-## ルータへBGPの設定追加
-
-### helmでmetallbのインストールする。
+## helmでmetallbのインストールする。
 ```shell
 $ kubectl create ns metallb-system
 namespace/metallb-system created
@@ -22,12 +20,12 @@ Now you can configure it via its CRs. Please refer to the metallb official docs
 on how to use the CRs.
 ```
 
-### 設定適用
+## 設定適用
 ```
 $ kubectl apply -f metallb.yaml 
 ```
 
-### 動作確認
+## 動作確認
 ```shell
 $ kubectl get pods -n metallb-system --kubeconfig=/tmp/kubeconfig
 NAME                                  READY   STATUS              RESTARTS   AGE
