@@ -1,0 +1,9 @@
+---
+configMapGenerator:
+  - name: gptwol-computers
+    namespace: app-gptwol
+    files:
+      - computers.txt=./appdata/db/computers.txt
+resources:
+  - deployment.yaml
+  - service.yaml
