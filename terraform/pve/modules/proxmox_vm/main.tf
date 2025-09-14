@@ -52,7 +52,7 @@ resource "proxmox_vm_qemu" "vm" {
         disk {
           backup     = true
           emulatessd = true
-          size       = "20G"
+          size       = "32G"
           storage    = "local-zfs"
         }
       }
