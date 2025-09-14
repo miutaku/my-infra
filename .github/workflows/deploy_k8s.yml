@@ -67,8 +67,14 @@ jobs:
       - name: Apply Kubernetes manifests
         working-directory: ${{ matrix.dir }}
         run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "Executing dry-run on branch ${{ github.ref_name }}"
+            DRY_RUN_FLAG="--dry-run=server"
+          fi
+          
           if [ -f "kustomization.yaml" ]; then
-            kubectl apply -k .
+            kubectl apply -k . $DRY_RUN_FLAG
           else
-            kubectl apply -f .
+            kubectl apply -f . $DRY_RUN_FLAG
           fi
