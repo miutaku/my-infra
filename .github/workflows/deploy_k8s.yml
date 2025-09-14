@@ -48,6 +48,8 @@ jobs:
 
           # Get unique directories from the found list.
           UNIQUE_DIRS=$(printf "%s\n" "${TARGET_DIRS[@]}" | sort -u)
+          echo "Unique directories with k8s manifests:"
+          echo "$UNIQUE_DIRS"
 
           # Output the unique directories as a JSON array, handling the empty case.
           if [ -z "$UNIQUE_DIRS" ]; then
