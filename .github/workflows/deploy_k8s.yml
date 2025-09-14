@@ -32,11 +32,28 @@ jobs:
       - name: Get unique directory names
         id: get-dirs
         run: |
-          DIRS=$(for file in ${{ steps.changed-files.outputs.all_changed_files }}; do dirname "$file"; done | sort -u)
-          if [ -z "$DIRS" ]; then
+          TARGET_DIRS=()
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            d=$(dirname "$file")
+            # Find the closest parent directory containing k8s manifests.
+            while [[ "$d" != "." && "$d" != "/" ]]; do
+              # Check for kustomization.yaml or any other .yaml/.yml files.
+              if [[ -f "$d/kustomization.yaml" ]] || compgen -G "$d/*.yaml" > /dev/null || compgen -G "$d/*.yml" > /dev/null; then
+                TARGET_DIRS+=("$d")
+                break
+              fi
+              d=$(dirname "$d")
+            done
+          done
+
+          # Get unique directories from the found list.
+          UNIQUE_DIRS=$(printf "%s\n" "${TARGET_DIRS[@]}" | sort -u)
+
+          # Output the unique directories as a JSON array, handling the empty case.
+          if [ -z "$UNIQUE_DIRS" ]; then
             echo "dirs=[]" >> $GITHUB_OUTPUT
           else
-            echo "dirs=$(echo "$DIRS" | jq -R . | jq -c -s .)" >> $GITHUB_OUTPUT
+            echo "dirs=$(echo "$UNIQUE_DIRS" | jq -R . | jq -c -s .)" >> $GITHUB_OUTPUT
           fi
 
   deploy:
