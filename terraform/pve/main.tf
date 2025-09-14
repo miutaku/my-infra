@@ -22,7 +22,7 @@ module "rke2_server" {
   vmid_start    = 11001
   tags          = ["ubuntu_2404", "rke2", "server", "master"]
   cpu_cores     = 2
-  memory        = 5120
+  memory        = 8192
   proxmox_nodes = var.proxmox_nodes
 }
 
@@ -36,7 +36,7 @@ module "rke2_worker" {
   vmid_start    = 12001
   tags          = ["ubuntu_2404", "rke2", "agent", "worker"]
   cpu_cores     = 1
-  memory        = 2048
+  memory        = 4096
   proxmox_nodes = var.proxmox_nodes
 }
 
