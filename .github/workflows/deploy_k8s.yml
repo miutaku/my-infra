@@ -6,7 +6,6 @@ on:
     branches: "*"
     paths:
       - 'k8s/**'
-      - '.github/workflows/deploy_k8s.yml'
 
 jobs:
   detect-changes:
