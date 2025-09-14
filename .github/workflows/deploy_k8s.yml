@@ -74,7 +74,7 @@ jobs:
           DRY_RUN_FLAG=""
           if [ "${{ github.ref_name }}" != "main" ]; then
             echo "Executing dry-run on branch ${{ github.ref_name }}"
-            DRY_RUN_FLAG="--dry-run=server"
+            DRY_RUN_FLAG="--server-dry-run"
           fi
           
           if [ -f "kustomization.yaml" ]; then
