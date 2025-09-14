@@ -1,10 +1,10 @@
 ---
-name: Deploy to k8s
+name: Deploy to home k8s cluster
 
 on:
   push:
     paths:
-      - 'k8s/**'
+      - 'k8s/pve/**'
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v44
         with:
-          files: k8s/**
+          files: k8s/pve/**
 
       - name: Get unique directory names
         id: get-dirs
