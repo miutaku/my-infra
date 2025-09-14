@@ -8,7 +8,7 @@ module "rke2_lb" {
   vmid_start    = 10001
   tags          = ["ubuntu_2404", "rke2", "lb", "haproxy", "keepalived"]
   cpu_cores     = 2
-  memory        = 2048
+  memory        = 1536
   proxmox_nodes = var.proxmox_nodes
 }
 
