@@ -1,0 +1,74 @@
+---
+name: Deploy to k8s
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/deploy_k8s.yml'
+
+jobs:
+  detect-changes:
+    name: Detect k8s directory changes
+    runs-on: ubuntu-latest
+    outputs:
+      changed_dirs: ${{ steps.get-dirs.outputs.dirs }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: k8s/**
+
+      - name: Get unique directory names
+        id: get-dirs
+        run: |
+          DIRS=$(for file in ${{ steps.changed-files.outputs.all_changed_files }}; do dirname "$file"; done | sort -u)
+          echo "dirs=$(echo "$DIRS" | jq -R . | jq -s .)" >> $GITHUB_OUTPUT
+
+  deploy:
+    name: Auto Deploy to k8s
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed_dirs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Set up kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Apply Kubernetes manifests
+        working-directory: ${{ matrix.dir }}
+        run: |
+          if [ -f "kustomization.yaml" ]; then
+            kubectl apply -k .
+          else
+            kubectl apply -f .
+          fi
