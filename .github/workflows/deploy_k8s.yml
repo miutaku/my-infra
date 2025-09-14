@@ -33,7 +33,11 @@ jobs:
         id: get-dirs
         run: |
           DIRS=$(for file in ${{ steps.changed-files.outputs.all_changed_files }}; do dirname "$file"; done | sort -u)
-          echo "dirs=$(echo "$DIRS" | jq -R . | jq -s .)" >> $GITHUB_OUTPUT
+          if [ -z "$DIRS" ]; then
+            echo "dirs=[]" >> $GITHUB_OUTPUT
+          else
+            echo "dirs=$(echo "$DIRS" | jq -R . | jq -c -s .)" >> $GITHUB_OUTPUT
+          fi
 
   deploy:
     name: Auto Deploy to k8s
