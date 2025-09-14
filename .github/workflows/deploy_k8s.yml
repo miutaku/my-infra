@@ -3,7 +3,7 @@ name: Deploy to k8s
 
 on:
   push:
-    branches: "*"
+    branches: '*'
     paths:
       - 'k8s/**'
 
