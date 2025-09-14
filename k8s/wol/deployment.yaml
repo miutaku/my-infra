@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gptwol-deployment
+  namespace: app-gptwol
+  labels:
+    app: gptwol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gptwol
+  template:
+    metadata:
+      labels:
+        app: gptwol
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+        - name: copy-computers-txt
+          image: busybox
+          command: ['sh', '-c', 'cp /config/computers.txt /db/computers.txt']
+          volumeMounts:
+            - name: computers-config-volume
+              mountPath: /config
+            - name: db-volume
+              mountPath: /db
+      containers:
+        - name: gptwol
+          image: misterbabou/gptwol:latest
+          env:
+            - name: PORT
+              value: "5000"
+            - name: TZ
+              value: "Asia/Tokyo"
+          ports:
+            - containerPort: 5000
+              name: http
+          volumeMounts:
+            - name: db-volume
+              mountPath: "/app/db"
+      volumes:
+        - name: computers-config-volume
+          configMap:
+            name: gptwol-computers
+        - name: db-volume
+          emptyDir: {}

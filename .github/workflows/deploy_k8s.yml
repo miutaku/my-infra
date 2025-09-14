@@ -1,0 +1,103 @@
+---
+name: Deploy to k8s
+
+on:
+  push:
+    paths:
+      - 'k8s/**'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    name: Detect k8s directory changes
+    runs-on: ubuntu-latest
+    outputs:
+      changed_dirs: ${{ steps.get-dirs.outputs.dirs }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: k8s/**
+
+      - name: Get unique directory names
+        id: get-dirs
+        run: |
+          TARGET_DIRS=()
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            d=$(dirname "$file")
+            # Find the closest parent directory containing k8s manifests.
+            while [[ "$d" != "." && "$d" != "/" ]]; do
+              # Check for kustomization.yaml or any other .yaml/.yml files.
+              if [[ -f "$d/kustomization.yaml" ]] || compgen -G "$d/*.yaml" > /dev/null || compgen -G "$d/*.yml" > /dev/null; then
+                TARGET_DIRS+=("$d")
+                break
+              fi
+              d=$(dirname "$d")
+            done
+          done
+
+          # Get unique directories from the found list.
+          UNIQUE_DIRS=$(printf "%s\n" "${TARGET_DIRS[@]}" | sort -u)
+          echo "Unique directories with k8s manifests:"
+          echo "$UNIQUE_DIRS"
+
+          # Output the unique directories as a JSON array, handling the empty case.
+          if [ -z "$UNIQUE_DIRS" ]; then
+            echo "dirs=[]" >> $GITHUB_OUTPUT
+          else
+            echo "dirs=$(echo "$UNIQUE_DIRS" | jq -R . | jq -c -s .)" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    name: Auto Deploy to k8s
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed_dirs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Set up kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Apply Kubernetes manifests
+        working-directory: ${{ matrix.dir }}
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "Executing dry-run on branch ${{ github.ref_name }}"
+            DRY_RUN_FLAG="--dry-run=server"
+          fi
+          
+          if [ -f "kustomization.yaml" ]; then
+            kubectl apply -k . $DRY_RUN_FLAG
+          else
+            kubectl apply -f . $DRY_RUN_FLAG
+          fi
