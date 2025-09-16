@@ -1,0 +1,8 @@
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: app-coredns
+  labels:
+    name: coredns
+    app: coredns
