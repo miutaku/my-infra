@@ -4,6 +4,10 @@ kind: Service
 metadata:
   name: gptwol-service
   namespace: app-gptwol
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.0.200
+  labels:
+    app: gptwol
 spec:
   selector:
     app: gptwol
