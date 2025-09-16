@@ -87,17 +87,23 @@ jobs:
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-      - name: Apply Kubernetes manifests
+      - name: Diff and Apply Kubernetes manifests
         working-directory: ${{ matrix.dir }}
         run: |
-          DRY_RUN_FLAG=""
-          if [ "${{ github.ref_name }}" != "main" ]; then
-            echo "Executing dry-run on branch ${{ github.ref_name }}"
-            DRY_RUN_FLAG="--dry-run=server"
-          fi
-          
+          APPLY_ARGS=""
           if [ -f "kustomization.yaml" ]; then
-            kubectl apply -k . $DRY_RUN_FLAG
+            APPLY_ARGS="-k ."
           else
-            kubectl apply -f . $DRY_RUN_FLAG
+            APPLY_ARGS="-f ."
+          fi
+
+          # Show the diff. Exit code 1 means there is a diff, so we use || true.
+          kubectl diff $APPLY_ARGS || true
+
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "Applying changes to main branch."
+            kubectl apply $APPLY_ARGS
+          else
+            echo "Dry run for branch ${{ github.ref_name }}. No changes applied."
+            kubectl apply $APPLY_ARGS --dry-run=server
           fi
