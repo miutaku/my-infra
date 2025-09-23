@@ -50,7 +50,7 @@ module "prd_rec_server" {
   vmid_start     = 30000
   tags           = ["prd", "ubuntu_2404", "rec-server", "docker"]
   cpu_cores      = 1
-  memory         = 9216
+  memory         = 4096
   proxmox_nodes  = ["pve-b550m"] # PCI device is on a specific node
   clone_template = "template-ubuntu-24-04-home-amd64"
   disk_size      = 64
