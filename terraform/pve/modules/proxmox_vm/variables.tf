@@ -55,6 +55,12 @@ variable "pcis" {
   default     = null
 }
 
+variable "usbs" {
+  description = "A map of USB devices to pass through to the VM."
+  type        = any
+  default     = null
+}
+
 variable "disk_size" {
   description = "The size of the primary disk in GB."
   type        = number

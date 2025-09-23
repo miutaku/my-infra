@@ -40,13 +40,13 @@ module "rke2_worker" {
   proxmox_nodes = var.proxmox_nodes
 }
 
-module "rec_server" {
+module "prd_rec_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.rec_server_vm_count
+  vm_count       = var.prd_rec_server_vm_count
   name_prefix    = "prd-rec-server"
   name_suffix    = "docker-ubuntu-24-04-home-amd64"
-  base_macaddr   = var.rec_server_macaddr
+  base_macaddr   = var.prd_rec_server_macaddr
   vmid_start     = 30000
   tags           = ["prd", "ubuntu_2404", "rec-server", "docker"]
   cpu_cores      = 1
@@ -59,6 +59,29 @@ module "rec_server" {
       mapping = {
         mapping_id = "earthsoft_pt3"
         pcie       = true
+      }
+    }
+  }
+}
+
+module "dev_rec_server" {
+  source = "./modules/proxmox_vm"
+
+  vm_count       = var.dev_rec_server_vm_count
+  name_prefix    = "dev-rec-server"
+  name_suffix    = "docker-ubuntu-24-04-home-amd64"
+  base_macaddr   = var.dev_rec_server_macaddr
+  vmid_start     = 31000
+  tags           = ["dev", "ubuntu_2404", "rec-server", "docker"]
+  cpu_cores      = 1
+  memory         = 2048
+  proxmox_nodes  = ["pve-x570"] # USB device is on a specific node
+  clone_template = "template-ubuntu-24-04-home-amd64"
+  disk_size      = 32
+  usbs = {
+    usb0 = {
+      mapping = {
+        mapping_id = "plex_s1ud"
       }
     }
   }

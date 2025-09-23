@@ -28,10 +28,22 @@ variable "worker_vm_count" {
   default     = 2
 }
 
-variable "rec_server_vm_count" {
-  description = "The number of recording server virtual machines"
+variable "prd_rec_server_vm_count" {
+  description = "The number of prd recording server virtual machines"
   type        = number
   default     = 1
+}
+
+variable "dev_rec_server_vm_count" {
+  description = "The number of dev recording server virtual machines"
+  type        = number
+  default     = 1
+}
+
+variable "dev_rec_server_macaddr" {
+  description = "The MAC address of the dev recording server virtual machine"
+  type        = string
+  default     = "52:54:00:23:98:fd"
 }
 
 variable "rke2_base_lb_macaddr" {
@@ -52,8 +64,8 @@ variable "rke2_base_worker_macaddr" {
   default     = "BC:24:11:23:32:00"
 }
 
-variable "rec_server_macaddr" {
-  description = "The MAC address of the recording server virtual machine"
+variable "prd_rec_server_macaddr" {
+  description = "The MAC address of the prd recording server virtual machine"
   type        = string
   default     = "52:54:00:23:98:fc"
 }
