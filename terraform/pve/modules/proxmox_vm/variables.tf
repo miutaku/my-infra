@@ -66,3 +66,9 @@ variable "disk_size" {
   type        = number
   default     = 32
 }
+
+variable "machine" {
+  description = "The machine type (e.g., i440fx or q35)."
+  type        = string
+  default     = null
+}
