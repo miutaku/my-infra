@@ -54,7 +54,6 @@ module "prd_rec_server" {
   proxmox_nodes  = ["pve-b550m"] # PCI device is on a specific node
   clone_template = "template-ubuntu-24-04-home-amd64"
   disk_size      = 64
-  machine        = "q35"
   pcis = {
     pci0 = {
       mapping = {
