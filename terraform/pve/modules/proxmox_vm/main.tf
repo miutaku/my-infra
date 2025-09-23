@@ -20,6 +20,7 @@ resource "proxmox_vm_qemu" "vm" {
   ## boot
   bios        = "seabios"
   boot        = "order=scsi0"
+  machine     = var.machine
   target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
   clone       = var.clone_template
   full_clone  = false
