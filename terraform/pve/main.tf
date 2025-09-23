@@ -59,7 +59,7 @@ module "prd_rec_server" {
     pci0 = {
       mapping = {
         mapping_id = "earthsoft_pt3"
-        pcie       = true
+        pcie       = false # trueだとq35じゃないと起動しない
       }
     }
   }
