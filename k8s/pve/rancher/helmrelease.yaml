@@ -1,0 +1,36 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: rancher
+  namespace: cattle-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: rancher
+      version: "2.8.2"
+      sourceRef:
+        kind: HelmRepository
+        name: rancher-stable
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: -1
+  values:
+    hostname: rancher.miutaku.work
+    bootstrapPassword: "your_bootstrap_password"
+    ingress:
+      enabled: false
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: rancher-stable
+  namespace: flux-system
+spec:
+  interval: 10m
+  url: https://releases.rancher.com/server-charts/stable

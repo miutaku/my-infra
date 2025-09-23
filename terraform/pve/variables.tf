@@ -43,7 +43,7 @@ variable "dev_rec_server_vm_count" {
 variable "dev_rec_server_macaddr" {
   description = "The MAC address of the dev recording server virtual machine"
   type        = string
-  default     = "52:54:00:23:98:fd"
+  default     = "52:54:00:23:98:01"
 }
 
 variable "rke2_base_lb_macaddr" {
@@ -67,7 +67,7 @@ variable "rke2_base_worker_macaddr" {
 variable "prd_rec_server_macaddr" {
   description = "The MAC address of the prd recording server virtual machine"
   type        = string
-  default     = "52:54:00:23:98:fc"
+  default     = "52:54:00:23:99:01"
 }
 
 variable "proxmox_nodes" {
