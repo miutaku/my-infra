@@ -1,2 +1,6 @@
-# my-infra
-自分のインフラ環境
+# My Infra
+
+## 絶対読む
+
+- [OCI Terraform](./terraform/oci/README.md)
+- [PVE Terraform](./terraform/pve/README.md)
