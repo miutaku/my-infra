@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'k8s/pve/**'
+      - '.github/workflows/deploy_k8s_home.yml'
 
 permissions:
   contents: read
