@@ -52,8 +52,27 @@ resource "proxmox_vm_qemu" "vm" {
         disk {
           backup     = true
           emulatessd = true
-          size       = "32G"
+          size       = "${var.disk_size}G"
           storage    = "local-zfs"
+        }
+      }
+    }
+  }
+
+  # PCI passthrough (optional)
+  dynamic "pcis" {
+    for_each = var.pcis != null ? [var.pcis] : []
+    content {
+      dynamic "pci0" {
+        for_each = lookup(pcis.value, "pci0", null) != null ? [lookup(pcis.value, "pci0", null)] : []
+        content {
+          dynamic "mapping" {
+            for_each = lookup(pci0.value, "mapping", null) != null ? [lookup(pci0.value, "mapping", null)] : []
+            content {
+              mapping_id = lookup(mapping.value, "mapping_id", null)
+              pcie       = lookup(mapping.value, "pcie", null)
+            }
+          }
         }
       }
     }

@@ -48,3 +48,15 @@ variable "clone_template" {
   type        = string
   default     = "template-ubuntu-24-04-home-amd64"
 }
+
+variable "pcis" {
+  description = "A map of PCI devices to pass through to the VM."
+  type        = any
+  default     = null
+}
+
+variable "disk_size" {
+  description = "The size of the primary disk in GB."
+  type        = number
+  default     = 32
+}
