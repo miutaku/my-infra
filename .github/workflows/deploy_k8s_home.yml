@@ -90,20 +90,34 @@ jobs:
       - name: Diff and Apply Kubernetes manifests
         working-directory: ${{ matrix.dir }}
         run: |
-          APPLY_ARGS=""
-          if [ -f "kustomization.yaml" ]; then
-            APPLY_ARGS="-k ."
-          else
-            APPLY_ARGS="-f ."
+          # --- Step 1: Apply Namespace first (if it exists) ---
+          # This ensures the namespace exists before other resources are applied.
+          if [ -f "namespace.yaml" ]; then
+            echo "--- Diffing Namespace ---"
+            kubectl diff -f namespace.yaml || true
+            if [ "${{ github.ref_name }}" == "main" ]; then
+              echo "Applying Namespace for main branch."
+              kubectl apply -f namespace.yaml
+            else
+              echo "Dry-running Namespace for branch ${{ github.ref_name }}."
+              kubectl apply -f namespace.yaml --dry-run=server
+            fi
           fi
 
-          # Show the diff. Exit code 1 means there is a diff, so we use || true.
-          kubectl diff $APPLY_ARGS || true
-
+          # --- Step 2: Apply all other manifests using Kustomize or file path ---
+          echo "--- Diffing all resources ---"
+          if [ -f "kustomization.yaml" ]; then
+            kubectl diff -k . || true
+          else
+            kubectl diff -f . || true
+          fi
+          
           if [ "${{ github.ref_name }}" == "main" ]; then
             echo "Applying changes to main branch."
-            kubectl apply $APPLY_ARGS
+            kubectl apply -k .
           else
             echo "Dry run for branch ${{ github.ref_name }}. No changes applied."
-            kubectl apply $APPLY_ARGS --dry-run=server
+            # We apply all resources here again, as the dry-run should be atomic for the whole set.
+            # The namespace will be reported as 'unchanged' if it was created in the step above.
+            kubectl apply -k . --dry-run=server
           fi
