@@ -28,6 +28,24 @@ variable "worker_vm_count" {
   default     = 2
 }
 
+variable "prd_rec_server_vm_count" {
+  description = "The number of prd recording server virtual machines"
+  type        = number
+  default     = 1
+}
+
+variable "dev_rec_server_vm_count" {
+  description = "The number of dev recording server virtual machines"
+  type        = number
+  default     = 1
+}
+
+variable "dev_rec_server_macaddr" {
+  description = "The MAC address of the dev recording server virtual machine"
+  type        = string
+  default     = "52:54:00:23:98:fd"
+}
+
 variable "rke2_base_lb_macaddr" {
   description = "The base MAC address of the virtual machines"
   type        = string
@@ -46,11 +64,11 @@ variable "rke2_base_worker_macaddr" {
   default     = "BC:24:11:23:32:00"
 }
 
-#variable "tuner_vm_name" {
-#    description = "The name of the mirakurun virtual machine"
-#    type        = string
-#    default     = "mirakurun-ubuntu-24-04-home-amd64"
-#}
+variable "prd_rec_server_macaddr" {
+  description = "The MAC address of the prd recording server virtual machine"
+  type        = string
+  default     = "52:54:00:23:98:fc"
+}
 
 variable "proxmox_nodes" {
   description = "A list of Proxmox nodes to distribute VMs across."
@@ -58,4 +76,3 @@ variable "proxmox_nodes" {
 #  default     = ["pve-x570"]
   default     = ["pve-x570", "pve-b550m"]
 }
-
