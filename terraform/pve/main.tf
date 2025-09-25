@@ -49,8 +49,8 @@ module "prd_rec_server" {
   base_macaddr   = var.prd_rec_server_macaddr
   vmid_start     = 30000
   tags           = ["prd", "ubuntu_2404", "rec-server", "docker"]
-  cpu_cores      = 1
-  memory         = 4096
+  cpu_cores      = 6
+  memory         = 8192
   proxmox_nodes  = ["pve-b550m"] # PCI device is on a specific node
   clone_template = "template-ubuntu-24-04-home-amd64"
   disk_size      = 64
@@ -73,8 +73,8 @@ module "dev_rec_server" {
   base_macaddr   = var.dev_rec_server_macaddr
   vmid_start     = 31000
   tags           = ["dev", "ubuntu_2404", "rec-server", "docker"]
-  cpu_cores      = 1
-  memory         = 2048
+  cpu_cores      = 4
+  memory         = 4096
   proxmox_nodes  = ["pve-x570"] # USB device is on a specific node
   clone_template = "template-ubuntu-24-04-home-amd64"
   disk_size      = 32
