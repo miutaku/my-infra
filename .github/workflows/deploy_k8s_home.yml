@@ -101,6 +101,9 @@ jobs:
             exit 1
           fi
 
+          echo "Ensuring namespace '$K8S_SECRET_NAMESPACE' exists..."
+          kubectl create namespace "$K8S_SECRET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
           CMD_LITERALS=""
           IFS=',' read -ra MAPPINGS <<< "$SECRET_MAPPING"
           for MAPPING in "${MAPPINGS[@]}"; do
