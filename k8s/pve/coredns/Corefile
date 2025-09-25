@@ -20,7 +20,6 @@
       192.168.0.120 gaming-pc.miutaku.local
       192.168.0.122 bastion-01.miutaku.local
       192.168.0.124 work-windows.miutaku.local
-      192.168.0.125 mirakurun.miutaku.local
       192.168.0.126 master-01-rke2-server.miutaku.local
       192.168.0.127 master-02-rke2-server.miutaku.local
       192.168.0.128 master-03-rke2-server.miutaku.local
@@ -28,6 +27,8 @@
       192.168.0.130 worker-02-rke2-server.miutaku.local
       192.168.0.135 lb-01-rke2.miutaku.local
       192.168.0.136 lb-02-rke2.miutaku.local
+      192.168.0.150 dev-rec-server.miutaku.local
+      192.168.0.151 prd-rec-server.miutaku.local
       fallthrough
     }
 }
