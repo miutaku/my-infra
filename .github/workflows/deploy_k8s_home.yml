@@ -116,7 +116,7 @@ jobs:
               echo "::error::GitHub secret '$GITHUB_SECRET_NAME' defined in .secrets.env not found!"
               exit 1
             fi
-            CMD_LITERALS="$CMD_LITERALS --from-literal=$K8S_KEY='$SECRET_VALUE'"
+            CMD_LITERALS="$CMD_LITERALS --from-literal=$K8S_KEY=$SECRET_VALUE"
           done
 
           echo "Creating/updating secret '$K8S_SECRET_NAME' in namespace '$K8S_SECRET_NAMESPACE'."
