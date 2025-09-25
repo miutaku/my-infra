@@ -21,9 +21,9 @@ spec:
             # Podの再起動後もTailscaleのstateを保持するためにk8s secretを指定
             - name: TS_KUBE_SECRET
               value: "tailscale-state"
-            # userspace networking modeを有効化
+            # userspace networking modeを無効化し、カーネルモードで動作させる
             - name: TS_USERSPACE
-              value: "true"
+              value: "false"
             # secretからTailscaleのauth keyを読み込む
             - name: TS_AUTHKEY
               valueFrom:
