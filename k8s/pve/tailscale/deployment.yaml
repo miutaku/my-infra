@@ -34,6 +34,14 @@ spec:
             # 広報するsubnet routes
             - name: TS_ROUTES
               value: "192.168.0.0/24"
+            # Tailscaleのホスト名をk8sのノード名に設定
+            - name: TS_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            # Tailscaleのタグを設定
+            - name: TS_ADVERTISE_TAGS
+              value: "tag:rke2"
           securityContext:
             # subnet routerとして動作するために特権が必要
             privileged: true
