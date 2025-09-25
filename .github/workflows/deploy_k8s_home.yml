@@ -63,6 +63,8 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.changed_dirs != '[]'
     runs-on: ubuntu-latest
+    env:
+      SECRETS_JSON: ${{ toJSON(secrets) }}
     strategy:
       matrix:
         dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
@@ -86,6 +88,36 @@ jobs:
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
+
+      - name: Create/update secrets from .secrets.env
+        if: hashFiles(format('{0}/.secrets.env', matrix.dir)) != ''
+        working-directory: ${{ matrix.dir }}
+        run: |
+          echo "Found .secrets.env, processing..."
+          source .secrets.env
+
+          if [ -z "$K8S_SECRET_NAME" ] || [ -z "$K8S_SECRET_NAMESPACE" ] || [ -z "$SECRET_MAPPING" ]; then
+            echo "::error::.secrets.env is missing one or more required variables (K8S_SECRET_NAME, K8S_SECRET_NAMESPACE, SECRET_MAPPING)."
+            exit 1
+          fi
+
+          CMD_LITERALS=""
+          IFS=',' read -ra MAPPINGS <<< "$SECRET_MAPPING"
+          for MAPPING in "${MAPPINGS[@]}"; do
+            K8S_KEY=$(echo "$MAPPING" | cut -d'=' -f1)
+            GITHUB_SECRET_NAME=$(echo "$MAPPING" | cut -d'=' -f2)
+
+            SECRET_VALUE=$(echo "$SECRETS_JSON" | jq -r --arg key "$GITHUB_SECRET_NAME" '.[$key]')
+
+            if [ -z "$SECRET_VALUE" ] || [ "$SECRET_VALUE" == "null" ]; then
+              echo "::error::GitHub secret '$GITHUB_SECRET_NAME' defined in .secrets.env not found!"
+              exit 1
+            fi
+            CMD_LITERALS="$CMD_LITERALS --from-literal=$K8S_KEY='$SECRET_VALUE'"
+          done
+
+          echo "Creating/updating secret '$K8S_SECRET_NAME' in namespace '$K8S_SECRET_NAMESPACE'."
+          kubectl create secret generic "$K8S_SECRET_NAME" --namespace="$K8S_SECRET_NAMESPACE" $CMD_LITERALS --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Diff and Apply Kubernetes manifests
         working-directory: ${{ matrix.dir }}
