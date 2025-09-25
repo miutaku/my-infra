@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailscale-subnet-router
+  namespace: tailscale
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tailscale-subnet-router
+  template:
+    metadata:
+      labels:
+        app: tailscale-subnet-router
+    spec:
+      containers:
+        - name: tailscale
+          image: ghcr.io/tailscale/tailscale:latest
+          env:
+            # Podの再起動後もTailscaleのstateを保持するためにk8s secretを指定
+            - name: TS_KUBE_SECRET
+              value: "tailscale-state"
+            # userspace networking modeを有効化
+            - name: TS_USERSPACE
+              value: "true"
+            # secretからTailscaleのauth keyを読み込む
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth
+                  key: TS_AUTHKEY
+            # 広報するsubnet routes
+            - name: TS_ROUTES
+              value: "192.168.0.0/24"
+          securityContext:
+            # subnet routerとして動作するために特権が必要
+            privileged: true
