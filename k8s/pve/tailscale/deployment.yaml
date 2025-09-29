@@ -41,7 +41,7 @@ spec:
                   fieldPath: spec.nodeName
             # Tailscaleのタグを設定
             - name: TS_ADVERTISE_TAGS
-              value: "tag:rke2"
+              value: "tag:pve,tag:k8s,tag:rke2,tag:subnet_router"
           securityContext:
             # subnet routerとして動作するために特権が必要
             privileged: true
