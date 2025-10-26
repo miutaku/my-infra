@@ -86,3 +86,26 @@ module "dev_rec_server" {
     }
   }
 }
+
+module "truenas" {
+  source = "./modules/proxmox_vm"
+
+  vm_count       = 2
+  name_prefix    = "nas"
+  name_suffix    = "truenas-23-10-home-amd64"
+  base_macaddr   = var.truenas_macaddr
+  vmid_start     = 69001
+  tags           = ["truenas", "nas"]
+  cpu_cores      = 4
+  memory         = 8192
+  proxmox_nodes  = ["pve-b550m", "pve-x570"]
+  clone_template = "template-nas-truenas-23-10-home-amd64"
+  disk_size      = 24
+  usbs = {
+    usb0 = {
+      mapping = {
+        mapping_id = "nas_disk"
+      }
+    }
+  }
+}
