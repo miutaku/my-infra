@@ -72,3 +72,9 @@ variable "machine" {
   type        = string
   default     = null
 }
+
+variable "os_type" {
+  description = "The OS type for the VM."
+  type        = string
+  default     = "l26"
+}
