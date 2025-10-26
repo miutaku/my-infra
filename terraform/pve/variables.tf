@@ -71,6 +71,12 @@ variable "prd_rec_server_macaddr" {
   default     = "52:54:00:23:99:00"
 }
 
+variable "truenas_macaddr" {
+  description = "The base MAC address of the truenas virtual machine"
+  type        = string
+  default     = "52:54:00:24:99:01"
+}
+
 variable "proxmox_nodes" {
   description = "A list of Proxmox nodes to distribute VMs across."
   type        = list(string)
