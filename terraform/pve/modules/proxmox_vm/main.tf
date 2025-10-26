@@ -13,6 +13,7 @@ resource "proxmox_vm_qemu" "vm" {
   name             = each.key
   tags             = join(";", var.tags)
   agent            = 1 # qemu-guest-agent
+  os_type          = var.os_type
   onboot           = true
   automatic_reboot = true
 
@@ -36,7 +37,7 @@ resource "proxmox_vm_qemu" "vm" {
 
   ## memory
   memory  = var.memory
-  balloon = 1
+  balloon = substr(var.os_type, 0, 1) == "w" ? 1 : 0
 
   # network
   network {
