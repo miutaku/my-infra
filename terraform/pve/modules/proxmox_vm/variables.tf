@@ -78,3 +78,9 @@ variable "os_type" {
   type        = string
   default     = "l26"
 }
+
+variable "tpm" {
+  description = "Enable TPM device."
+  type        = bool
+  default     = false
+}

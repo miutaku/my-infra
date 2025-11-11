@@ -109,3 +109,35 @@ module "truenas" {
     }
   }
 }
+
+module "windows" {
+  source = "./modules/proxmox_vm"
+
+  vm_count       = 1
+  name_prefix    = "work-windows-home"
+  name_suffix    = "amd664"
+  base_macaddr   = "52:54:00:8c:83:18"
+  vmid_start     = 60000
+  tags           = ["windows", "work", "win11"]
+  cpu_cores      = 12
+  memory         = 16384
+  proxmox_nodes  = ["pve-x570"]
+  clone_template = "template-win11-home-amd64" # TODO: Set Correct Template
+  disk_size      = 120
+  os_type        = "win11"
+  tpm            = true
+  pcis = {
+    pci0 = {
+      mapping = {
+        mapping_id = "gt1030"
+        pcie       = true
+      }
+    }
+    pci1 = {
+      mapping = {
+        mapping_id = "jmicron_scsi_controller"
+        pcie       = true
+      }
+    }
+  }
+}

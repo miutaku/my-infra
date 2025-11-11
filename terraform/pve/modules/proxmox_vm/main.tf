@@ -1,5 +1,5 @@
 locals {
-  vm_names = [for i in range(var.vm_count) : format("%s-%02d-%s", var.name_prefix, i + 1, var.name_suffix)]
+  vm_names = [for i in range(var.vm_count) : var.vm_count > 1 ? format("%s-%02d-%s", var.name_prefix, i + 1, var.name_suffix) : format("%s-%s", var.name_prefix, var.name_suffix)]
   macaddrs = [for i in range(var.vm_count) : format("%s%02X", substr(var.base_macaddr, 0, length(var.base_macaddr) - 2), i + 1)]
   vmids    = [for i in range(var.vm_count) : var.vmid_start + i]
 }
@@ -39,6 +39,15 @@ resource "proxmox_vm_qemu" "vm" {
   memory  = var.memory
   balloon = substr(var.os_type, 0, 1) == "w" ? 1 : 0
 
+  # TPM
+  dynamic "tpm" {
+    for_each = var.tpm ? [1] : []
+    content {
+      storage = "local-zfs"
+      version = "v2.0"
+    }
+  }
+
   # network
   network {
     id       = 0
@@ -70,6 +79,18 @@ resource "proxmox_vm_qemu" "vm" {
         content {
           dynamic "mapping" {
             for_each = lookup(pci0.value, "mapping", null) != null ? [lookup(pci0.value, "mapping", null)] : []
+            content {
+              mapping_id = lookup(mapping.value, "mapping_id", null)
+              pcie       = lookup(mapping.value, "pcie", null)
+            }
+          }
+        }
+      }
+      dynamic "pci1" {
+        for_each = lookup(pcis.value, "pci1", null) != null ? [lookup(pcis.value, "pci1", null)] : []
+        content {
+          dynamic "mapping" {
+            for_each = lookup(pci1.value, "mapping", null) != null ? [lookup(pci1.value, "mapping", null)] : []
             content {
               mapping_id = lookup(mapping.value, "mapping_id", null)
               pcie       = lookup(mapping.value, "pcie", null)
