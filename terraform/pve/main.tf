@@ -87,6 +87,22 @@ module "dev_rec_server" {
   }
 }
 
+module "stg_reventer_server" {
+  source = "./modules/proxmox_vm"
+
+  vm_count       = var.dev_rec_server_vm_count
+  name_prefix    = "stg-reventer-server"
+  name_suffix    = "docker-ubuntu-24-04-home-amd64"
+  base_macaddr   = var.dev_rec_server_macaddr
+  vmid_start     = 41000
+  tags           = ["stg", "ubuntu_2404", "reventer-server", "docker"]
+  cpu_cores      = 8
+  memory         = 8192
+  proxmox_nodes  = ["pve-x570"]
+  clone_template = "template-ubuntu-24-04-home-amd64"
+  disk_size      = 64
+}
+
 module "truenas" {
   source = "./modules/proxmox_vm"
 
