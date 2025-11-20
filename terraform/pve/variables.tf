@@ -83,3 +83,9 @@ variable "proxmox_nodes" {
 #  default     = ["pve-x570"]
   default     = ["pve-x570", "pve-b550m"]
 }
+
+variable "stg_reventer_server_macaddr" {
+  description = "The MAC address of the stg reventer server virtual machine"
+  type        = string
+  default     = "52:54:00:25:98:01"
+}

@@ -93,7 +93,7 @@ module "stg_reventer_server" {
   vm_count       = var.dev_rec_server_vm_count
   name_prefix    = "stg-reventer-server"
   name_suffix    = "docker-ubuntu-24-04-home-amd64"
-  base_macaddr   = var.dev_rec_server_macaddr
+  base_macaddr   = var.stg_reventer_server_macaddr
   vmid_start     = 41000
   tags           = ["stg", "ubuntu_2404", "reventer-server", "docker"]
   cpu_cores      = 8
