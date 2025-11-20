@@ -96,6 +96,22 @@ module "stg_reventer_server" {
   base_macaddr   = var.stg_reventer_server_macaddr
   vmid_start     = 41000
   tags           = ["stg", "ubuntu_2404", "reventer-server", "docker"]
+  cpu_cores      = 2
+  memory         = 2048
+  proxmox_nodes  = ["pve-x570"]
+  clone_template = "template-ubuntu-24-04-home-amd64"
+  disk_size      = 64
+}
+
+module "dev_application_server" {
+  source = "./modules/proxmox_vm"
+
+  vm_count       = var.dev_application_server_vm_count
+  name_prefix    = "dev-application-server"
+  name_suffix    = "docker-ubuntu-24-04-home-amd64"
+  base_macaddr   = var.dev_application_server_macaddr
+  vmid_start     = 40000
+  tags           = ["dev", "ubuntu_2404", "application-server","docker"]
   cpu_cores      = 8
   memory         = 8192
   proxmox_nodes  = ["pve-x570"]

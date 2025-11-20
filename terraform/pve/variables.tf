@@ -95,3 +95,15 @@ variable "stg_reventer_server_vm_count" {
   type        = number
   default     = 1
 }
+
+variable "dev_application_server_vm_count" {
+  description = "The number of dev application server virtual machines"
+  type        = number
+  default     = 1
+}
+
+variable "dev_application_server_macaddr" {
+  description = "The MAC address of the dev application server virtual machine"
+  type        = string
+  default     = "52:54:00:25:98:11"
+}
