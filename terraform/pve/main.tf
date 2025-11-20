@@ -90,7 +90,7 @@ module "dev_rec_server" {
 module "stg_reventer_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.dev_rec_server_vm_count
+  vm_count       = var.stg_reventer_server_vm_count
   name_prefix    = "stg-reventer-server"
   name_suffix    = "docker-ubuntu-24-04-home-amd64"
   base_macaddr   = var.stg_reventer_server_macaddr

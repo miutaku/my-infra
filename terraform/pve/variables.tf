@@ -89,3 +89,9 @@ variable "stg_reventer_server_macaddr" {
   type        = string
   default     = "52:54:00:25:98:01"
 }
+
+variable "stg_reventer_server_vm_count" {
+  description = "The number of stg reventer server virtual machines"
+  type        = number
+  default     = 1
+}
