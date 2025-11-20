@@ -111,7 +111,7 @@ module "dev_application_server" {
   name_suffix    = "docker-ubuntu-24-04-home-amd64"
   base_macaddr   = var.dev_application_server_macaddr
   vmid_start     = 40000
-  tags           = ["dev", "ubuntu_2404", "docker"]
+  tags           = ["dev", "ubuntu_2404", "application-server","docker"]
   cpu_cores      = 8
   memory         = 8192
   proxmox_nodes  = ["pve-x570"]
