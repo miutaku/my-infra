@@ -107,3 +107,15 @@ variable "dev_application_server_macaddr" {
   type        = string
   default     = "52:54:00:25:98:11"
 }
+
+variable "mm_server_vm_count" {
+  description = "The number of dev Magic Mirror² server virtual machines"
+  type        = number
+  default     = 1
+}
+
+variable "mm_server_macaddr" {
+  description = "The MAC address of the Magic Mirror² server virtual machine"
+  type        = string
+  default     = "52:54:00:99:00:01"
+}
