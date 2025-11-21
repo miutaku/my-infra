@@ -109,7 +109,7 @@ variable "dev_application_server_macaddr" {
 }
 
 variable "mm_server_vm_count" {
-  description = "The number of dev Magic Mirror² server virtual machines"
+  description = "The number of Magic Mirror² server virtual machines"
   type        = number
   default     = 1
 }
