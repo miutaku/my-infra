@@ -105,7 +105,7 @@ variable "dev_application_server_vm_count" {
 variable "dev_application_server_macaddr" {
   description = "The MAC address of the dev application server virtual machine"
   type        = string
-  default     = "52:54:00:25:98:11"
+  default     = "52:54:00:25:01:01"
 }
 
 variable "mm_server_vm_count" {
