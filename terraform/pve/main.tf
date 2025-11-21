@@ -141,3 +141,26 @@ module "truenas" {
     }
   }
 }
+
+module "magic_mirror_server" {
+  source = "./modules/proxmox_vm"
+
+  vm_count       = var.mm_server_vm_count
+  name_prefix    = "mm-server"
+  name_suffix    = "ubuntu-24-04-home-amd64"
+  base_macaddr   = var.mm_server_macaddr
+  vmid_start     = 5000
+  tags           = ["ubuntu_2404", "mm-server", "iot"]
+  cpu_cores      = 1
+  memory         = 4096
+  proxmox_nodes  = ["pve-b550m"] # USB device is on a specific node
+  clone_template = "template-ubuntu-24-04-home-amd64"
+  disk_size      = 32
+  usbs = {
+    usb0 = {
+      mapping = {
+        mapping_id = "displaylink"
+      }
+    }
+  }
+}
