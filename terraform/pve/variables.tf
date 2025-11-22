@@ -121,6 +121,7 @@ variable "mm_server_macaddr" {
 }
 
 variable "kvm_vga_type" {
-  description  = "Magic Mirror² server KVM not using"
-  kvm_vga_type = "none"
+  description   = "Magic Mirror² server KVM not using"
+  type          = string
+  default       = "none"
 }
