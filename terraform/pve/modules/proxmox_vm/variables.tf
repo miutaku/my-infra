@@ -38,6 +38,18 @@ variable "memory" {
   type        = number
 }
 
+variable "kvm_vga_type" {
+  description = "Using KVM VGA"
+  type        = string
+  default     = "std"
+}
+
+variable "kvm_vga_memory" {
+  description = "KVM VRAM size (MiB)"
+  type        = number
+  default     = 16
+}
+
 variable "proxmox_nodes" {
   description = "List of Proxmox nodes to distribute VMs across"
   type        = list(string)
