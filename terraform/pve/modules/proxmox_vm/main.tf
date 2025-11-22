@@ -35,6 +35,12 @@ resource "proxmox_vm_qemu" "vm" {
     type    = "host"
   }
 
+  # vga
+  vga {
+    type    = var.kvm_vga_type
+    memory  = var.kvm_vga_memory
+  }
+
   ## memory
   memory  = var.memory
   balloon = substr(var.os_type, 0, 1) == "w" ? 1 : 0
