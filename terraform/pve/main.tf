@@ -150,7 +150,7 @@ module "magic_mirror_server" {
   name_suffix    = "ubuntu-24-04-home-amd64"
   base_macaddr   = var.mm_server_macaddr
   vmid_start     = 5000
-  tags           = ["ubuntu_2404", "mm-server", "iot"]
+  tags           = ["ubuntu_2404", "mm-server", "docker", "iot"]
   cpu_cores      = 1
   memory         = 4096
   proxmox_nodes  = ["pve-b550m"] # USB device is on a specific node
