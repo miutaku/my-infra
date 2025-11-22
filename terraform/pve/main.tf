@@ -153,7 +153,7 @@ module "magic_mirror_server" {
   tags           = ["ubuntu_2404", "mm-server", "docker", "iot"]
   cpu_cores      = 1
   memory         = 4096
-  vga_type       = "none"
+  kvm_vga_type   = "none"
   proxmox_nodes  = ["pve-b550m"] # USB device is on a specific node
   clone_template = "template-ubuntu-24-04-home-amd64"
   disk_size      = 32
