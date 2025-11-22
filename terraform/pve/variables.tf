@@ -120,4 +120,7 @@ variable "mm_server_macaddr" {
   default     = "52:54:00:99:00:01"
 }
 
-variable "vga_memory"
+variable "kvm_vga_type" {
+  description  = "Magic Mirror² server KVM not using"
+  kvm_vga_type = "none"
+}
