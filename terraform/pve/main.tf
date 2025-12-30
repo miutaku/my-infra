@@ -97,7 +97,7 @@ module "dev_application_server" {
   vmid_start     = 40000
   tags           = ["dev", "ubuntu_2404", "application-server","docker"]
   cpu_cores      = 8
-  memory         = 10240
+  memory         = 10 * 1024
   proxmox_nodes  = ["pve-x570"]
   clone_template = "template-ubuntu-24-04-home-amd64"
   disk_size      = 64
