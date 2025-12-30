@@ -40,7 +40,6 @@ variable "dev_rec_server_vm_count" {
   default     = 1
 }
 
-
 variable "rke2_base_lb_macaddr" {
   description = "The base MAC address of the virtual machines"
   type        = string
@@ -82,18 +81,6 @@ variable "proxmox_nodes" {
   type        = list(string)
 #  default     = ["pve-x570"]
   default     = ["pve-x570", "pve-b550m"]
-}
-
-variable "stg_reventer_server_macaddr" {
-  description = "The MAC address of the stg reventer server virtual machine"
-  type        = string
-  default     = "52:54:00:25:98:01"
-}
-
-variable "stg_reventer_server_vm_count" {
-  description = "The number of stg reventer server virtual machines"
-  type        = number
-  default     = 1
 }
 
 variable "dev_application_server_vm_count" {
