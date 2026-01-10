@@ -2,6 +2,7 @@
 name: Deploy to home k8s cluster
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'k8s/pve/**'
