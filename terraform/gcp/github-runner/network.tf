@@ -25,7 +25,7 @@ resource "google_compute_firewall" "allow_ssh" {
     ports    = ["22"]
   }
 
-  source_ranges = ["106.72.56.1/32"]
+  source_ranges = [var.ssh_allowed_cidr]
   target_tags   = ["github-runner"]
 }
 
