@@ -51,12 +51,20 @@ resource "google_compute_router" "runner_router" {
   project = var.project_id
 }
 
+# Static IP for Cloud NAT (fixed outbound IP for whitelisting)
+resource "google_compute_address" "nat_ip" {
+  name    = "${var.network_name}-nat-ip"
+  region  = var.region
+  project = var.project_id
+}
+
 resource "google_compute_router_nat" "runner_nat" {
   name                               = "${var.network_name}-nat"
   router                             = google_compute_router.runner_router.name
   region                             = var.region
   project                            = var.project_id
-  nat_ip_allocate_option             = "AUTO_ONLY"
+  nat_ip_allocate_option             = "MANUAL_ONLY"
+  nat_ips                            = [google_compute_address.nat_ip.self_link]
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
   log_config {
