@@ -59,7 +59,7 @@ variable "disk_size_gb" {
 variable "boot_image" {
   description = "The boot disk image for the GCE instance."
   type        = string
-  default     = "ubuntu-os-cloud/ubuntu-2404-lts"
+  default     = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
 }
 
 variable "network_name" {
