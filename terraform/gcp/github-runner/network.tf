@@ -29,6 +29,22 @@ resource "google_compute_firewall" "allow_ssh" {
   target_tags   = ["github-runner"]
 }
 
+# Firewall - Allow SSH via IAP (Identity-Aware Proxy)
+resource "google_compute_firewall" "allow_iap_ssh" {
+  name    = "${var.network_name}-allow-iap-ssh"
+  network = google_compute_network.runner_network.name
+  project = var.project_id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  # IAP's IP range
+  source_ranges = ["35.235.240.0/20"]
+  target_tags   = ["github-runner"]
+}
+
 # Firewall - Allow outbound (required for GitHub communication)
 resource "google_compute_firewall" "allow_egress" {
   name      = "${var.network_name}-allow-egress"
