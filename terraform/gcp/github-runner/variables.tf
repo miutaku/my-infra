@@ -50,6 +50,12 @@ variable "disk_size_gb" {
   default     = 30
 }
 
+variable "boot_image" {
+  description = "The boot disk image for the GCE instance."
+  type        = string
+  default     = "ubuntu-os-cloud/ubuntu-2404-lts"
+}
+
 variable "network_name" {
   description = "The name of the VPC network."
   type        = string
@@ -60,4 +66,10 @@ variable "subnet_cidr" {
   description = "The CIDR range for the subnet."
   type        = string
   default     = "10.0.1.0/24"
+}
+
+variable "ssh_allowed_cidr" {
+  description = "The CIDR range allowed for SSH access."
+  type        = string
+  sensitive   = true
 }
