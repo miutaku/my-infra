@@ -1,11 +1,11 @@
 # Service Account for the GCE instance
 resource "google_service_account" "runner_sa" {
-  account_id   = "${var.runner_name}-sa"
-  display_name = "GitHub Actions Runner Service Account"
+  account_id   = "${var.prefix}-runner-sa"
+  display_name = "${var.prefix} GitHub Actions Runner Service Account"
   project      = var.project_id
 }
 
-# Minimal IAM roles for the runner (add more if needed for your CI/CD)
+# Minimal IAM roles for the runner
 resource "google_project_iam_member" "runner_log_writer" {
   project = var.project_id
   role    = "roles/logging.logWriter"
@@ -27,7 +27,7 @@ resource "google_project_iam_member" "runner_secret_accessor" {
 
 # Secret Manager secret for GitHub runner token
 resource "google_secret_manager_secret" "runner_token" {
-  secret_id = "${var.runner_name}-token"
+  secret_id = "${var.prefix}-runner-token"
   project   = var.project_id
 
   replication {
@@ -42,15 +42,16 @@ resource "google_secret_manager_secret_version" "runner_token" {
 
 # GCE Instance for GitHub Actions Runner
 resource "google_compute_instance" "github_runner" {
-  name         = var.runner_name
+  name         = "${var.prefix}-runner"
   machine_type = var.machine_type
   zone         = var.zone
   project      = var.project_id
 
-  tags = ["github-runner"]
+  tags = ["${var.prefix}-runner"]
 
   labels = {
     purpose = "github-actions-runner"
+    app     = var.prefix
     managed = "terraform"
   }
 
@@ -64,12 +65,6 @@ resource "google_compute_instance" "github_runner" {
 
   network_interface {
     subnetwork = google_compute_subnetwork.runner_subnet.id
-
-    # No external IP - uses Cloud NAT for outbound
-    # Uncomment below if you need direct SSH access
-    # access_config {
-    #   // Ephemeral public IP
-    # }
   }
 
   service_account {
@@ -84,20 +79,18 @@ resource "google_compute_instance" "github_runner" {
 
   metadata_startup_script = templatefile("${path.module}/startup-script.sh", {
     project_id     = var.project_id
-    github_org     = var.github_org
+    github_repo    = var.github_repo
     secret_name    = google_secret_manager_secret.runner_token.secret_id
-    runner_name    = var.runner_name
+    runner_name    = "${var.prefix}-runner"
     runner_labels  = var.runner_labels
     runner_version = var.runner_version
   })
 
-  # Ensure network resources are created first
   depends_on = [
     google_compute_router_nat.runner_nat,
     google_secret_manager_secret_version.runner_token
   ]
 
-  # Allow Terraform to recreate the instance if startup script changes
   lifecycle {
     create_before_destroy = true
   }
