@@ -1,21 +1,21 @@
-name: 'Terraform CI/CD for GCP GitHub Runner (TFC)'
+name: 'Terraform CI/CD for GCP Reventer Runner (TFC)'
 
 on:
   push:
     branches:
       - '**'
     paths:
-      - 'terraform/gcp/github-runner/**.tf'
-      - 'terraform/gcp/github-runner/**.sh'
+      - 'terraform/gcp/github-runner/reventer/**'
+      - 'terraform/gcp/github-runner/modules/**'
 
 env:
-  TF_WORKING_DIR: ./terraform/gcp/github-runner
+  TF_WORKING_DIR: ./terraform/gcp/github-runner/reventer
   TF_CLOUD_ORGANIZATION: ${{ vars.TF_ORGANIZATION }}
-  TF_WORKSPACE: gcp-github-runner
+  TF_WORKSPACE: gcp-reventer-github-runner
 
 permissions:
   contents: read
-  id-token: write  # Required for Workload Identity Federation
+  id-token: write
 
 jobs:
   plan_job:

@@ -23,11 +23,6 @@ output "network_name" {
   value       = google_compute_network.runner_network.name
 }
 
-output "subnet_name" {
-  description = "The name of the subnet."
-  value       = google_compute_subnetwork.runner_subnet.name
-}
-
 output "nat_external_ip" {
   description = "The static external IP address for outbound traffic (for whitelisting)."
   value       = google_compute_address.nat_ip.address

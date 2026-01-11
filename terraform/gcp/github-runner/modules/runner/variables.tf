@@ -15,21 +15,20 @@ variable "zone" {
   default     = "us-west1-b"
 }
 
-variable "github_org" {
-  description = "The GitHub organization name to register the runner."
+variable "prefix" {
+  description = "Prefix for all resource names (e.g., 'reventer')."
+  type        = string
+}
+
+variable "github_repo" {
+  description = "The GitHub repository (owner/repo format, e.g. miutaku/reventer) to register the runner."
   type        = string
 }
 
 variable "github_runner_token" {
-  description = "The GitHub Actions runner registration token. Get it from GitHub Org Settings > Actions > Runners > New self-hosted runner."
+  description = "The GitHub Actions runner registration token."
   type        = string
   sensitive   = true
-}
-
-variable "runner_name" {
-  description = "The name for the self-hosted runner."
-  type        = string
-  default     = "gce-runner"
 }
 
 variable "runner_labels" {
@@ -60,12 +59,6 @@ variable "boot_image" {
   description = "The boot disk image for the GCE instance."
   type        = string
   default     = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
-}
-
-variable "network_name" {
-  description = "The name of the VPC network."
-  type        = string
-  default     = "github-runner-network"
 }
 
 variable "subnet_cidr" {

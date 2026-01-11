@@ -9,10 +9,10 @@ terraform {
   }
 
   # Terraform Cloud backend
-  # Set TF_CLOUD_ORGANIZATION env var or replace with your org name
+  # Set TF_CLOUD_ORGANIZATION env var
   cloud {
     workspaces {
-      name = "gcp-github-runner"
+      name = "gcp-reventer-github-runner"
     }
   }
 }

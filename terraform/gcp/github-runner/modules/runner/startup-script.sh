@@ -3,7 +3,7 @@ set -e
 
 # Variables passed from Terraform
 PROJECT_ID="${project_id}"
-GITHUB_ORG="${github_org}"
+GITHUB_REPO="${github_repo}"
 SECRET_NAME="${secret_name}"
 RUNNER_NAME="${runner_name}"
 RUNNER_LABELS="${runner_labels}"
@@ -44,9 +44,9 @@ rm actions-runner-linux-x64.tar.gz
 # Change ownership
 chown -R runner:runner $RUNNER_DIR
 
-# Configure the runner as the runner user (Organization level)
+# Configure the runner (Repository level)
 sudo -u runner ./config.sh \
-  --url "https://github.com/$${GITHUB_ORG}" \
+  --url "https://github.com/$${GITHUB_REPO}" \
   --token "$${RUNNER_TOKEN}" \
   --name "$${RUNNER_NAME}" \
   --labels "$${RUNNER_LABELS}" \
