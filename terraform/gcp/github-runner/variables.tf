@@ -38,8 +38,14 @@ variable "runner_labels" {
   default     = "gce,linux,x64"
 }
 
+variable "runner_version" {
+  description = "The GitHub Actions runner version to install."
+  type        = string
+  default     = "2.321.0"
+}
+
 variable "machine_type" {
-  description = "The GCE machine type."
+  description = "The GCE machine type. (free tier)"
   type        = string
   default     = "e2-micro"
 }

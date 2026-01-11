@@ -2,11 +2,12 @@
 set -e
 
 # Variables passed from Terraform
+PROJECT_ID="${project_id}"
 GITHUB_ORG="${github_org}"
-RUNNER_TOKEN="${runner_token}"
+SECRET_NAME="${secret_name}"
 RUNNER_NAME="${runner_name}"
 RUNNER_LABELS="${runner_labels}"
-RUNNER_VERSION="2.321.0"
+RUNNER_VERSION="${runner_version}"
 
 # Create runner user
 useradd -m -s /bin/bash runner || true
@@ -21,6 +22,12 @@ usermod -aG docker runner
 # Enable and start Docker
 systemctl enable docker
 systemctl start docker
+
+# Fetch runner token from Secret Manager (secure method)
+RUNNER_TOKEN=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
+  -H "Metadata-Flavor: Google" | jq -r '.access_token' | \
+  xargs -I {} curl -s "https://secretmanager.googleapis.com/v1/projects/$${PROJECT_ID}/secrets/$${SECRET_NAME}/versions/latest:access" \
+  -H "Authorization: Bearer {}" | jq -r '.payload.data' | base64 -d)
 
 # Create runner directory
 RUNNER_DIR="/home/runner/actions-runner"

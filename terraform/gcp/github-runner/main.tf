@@ -1,6 +1,6 @@
 # Service Account for the GCE instance
 resource "google_service_account" "runner_sa" {
-  account_id   = "github-runner-sa"
+  account_id   = "${var.runner_name}-sa"
   display_name = "GitHub Actions Runner Service Account"
   project      = var.project_id
 }
@@ -16,6 +16,28 @@ resource "google_project_iam_member" "runner_metric_writer" {
   project = var.project_id
   role    = "roles/monitoring.metricWriter"
   member  = "serviceAccount:${google_service_account.runner_sa.email}"
+}
+
+# IAM role to access Secret Manager
+resource "google_project_iam_member" "runner_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.runner_sa.email}"
+}
+
+# Secret Manager secret for GitHub runner token
+resource "google_secret_manager_secret" "runner_token" {
+  secret_id = "${var.runner_name}-token"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "runner_token" {
+  secret      = google_secret_manager_secret.runner_token.id
+  secret_data = var.github_runner_token
 }
 
 # GCE Instance for GitHub Actions Runner
@@ -51,20 +73,28 @@ resource "google_compute_instance" "github_runner" {
   }
 
   service_account {
-    email  = google_service_account.runner_sa.email
-    scopes = ["cloud-platform"]
+    email = google_service_account.runner_sa.email
+    scopes = [
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring.write",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/cloud-platform",
+    ]
   }
 
   metadata_startup_script = templatefile("${path.module}/startup-script.sh", {
-    github_org    = var.github_org
-    runner_token  = var.github_runner_token
-    runner_name   = var.runner_name
-    runner_labels = var.runner_labels
+    project_id     = var.project_id
+    github_org     = var.github_org
+    secret_name    = google_secret_manager_secret.runner_token.secret_id
+    runner_name    = var.runner_name
+    runner_labels  = var.runner_labels
+    runner_version = var.runner_version
   })
 
   # Ensure network resources are created first
   depends_on = [
-    google_compute_router_nat.runner_nat
+    google_compute_router_nat.runner_nat,
+    google_secret_manager_secret_version.runner_token
   ]
 
   # Allow Terraform to recreate the instance if startup script changes
