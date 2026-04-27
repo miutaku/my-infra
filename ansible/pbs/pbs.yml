@@ -1,0 +1,16 @@
+---
+- name: Configure Proxmox Backup Server
+  hosts: pbs
+  strategy: debug
+  gather_facts: true
+  become: true
+  vars:
+    ansible_user: miutaku
+    ansible_ssh_user: miutaku
+  roles:
+    - role: common
+      tags: common
+    - role: zfs
+      tags: zfs
+    - role: proxmox_backup_server
+      tags: proxmox_backup_server

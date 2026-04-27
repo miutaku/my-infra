@@ -1,0 +1,4 @@
+---
+bw_credentials:
+  ssh: '18bb5920-fef9-4a47-ad66-b2bc013c6002'
+  pbs_admin_password: "{{ bw_cred_pbs_admin_password }}"
