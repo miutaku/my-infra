@@ -25,9 +25,14 @@ variable "private_key_base64" {
 }
 
 variable "ssh_public_key" {
-  description = "The SSH public key to use for the bastion and worker nodes."
+  description = "The SSH public key to use for worker nodes."
   type        = string
   sensitive   = true
+}
+
+variable "alert_email" {
+  description = "Email address to receive Budget Alert notifications."
+  type        = string
 }
 
 variable "region" {
@@ -51,11 +56,11 @@ variable "node_pool_shape" {
 }
 
 variable "node_pool_ocpus" {
-  description = "The total number of OCPUs for each worker node."
-  default     = 4
+  description = "OCPUs per worker node. 2 nodes x 2 OCPU = 4 OCPU total (Always Free limit)."
+  default     = 2
 }
 
 variable "node_pool_memory_gbs" {
-  description = "The total amount of memory in GBs for each worker node."
-  default     = 24
+  description = "Memory GBs per worker node. 2 nodes x 12 GB = 24 GB total (Always Free limit)."
+  default     = 12
 }
