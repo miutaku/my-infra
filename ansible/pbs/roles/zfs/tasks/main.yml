@@ -1,0 +1,74 @@
+---
+- name: Enabled contrib component in Debian apt sources
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list
+    regexp: '^(deb https?://deb\.debian\.org/debian bookworm main)$'
+    replace: '\1 contrib'
+
+- name: Installed linux-headers for current kernel
+  ansible.builtin.apt:
+    name: "linux-headers-{{ ansible_kernel }}"
+    state: present
+    update_cache: true
+  retries: 100
+  delay: 5
+
+- name: Installed ZFS packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: false
+  with_items:
+    - zfs-dkms
+    - zfsutils-linux
+  retries: 100
+  delay: 5
+
+- name: Loaded ZFS kernel module
+  community.general.modprobe:
+    name: zfs
+    state: present
+
+- name: Created ZFS mountpoint directory
+  ansible.builtin.file:
+    path: "{{ zfs.mountpoint }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Checked existing ZFS pools
+  ansible.builtin.command:
+    cmd: "zpool list -H -o name"
+  register: zpool_list
+  changed_when: false
+  failed_when: false
+
+- name: Created ZFS pool {{ zfs.pool_name }}
+  ansible.builtin.command:
+    cmd: >-
+      zpool create
+      -o ashift={{ zfs.ashift }}
+      -O compression={{ zfs.compression }}
+      -O atime={{ zfs.atime }}
+      -O xattr={{ zfs.xattr }}
+      -m {{ zfs.mountpoint }}
+      {{ zfs.pool_name }}
+      {{ zfs.devices | join(' ') }}
+  when: zfs.pool_name not in zpool_list.stdout
+  changed_when: true
+
+- name: Set ZFS pool compression property
+  ansible.builtin.command:
+    cmd: "zfs set compression={{ zfs.compression }} {{ zfs.pool_name }}"
+  changed_when: false
+
+- name: Set ZFS pool atime property
+  ansible.builtin.command:
+    cmd: "zfs set atime={{ zfs.atime }} {{ zfs.pool_name }}"
+  changed_when: false
+
+- name: Set ZFS pool xattr property
+  ansible.builtin.command:
+    cmd: "zfs set xattr={{ zfs.xattr }} {{ zfs.pool_name }}"
+  changed_when: false

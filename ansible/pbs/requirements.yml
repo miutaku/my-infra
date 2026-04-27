@@ -1,0 +1,4 @@
+# from ansible-galaxy
+collections:
+  - name: community.general
+  - name: ansible.posix
