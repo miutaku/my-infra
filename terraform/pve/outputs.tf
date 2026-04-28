@@ -26,3 +26,10 @@ output "rke2_worker_vm_names" {
 output "rke2_worker_vm_ids" {
   value = [for vm in values(module.rke2_worker.vms) : vm.id]
 }
+
+output "batocera_vm_name" {
+  value = [for vm in values(module.batocera.vms) : vm.name]
+}
+output "batocera_vm_id" {
+  value = [for vm in values(module.batocera.vms) : vm.id]
+}

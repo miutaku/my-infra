@@ -79,8 +79,8 @@ variable "truenas_macaddr" {
 variable "proxmox_nodes" {
   description = "A list of Proxmox nodes to distribute VMs across."
   type        = list(string)
-#  default     = ["pve-x570"]
-  default     = ["pve-x570", "pve-b550m"]
+  #  default     = ["pve-x570"]
+  default = ["pve-x570", "pve-b550m"]
 }
 
 variable "dev_application_server_vm_count" {
