@@ -5,7 +5,7 @@
   gather_facts: true
   become: true
   vars:
-    ansible_user: miutaku # tips: with --ask-become-pass, this user must have sudo privileges
+    ansible_user: miutaku
   roles:
     - role: common
       tags: common

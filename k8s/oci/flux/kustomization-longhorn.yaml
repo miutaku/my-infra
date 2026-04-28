@@ -1,0 +1,20 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: oci-longhorn
+  namespace: flux-system
+spec:
+  interval: 10m
+  dependsOn:
+    - name: oci-external-secrets
+  sourceRef:
+    kind: GitRepository
+    name: my-infra
+  path: ./k8s/oci/infrastructure/longhorn
+  prune: true
+  timeout: 10m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: longhorn-driver-deployer
+      namespace: longhorn-system
