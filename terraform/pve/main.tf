@@ -174,7 +174,7 @@ module "batocera" {
   efi_storage_pool  = "local-lvm"
   machine           = "q35"
   disk_size         = 64
-  data_disk_size    = 500 # game storage
+  data_disk_size    = 16 # game storage (scsi1)
   kvm_vga_type      = "none"
   kvm_vga_memory    = null
   usbs = {
