@@ -4,3 +4,4 @@ resources:
   - tfc-agent
   - cloudflared
   - grafana-alloy
+  - actions-runner
