@@ -1,0 +1,59 @@
+name: 'Terraform CI/CD for Cloudflare (TFC)'
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'terraform/cloudflare/**.tf'
+      - 'terraform/cloudflare/**.tfvars'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/cloudflare/**.tf'
+      - 'terraform/cloudflare/**.tfvars'
+
+env:
+  TF_WORKING_DIR: ./terraform/cloudflare
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan:
+    name: 'Terraform Plan (TFC)'
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -no-color > /dev/null
+
+  apply:
+    name: 'Terraform Apply (TFC)'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve -no-color > /dev/null
