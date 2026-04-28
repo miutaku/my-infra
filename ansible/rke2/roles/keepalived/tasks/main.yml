@@ -8,40 +8,24 @@
   retries: 100
   delay: 5
 
-- name: Initialized bitwarden vault
+- name: Got keepalived auth_pass from BSM
   ansible.builtin.shell:
-    cmd: "bw sync"
-    executable: "/bin/bash"
-  delegate_to: localhost
-  become: false
-  check_mode: false
-  changed_when: false
-
-- name: Unlocked bitwarden vault with generated session key
-  ansible.builtin.shell:
-    cmd: "bw unlock {{ bw_passwd }} --raw"
+    cmd: "bws secret get {{ bsm_keepalived_auth_pass_id }} | jq -r '.value'"
     executable: "/bin/bash"
   environment:
-    PATH: "{{ lookup('env', 'PATH') }}"
-  delegate_to: localhost
-  become: false
-  run_once: true
-  register: bw_session_key
-  check_mode: false
-  changed_when: false
-  notify:
-    - Locked bitwarden vault
-
-- name: Got keepalived auth_pass from bitwarden
-  ansible.builtin.shell:
-    cmd: "set -o pipefail && bw get item {{ bw_credentials.keepalived }} --session {{ bw_session_key.stdout }} | jq -r .login.password"
-    executable: "/bin/bash"
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
   delegate_to: localhost
   become: false
   run_once: true
   register: keepalived_auth_pass
   check_mode: false
   changed_when: false
+
+- name: Set dummy auth_pass for check mode
+  ansible.builtin.set_fact:
+    keepalived_auth_pass:
+      stdout: "dummy_password"
+  when: ansible_check_mode
 
 - name: Set other rke2-lb IPs (exclude self)
   ansible.builtin.set_fact:

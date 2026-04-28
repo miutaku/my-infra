@@ -106,3 +106,30 @@ variable "mm_server_macaddr" {
   type        = string
   default     = "52:54:00:99:00:01"
 }
+
+# RKE2 ネットワーク設定
+# ルーターの DHCP 静的リースで MAC → IP を固定した後、ここの値と一致させること。
+# `terraform output rke2_*_mac_addresses` で各 VM の MAC を確認できる。
+variable "rke2_lb_ips" {
+  description = "LB VMs に割り当てる IP アドレス (DHCP 静的リースと一致させること)"
+  type        = list(string)
+  default     = ["192.168.0.135", "192.168.0.136"]
+}
+
+variable "rke2_server_ips" {
+  description = "Server VMs に割り当てる IP アドレス (DHCP 静的リースと一致させること)"
+  type        = list(string)
+  default     = ["192.168.0.126", "192.168.0.127", "192.168.0.128"]
+}
+
+variable "rke2_worker_ips" {
+  description = "Worker VMs に割り当てる IP アドレス (DHCP 静的リースと一致させること)"
+  type        = list(string)
+  default     = ["192.168.0.129", "192.168.0.130"]
+}
+
+variable "rke2_lb_vip" {
+  description = "Keepalived の Virtual IP (任意の未使用 IP)"
+  type        = string
+  default     = "192.168.0.227"
+}
