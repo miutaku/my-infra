@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bitwarden-sdk-server
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.external-secrets.io
+    chart: bitwarden-sdk-server
+    targetRevision: "0.3.0"
+    helm:
+      releaseName: bitwarden-sdk-server
+      valuesObject:
+        bitwardenSdkServer:
+          apiUrl: "https://api.bitwarden.com"
+          identityUrl: "https://identity.bitwarden.com"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-secrets
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
