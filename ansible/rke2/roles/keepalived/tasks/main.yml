@@ -10,7 +10,7 @@
 
 - name: Got keepalived auth_pass from BSM
   ansible.builtin.shell:
-    cmd: "bws secret get {{ bsm_keepalived_auth_pass_id }} | jq -r '.value'"
+    cmd: "set -o pipefail && bws secret get {{ bsm_keepalived_auth_pass_id }} | jq -r '.value'"
     executable: "/bin/bash"
   environment:
     BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
