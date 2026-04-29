@@ -1,0 +1,5 @@
+---
+- hosts: ix2215
+  gather_facts: false
+  roles:
+    - dhcp_static_lease
