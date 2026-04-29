@@ -105,6 +105,18 @@ packer build \
 4. SSH ホストキー削除 — クローンごとに再生成
 5. APT キャッシュ削除
 
+## CI / GitHub Actions
+
+`packer/**` 以下に変更が入ると `.github/workflows/packer.yml` が自動実行される。
+
+| ジョブ | トリガー | 内容 |
+|---|---|---|
+| `validate` | push / PR | `packer validate` で HCL 構文チェック (ダミー変数使用、実ビルドなし) |
+
+**実際の `packer build` は GitHub Actions からは実行できない。**  
+Proxmox は宅内ネットワーク (`192.168.0.x`) にあり GitHub-hosted runner から到達不可のため、
+ビルドは手元の端末から上記「実行方法」コマンドで行う。
+
 ## 変数一覧
 
 | 変数 | デフォルト | 必須 | 説明 |
