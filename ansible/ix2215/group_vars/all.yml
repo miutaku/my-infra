@@ -13,22 +13,22 @@ dhcp_profile: "main"
 dhcp_assignments:
   - name: lb-01-rke2-haproxy-keepalived
     ip: "192.168.0.135"
-    mac: "CHANGE_ME"  # terraform output rke2_lb_mac_addresses の lb-01 の値
+    mac: "BC:24:11:AD:44:01"
   - name: lb-02-rke2-haproxy-keepalived
     ip: "192.168.0.136"
-    mac: "CHANGE_ME"  # terraform output rke2_lb_mac_addresses の lb-02 の値
+    mac: "BC:24:11:AD:44:02"
   - name: master-01-rke2-server
     ip: "192.168.0.126"
-    mac: "CHANGE_ME"  # terraform output rke2_server_mac_addresses の master-01 の値
+    mac: "BC:24:11:97:96:01"
   - name: master-02-rke2-server
     ip: "192.168.0.127"
-    mac: "CHANGE_ME"
+    mac: "BC:24:11:97:96:02"
   - name: master-03-rke2-server
     ip: "192.168.0.128"
-    mac: "CHANGE_ME"
+    mac: "BC:24:11:97:96:03"
   - name: worker-01-rke2-agent
     ip: "192.168.0.129"
-    mac: "CHANGE_ME"
+    mac: "BC:24:11:23:32:01"
   - name: worker-02-rke2-agent
     ip: "192.168.0.130"
-    mac: "CHANGE_ME"
+    mac: "BC:24:11:23:32:02"
