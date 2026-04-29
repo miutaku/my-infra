@@ -22,9 +22,12 @@
     IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
     DHCP_PROFILE: "{{ dhcp_profile }}"
     DHCP_ASSIGNMENTS_JSON: "{{ dhcp_assignments | to_json }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
   register: dhcp_result
   changed_when: "'changed=true' in dhcp_result.stdout"
   failed_when: "'failed=true' in dhcp_result.stdout or dhcp_result.rc != 0"
+  # check mode でも実行する (DRY_RUN=true で IX2215 に接続して差分を表示)
+  check_mode: false
 
 - name: Show result
   ansible.builtin.debug:
