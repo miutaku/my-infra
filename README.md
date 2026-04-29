@@ -1,6 +1,119 @@
-# My Infra
+# my-infra
 
-## 絶対読む
+自宅ホームラボ + OCI クラウドのインフラ全体を管理するリポジトリ。
 
-- [OCI Terraform](./terraform/oci/README.md)
-- [PVE Terraform](./terraform/pve/README.md)
+## アーキテクチャ概要
+
+```
+                        ┌─────────────────────────────────────┐
+                        │        Grafana Labs (Managed)        │
+                        │  Grafana Cloud ← metrics (remote_write)│
+                        │  Grafana UI    ← PDC tunnel (VictoriaMetrics) │
+                        └──────────────┬──────────────────────┘
+                                       │
+                     ┌─────────────────┼──────────────────────┐
+                     │ Cloudflare      │                        │
+                     │ - Tunnel (rke2-home / oke-cloud)        │
+                     │ - Zero Trust Access                     │
+                     │ - DNS (miutaku.work)                    │
+                     └────┬──────────────────────┬────────────┘
+                          │                      │
+         ┌────────────────▼──────┐    ┌──────────▼──────────────┐
+         │   宅内 (Proxmox VE)   │    │   OCI OKE (Always Free) │
+         │                       │    │                          │
+         │  RKE2 HA クラスタ      │    │  OKE Basic クラスタ      │
+         │  - 2x LB (Keepalived) │    │  - 2x A1.Flex (ARM64)   │
+         │  - 3x Server (etcd)   │    │  Flux v2 (GitOps)       │
+         │  - 2x Worker          │    │  - ESO + Bitwarden BSM  │
+         │  ArgoCD (App-of-Apps) │    │  - cert-manager         │
+         │  - ESO + Bitwarden BSM│    │  - ingress-nginx (OCI LB)│
+         │  - VictoriaMetrics    │    │  - Longhorn             │
+         │  - Grafana Alloy      │    │  - cloudflared          │
+         │  - Grafana PDC agent  │    │  - tfc-agent            │
+         │  - cloudflared        │    │  - grafana-alloy        │
+         │  - MetalLB / Tailscale│    │  - actions-runner       │
+         │                       │    │                          │
+         │  IX2215 (ルーター)     │    │                          │
+         │  - DHCP 静的リース     │    │                          │
+         │  - map-e (IPv6)       │    │                          │
+         │                       │    │                          │
+         │  PBS (192.168.0.117)  │    │                          │
+         │  - Proxmox Backup     │    │                          │
+         └───────────────────────┘    └──────────────────────────┘
+```
+
+## ドメイン
+
+`miutaku.work` — Cloudflare で管理。Let's Encrypt (DNS01) で証明書取得。
+
+## シークレット管理
+
+すべてのシークレットは **Bitwarden Secrets Manager (BSM)** で管理する。  
+k8s への注入は **External Secrets Operator (ESO)** + bitwarden-sdk-server 経由。  
+Ansible は `bws` CLI + `BWS_ACCESS_TOKEN` 環境変数で取得する。
+
+## リポジトリ構成
+
+```
+my-infra/
+├── terraform/
+│   ├── oci/            OCI OKE クラスタ (TFC workspace: my-infra)
+│   ├── pve/            Proxmox VM 全台 (TFC workspace: pve-home)
+│   └── cloudflare/     Cloudflare Tunnel / DNS / Zero Trust (TFC workspace: cloudflare)
+├── ansible/
+│   ├── rke2/           RKE2 クラスタ構成 (HAProxy + Keepalived + RKE2)
+│   ├── ix2215/         IX2215 DHCP 静的リース管理
+│   └── pbs/            Proxmox Backup Server 構築
+├── k8s/
+│   ├── pve/            宅内 RKE2 (ArgoCD App-of-Apps)
+│   └── oci/            OCI OKE (Flux v2 GitOps)
+└── packer/
+    ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)
+    └── truenas-scale/  Proxmox テンプレート (TrueNAS Scale)
+```
+
+## 作業フロー: 宅内クラスタを新規構築する順序
+
+```
+[1] terraform/pve/        → Proxmox VM を作成
+[2] ansible/ix2215/       → IX2215 に DHCP 静的リースを設定 (MAC → IP 固定)
+[3] ansible/rke2/         → RKE2 クラスタを構成
+[4] k8s/pve/argocd/       → ArgoCD Bootstrap → App-of-Apps 起動
+```
+
+## 作業フロー: OKE クラスタを新規構築する順序
+
+```
+[1] terraform/oci/        → OKE クラスタを作成
+[2] k8s/oci/flux/         → Flux v2 Bootstrap → GitOps 開始
+```
+
+## 各コンポーネントの README
+
+作業前に必ず該当 README を読むこと。
+
+| コンポーネント | README | 主な内容 |
+|---|---|---|
+| OCI Terraform | [terraform/oci/README.md](./terraform/oci/README.md) | OKE 構築, TFC Variables |
+| PVE Terraform | [terraform/pve/README.md](./terraform/pve/README.md) | VM 作成, MAC/IP 管理, Ansible 自動生成 |
+| Cloudflare Terraform | [terraform/cloudflare/README.md](./terraform/cloudflare/README.md) | Tunnel, DNS, Zero Trust |
+| RKE2 Ansible | [ansible/rke2/README.md](./ansible/rke2/README.md) | RKE2 HA クラスタ構成 |
+| IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | DHCP 静的リース |
+| PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
+| ArgoCD Bootstrap (RKE2) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSM シークレット一覧, App-of-Apps |
+| Flux Bootstrap (OKE) | [k8s/oci/flux/README.md](./k8s/oci/flux/README.md) | BSM シークレット一覧, Kustomization 順序 |
+| PDC Agent | [k8s/pve/pdc-agent/README.md](./k8s/pve/pdc-agent/README.md) | Grafana PDC トンネル |
+| Packer Ubuntu | [packer/ubuntu-26-04/README.md](./packer/ubuntu-26-04/README.md) | テンプレートビルド |
+| Packer TrueNAS | [packer/truenas-scale/README.md](./packer/truenas-scale/README.md) | テンプレートビルド |
+| Actions Runner (OKE) | [k8s/oci/apps/actions-runner/README.md](./k8s/oci/apps/actions-runner/README.md) | OKE 上の GitHub runner |
+
+## CI / GitHub Actions
+
+| ワークフロー | トリガーパス | 内容 |
+|---|---|---|
+| `terraform_pve.yml` | `terraform/pve/**` | plan (PR) / apply (main) + Ansible inventory 自動コミット |
+| `terraform_oci.yml` | `terraform/oci/**` | plan (PR) / apply (main) |
+| `terraform_cloudflare.yml` | `terraform/cloudflare/**` | plan (PR) / apply (main) |
+| `ansible_check_rke2.yml` | `ansible/rke2/**` | lint + syntax-check |
+| `ansible_check_ix2215.yml` | `ansible/ix2215/**` | lint + syntax-check |
+| `packer.yml` | `packer/**` | packer validate (実ビルドは手動) |
