@@ -64,15 +64,19 @@
     state: started
     enabled: true
 
-- name: Got PBS admin password from bitwarden
+- name: Got PBS admin password from BSM
   ansible.builtin.shell:
-    cmd: "set -o pipefail && bw get password {{ bw_credentials.pbs_admin_password }} --session {{ bw_session_key.stdout }}"
+    cmd: "bws secret get {{ bsm_pbs_admin_password_id }} | jq -r '.value'"
     executable: /bin/bash
+  environment:
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
   delegate_to: localhost
   become: false
+  run_once: true
   register: pbs_admin_password_result
   check_mode: false
   changed_when: false
+  no_log: true
 
 - name: Checked existing PBS users
   ansible.builtin.command:

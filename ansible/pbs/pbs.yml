@@ -6,7 +6,6 @@
   become: true
   vars:
     ansible_user: miutaku
-    ansible_ssh_user: miutaku
   roles:
     - role: common
       tags: common
