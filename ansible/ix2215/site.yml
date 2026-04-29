@@ -1,5 +1,6 @@
 ---
-- hosts: ix2215
+- name: Configure IX2215 DHCP static leases
+  hosts: ix2215
   gather_facts: false
   roles:
     - dhcp_static_lease
