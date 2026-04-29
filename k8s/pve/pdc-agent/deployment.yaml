@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdc-agent
+  namespace: monitoring
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: pdc-agent
+  template:
+    metadata:
+      labels:
+        app: pdc-agent
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 30000
+        runAsGroup: 30000
+        fsGroup: 30000
+      containers:
+        - name: pdc-agent
+          image: grafana/pdc-agent:latest
+          imagePullPolicy: Always
+          args:
+            - "-token"
+            - "$(TOKEN)"
+            - "-gcloud-hosted-grafana-id"
+            - "$(HOSTED_GRAFANA_ID)"
+            - "-cluster"
+            - "$(CLUSTER)"
+          env:
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-pdc-credentials
+                  key: token
+            - name: HOSTED_GRAFANA_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-pdc-credentials
+                  key: hosted-grafana-id
+            - name: CLUSTER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-pdc-credentials
+                  key: cluster
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            # SSH 鍵を /tmp に書き込むため readOnly にできない
+            readOnlyRootFilesystem: false
