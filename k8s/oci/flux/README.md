@@ -61,6 +61,7 @@ kubectl apply -k k8s/oci/flux/
 | `GRAFANA_CLOUD_METRICS_URL` | Grafana Cloud Prometheus push URL |
 | `GRAFANA_CLOUD_METRICS_USERNAME` | Grafana Cloud instance ID |
 | `GRAFANA_CLOUD_METRICS_PASSWORD` | Grafana Cloud API key |
+| `GITHUB_REVENTER_RUNNER_PAT` | GitHub PAT (`repo` スコープ) — miutaku/reventer 用 self-hosted runner |
 
 ## 同期状態の確認
 

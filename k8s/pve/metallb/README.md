@@ -1,51 +1,40 @@
-# helmでmetallbを入れる(Loadbalancer)
+# MetalLB (LoadBalancer for RKE2)
 
-## helmでmetallbのインストールする。
-```shell
-$ kubectl create ns metallb-system
-namespace/metallb-system created
+RKE2 クラスタに L2 モードの LoadBalancer 機能を提供する。  
+ArgoCD App-of-Apps (`k8s/pve/argocd-apps/metallb.yaml`) で管理される。
 
-$ helm repo add metallb https://metallb.github.io/metallb
-$ helm install metallb metallb/metallb -n metallb-system
-NAME: metallb
-LAST DEPLOYED: Sun Jun  8 17:50:04 2025
-NAMESPACE: metallb-system
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-MetalLB is now running in the cluster.
+## 構成
 
-Now you can configure it via its CRs. Please refer to the metallb official docs
-on how to use the CRs.
-```
+| 項目 | 値 |
+|---|---|
+| モード | L2 (ARP アナウンス) |
+| IP プール | `192.168.0.200-192.168.0.220` |
+| インストール方法 | ArgoCD HelmRelease (grafana/helm-charts) |
 
-## 設定適用
-```
-$ kubectl apply -f metallb.yaml 
-```
+IP プールは宅内 LAN の DHCP 割り当て範囲外に設定すること。  
+DHCP サーバー (IX2215) の `ip dhcp profile main` の `default-gateway` 設定と重複しないこと。
 
-## 動作確認
-```shell
-$ kubectl get pods -n metallb-system --kubeconfig=/tmp/kubeconfig
-NAME                                  READY   STATUS              RESTARTS   AGE
-metallb-controller-5754956df6-zjqsj   1/1     Running             0          110s
-metallb-speaker-2cvbt                 4/4     Running             0          110s
-metallb-speaker-wqxqc                 4/4     Running             0          110s
-```
+## ArgoCD での管理
 
-```shell
-kubectl get all -n app-gptwol
-NAME                                    READY   STATUS    RESTARTS   AGE
-pod/gptwol-deployment-6f5ccd7bf-q2k5g   1/1     Running   0          2m22s
+このディレクトリのマニフェストは ArgoCD が自動で同期する。  
+**手動で `kubectl apply` や `helm install` は不要。**
 
-NAME                     TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
-service/gptwol-service   LoadBalancer   10.43.54.213   192.168.0.200   5000:30000/TCP   33m
+同期順序: sync-wave `1` (external-secrets, bitwarden-sdk-server より後)
 
-NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/gptwol-deployment   1/1     1            1           33m
+## IP プールの変更
 
-NAME                                           DESIRED   CURRENT   READY   AGE
-replicaset.apps/gptwol-deployment-56fc956766   0         0         0       33m
-replicaset.apps/gptwol-deployment-6f5ccd7bf    1         1         1       2m22s
+[values.yaml](./values.yaml) の `configInline.address-pools[0].addresses` を変更して  
+git push → main マージ → ArgoCD が自動反映。
+
+## 確認コマンド
+
+```bash
+# MetalLB Pod が起動しているか確認
+kubectl get pods -n metallb-system
+
+# IP プールの確認
+kubectl get ipaddresspool -n metallb-system
+
+# LoadBalancer Service に IP が割り当てられているか確認
+kubectl get svc -A --field-selector spec.type=LoadBalancer
 ```

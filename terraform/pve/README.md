@@ -1,133 +1,148 @@
-# Proxmox VE: PCI/PCIeパススルーのためのIOMMUグループ分離設定
+# terraform/pve
 
-## 前提条件: IOMMUの有効化
+Proxmox VE 2 ノードクラスタ (`pve-x570` / `pve-b550m`) に VM を作成する Terraform workspace。  
+TFC workspace: `pve-home` (organization: `miutaku`)
 
-PCIパススルーを行うには、まずホストシステムでIOMMUが有効になっている必要があります。
+## 作成される VM
 
-1.  **BIOS/UEFI設定の確認**
-    マザーボードのBIOS/UEFI設定で、以下の項目が `Enabled` (有効) になっていることを確認してください。
-    - Intel CPUの場合: `Intel VT-d`
-    - AMD CPUの場合: `AMD-V`, `IOMMU`, `SVM` など (名称はマザーボードメーカーによって異なります)
+| モジュール | 台数 | 役割 | ノード配置 |
+|---|---|---|---|
+| `rke2_lb` | 2 | HAProxy + Keepalived (RKE2 LB) | 両ノード分散 |
+| `rke2_server` | 3 | RKE2 コントロールプレーン (etcd) | 両ノード分散 |
+| `rke2_worker` | 2 | RKE2 ワーカー | 両ノード分散 |
+| `prd_rec_server` | 1 | 録画サーバー (pve-x570, PCI passthrough) | pve-x570 固定 |
+| `dev_rec_server` | 1 | 開発用録画サーバー | 両ノード分散 |
+| `dev_application_server` | 1 | 開発用アプリサーバー | 両ノード分散 |
+| `mm_server` | 1 | Magic Mirror² サーバー | 両ノード分散 |
+| `truenas` | 1 | TrueNAS Scale NAS | (modules/truenas_vm) |
 
-2.  **基本的なカーネルパラメータの追加**
-    CPUに応じて、以下のカーネルパラメータを追記することでIOMMUを有効化します。これらのパラメータは、後述する `pcie_acs_override` と同じ場所に追加します。
-    - Intel CPUの場合: `intel_iommu=on`
-    - AMD CPUの場合: `amd_iommu=on`
-    - パフォーマンス向上のため、`iommu=pt` (パススルーモード) も併せて追加することを推奨します。
+全 VM はテンプレート (`template-ubuntu-26-04-home-amd64`) から clone して作成する。  
+テンプレートは事前に `packer/ubuntu-26-04/` でビルドしておく必要がある。
 
-## 概要
+## DHCP と IP アドレスの関係
 
-Proxmox VE環境で特定のPCI/PCIeデバイス（TVチューナーカード、GPUなど）をVMにパススルーする際、IOMMUグループが適切に分離されていないことが原因でホストOSがクラッシュしたり、不安定になったりすることがあります。
+VM は DHCP で IP を取得する (cloud-init による静的 IP 設定はしない)。  
+以下の流れで IP を固定する:
 
-これは特にコンシューマ向けのマザーボードで発生しやすく、パススルーしたいデバイスが、ホストの動作に不可欠な他のデバイス（オンボードNIC、SATAコントローラ、USBコントローラなど）と同じIOMMUグループにまとめられてしまうために起こります。
+```
+[1] terraform apply → VM が作成され MAC アドレスが確定する
+[2] terraform output rke2_lb_mac_addresses 等で MAC を確認
+[3] ansible/ix2215 で IX2215 ルーターに DHCP 静的リースを設定
+[4] VM 再起動 → 固定 IP が割り当てられる
+```
 
-このドキュメントでは、カーネルパラメータ `pcie_acs_override` を使ってIOMMUグループを強制的に分離し、安全にPCI/PCIeパススルーを行うための手順を整理します。
+`variables.tf` の `rke2_lb_ips` / `rke2_server_ips` / `rke2_worker_ips` には  
+DHCP 静的リースで割り当てる予定の IP を設定する。これらは Ansible inventory 生成に使われる。
 
-## 1. 現状のIOMMUグループを確認する
+## Ansible inventory の自動生成
 
-まず、Proxmoxホストのシェルで以下のコマンドを実行し、現在のIOMMUグループの構成を確認します。
+`terraform apply` 後、`ansible.tf` が以下のファイルを自動生成する:
+
+| 生成先ファイル | 内容 |
+|---|---|
+| `ansible/rke2/hosts/prd` | RKE2 Ansible インベントリ (INI 形式) |
+| `ansible/rke2/group_vars/prd-all.yml` | LB VIP・HAProxy サーバー一覧 |
+
+生成後は GitHub Actions が変更を自動コミット (`chore(ansible): auto-update RKE2 inventory from terraform output`)。  
+**これらのファイルは直接編集しないこと。**
+
+## 前提条件
+
+### Proxmox 側
+
+- 2 ノード Proxmox VE クラスタが構築済み (`pve-x570`, `pve-b550m`)
+- 各ノードに Proxmox API トークンが作成済み
+
+**API トークン作成手順** (各 PVE ノードの Web UI で実施):
+1. `Datacenter` → `Permissions` → `API Tokens` → `Add`
+2. User: `root@pam` / Token ID: `terraform` / Privilege Separation: **無効**
+3. Secret を控えておく (一度しか表示されない)
+
+- `template-ubuntu-26-04-home-amd64` テンプレートが両ノードに存在すること  
+  → 存在しない場合は `packer/ubuntu-26-04/` を参照してビルドする
+
+### TFC 側
+
+TFC workspace `pve-home` に以下の Variables を登録する。
+
+| Variable | Sensitive | 値 |
+|---|---|---|
+| `pm_api_token_id` | **yes** | `root@pam!terraform` (ノード名は省略) |
+| `pm_api_token_secret` | **yes** | API トークン Secret |
+
+> MAC アドレス・VM 台数・IP アドレスは `variables.tf` のデフォルト値を使用。  
+> 変更が必要な場合は `variables.tf` を直接編集してコミットする。
+
+## 全体の流れ
+
+```
+[1] packer/ubuntu-26-04/ でテンプレートをビルド (初回のみ)
+[2] TFC workspace に Variables を登録
+[3] terraform init (TFC backend に接続)
+[4] terraform plan / apply
+[5] terraform output で MAC アドレスを確認
+[6] ansible/ix2215/ で IX2215 に DHCP 静的リースを設定
+[7] 各 VM を再起動して固定 IP を取得させる
+[8] ansible/rke2/ で RKE2 クラスタを構成
+```
+
+## セットアップ
 
 ```bash
-pvesh get /nodes/$(hostname)/hardware/pci --pci-class-blacklist ""
+cd terraform/pve
+terraform login  # TFC トークンを対話入力 (初回のみ)
+terraform init
 ```
 
-出力結果の `iommugroup` カラムを確認し、パススルーしたいデバイスが、他の重要なデバイスと同じグループ番号に属していないかを確認します。
-もし同じグループに含まれている場合、次の手順に進みます。
+## plan / apply
 
-## 2. ブートローダーの種類を確認する
-
-カーネルパラメータの編集方法は、Proxmoxホストが使用しているブートローダーによって異なります。
-
-- **systemd-boot の場合:** (UEFIブートでZFSをルートファイルシステムとしてインストールした場合のデフォルト)
-  - `/etc/kernel/cmdline` ファイルが存在します。
-- **GRUB の場合:** (Legacy BIOSブートや、ext4/xfsファイルシステムでインストールした場合のデフォルト)
-  - `/etc/default/grub` ファイルが存在します。
-
-以下の手順では、今回の環境(`pve-b550m`)で利用されていた `systemd-boot` の方法を先に説明します。
-
-## 3. カーネルパラメータを設定する
-
-### 3-1. systemd-boot の場合
-
-1.  `/etc/kernel/cmdline` ファイルを編集します。
-
-    ```bash
-    sudo vim.tiny /etc/kernel/cmdline
-    ```
-
-2.  既存の行の末尾に、スペース区切りで必要なカーネルパラメータを追記します。
-    (例: AMD CPUの場合)
-    ```diff
-    - root=ZFS=rpool/ROOT/pve-1 boot=zfs nomodeset
-    + root=ZFS=rpool/ROOT/pve-1 boot=zfs nomodeset amd_iommu=on iommu=pt pcie_acs_override=downstream,multifunction
-    ```
-
-3.  設定をブートローダーに反映させます。
-
-    ```bash
-    sudo proxmox-boot-tool refresh
-    ```
-
-### 3-2. GRUB の場合
-
-1.  `/etc/default/grub` ファイルを編集します。
-
-    ```bash
-    sudo vim.tiny /etc/default/grub
-    ```
-
-2.  `GRUB_CMDLINE_LINUX_DEFAULT` の行を探し、`quiet` の後ろなどに必要なカーネルパラメータを追記します。
-
-    ```diff
-    - GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-    + GRUB_CMDLINE_LINUX_DEFAULT="quiet amd_iommu=on iommu=pt pcie_acs_override=downstream,multifunction"
-    ```
-
-3.  設定をGRUBに反映させます。
-
-    ```bash
-    sudo update-grub
-    ```
-
-## 4. 再起動と確認
-
-1.  設定を反映させるためにホストを再起動します。
-
-    ```bash
-    sudo reboot
-    ```
-
-2.  再起動後、カーネルパラメータが正しく適用されていることを確認します。
-
-    ```bash
-    cat /proc/cmdline
-    ```
-    出力に `pcie_acs_override=...` が含まれていることを確認してください。
-
-3.  再度IOMMUグループの構成を確認し、目的のデバイスが単独のグループに分離されていることを確認します。
-
-    ```bash
-    pvesh get /nodes/$(hostname)/hardware/pci --pci-class-blacklist ""
-    ```
-
-## 5. Terraformでの設定
-
-IOMMUグループの分離が完了したら、Terraform側でPCIパススルーを有効にします。
-
-```terraform
-# main.tf
-module "prd_rec_server" {
-  # ... (省略) ...
-  machine        = "q35" # pcie = trueの場合のみ
-  pcis = {
-    pci0 = {
-      mapping = {
-        mapping_id = "earthsoft_pt3"
-        pcie       = true # q35の場合のみtrueにできる
-      }
-    }
-  }
-}
+```bash
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
 ```
 
-`machine = "q35"` はPCIeパススルーを行う際に必要となることが多い設定です。もしこの設定でエラーが出る場合は、ホストのBIOS/UEFIでVT-d (Intel) や AMD-V (AMD) が有効になっているかを確認してください。
+> `terraform apply` は TFC 上で実行される。TFC UI で `Confirm & Apply` する。
+
+## apply 後: MAC アドレスの確認
+
+```bash
+terraform output -json rke2_lb_mac_addresses
+terraform output -json rke2_server_mac_addresses
+terraform output -json rke2_worker_mac_addresses
+```
+
+出力された MAC アドレスを `ansible/ix2215/group_vars/all.yml` の `dhcp_assignments` に記載する。  
+形式は NEC IX 形式 (`xxxx.xxxx.xxxx`) に変換する。例: `BC:24:11:AD:44:00` → `bc24.11ad.4400`
+
+## VM を追加・変更したいとき
+
+1. `variables.tf` で VM 台数や MAC アドレスを変更する
+2. `main.tf` でモジュール設定を変更する
+3. `terraform plan` で差分を確認してから `terraform apply`
+
+新しい VM 用の DHCP 静的リースも `ansible/ix2215/group_vars/all.yml` に追加すること。
+
+## トラブルシューティング
+
+### テンプレートが見つからない
+
+```
+Error: ... clone: template "template-ubuntu-26-04-home-amd64" not found
+```
+
+`packer/ubuntu-26-04/` の手順でテンプレートをビルドする。  
+テンプレートは両 Proxmox ノードに存在する必要がある (片方だけでは分散配置時にエラー)。
+
+### VM が起動しない / IP が取得できない
+
+1. `ansible/ix2215/` の DHCP 静的リースが正しく設定されているか確認
+2. IX2215 コンソールで `show ip dhcp binding` を実行してリースが有効か確認
+3. PVE Web UI でコンソール接続し、DHCP リクエストのログを確認
+
+### PCI passthrough エラー (prd_rec_server)
+
+録画サーバーは `pve-x570` に固定で PCI デバイス (PT3 チューナー) をパススルーしている。  
+PCI passthrough には IOMMU の設定が必要。設定済みでない場合は `pve-x570` の BIOS で  
+VT-d または AMD-V + IOMMU を有効にし、カーネルパラメータを設定する。
