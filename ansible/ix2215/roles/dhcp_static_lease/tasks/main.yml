@@ -1,17 +1,4 @@
 ---
-- name: Get IX2215 SSH password from BSM
-  ansible.builtin.shell:
-    cmd: "set -o pipefail && bws secret get {{ bsm_ix2215_ssh_password_id }} | jq -r '.value'"
-    executable: /bin/bash
-  environment:
-    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
-  delegate_to: localhost
-  become: false
-  run_once: true
-  register: ix2215_ssh_password
-  changed_when: false
-  no_log: true
-
 - name: Configure DHCP static leases on IX2215
   ansible.builtin.command:
     cmd: python3 scripts/configure_dhcp_leases.py
@@ -26,7 +13,6 @@
   register: dhcp_result
   changed_when: "'changed=true' in dhcp_result.stdout"
   failed_when: "'failed=true' in dhcp_result.stdout or dhcp_result.rc != 0"
-  # check mode でも実行する (DRY_RUN=true で IX2215 に接続して差分を表示)
   check_mode: false
 
 - name: Show result

@@ -3,13 +3,157 @@ ix2215_host: "192.168.0.254"
 ix2215_user: "miutaku"
 
 # BSM シークレット ID (bws secret list で確認)
-bsm_ix2215_ssh_password_id: "CHANGE_ME"
+bsm_ix2215_ssh_password_id: "ad6bded6-0308-443e-964e-b43b00fab5d5"
 
+# ---------------------------------------------------------------------------
+# System
+# ---------------------------------------------------------------------------
+ix_timezone: "+09 00"
+
+ix_logging:
+  - "subsystem ike info"
+  - "timestamp datetime"
+
+ix_ntp:
+  enable: true
+  servers:
+    - "61.205.120.130" # ntp.nict.jp
+
+ix_snmp:
+  communities:
+    - "monitor"
+    - "public"
+
+ix_system_services:
+  ssh_server_ip: true
+  vrrp: true
+  bridge_irb: true
+  ip_dhcp: true
+  ipv6_dhcp: true
+  http_server_ip: true
+  http_server_username: "miutaku"
+  nm_ip: true
+
+# ---------------------------------------------------------------------------
+# DNS
+# ---------------------------------------------------------------------------
+ix_dns_servers_v4:
+  - "1.1.1.1" # Cloudflare DNS
+  - "1.0.0.1" # Cloudflare DNS
+  - "8.8.8.8" # Google DNS
+  - "8.8.4.4" # Google DNS
+
+ix_dns_servers_v6:
+  - "2001:4860:4860::8888" # Google DNS
+  - "2001:4860:4860::8844" # Google DNS
+  - "2606:4700:4700::1111" # Cloudflare DNS
+  - "2606:4700:4700::1001" # Cloudflare DNS
+
+ix_dns_cache:
+  enable: true
+  max_records: 512
+  lifetime: 300
+  ncache_lifetime: 60
+
+ix_proxy_dns:
+  ip_enable: true
+  ip_request: "both"
+  ipv6_enable: true
+
+# ---------------------------------------------------------------------------
+# IP routing & UFS cache
+# ---------------------------------------------------------------------------
+ix_ufs_cache:
+  max_entries: 100000
+
+ix_ipv6_ufs_cache:
+  max_entries: 65535
+
+ix_static_routes_v4:
+  - dest: "default"
+    gw: "GigaEthernet0.1"
+  - dest: "default"
+    gw: "Tunnel0.0"
+
+# ---------------------------------------------------------------------------
+# IP access lists
+# ---------------------------------------------------------------------------
+ix_access_lists: []
+
+ix_ipv6_access_lists:
+  - name: "block-list"
+    entries:
+      - "deny ip src any dest any"
+  - name: "dhcpv6-list"
+    entries:
+      - "permit udp src any sport any dest any dport eq 546"
+      - "permit udp src any sport any dest any dport eq 547"
+  - name: "icmpv6-list"
+    entries:
+      - "permit icmp src any dest any"
+  - name: "other-list"
+    entries:
+      - "permit ip src any dest any"
+  - name: "tunnel-list"
+    entries:
+      - "permit 4 src any dest any"
+  - name: "dynamic"
+    special:
+      - "cache 65535"
+      - "dflt-list access other-list"
+
+# ---------------------------------------------------------------------------
+# DHCP profiles
+# ---------------------------------------------------------------------------
 dhcp_profile: "main"
 
-# RKE2 クラスタノードの DHCP 静的リース設定
-# MAC アドレスは `terraform -chdir=terraform/pve output` で確認して更新する
-# 形式: NEC IX 形式 (xxxx.xxxx.xxxx) に変換済みの値を記載
+ix_dhcp_profiles:
+  - name: "main"
+    assignable_range: "192.168.0.1 192.168.0.50"
+    dns_server: "192.168.0.254"
+    fixed_assignments:
+      - { ip: "192.168.0.51",  mac: "52:54:00:99:00:01" }
+      - { ip: "192.168.0.79",  mac: "04:03:d6:db:e6:65" }
+      - { ip: "192.168.0.80",  mac: "88:c9:e8:db:30:81" }
+      - { ip: "192.168.0.101", mac: "52:54:00:25:01:01" }
+      - { ip: "192.168.0.103", mac: "00:11:32:4b:07:4a" }
+      - { ip: "192.168.0.104", mac: "00:25:dc:59:1d:12" }
+      - { ip: "192.168.0.107", mac: "dc:a6:32:f4:3e:e7" }
+      - { ip: "192.168.0.108", mac: "dc:a6:32:f4:3e:e9" }
+      - { ip: "192.168.0.109", mac: "dc:a6:32:a0:3f:93" }
+      - { ip: "192.168.0.110", mac: "dc:a6:32:a0:3f:94" }
+      - { ip: "192.168.0.111", mac: "b8:27:eb:10:65:f8" }
+      - { ip: "192.168.0.112", mac: "b8:27:eb:54:33:22" }
+      - { ip: "192.168.0.113", mac: "b8:27:eb:b6:c1:8b" }
+      - { ip: "192.168.0.115", mac: "70:85:c2:da:b6:e1" }
+      - { ip: "192.168.0.117", mac: "e0:51:d8:10:35:e4" }
+      - { ip: "192.168.0.118", mac: "80:b6:55:62:4e:59" }
+      - { ip: "192.168.0.119", mac: "a8:a1:59:57:ce:43" }
+      - { ip: "192.168.0.120", mac: "9c:6b:00:96:87:c6" }
+      - { ip: "192.168.0.121", mac: "bc:24:11:db:b0:f6" }
+      - { ip: "192.168.0.122", mac: "bc:24:11:db:b0:f7" }
+      - { ip: "192.168.0.123", mac: "52:54:00:c1:3a:38" }
+      - { ip: "192.168.0.124", mac: "52:54:00:8c:83:18" }
+      - { ip: "192.168.0.140", mac: "a0:ce:c8:d6:20:64" }
+      - { ip: "192.168.0.141", mac: "00:1b:7a:c8:e4:88" }
+      - { ip: "192.168.0.142", mac: "00:22:cf:ed:a9:7a" }
+      - { ip: "192.168.0.143", mac: "cc:e1:d5:40:32:d2" }
+      - { ip: "192.168.0.144", mac: "00:e0:4d:ac:58:ec" }
+      - { ip: "192.168.0.150", mac: "52:54:00:23:98:01" }
+      - { ip: "192.168.0.151", mac: "52:54:00:23:99:01" }
+      - { ip: "192.168.0.154", mac: "02:11:32:2a:cb:3a" }
+      - { ip: "192.168.0.191", mac: "52:54:00:24:99:01" }
+      - { ip: "192.168.0.192", mac: "52:54:00:24:99:02" }
+      - { ip: "192.168.0.228", mac: "1c:90:ff:88:39:33" }
+      - { ip: "192.168.0.229", mac: "3c:61:05:ce:9c:15" }
+      - { ip: "192.168.0.230", mac: "94:e0:d6:67:7f:fb" }
+      - { ip: "192.168.0.231", mac: "38:56:10:c7:a3:e9" }
+      - { ip: "192.168.0.240", mac: "48:da:35:6f:c6:70" }
+      - { ip: "192.168.0.241", mac: "48:da:35:6f:b6:8b" }
+      - { ip: "192.168.0.252", mac: "18:e8:29:b3:48:f7" }
+      - { ip: "192.168.0.253", mac: "64:9d:99:d0:c1:ec" }
+
+# RKE2 クラスタノードの DHCP 静的リース (Terraform から更新)
 dhcp_assignments:
   - name: lb-01-rke2-haproxy-keepalived
     ip: "192.168.0.135"
@@ -32,3 +176,82 @@ dhcp_assignments:
   - name: worker-02-rke2-agent
     ip: "192.168.0.130"
     mac: "BC:24:11:23:32:02"
+
+# ---------------------------------------------------------------------------
+# DHCPv6
+# ---------------------------------------------------------------------------
+ix_dhcpv6_client_profiles:
+  - name: "dhcpv6-cl"
+    information_request: true
+    option_request: "dns-servers"
+
+ix_dhcpv6_server_profiles:
+  - name: "dhcpv6-sv"
+    dns_server: "dhcp"
+
+# ---------------------------------------------------------------------------
+# map-e (Tunnel0.0) - ikev2 default-profile
+# ---------------------------------------------------------------------------
+ix_map_e_ikev2:
+  dpd_interval: 10
+  source_address: "Tunnel0.0"
+
+# ---------------------------------------------------------------------------
+# Interfaces
+# ---------------------------------------------------------------------------
+ix_interfaces:
+  - name: "GigaEthernet0.0"
+    description: ~
+    ip_address: ~
+    ipv6_enable: true
+    ipv6_dhcp_client: "dhcpv6-cl"
+    ipv6_nd_proxy: "GigaEthernet2.0"
+    ipv6_filters_in:
+      - { seq: 1, list: "dhcpv6-list" }
+      - { seq: 2, list: "icmpv6-list" }
+      - { seq: 3, list: "tunnel-list" }
+      - { seq: 100, list: "block-list" }
+    ipv6_filters_out:
+      - { seq: 1, list: "dhcpv6-list" }
+      - { seq: 2, list: "icmpv6-list" }
+      - { seq: 3, list: "tunnel-list" }
+      - { seq: 100, list: "dflt-list" }
+    shutdown: false
+
+  - name: "GigaEthernet1.0"
+    shutdown: true
+
+  - name: "GigaEthernet2.0"
+    description: "MainLAN_AP_trunk_untag"
+    ip_address: "192.168.0.254/24"
+    ip_dhcp_binding: "main"
+    ipv6_enable: true
+    ipv6_dhcp_server: "dhcpv6-sv"
+    ipv6_nd_ra: true
+    ipv6_nd_ra_other_config_flag: true
+    bridge_group: 1
+    http_server_ip_enable: true
+    shutdown: false
+
+  - name: "GigaEthernet2.8"
+    description: "GuestLAN_AP_tagged_vlan8"
+    encapsulation: "dot1q 8 tpid 8100"
+    auto_connect: true
+    bridge_group: 8
+    shutdown: false
+
+  - name: "BVI8"
+    description: "GuestLAN_Interface"
+    ip_address: "192.168.8.254/24"
+    ip_dhcp_binding: "guest"
+    ip_filter_in: { seq: 1, list: "guest-acl" }
+    bridge_group: 8
+    shutdown: false
+
+  - name: "Tunnel0.0"
+    tunnel_mode: "map-e"
+    ip_address: "map-e"
+    ip_tcp_adjust_mss: "auto"
+    ip_napt_enable: true
+    ip_napt_eim_mode: true
+    shutdown: false
