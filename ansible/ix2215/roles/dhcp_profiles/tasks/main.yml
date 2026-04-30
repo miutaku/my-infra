@@ -1,0 +1,21 @@
+---
+- name: Configure DHCP/DHCPv6 profiles (settings excluding fixed-assignments)
+  ansible.builtin.command:
+    cmd: python3 scripts/configure_dhcp_profiles.py
+    chdir: "{{ playbook_dir }}"
+  environment:
+    IX2215_HOST: "{{ ix2215_host }}"
+    IX2215_USER: "{{ ix2215_user }}"
+    IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+    IX_DHCP_PROFILES_JSON: "{{ ix_dhcp_profiles | to_json }}"
+    IX_DHCPV6_CLIENT_PROFILES_JSON: "{{ ix_dhcpv6_client_profiles | to_json }}"
+    IX_DHCPV6_SERVER_PROFILES_JSON: "{{ ix_dhcpv6_server_profiles | to_json }}"
+  register: result
+  changed_when: "'changed=true' in result.stdout"
+  failed_when: "'failed=true' in result.stdout or result.rc != 0"
+  check_mode: false
+
+- name: Show result
+  ansible.builtin.debug:
+    msg: "{{ result.stdout }}"

@@ -29,9 +29,24 @@ def to_ix_mac(mac: str) -> str:
 
 
 def parse_existing_assignments(config_output: str) -> dict[str, str]:
-    """running-config から fixed-assignment を ip -> mac の辞書で返す"""
-    pattern = r"fixed-assignment\s+(\S+)\s+(\S+)"
-    return {ip: mac for ip, mac in re.findall(pattern, config_output)}
+    """show ip dhcp profile の Fixed assignments テーブルから ip -> mac (IX形式) の辞書で返す"""
+    result: dict[str, str] = {}
+    in_fixed = False
+    ip_mac_pattern = re.compile(
+        r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+    )
+    for line in config_output.splitlines():
+        if "Fixed assignments" in line:
+            in_fixed = True
+            continue
+        if "Dynamic assignments" in line:
+            in_fixed = False
+            continue
+        if in_fixed:
+            m = ip_mac_pattern.search(line)
+            if m:
+                result[m.group(1)] = to_ix_mac(m.group(2))
+    return result
 
 
 def main() -> None:
@@ -58,7 +73,9 @@ def main() -> None:
     }
 
     with ConnectHandler(**device) as conn:
-        output = conn.send_command("show running-config")
+        conn.config_mode()
+        output = conn.send_command(f"show ip dhcp profile {dhcp_profile}", read_timeout=60)
+        conn.exit_config_mode()
         existing = parse_existing_assignments(output)
 
         missing = [
@@ -67,7 +84,8 @@ def main() -> None:
         ]
 
         if not missing:
-            print("changed=false msg='All DHCP static leases already configured'")
+            dry = " dry_run=true" if dry_run else ""
+            print(f"changed=false{dry} msg='All DHCP static leases already configured'")
             return
 
         names = [a["name"] for a in missing]
