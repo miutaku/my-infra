@@ -3,18 +3,21 @@ resource "oci_core_vcn" "oke_vcn" {
   display_name   = "oke-vcn"
   cidr_block     = var.vcn_cidr
   dns_label      = "okevcn"
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_core_internet_gateway" "oke_igw" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.oke_vcn.id
   display_name   = "oke-igw"
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_core_public_ip" "nat_ip" {
   compartment_id = var.compartment_ocid
   lifetime       = "RESERVED"
   display_name   = "oke-nat-ip"
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_core_nat_gateway" "oke_ngw" {
@@ -22,6 +25,7 @@ resource "oci_core_nat_gateway" "oke_ngw" {
   vcn_id         = oci_core_vcn.oke_vcn.id
   display_name   = "oke-ngw"
   public_ip_id   = oci_core_public_ip.nat_ip.id
+  freeform_tags  = local.common_tags
 }
 
 # Public Subnet — API endpoint + Flex LB (ingress-nginx)
@@ -34,6 +38,7 @@ resource "oci_core_subnet" "oke_lb_subnet" {
   prohibit_public_ip_on_vnic = false
   route_table_id             = oci_core_route_table.public_rt.id
   security_list_ids          = [oci_core_security_list.lb_sl.id]
+  freeform_tags              = local.common_tags
 }
 
 # Private Subnet — Worker Nodes
@@ -46,6 +51,7 @@ resource "oci_core_subnet" "oke_worker_subnet" {
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.private_rt.id
   security_list_ids          = [oci_core_security_list.worker_sl.id]
+  freeform_tags              = local.common_tags
 }
 
 # Route Tables
@@ -53,6 +59,7 @@ resource "oci_core_route_table" "public_rt" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.oke_vcn.id
   display_name   = "oke-public-rt"
+  freeform_tags  = local.common_tags
   route_rules {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_internet_gateway.oke_igw.id
@@ -63,6 +70,7 @@ resource "oci_core_route_table" "private_rt" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.oke_vcn.id
   display_name   = "oke-private-rt"
+  freeform_tags  = local.common_tags
   route_rules {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_nat_gateway.oke_ngw.id
@@ -74,6 +82,7 @@ resource "oci_core_security_list" "lb_sl" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.oke_vcn.id
   display_name   = "oke-lb-sl"
+  freeform_tags  = local.common_tags
 
   # OKE API server (kubectl)
   ingress_security_rules {
@@ -127,6 +136,7 @@ resource "oci_core_security_list" "worker_sl" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.oke_vcn.id
   display_name   = "oke-worker-sl"
+  freeform_tags  = local.common_tags
 
   # Node-to-node and LB→node communication within VCN
   ingress_security_rules {

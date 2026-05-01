@@ -4,10 +4,11 @@ data "oci_identity_availability_domains" "ads" {
 
 resource "oci_containerengine_cluster" "oke_cluster" {
   compartment_id     = var.compartment_ocid
-  kubernetes_version = "v1.31.1"
+  kubernetes_version = "v1.34.2"
   name               = var.cluster_name
   type               = "BASIC_CLUSTER"
   vcn_id             = oci_core_vcn.oke_vcn.id
+  freeform_tags      = local.common_tags
 
   endpoint_config {
     is_public_ip_enabled = true
@@ -33,6 +34,7 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   kubernetes_version = oci_containerengine_cluster.oke_cluster.kubernetes_version
   name               = "oke-free-node-pool"
   node_shape         = var.node_pool_shape
+  freeform_tags      = local.common_tags
 
   node_shape_config {
     ocpus         = var.node_pool_ocpus
