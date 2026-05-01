@@ -20,4 +20,4 @@ pbs:
   keep_monthly: 6
 
 # BSM シークレット ID (bws secret list で確認)
-bsm_pbs_admin_password_id: "CHANGE_ME"
+bsm_pbs_admin_password_id: "ee95c63d-5cb8-4797-bd9c-b43c01404312"

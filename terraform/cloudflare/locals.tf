@@ -8,6 +8,10 @@ locals {
       backend       = "https://argocd-server.argocd.svc.cluster.local:443"
       no_tls_verify = true
     }
+    wol = {
+      backend       = "http://gptwol-service.app-gptwol.svc.cluster.local:5000"
+      no_tls_verify = false
+    }
   }
 
   # Services exposed through the OKE (cloud) tunnel.
@@ -16,5 +20,5 @@ locals {
 
   # Subdomains that require Cloudflare Access (SSO) protection.
   # Must be keys present in rke2_services or oke_services.
-  access_protected_subdomains = toset(["argocd"])
+  access_protected_subdomains = toset(["argocd", "wol"])
 }
