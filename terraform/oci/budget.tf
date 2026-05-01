@@ -6,6 +6,7 @@ resource "oci_budget_budget" "always_free_budget" {
   targets        = [var.compartment_ocid]
   display_name   = "always-free-budget"
   description    = "Alert when any actual spend occurs against the Always Free compartment."
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_budget_alert_rule" "one_percent_alert" {
