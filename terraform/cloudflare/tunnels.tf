@@ -1,6 +1,6 @@
 resource "cloudflare_zero_trust_tunnel_cloudflared" "rke2" {
   account_id = var.account_id
-  name       = "rke2-home"
+  name       = "rke2-home-managed-by-tf"
   secret     = var.tunnel_secret_rke2
 }
 
@@ -28,7 +28,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "rke2" {
 
 resource "cloudflare_zero_trust_tunnel_cloudflared" "oke" {
   account_id = var.account_id
-  name       = "oke-cloud"
+  name       = "oke-cloud-managed-by-tf"
   secret     = var.tunnel_secret_oke
 }
 
@@ -51,4 +51,14 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "oke" {
       service = "http_status:404"
     }
   }
+}
+
+output "rke2_tunnel_token" {
+  value     = cloudflare_zero_trust_tunnel_cloudflared.rke2.tunnel_token
+  sensitive = true
+}
+
+output "oke_tunnel_token" {
+  value     = cloudflare_zero_trust_tunnel_cloudflared.oke.tunnel_token
+  sensitive = true
 }
