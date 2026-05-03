@@ -1,62 +1,66 @@
 module "rke2_lb" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.lb_vm_count
-  name_prefix    = "lb"
-  name_suffix    = "rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"
-  base_macaddr   = var.rke2_base_lb_macaddr
-  vmid_start     = 10001
-  tags           = ["ubuntu_2604", "rke2", "lb", "haproxy", "keepalived"]
-  cpu_cores      = 2
-  memory         = 1536
-  clone_template = local.ubuntu_template
-  proxmox_nodes  = var.proxmox_nodes
+  vm_count          = var.lb_vm_count
+  name_prefix       = "lb"
+  name_suffix       = "rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"
+  base_macaddr      = var.rke2_base_lb_macaddr
+  vmid_start        = 10001
+  tags              = ["ubuntu_2604", "rke2", "lb", "haproxy", "keepalived"]
+  cpu_cores         = 2
+  memory            = 1536
+  clone_template    = local.ubuntu_template
+  proxmox_nodes     = var.proxmox_nodes
+  cloudinit_storage = "local-zfs"
 }
 
 module "rke2_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.server_vm_count
-  name_prefix    = "master"
-  name_suffix    = "rke2-server-ubuntu-26-04-home-amd64"
-  base_macaddr   = var.rke2_base_server_macaddr
-  vmid_start     = 11001
-  tags           = ["ubuntu_2604", "rke2", "server", "master"]
-  cpu_cores      = 2
-  memory         = 8192
-  clone_template = local.ubuntu_template
-  proxmox_nodes  = var.proxmox_nodes
+  vm_count          = var.server_vm_count
+  name_prefix       = "master"
+  name_suffix       = "rke2-server-ubuntu-26-04-home-amd64"
+  base_macaddr      = var.rke2_base_server_macaddr
+  vmid_start        = 11001
+  tags              = ["ubuntu_2604", "rke2", "server", "master"]
+  cpu_cores         = 2
+  memory            = 8192
+  clone_template    = local.ubuntu_template
+  proxmox_nodes     = var.proxmox_nodes
+  cloudinit_storage = "local-zfs"
 }
 
 module "rke2_worker" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.worker_vm_count
-  name_prefix    = "worker"
-  name_suffix    = "rke2-agent-ubuntu-26-04-home-amd64"
-  base_macaddr   = var.rke2_base_worker_macaddr
-  vmid_start     = 12001
-  tags           = ["ubuntu_2604", "rke2", "agent", "worker"]
-  cpu_cores      = 1
-  memory         = 4096
-  clone_template = local.ubuntu_template
-  proxmox_nodes  = var.proxmox_nodes
+  vm_count          = var.worker_vm_count
+  name_prefix       = "worker"
+  name_suffix       = "rke2-agent-ubuntu-26-04-home-amd64"
+  base_macaddr      = var.rke2_base_worker_macaddr
+  vmid_start        = 12001
+  tags              = ["ubuntu_2604", "rke2", "agent", "worker"]
+  cpu_cores         = 1
+  memory            = 4096
+  clone_template    = local.ubuntu_template
+  proxmox_nodes     = var.proxmox_nodes
+  cloudinit_storage = "local-zfs"
 }
 
 module "prd_rec_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.prd_rec_server_vm_count
-  name_prefix    = "prd-rec-server"
-  name_suffix    = "docker-ubuntu-26-04-home-amd64"
-  base_macaddr   = var.prd_rec_server_macaddr
-  vmid_start     = 30000
-  tags           = ["prd", "ubuntu_2604", "rec-server", "docker"]
-  cpu_cores      = 6
-  memory         = 8192
-  proxmox_nodes  = ["pve-x570"] # PCI device is on this node
-  clone_template = local.ubuntu_template
-  disk_size      = 64
+  vm_count          = var.prd_rec_server_vm_count
+  name_prefix       = "prd-rec-server"
+  name_suffix       = "docker-ubuntu-26-04-home-amd64"
+  base_macaddr      = var.prd_rec_server_macaddr
+  vmid_start        = 30000
+  tags              = ["prd", "ubuntu_2604", "rec-server", "docker"]
+  cpu_cores         = 6
+  memory            = 8192
+  proxmox_nodes     = ["pve-x570"] # PCI device is on this node
+  clone_template    = local.ubuntu_template
+  disk_size         = 64
+  cloudinit_storage = "local-zfs"
   pcis = {
     pci0 = {
       mapping = {
@@ -70,17 +74,18 @@ module "prd_rec_server" {
 module "dev_rec_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.dev_rec_server_vm_count
-  name_prefix    = "dev-rec-server"
-  name_suffix    = "docker-ubuntu-26-04-home-amd64"
-  base_macaddr   = var.dev_rec_server_macaddr
-  vmid_start     = 31000
-  tags           = ["dev", "ubuntu_2604", "rec-server", "docker"]
-  cpu_cores      = 4
-  memory         = 4096
-  proxmox_nodes  = ["pve-x570"] # USB device is on this node
-  clone_template = local.ubuntu_template
-  disk_size      = 32
+  vm_count          = var.dev_rec_server_vm_count
+  name_prefix       = "dev-rec-server"
+  name_suffix       = "docker-ubuntu-26-04-home-amd64"
+  base_macaddr      = var.dev_rec_server_macaddr
+  vmid_start        = 31000
+  tags              = ["dev", "ubuntu_2604", "rec-server", "docker"]
+  cpu_cores         = 4
+  memory            = 4096
+  proxmox_nodes     = ["pve-x570"] # USB device is on this node
+  clone_template    = local.ubuntu_template
+  disk_size         = 32
+  cloudinit_storage = "local-zfs"
   usbs = {
     usb0 = {
       mapping = {
@@ -93,17 +98,18 @@ module "dev_rec_server" {
 module "dev_application_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.dev_application_server_vm_count
-  name_prefix    = "dev-application-server"
-  name_suffix    = "docker-ubuntu-26-04-home-amd64"
-  base_macaddr   = var.dev_application_server_macaddr
-  vmid_start     = 40000
-  tags           = ["dev", "ubuntu_2604", "application-server", "docker"]
-  cpu_cores      = 8
-  memory         = 10 * 1024
-  proxmox_nodes  = ["pve-x570"]
-  clone_template = local.ubuntu_template
-  disk_size      = 64
+  vm_count          = var.dev_application_server_vm_count
+  name_prefix       = "dev-application-server"
+  name_suffix       = "docker-ubuntu-26-04-home-amd64"
+  base_macaddr      = var.dev_application_server_macaddr
+  vmid_start        = 40000
+  tags              = ["dev", "ubuntu_2604", "application-server", "docker"]
+  cpu_cores         = 8
+  memory            = 10 * 1024
+  proxmox_nodes     = ["pve-x570"]
+  clone_template    = local.ubuntu_template
+  disk_size         = 64
+  cloudinit_storage = "local-zfs"
 }
 
 module "truenas" {
@@ -135,19 +141,20 @@ module "truenas" {
 module "magic_mirror_server" {
   source = "./modules/proxmox_vm"
 
-  vm_count       = var.mm_server_vm_count
-  name_prefix    = "mm-server"
-  name_suffix    = "ubuntu-26-04-home-amd64"
-  base_macaddr   = var.mm_server_macaddr
-  vmid_start     = 5000
-  tags           = ["ubuntu_2604", "mm-server", "docker", "iot"]
-  cpu_cores      = 1
-  memory         = 4096
-  kvm_vga_type   = "none"
-  kvm_vga_memory = null
-  proxmox_nodes  = ["pve-b550m"] # USB device is on this node
-  clone_template = local.ubuntu_template
-  disk_size      = 32
+  vm_count          = var.mm_server_vm_count
+  name_prefix       = "mm-server"
+  name_suffix       = "ubuntu-26-04-home-amd64"
+  base_macaddr      = var.mm_server_macaddr
+  vmid_start        = 5000
+  tags              = ["ubuntu_2604", "mm-server", "docker", "iot"]
+  cpu_cores         = 1
+  memory            = 4096
+  kvm_vga_type      = "none"
+  kvm_vga_memory    = null
+  proxmox_nodes     = ["pve-b550m"] # USB device is on this node
+  clone_template    = local.ubuntu_template
+  disk_size         = 32
+  cloudinit_storage = "local-zfs"
   usbs = {
     usb0 = {
       mapping = {

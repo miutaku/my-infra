@@ -128,3 +128,9 @@ variable "usbs" {
   default     = null
 }
 
+variable "cloudinit_storage" {
+  description = "Storage pool for the cloud-init drive. When set, Proxmox injects the PVE VM name as hostname on first boot. null = no cloud-init drive."
+  type        = string
+  default     = null
+}
+

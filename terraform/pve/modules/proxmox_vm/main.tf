@@ -17,6 +17,10 @@ resource "proxmox_vm_qemu" "vm" {
   onboot           = true
   automatic_reboot = true
 
+  # cloud-init: Proxmox injects PVE VM name as hostname via NoCloud datasource
+  ipconfig0 = var.cloudinit_storage != null ? "ip=dhcp" : null
+  ciupgrade  = var.cloudinit_storage != null ? false : null
+
   # hardware
   bios        = var.bios
   boot        = "order=scsi0"
@@ -83,6 +87,16 @@ resource "proxmox_vm_qemu" "vm" {
             emulatessd = true
             size       = "${var.data_disk_size}G"
             storage    = var.data_disk_storage
+          }
+        }
+      }
+    }
+    dynamic "ide" {
+      for_each = var.cloudinit_storage != null ? [1] : []
+      content {
+        ide2 {
+          cloudinit {
+            storage = var.cloudinit_storage
           }
         }
       }

@@ -1,0 +1,12 @@
+[Unit]
+Description=Sync hostname from Proxmox VM name (cidata drive)
+After=local-fs.target
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sync-hostname-from-pve
+RemainAfterExit=yes
+
+[Install]
+WantedBy=network-pre.target
