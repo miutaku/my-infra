@@ -100,10 +100,57 @@ packer build \
 ビルド完了後に以下を自動実行します:
 
 1. cloud-init の完了待機
-2. `cloud-init clean --logs` — クローン VM が初回起動時に再実行できるよう初期化
-3. `/etc/machine-id` を空にトランケート — クローンごとに一意 ID を生成
-4. SSH ホストキー削除 — クローンごとに再生成
-5. APT キャッシュ削除
+2. `/etc/cloud/cloud.cfg.d/99-pve.cfg` に `datasource_list: [NoCloud, ConfigDrive]` を書き込み
+3. `cloud-init clean --logs` — クローン VM が初回起動時に再実行できるよう初期化
+4. `/etc/machine-id` を空にトランケート — クローンごとに一意 ID を生成
+5. SSH ホストキー削除 — クローンごとに再生成
+6. APT キャッシュ削除
+
+## PVE ノード名のホスト名同期
+
+このテンプレートをクローンして作成した VM は、**起動するたびに** Proxmox の VM 名をホスト名として自動同期します。  
+PVE 上で VM 名を変更しても、次回再起動時に自動で反映されます。
+
+### 仕組み
+
+```
+Packer ビルド時
+  ├─ /usr/local/bin/sync-hostname-from-pve を配置 (起動時に実行されるスクリプト)
+  ├─ sync-hostname-from-pve.service を有効化 (Before=network-pre.target)
+  └─ /etc/cloud/cloud.cfg.d/99-pve.cfg に NoCloud datasource を設定
+
+Terraform でクローン時
+  └─ ide2 に cloud-init ドライブを追加 (cloudinit_storage = "local-zfs")
+     └─ Proxmox が VM 名をホスト名として cloud-init データを自動生成・更新
+
+VM 起動ごと (毎回)
+  └─ sync-hostname-from-pve.service が起動
+     └─ cidata ラベルのブロックデバイス (Proxmox cloud-init ドライブ) をマウント
+        └─ meta-data の local-hostname を読み込み
+           └─ 現在の hostname と異なれば hostnamectl で更新 → /etc/hosts も更新
+```
+
+### Terraform での有効化
+
+`terraform/pve/modules/proxmox_vm` の `cloudinit_storage` 変数で制御します:
+
+```hcl
+module "my_vm" {
+  source = "./modules/proxmox_vm"
+  ...
+  cloudinit_storage = "local-zfs"  # cloud-init ドライブを追加してホスト名同期を有効化
+}
+```
+
+TrueNAS や Batocera など cloud-init を使わない VM は `cloudinit_storage` を省略 (null) してください。
+
+### ホスト名更新の確認
+
+```bash
+# 動作確認 (VM 内)
+sudo systemctl status sync-hostname-from-pve
+journalctl -t sync-hostname-from-pve
+```
 
 ## CI / GitHub Actions
 

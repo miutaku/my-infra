@@ -70,6 +70,16 @@ source "proxmox-iso" "ubuntu" {
 build {
   sources = ["source.proxmox-iso.ubuntu"]
 
+  provisioner "file" {
+    source      = "${path.root}/files/sync-hostname-from-pve.sh"
+    destination = "/tmp/sync-hostname-from-pve.sh"
+  }
+
+  provisioner "file" {
+    source      = "${path.root}/files/sync-hostname-from-pve.service"
+    destination = "/tmp/sync-hostname-from-pve.service"
+  }
+
   provisioner "shell" {
     inline = [
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 5; done",
@@ -78,6 +88,12 @@ build {
       "sudo apt-get upgrade -y",
       "sudo apt-get install -y vim",
       "sudo apt-get remove -y --purge nano || true",
+      # Install PVE hostname sync service
+      "sudo install -m 0755 /tmp/sync-hostname-from-pve.sh /usr/local/bin/sync-hostname-from-pve",
+      "sudo install -m 0644 /tmp/sync-hostname-from-pve.service /etc/systemd/system/sync-hostname-from-pve.service",
+      "sudo systemctl enable sync-hostname-from-pve.service",
+      # Configure cloud-init for Proxmox NoCloud datasource
+      "echo 'datasource_list: [NoCloud, ConfigDrive]' | sudo tee /etc/cloud/cloud.cfg.d/99-pve.cfg",
       "sudo cloud-init clean --logs",
       "sudo rm -rf /var/lib/cloud/",
       "sudo truncate -s 0 /etc/machine-id",
