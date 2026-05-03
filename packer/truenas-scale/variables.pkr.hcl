@@ -21,7 +21,7 @@ variable "proxmox_node" {
 
 variable "proxmox_storage_pool" {
   description = "Storage pool for the template disk."
-  default     = "local-lvm"
+  default     = "local-zfs"
 }
 
 variable "iso_file" {

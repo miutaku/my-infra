@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     proxmox = {
-      version = ">= 1.2.0"
+      version = ">= 1.2.3"
       source  = "github.com/hashicorp/proxmox"
     }
   }
@@ -34,11 +34,9 @@ source "proxmox-iso" "ubuntu" {
   }
 
   boot_iso {
-    type             = "ide"
-    iso_url          = var.iso_url
-    iso_checksum     = "sha256:${var.iso_checksum}"
-    iso_storage_pool = var.iso_storage_pool
-    unmount          = true
+    type    = "ide"
+    iso_file = var.iso_file
+    unmount = true
   }
 
   http_content = {
@@ -46,21 +44,21 @@ source "proxmox-iso" "ubuntu" {
       ssh_password_hash = var.ssh_password_hash
       ssh_public_key    = var.ssh_public_key
     })
-    "/meta-data" = ""
+    "/meta-data" = "instance-id: packer-build\nlocal-hostname: template-ubuntu-26-04-home-amd64\n"
   }
 
-  boot_wait = "5s"
+  boot_wait = "20s"
   boot_command = [
-    "c<wait>",
-    "linux /casper/vmlinuz quiet autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---<enter><wait5>",
+    "c<wait3>",
+    "<leftShiftOff><rightShiftOff>linux /casper/vmlinuz autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---<enter><wait5>",
     "initrd /casper/initrd<enter><wait5>",
     "boot<enter>"
   ]
 
   communicator           = "ssh"
-  ssh_username           = "packer"
+  ssh_username           = "miutaku"
   ssh_password           = var.ssh_password
-  ssh_timeout            = "40m"
+  ssh_timeout            = "60m"
   ssh_handshake_attempts = 50
 
   qemu_agent = true
@@ -74,17 +72,18 @@ build {
 
   provisioner "shell" {
     inline = [
-      # Wait for cloud-init to finish
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 5; done",
-      # cloud-init cleanup so cloned VMs get a fresh run
+      "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
+      "sudo apt-get update -qq",
+      "sudo apt-get upgrade -y",
+      "sudo apt-get install -y vim",
+      "sudo apt-get remove -y --purge nano || true",
       "sudo cloud-init clean --logs",
       "sudo rm -rf /var/lib/cloud/",
-      # Ensure machine-id is cleared so clones get unique IDs
       "sudo truncate -s 0 /etc/machine-id",
       "sudo rm -f /var/lib/dbus/machine-id",
-      # Remove SSH host keys so each clone generates its own
       "sudo rm -f /etc/ssh/ssh_host_*",
-      # Remove APT cache
+      "sudo apt-get autoremove -y",
       "sudo apt-get clean",
     ]
   }

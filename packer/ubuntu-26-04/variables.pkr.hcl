@@ -21,22 +21,12 @@ variable "proxmox_node" {
 
 variable "proxmox_storage_pool" {
   description = "Storage pool for the template disk."
-  default     = "local-lvm"
+  default     = "local-zfs"
 }
 
-variable "iso_storage_pool" {
-  description = "Storage pool where the downloaded ISO will be cached."
-  default     = "local"
-}
-
-variable "iso_url" {
-  description = "Download URL for the Ubuntu 26.04 LTS server ISO."
-  default     = "https://releases.ubuntu.com/26.04/ubuntu-26.04-live-server-amd64.iso"
-}
-
-variable "iso_checksum" {
-  description = "SHA-256 checksum of the ISO. Get from https://releases.ubuntu.com/26.04/SHA256SUMS"
-  type        = string
+variable "iso_file" {
+  description = "Path to the Ubuntu ISO in Proxmox storage format (e.g. oci-omv:iso/ubuntu-26.04-live-server-amd64.iso)."
+  default     = "oci-omv:iso/ubuntu-26.04-live-server-amd64.iso"
 }
 
 variable "template_name" {
