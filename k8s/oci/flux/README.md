@@ -76,11 +76,12 @@ kubectl apply -k k8s/oci/flux/
 | 順序 | Kustomization | パス |
 |------|---------------|------|
 | 1 | oci-sources | k8s/oci/infrastructure/sources |
-| 2 | oci-external-secrets | k8s/oci/infrastructure/external-secrets |
-| 3 | oci-cert-manager | k8s/oci/infrastructure/cert-manager |
-| 3 | oci-longhorn | k8s/oci/infrastructure/longhorn |
-| 4 | oci-ingress-nginx | k8s/oci/infrastructure/ingress-nginx |
-| 5 | oci-apps | k8s/oci/apps |
+| 2 | oci-external-secrets | k8s/oci/infrastructure/external-secrets (ESO operator) |
+| 3 | oci-external-secrets-config | k8s/oci/infrastructure/external-secrets-config (ClusterSecretStore) |
+| 4 | oci-cert-manager | k8s/oci/infrastructure/cert-manager |
+| 4 | oci-longhorn | k8s/oci/infrastructure/longhorn |
+| 5 | oci-ingress-nginx | k8s/oci/infrastructure/ingress-nginx |
+| 6 | oci-apps | k8s/oci/apps |
 
 ## BSM シークレット一覧
 
