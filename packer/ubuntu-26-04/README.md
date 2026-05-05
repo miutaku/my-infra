@@ -48,36 +48,32 @@ mkpasswd --method=SHA-512 'yourpassword'
 
 ## 実行方法
 
+シークレットを環境変数で渡す（推奨）:
+
+```bash
+export PKR_VAR_proxmox_token_id="packer@pve!packer"
+export PKR_VAR_proxmox_token_secret="<トークンシークレット>"
+export PKR_VAR_ssh_password="<ビルド用パスワード>"
+export PKR_VAR_ssh_password_hash="$(mkpasswd --method=SHA-512 '<ビルド用パスワード>')"
+```
+
+### pve-x570 でビルド
+
 ```bash
 cd packer/ubuntu-26-04
-
-# 初期化 (初回のみ)
 packer init .
-
-# ビルド
-packer build \
-  -var "proxmox_token_id=packer@pve!packer" \
-  -var "proxmox_token_secret=<トークンシークレット>" \
-  -var "iso_url=https://releases.ubuntu.com/26.04/ubuntu-26.04-live-server-amd64.iso" \
-  -var "iso_checksum=<sha256ハッシュ>" \
-  -var "ssh_password=<パッカービルド用パスワード>" \
-  -var "ssh_password_hash=<mkpasswd生成ハッシュ>" \
-  .
+packer build -var-file=pve-x570.pkrvars.hcl .
 ```
 
-シークレットを環境変数で渡す場合（推奨）:
+### pve-b550m でビルド
 
 ```bash
-export PKR_VAR_proxmox_token_secret="xxxxx"
-export PKR_VAR_ssh_password="yourpassword"
-export PKR_VAR_ssh_password_hash="$( mkpasswd --method=SHA-512 yourpassword )"
-
-packer build \
-  -var "proxmox_token_id=packer@pve!packer" \
-  -var "iso_url=https://releases.ubuntu.com/26.04/ubuntu-26.04-live-server-amd64.iso" \
-  -var "iso_checksum=<sha256ハッシュ>" \
-  .
+cd packer/ubuntu-26-04
+packer build -var-file=pve-b550m.pkrvars.hcl .
 ```
+
+> **注意**: `oci-omv:iso/ubuntu-26.04-live-server-amd64.iso` が両ノードから参照できる共有ストレージにあることを確認すること。  
+> pve-b550m からアクセスできない場合は `iso_file` を変数で上書きする。
 
 ## ビルド内容
 
