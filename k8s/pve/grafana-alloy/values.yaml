@@ -119,7 +119,7 @@ alloy:
         targets = [
           {
             "__address__"      = "blackbox-exporter.monitoring.svc.cluster.local:9115",
-            "__param_target"   = "http://192.168.0.254",
+            "__param_target"   = "http://192.168.20.254",
             "__param_module"   = "http_2xx",
             "instance"         = "ix2215",
             "job"              = "blackbox",

@@ -5,7 +5,7 @@
     }
     ready
     prometheus :9153
-    forward . 8.8.8.8 {
+    forward . 1.1.1.1 8.8.8.8 {
        max_concurrent 1000
     }
     cache 30
@@ -13,22 +13,23 @@
     reload
     loadbalance
     hosts {
-      192.168.0.100 tv.miutaku.local
-      192.168.0.117 pve-nucbox-3-wired.miutaku.local
-      192.168.0.118 pve-nucbox-3-wifi.miutaku.local
-      192.168.0.119 pve-b550m.miutaku.local
-      192.168.0.120 gaming-pc.miutaku.local
-      192.168.0.122 bastion-01.miutaku.local
-      192.168.0.124 work-windows.miutaku.local
-      192.168.0.126 master-01-rke2-server.miutaku.local
-      192.168.0.127 master-02-rke2-server.miutaku.local
-      192.168.0.128 master-03-rke2-server.miutaku.local
-      192.168.0.129 worker-01-rke2-server.miutaku.local
-      192.168.0.130 worker-02-rke2-server.miutaku.local
-      192.168.0.135 lb-01-rke2.miutaku.local
-      192.168.0.136 lb-02-rke2.miutaku.local
-      192.168.0.150 dev-rec-server.miutaku.local
-      192.168.0.151 prd-rec-server.miutaku.local
+      192.168.40.80   tv.miutaku.local
+      192.168.10.117  pve-nucbox-3-wired.miutaku.local
+      192.168.10.118  pve-nucbox-3-wifi.miutaku.local
+      192.168.10.119  pve-b550m.miutaku.local
+      192.168.30.120  gaming-pc.miutaku.local
+      192.168.20.121  bastion-01.miutaku.local
+      192.168.20.122  bastion-02.miutaku.local
+      192.168.30.124  work-windows.miutaku.local
+      192.168.20.126  master-01-rke2-server.miutaku.local
+      192.168.20.127  master-02-rke2-server.miutaku.local
+      192.168.20.128  master-03-rke2-server.miutaku.local
+      192.168.20.129  worker-01-rke2-server.miutaku.local
+      192.168.20.130  worker-02-rke2-server.miutaku.local
+      192.168.20.135  lb-01-rke2.miutaku.local
+      192.168.20.136  lb-02-rke2.miutaku.local
+      192.168.20.150  dev-rec-server.miutaku.local
+      192.168.20.151  prd-rec-server.miutaku.local
       fallthrough
     }
 }
