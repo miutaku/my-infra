@@ -12,8 +12,9 @@ resources:
   limits:
     memory: 64Mi
 
-# IX2215 向け IF-MIB + system MIB モジュール定義
+# IX2215 向け IF-MIB + NEC enterprise MIB モジュール定義
 # community: monitor (ix2215 group_vars/all.yml で設定済み)
+# NEC enterprise OID prefix: 1.3.6.1.4.1.119.2.3.84 (PICO-SMI-MIB)
 snmpConfig:
   auths:
     ix2215_v2:
@@ -21,14 +22,30 @@ snmpConfig:
       security_level: noAuthNoPriv
       version: 2
   modules:
-    ix2215_if:
+    ix2215:
       walk:
-        - 1.3.6.1.2.1.1.3    # sysUpTime
-        - 1.3.6.1.2.1.2.2    # interfaces table
-        - 1.3.6.1.2.1.31.1.1 # ifXTable (64-bit counters)
+        - 1.3.6.1.2.1.1.3          # sysUpTime
+        - 1.3.6.1.2.1.2.2          # interfaces table
+        - 1.3.6.1.2.1.31.1.1       # ifXTable (64-bit counters)
+        - 1.3.6.1.4.1.119.2.3.84.2.1  # picoCelsius / picoFahrenheit (筐体温度)
+        - 1.3.6.1.4.1.119.2.3.84.2.5  # picoSched (CPU utilization)
+        - 1.3.6.1.4.1.119.2.3.84.2.6  # picoHeap (memory utilization)
+        - 1.3.6.1.4.1.119.2.3.84.3    # picoNapt (NAPT session counts)
       get:
         - 1.3.6.1.2.1.1.1.0  # sysDescr
         - 1.3.6.1.2.1.1.5.0  # sysName
+        - 1.3.6.1.4.1.119.2.3.84.2.2.0  # picoVoltage (mV)
+        # IP-MIB: forwarding stats
+        - 1.3.6.1.2.1.4.3.0   # ipInReceives
+        - 1.3.6.1.2.1.4.6.0   # ipForwDatagrams
+        - 1.3.6.1.2.1.4.8.0   # ipInDiscards
+        - 1.3.6.1.2.1.4.11.0  # ipOutDiscards
+        - 1.3.6.1.2.1.4.12.0  # ipOutNoRoutes
+        # TCP-MIB
+        - 1.3.6.1.2.1.6.7.0   # tcpAttemptFails
+        - 1.3.6.1.2.1.6.8.0   # tcpEstabResets
+        - 1.3.6.1.2.1.6.9.0   # tcpCurrEstab
+        - 1.3.6.1.2.1.6.12.0  # tcpRetransSegs
       metrics:
         - name: sysUpTime
           oid: 1.3.6.1.2.1.1.3.0
@@ -126,3 +143,130 @@ snmpConfig:
               labelname: ifAlias
               oid: 1.3.6.1.2.1.31.1.1.1.18
               type: DisplayString
+        # ── NEC enterprise: 筐体温度 (picoCelsius / picoFahrenheit) ──────────
+        # generator (PICO-SMI-MIB) による正式名称。実測: 53°C / 127°F
+        - name: picoCelsius
+          oid: 1.3.6.1.4.1.119.2.3.84.2.1.1
+          type: gauge
+          help: Internal temperature of the device in degrees Celsius
+        - name: picoFahrenheit
+          oid: 1.3.6.1.4.1.119.2.3.84.2.1.2
+          type: gauge
+          help: Internal temperature of the device in degrees Fahrenheit
+        # ── NEC enterprise: 電源電圧 (picoVoltage) ──────────────────────────
+        # 実測: 3250 mV = 3.25V
+        - name: picoVoltage
+          oid: 1.3.6.1.4.1.119.2.3.84.2.2
+          type: gauge
+          help: Observed voltage in milli-volt (mV)
+        # ── IF-MIB: interface discards ──────────────────────────────────────
+        - name: ifInDiscards
+          oid: 1.3.6.1.2.1.2.2.1.13
+          type: counter
+          help: Inbound packets discarded (buffer full etc.)
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifOutDiscards
+          oid: 1.3.6.1.2.1.2.2.1.19
+          type: counter
+          help: Outbound packets discarded (buffer full etc.)
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        # ── NEC enterprise: CPU (picoSched) ──────────────────────────────────
+        - name: nec_ix_cpu_utilization_1sec
+          oid: 1.3.6.1.4.1.119.2.3.84.2.5.1.0
+          type: gauge
+          help: CPU utilization last 1 second (%)
+        - name: nec_ix_cpu_utilization_5sec
+          oid: 1.3.6.1.4.1.119.2.3.84.2.5.2.0
+          type: gauge
+          help: CPU utilization last 5 seconds (%)
+        - name: nec_ix_cpu_utilization_1min
+          oid: 1.3.6.1.4.1.119.2.3.84.2.5.3.0
+          type: gauge
+          help: CPU utilization last 1 minute (%)
+        - name: nec_ix_cpu_utilization_1hour
+          oid: 1.3.6.1.4.1.119.2.3.84.2.5.4.0
+          type: gauge
+          help: CPU utilization last 1 hour (%)
+        # ── NEC enterprise: Memory (picoHeap) ───────────────────────────────
+        - name: nec_ix_memory_total_bytes
+          oid: 1.3.6.1.4.1.119.2.3.84.2.6.1.0
+          type: gauge
+          help: Total heap memory in bytes
+        - name: nec_ix_memory_utilization
+          oid: 1.3.6.1.4.1.119.2.3.84.2.6.2.0
+          type: gauge
+          help: Memory (heap) utilization (%)
+        # ── IP-MIB: forwarding statistics ────────────────────────────────────
+        - name: ip_in_receives
+          oid: 1.3.6.1.2.1.4.3.0
+          type: counter
+          help: Total IP datagrams received
+        - name: ip_forw_datagrams
+          oid: 1.3.6.1.2.1.4.6.0
+          type: counter
+          help: IP datagrams forwarded
+        - name: ip_in_discards
+          oid: 1.3.6.1.2.1.4.8.0
+          type: counter
+          help: Inbound IP datagrams discarded (resource constraints)
+        - name: ip_out_discards
+          oid: 1.3.6.1.2.1.4.11.0
+          type: counter
+          help: Outbound IP datagrams discarded (resource constraints)
+        - name: ip_out_no_routes
+          oid: 1.3.6.1.2.1.4.12.0
+          type: counter
+          help: Outbound IP datagrams discarded due to no route
+        # ── TCP-MIB: connection statistics ───────────────────────────────────
+        - name: tcp_curr_estab
+          oid: 1.3.6.1.2.1.6.9.0
+          type: gauge
+          help: Number of TCP connections currently in ESTABLISHED or CLOSE-WAIT state
+        - name: tcp_retrans_segs
+          oid: 1.3.6.1.2.1.6.12.0
+          type: counter
+          help: Total TCP segments retransmitted
+        - name: tcp_attempt_fails
+          oid: 1.3.6.1.2.1.6.7.0
+          type: counter
+          help: Failed TCP connection attempts
+        - name: tcp_estab_resets
+          oid: 1.3.6.1.2.1.6.8.0
+          type: counter
+          help: TCP connections reset from ESTABLISHED or CLOSE-WAIT state
+        # ── NEC enterprise: NAPT (picoNapt) — MAP-E ポート枯渇監視 ───────────
+        # MAP-E はユーザーごとに使用可能ポート範囲が限定されるため、
+        # NAPT セッション数とポート割り当て失敗数の監視が重要。
+        # PICO-SMI-MIB に picoNapt の定義がないため OID 直指定。
+        # generator 実行でより正確な名前が取れる可能性あり。
+        # (.3.1.2 = TCP NAPT stats, .3.1.3 = UDP NAPT stats)
+        - name: nec_ix_napt_tcp_current_sessions
+          oid: 1.3.6.1.4.1.119.2.3.84.3.1.2.1.1.0
+          type: gauge
+          help: Current TCP NAPT sessions (MAP-E port exhaustion indicator)
+        - name: nec_ix_napt_udp_current_sessions
+          oid: 1.3.6.1.4.1.119.2.3.84.3.1.3.1.1.0
+          type: gauge
+          help: Current UDP NAPT sessions (MAP-E port exhaustion indicator)
+        - name: nec_ix_napt_tcp_create_failures
+          oid: 1.3.6.1.4.1.119.2.3.84.3.1.2.1.14.0
+          type: counter
+          help: TCP NAPT session creation failures (likely port pool exhausted)
+        - name: nec_ix_napt_udp_create_failures
+          oid: 1.3.6.1.4.1.119.2.3.84.3.1.3.1.22.0
+          type: counter
+          help: UDP NAPT session creation failures (likely port pool exhausted)

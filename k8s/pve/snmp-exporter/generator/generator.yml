@@ -1,0 +1,37 @@
+modules:
+  ix2215:
+    walk:
+      # Standard MIBs
+      - 1.3.6.1.2.1.1.3          # sysUpTime
+      - 1.3.6.1.2.1.2.2          # ifTable
+      - 1.3.6.1.2.1.31.1.1       # ifXTable (64-bit counters + ifAlias)
+      - 1.3.6.1.2.1.4            # IP-MIB (forwarding/discard stats)
+      - 1.3.6.1.2.1.6            # TCP-MIB (connections, retransmits)
+      # NEC enterprise: picoSystem
+      - 1.3.6.1.4.1.119.2.3.84.2.1  # picoUfs    (UFS cache)
+      - 1.3.6.1.4.1.119.2.3.84.2.2  # picoRoute  (routing table entries)
+      - 1.3.6.1.4.1.119.2.3.84.2.5  # picoSched  (CPU utilization)
+      - 1.3.6.1.4.1.119.2.3.84.2.6  # picoHeap   (memory utilization)
+      # NEC enterprise: picoNapt (MAP-E NAPT session/port exhaustion)
+      - 1.3.6.1.4.1.119.2.3.84.3    # picoNapt   (TCP/UDP sessions + failure counters)
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.2.2.1.2    # ifDescr
+        drop_source_indexes: false
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.18  # ifAlias
+        drop_source_indexes: false
+    overrides:
+      # Ignore high-cardinality / per-connection tables
+      1.3.6.1.2.1.4.20:     # ipAddrTable
+        ignore: true
+      1.3.6.1.2.1.4.21:     # ipRouteTable
+        ignore: true
+      1.3.6.1.2.1.4.22:     # ipNetToMediaTable (ARP)
+        ignore: true
+      1.3.6.1.2.1.6.13:     # tcpConnTable
+        ignore: true
+      1.3.6.1.2.1.7.5:      # udpTable
+        ignore: true
+      1.3.6.1.2.1.7.6:      # udpEndpointTable
+        ignore: true
