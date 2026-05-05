@@ -200,8 +200,14 @@ kubens               # namespace 一覧
 ### node_exporter について
 
 node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
-テンプレートから作成した VM は起動時点で `:9100` でメトリクスを公開する。  
-既存 VM（テンプレート再ビルド前に作成済み）は手動で導入が必要。
+テンプレートから作成した VM は起動時点で `:9100` でメトリクスを公開する。
+
+既存 VM（テンプレート再ビルド前に作成済み）は Ansible で一括導入:
+
+```bash
+cd ansible/monitoring
+ansible-playbook site.yml
+```
 
 ### PVE exporter の有効化（BSM シークレット登録後）
 
