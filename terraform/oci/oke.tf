@@ -4,7 +4,7 @@ data "oci_identity_availability_domains" "ads" {
 
 resource "oci_containerengine_cluster" "oke_cluster" {
   compartment_id     = var.compartment_ocid
-  kubernetes_version = "v1.34.2"
+  kubernetes_version = "v1.35.2"
   name               = var.cluster_name
   type               = "BASIC_CLUSTER"
   vcn_id             = oci_core_vcn.oke_vcn.id
