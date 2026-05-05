@@ -14,6 +14,17 @@ IX2215 ルーターを SNMP v2c で監視する。[prometheus-community/promethe
 
 IX2215 側の SNMP 設定は `ansible/ix2215/group_vars/all.yml` の `snmp_community` / `snmp_allowed_host` で管理。
 
+## MIB ライセンス表記
+
+NEC enterprise MIB 由来のメトリクス名（`picoCelsius`, `picoFahrenheit`, `picoVoltage`, `picoSchedRtUtl*`, `picoHeapSize`, `picoHeapUtil` 等）は、NEC Corporation が公開する **PICO-SMI-MIB** から派生しています。
+
+> © NEC Corporation 2001-2021. All rights reserved.  
+> MIB ファイルは [NEC UNIVERGE IX サポートページ](https://jpn.nec.com/univerge/ix/Manual/MIB) にて公開されています。
+
+MIB ファイル自体はライセンス順守のためリポジトリに含めていません（`.gitignore` で除外）。
+
+---
+
 ## 収集メトリクス
 
 ### IF-MIB（標準インタフェース統計）
