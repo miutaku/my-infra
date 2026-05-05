@@ -189,12 +189,12 @@ kubens               # namespace 一覧
 | pve-x570 | 192.168.10.115 | pve-exporter | BSM 要設定 |
 | pve-b550m | 192.168.10.119 | pve-exporter | BSM 要設定 |
 | RKE2 nodes ×5 | 192.168.20.126-130 | Alloy DaemonSet (node) | ✅ |
-| LB ×2 | 192.168.20.135-136 | blackbox ICMP | ✅ |
-| bastion-01/02 | 192.168.20.121-122 | node_exporter :9100 | Ansible 要実行 |
-| dev-app-server | 192.168.20.101 | node_exporter :9100 | Ansible 要実行 |
-| dev-rec-server | 192.168.20.150 | node_exporter :9100 | Ansible 要実行 |
-| prd-rec-server | 192.168.20.151 | node_exporter :9100 | Ansible 要実行 |
-| nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | Ansible 要実行 |
+| LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
+| dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
+| dev-rec-server | 192.168.20.150 | node_exporter :9100 | ✅ |
+| prd-rec-server | 192.168.20.151 | node_exporter :9100 | ✅ |
+| mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | IX2215 VLAN20↔40 ルーティング追加後に有効化 |
+| nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
 | OKE nodes ×2 | 10.0.1.x | Alloy DaemonSet (node) | ✅ |
 
 ### node_exporter について
