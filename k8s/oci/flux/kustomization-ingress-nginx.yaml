@@ -6,7 +6,7 @@ metadata:
 spec:
   interval: 10m
   dependsOn:
-    - name: oci-cert-manager
+    - name: oci-cert-manager-config
   sourceRef:
     kind: GitRepository
     name: my-infra
