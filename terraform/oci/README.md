@@ -62,18 +62,71 @@ OCI Always Free 上に OKE Basic クラスタを構築する Terraform workspace
 ### ローカル CLI のインストール
 
 ```bash
-# OCI CLI
-mkdir ~/oci-cli && cd ~/oci-cli
-wget https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
-chmod +x install.sh && bash install.sh --accept-all-defaults
-oci setup config  # tenancy OCID / user OCID / region / API key を対話入力
+# OCI CLI (pip でユーザーインストール)
+pip3 install --user --break-system-packages oci-cli
+
+# PATH に追加 (pip --user でインストールした場合)
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+oci --version
+
+# pip がシステム Python を使えない場合 (virtualenv 環境など)
+# → virtualenv 内にインストールして ~/bin にシンボリックリンク
+pip3 install oci-cli   # virtualenv 内でインストール
+mkdir -p ~/bin
+ln -sf "$(which oci)" ~/bin/oci
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 
 # kubectl
 sudo snap install kubectl --classic
 
+# Flux CLI
+curl -sL https://github.com/fluxcd/flux2/releases/latest/download/flux_linux_amd64.tar.gz \
+  | tar xz -C ~/bin && flux version --client
+
 # terraform (1.9+ 推奨)
 # https://developer.hashicorp.com/terraform/install
 ```
+
+### OCI API Key の設定
+
+```bash
+mkdir -p ~/.oci
+
+# 秘密鍵を生成 (新規の場合)
+openssl genrsa -out ~/.oci/oci_api_key.pem 2048
+chmod 600 ~/.oci/oci_api_key.pem
+
+# OCI に登録する公開鍵を出力 (DER 形式で fingerprint 計算)
+openssl rsa -pubout -in ~/.oci/oci_api_key.pem 2>/dev/null
+
+# fingerprint 確認 (OCI Console の表示と一致するはず)
+# 注: OCI は DER 形式の MD5 を使う。PEM 形式では一致しないので注意
+openssl rsa -pubout -outform DER -in ~/.oci/oci_api_key.pem 2>/dev/null | openssl md5 -c
+```
+
+OCI コンソール → **User Settings → API Keys → Add API Key → Paste Public Key** で公開鍵を登録する。
+API Key は 1 ユーザーにつき最大 3 つまで。上限に達している場合は不要なものを削除してから追加する。
+
+```bash
+# ~/.oci/config を作成
+cat > ~/.oci/config <<EOF
+[DEFAULT]
+user=<user_ocid>
+fingerprint=<fingerprint>
+tenancy=<tenancy_ocid>
+region=ap-tokyo-1
+key_file=/home/<username>/.oci/oci_api_key.pem
+EOF
+chmod 600 ~/.oci/config
+
+# 接続確認
+export SUPPRESS_LABEL_WARNING=True
+oci iam region list --output table
+```
+
+> **重要**: `key_file` には `~` ではなく絶対パスを使うこと。`~` が展開されずに認証エラーになる場合がある。
 
 ### terraform init
 

@@ -6,7 +6,7 @@ metadata:
 spec:
   interval: 10m
   dependsOn:
-    - name: oci-external-secrets
+    - name: oci-external-secrets-config
   sourceRef:
     kind: GitRepository
     name: my-infra

@@ -4,6 +4,7 @@ resources:
   - gitrepository.yaml
   - kustomization-sources.yaml
   - kustomization-external-secrets.yaml
+  - kustomization-external-secrets-config.yaml
   - kustomization-cert-manager.yaml
   - kustomization-ingress-nginx.yaml
   - kustomization-longhorn.yaml
