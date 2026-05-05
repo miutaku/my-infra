@@ -11,6 +11,7 @@ module "rke2_lb" {
   memory            = 1536
   clone_template    = local.ubuntu_template
   proxmox_nodes     = var.proxmox_nodes
+  vlan_tag          = 20
   cloudinit_storage = "local-zfs"
 }
 
@@ -26,7 +27,8 @@ module "rke2_server" {
   cpu_cores         = 2
   memory            = 8192
   clone_template    = local.ubuntu_template
-  proxmox_nodes     = var.proxmox_nodes
+  proxmox_nodes     = ["pve-x570", "pve-b550m", "pve-b550m"]
+  vlan_tag          = 20
   cloudinit_storage = "local-zfs"
 }
 
@@ -43,6 +45,7 @@ module "rke2_worker" {
   memory            = 4096
   clone_template    = local.ubuntu_template
   proxmox_nodes     = var.proxmox_nodes
+  vlan_tag          = 20
   cloudinit_storage = "local-zfs"
 }
 
@@ -60,6 +63,7 @@ module "prd_rec_server" {
   proxmox_nodes     = ["pve-x570"] # PCI device is on this node
   clone_template    = local.ubuntu_template
   disk_size         = 64
+  vlan_tag          = 20
   cloudinit_storage = "local-zfs"
   pcis = {
     pci0 = {
@@ -82,9 +86,10 @@ module "dev_rec_server" {
   tags              = ["dev", "ubuntu_2604", "rec-server", "docker"]
   cpu_cores         = 4
   memory            = 4096
-  proxmox_nodes     = ["pve-x570"] # USB device is on this node
+  proxmox_nodes     = ["pve-b550m"] # USB device is on this node
   clone_template    = local.ubuntu_template
   disk_size         = 32
+  vlan_tag          = 20
   cloudinit_storage = "local-zfs"
   usbs = {
     usb0 = {
@@ -106,9 +111,10 @@ module "dev_application_server" {
   tags              = ["dev", "ubuntu_2604", "application-server", "docker"]
   cpu_cores         = 8
   memory            = 10 * 1024
-  proxmox_nodes     = ["pve-x570"]
+  proxmox_nodes     = ["pve-b550m"]
   clone_template    = local.ubuntu_template
   disk_size         = 64
+  vlan_tag          = 20
   cloudinit_storage = "local-zfs"
 }
 
@@ -126,9 +132,10 @@ module "truenas" {
   proxmox_nodes    = local.all_nodes # one VM per node
   clone_template   = local.truenas_template
   bios             = "ovmf"
-  efi_storage_pool = "local-lvm"
+  efi_storage_pool = "local-zfs"
   machine          = "q35"
   disk_size        = 24
+  vlan_tag         = 20
   usbs = {
     usb0 = {
       mapping = {
@@ -154,6 +161,7 @@ module "magic_mirror_server" {
   proxmox_nodes     = ["pve-b550m"] # USB device is on this node
   clone_template    = local.ubuntu_template
   disk_size         = 32
+  vlan_tag          = 40
   cloudinit_storage = "local-zfs"
   usbs = {
     usb0 = {
@@ -164,39 +172,40 @@ module "magic_mirror_server" {
   }
 }
 
-module "batocera" {
-  source = "./modules/proxmox_vm"
-
-  vm_count          = 1
-  name_prefix       = "retro"
-  name_suffix       = "batocera-home-amd64"
-  macaddrs_override = ["BC:24:11:F5:C5:06"]
-  vmid_start        = 50001
-  tags              = ["batocera", "gaming", "retro"]
-  cpu_cores         = 4
-  memory            = 4096
-  proxmox_nodes     = ["pve-x570"] # GT1030 is on this node
-  clone_template    = "template-batocera-home-amd64"
-  bios              = "ovmf"
-  efi_storage_pool  = "local-lvm"
-  machine           = "q35"
-  disk_size         = 64
-  data_disk_size    = 16 # game storage (scsi1)
-  kvm_vga_type      = "none"
-  kvm_vga_memory    = null
-  usbs = {
-    usb0 = {
-      mapping = {
-        mapping_id = "mayflash"
-      }
-    }
-  }
-  pcis = {
-    pci0 = {
-      mapping = {
-        mapping_id = "gt1030"
-        pcie       = true # q35 + OVMF enables PCIe passthrough
-      }
-    }
-  }
-}
+# module "batocera" {
+#   source = "./modules/proxmox_vm"
+#
+#   vm_count          = 1
+#   name_prefix       = "retro"
+#   name_suffix       = "batocera-home-amd64"
+#   macaddrs_override = ["BC:24:11:F5:C5:06"]
+#   vmid_start        = 50001
+#   tags              = ["batocera", "gaming", "retro"]
+#   cpu_cores         = 4
+#   memory            = 4096
+#   proxmox_nodes     = ["pve-x570"] # GT1030 is on this node
+#   clone_template    = "template-batocera-home-amd64"
+#   bios              = "ovmf"
+#   efi_storage_pool  = "local-lvm"
+#   machine           = "q35"
+#   disk_size         = 64
+#   data_disk_size    = 16 # game storage (scsi1)
+#   vlan_tag          = 40
+#   kvm_vga_type      = "none"
+#   kvm_vga_memory    = null
+#   usbs = {
+#     usb0 = {
+#       mapping = {
+#         mapping_id = "mayflash"
+#       }
+#     }
+#   }
+#   pcis = {
+#     pci0 = {
+#       mapping = {
+#         mapping_id = "gt1030"
+#         pcie       = true # q35 + OVMF enables PCIe passthrough
+#       }
+#     }
+#   }
+# }

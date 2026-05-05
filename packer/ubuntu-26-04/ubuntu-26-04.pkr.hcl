@@ -28,7 +28,7 @@ source "proxmox-iso" "ubuntu" {
   }
 
   disks {
-    type         = "virtio"
+    type         = "scsi"
     disk_size    = var.disk_size
     storage_pool = var.proxmox_storage_pool
   }
@@ -81,6 +81,7 @@ build {
   }
 
   provisioner "shell" {
+    environment_vars = ["DEBIAN_FRONTEND=noninteractive", "NEEDRESTART_MODE=l"]
     inline = [
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 5; done",
       "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",

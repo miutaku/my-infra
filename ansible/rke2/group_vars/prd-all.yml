@@ -1,14 +1,14 @@
 # このファイルは terraform/pve によって自動生成されます。直接編集しないでください。
 # 更新: terraform apply (terraform/pve/)
 lb:
-  vip: 192.168.0.227
+  vip: 192.168.20.227
 
 haproxy:
   bind: "{{ lb.vip }}"
   servers:
     - name: "master-01-rke2-server-ubuntu-26-04-home-amd64"
-      ip: 192.168.0.126
+      ip: 192.168.20.126
     - name: "master-02-rke2-server-ubuntu-26-04-home-amd64"
-      ip: 192.168.0.127
+      ip: 192.168.20.127
     - name: "master-03-rke2-server-ubuntu-26-04-home-amd64"
-      ip: 192.168.0.128
+      ip: 192.168.20.128
