@@ -5,8 +5,8 @@ locals {
   # no_tls_verify = skip TLS verification for self-signed certs (e.g. ArgoCD)
   rke2_services = {
     argocd = {
-      backend       = "https://argocd-server.argocd.svc.cluster.local:443"
-      no_tls_verify = true
+      backend       = "http://argocd-server.argocd.svc.cluster.local:80"
+      no_tls_verify = false
     }
     wol = {
       backend       = "http://gptwol-service.app-gptwol.svc.cluster.local:5000"
