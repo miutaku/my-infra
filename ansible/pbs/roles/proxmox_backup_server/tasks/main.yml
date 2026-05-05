@@ -1,0 +1,156 @@
+---
+- name: Installed python3-pexpect
+  ansible.builtin.apt:
+    name: python3-pexpect
+    state: present
+    update_cache: false
+
+- name: Pre-seeded Postfix mailer type
+  ansible.builtin.debconf:
+    name: postfix
+    question: postfix/main_mailer_type
+    value: 'Internet Site'
+    vtype: select
+
+- name: Pre-seeded Postfix mailname
+  ansible.builtin.debconf:
+    name: postfix
+    question: postfix/mailname
+    value: "{{ ansible_fqdn }}"
+    vtype: string
+
+- name: Placed PBS GPG key
+  ansible.builtin.get_url:
+    url: https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg
+    dest: /usr/share/keyrings/proxmox-archive-keyring.gpg
+    checksum: "sha512:7da6fe34168adc6e479327ba517796d4702fa2f8b4f0a9833f5ea6e6b48f6507a6da403a274fe201595edc86a84463d50383d07f64bdde2e3658108db7d6dc87"
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Added PBS no-subscription repository
+  ansible.builtin.copy:
+    content: |
+      Types: deb
+      URIs: http://download.proxmox.com/debian/pbs
+      Suites: bookworm
+      Components: pbs-no-subscription
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+    dest: /etc/apt/sources.list.d/pbs-no-subscription.sources
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Installed proxmox-backup-server
+  ansible.builtin.apt:
+    name: proxmox-backup-server
+    state: present
+    update_cache: true
+  retries: 100
+  delay: 5
+
+- name: Disabled PBS enterprise repository
+  ansible.builtin.copy:
+    content: ""
+    dest: /etc/apt/sources.list.d/pbs-enterprise.list
+    force: true
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Started proxmox-backup service
+  ansible.builtin.service:
+    name: proxmox-backup
+    state: started
+    enabled: true
+
+- name: Got PBS admin password from BSM
+  ansible.builtin.shell:
+    cmd: "set -o pipefail && bws secret get {{ bsm_pbs_admin_password_id }} | jq -r '.value'"
+    executable: /bin/bash
+  environment:
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: pbs_admin_password_result
+  check_mode: false
+  changed_when: false
+  no_log: true
+
+- name: Checked existing PBS users
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager user list --output-format json"
+  register: pbs_users
+  changed_when: false
+  failed_when: false
+
+- name: Created admin@pbs user
+  ansible.builtin.expect:
+    command: "proxmox-backup-manager user create {{ pbs.admin_user }}"
+    responses:
+      'Password:': "{{ pbs_admin_password_result.stdout }}"
+      'Confirm password:': "{{ pbs_admin_password_result.stdout }}"
+    timeout: 30
+  when: >-
+    pbs_users.rc != 0
+    or (pbs_users.stdout | from_json | selectattr('userid', 'eq', pbs.admin_user) | list | length == 0)
+  register: create_user_result
+  failed_when:
+    - create_user_result.rc is defined
+    - create_user_result.rc != 0
+    - '"already exists" not in (create_user_result.stdout | default(""))'
+  changed_when:
+    - create_user_result.rc is defined
+    - create_user_result.rc == 0
+
+- name: Checked existing PBS datastores
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager datastore list --output-format json"
+  register: pbs_datastores
+  changed_when: false
+  failed_when: false
+
+- name: Created PBS datastore
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager datastore create {{ pbs.datastore_name }} {{ zfs.mountpoint }}"
+  when: >-
+    pbs_datastores.rc != 0
+    or (pbs_datastores.stdout | from_json | selectattr('name', 'eq', pbs.datastore_name) | list | length == 0)
+  changed_when: true
+
+- name: Granted DatastoreAdmin role to admin@pbs
+  ansible.builtin.command:
+    cmd: >-
+      proxmox-backup-manager acl update
+      /datastore/{{ pbs.datastore_name }}
+      DatastoreAdmin
+      --auth-id {{ pbs.admin_user }}
+  changed_when: false
+
+- name: Scheduled PBS GC
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager datastore update {{ pbs.datastore_name }} --gc-schedule '{{ pbs.gc_schedule }}'"
+  changed_when: false
+
+- name: Checked existing PBS prune jobs
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager prune-job list --output-format json"
+  register: pbs_prune_jobs
+  changed_when: false
+  failed_when: false
+
+- name: Created PBS prune job
+  ansible.builtin.command:
+    cmd: >-
+      proxmox-backup-manager prune-job create {{ pbs.datastore_name }}-prune
+      --store {{ pbs.datastore_name }}
+      --schedule '{{ pbs.prune_schedule }}'
+      --keep-last {{ pbs.keep_last }}
+      --keep-daily {{ pbs.keep_daily }}
+      --keep-weekly {{ pbs.keep_weekly }}
+      --keep-monthly {{ pbs.keep_monthly }}
+  when: >-
+    pbs_prune_jobs.rc != 0
+    or (pbs_prune_jobs.stdout | from_json | selectattr('id', 'eq', pbs.datastore_name ~ '-prune') | list | length == 0)
+  changed_when: true

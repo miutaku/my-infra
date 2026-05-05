@@ -1,0 +1,3 @@
+---
+- name: Import PBS Playbook
+  import_playbook: pbs.yml

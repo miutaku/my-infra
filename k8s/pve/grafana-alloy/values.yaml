@@ -1,0 +1,168 @@
+controller:
+  type: daemonset
+  # 全ノードで動かす (taint があっても tolerationで通す)
+  tolerations:
+    - operator: Exists
+  # ノードメトリクス収集のため hostPID が必要
+  hostPID: true
+
+alloy:
+  securityContext:
+    privileged: true
+    allowPrivilegeEscalation: true
+
+  # Grafana Cloud 認証情報 (ExternalSecret grafana-cloud-credentials から注入)
+  extraEnv:
+    - name: GRAFANA_CLOUD_METRICS_URL
+      valueFrom:
+        secretKeyRef:
+          name: grafana-cloud-credentials
+          key: metrics-url
+    - name: GRAFANA_CLOUD_METRICS_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: grafana-cloud-credentials
+          key: metrics-username
+    - name: GRAFANA_CLOUD_METRICS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: grafana-cloud-credentials
+          key: metrics-password
+
+  configMap:
+    create: true
+    content: |
+      // ── Node metrics (unix exporter) ─────────────────────────────────────
+      prometheus.exporter.unix "node" {
+        rootfs_path = "/host/root"
+        procfs_path = "/host/proc"
+        sysfs_path  = "/host/sys"
+      }
+
+      prometheus.scrape "node" {
+        targets    = prometheus.exporter.unix.node.targets
+        forward_to = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        job_name         = "integrations/node_exporter"
+        scrape_interval  = "60s"
+      }
+
+      // ── Kubernetes pod 自動検出 ───────────────────────────────────────────
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+          action        = "keep"
+          regex         = "true"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+          action        = "replace"
+          target_label  = "__metrics_path__"
+          regex         = "(.+)"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port"]
+          action        = "replace"
+          target_label  = "__address__"
+          regex         = "(.+)"
+          replacement   = "$1"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+      }
+
+      prometheus.scrape "pods" {
+        targets    = discovery.relabel.pods.output
+        forward_to = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "60s"
+      }
+
+      // ── blackbox-exporter 経由の外形監視 ─────────────────────────────────
+      // ターゲットは後で追加する。現在は IX2215 のみ。
+      prometheus.scrape "blackbox_http" {
+        targets = [
+          {
+            "__address__"      = "blackbox-exporter.monitoring.svc.cluster.local:9115",
+            "__param_target"   = "http://192.168.0.254",
+            "__param_module"   = "http_2xx",
+            "instance"         = "ix2215",
+            "job"              = "blackbox",
+          },
+        ]
+        metrics_path    = "/probe"
+        forward_to      = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "60s"
+      }
+
+      // ── Remote write: VictoriaMetrics (クラスタ内) ────────────────────────
+      prometheus.remote_write "victoria_metrics" {
+        endpoint {
+          url = "http://victoria-metrics-victoria-metrics-single-server.monitoring.svc.cluster.local:8428/api/v1/write"
+        }
+      }
+
+      // ── Remote write: Grafana Cloud ───────────────────────────────────────
+      prometheus.remote_write "grafana_cloud" {
+        endpoint {
+          url = env("GRAFANA_CLOUD_METRICS_URL")
+          basic_auth {
+            username = env("GRAFANA_CLOUD_METRICS_USERNAME")
+            password = env("GRAFANA_CLOUD_METRICS_PASSWORD")
+          }
+        }
+      }
+
+# ホスト filesystem をマウント (unix exporter 用)
+extraVolumes:
+  - name: rootfs
+    hostPath:
+      path: /
+  - name: procfs
+    hostPath:
+      path: /proc
+  - name: sysfs
+    hostPath:
+      path: /sys
+
+extraVolumeMounts:
+  - name: rootfs
+    mountPath: /host/root
+    readOnly: true
+  - name: procfs
+    mountPath: /host/proc
+    readOnly: true
+  - name: sysfs
+    mountPath: /host/sys
+    readOnly: true
+
+serviceAccount:
+  create: true
+
+rbac:
+  create: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi

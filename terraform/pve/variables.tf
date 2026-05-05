@@ -79,8 +79,7 @@ variable "truenas_macaddr" {
 variable "proxmox_nodes" {
   description = "A list of Proxmox nodes to distribute VMs across."
   type        = list(string)
-#  default     = ["pve-x570"]
-  default     = ["pve-x570", "pve-b550m"]
+  default = ["pve-x570", "pve-b550m"]
 }
 
 variable "dev_application_server_vm_count" {
@@ -105,4 +104,31 @@ variable "mm_server_macaddr" {
   description = "The MAC address of the Magic Mirror² server virtual machine"
   type        = string
   default     = "52:54:00:99:00:01"
+}
+
+# RKE2 ネットワーク設定
+# ルーターの DHCP 静的リースで MAC → IP を固定した後、ここの値と一致させること。
+# `terraform output rke2_*_mac_addresses` で各 VM の MAC を確認できる。
+variable "rke2_lb_ips" {
+  description = "LB VMs に割り当てる IP アドレス (DHCP 静的リースと一致させること)"
+  type        = list(string)
+  default     = ["192.168.20.135", "192.168.20.136"]
+}
+
+variable "rke2_server_ips" {
+  description = "Server VMs に割り当てる IP アドレス (DHCP 静的リースと一致させること)"
+  type        = list(string)
+  default     = ["192.168.20.126", "192.168.20.127", "192.168.20.128"]
+}
+
+variable "rke2_worker_ips" {
+  description = "Worker VMs に割り当てる IP アドレス (DHCP 静的リースと一致させること)"
+  type        = list(string)
+  default     = ["192.168.20.129", "192.168.20.130"]
+}
+
+variable "rke2_lb_vip" {
+  description = "Keepalived の Virtual IP (任意の未使用 IP)"
+  type        = string
+  default     = "192.168.20.227"
 }

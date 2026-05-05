@@ -1,0 +1,2 @@
+[ix2215]
+localhost ansible_connection=local

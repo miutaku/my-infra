@@ -1,6 +1,3 @@
 ---
 server: https://{{ lb.vip }}:9345
 token: "{{ rke2_node_token | trim }}"
-cni: calico
-tls-san:
-  - "{{ lb.vip }}"

@@ -1,0 +1,409 @@
+---
+ix2215_host: "192.168.0.254"
+ix2215_user: "miutaku"
+
+# BSM シークレット ID (bws secret list で確認)
+bsm_ix2215_ssh_password_id: "ad6bded6-0308-443e-964e-b43b00fab5d5"
+
+# ---------------------------------------------------------------------------
+# System
+# ---------------------------------------------------------------------------
+ix_timezone: "+09 00"
+
+ix_logging:
+  - "subsystem ike info"
+  - "timestamp datetime"
+
+ix_ntp:
+  enable: true
+  servers:
+    - "61.205.120.130" # ntp.nict.jp
+
+ix_snmp:
+  communities:
+    - "monitor"
+    - "public"
+
+ix_system_services:
+  ssh_server_ip: true
+  vrrp: true
+  bridge_irb: true
+  ip_dhcp: true
+  ipv6_dhcp: true
+  http_server_ip: true
+  http_server_username: "miutaku"
+  nm_ip: true
+
+# ---------------------------------------------------------------------------
+# DNS
+# ---------------------------------------------------------------------------
+ix_dns_servers_v4:
+  - "1.1.1.1" # Cloudflare DNS
+  - "1.0.0.1" # Cloudflare DNS
+  - "8.8.8.8" # Google DNS
+  - "8.8.4.4" # Google DNS
+
+ix_dns_servers_v6:
+  - "2001:4860:4860::8888" # Google DNS
+  - "2001:4860:4860::8844" # Google DNS
+  - "2606:4700:4700::1111" # Cloudflare DNS
+  - "2606:4700:4700::1001" # Cloudflare DNS
+
+ix_dns_cache:
+  enable: true
+  max_records: 512
+  lifetime: 300
+  ncache_lifetime: 60
+
+ix_proxy_dns:
+  ip_enable: true
+  ip_request: "both"
+  ipv6_enable: true
+
+# ---------------------------------------------------------------------------
+# IP routing & UFS cache
+# ---------------------------------------------------------------------------
+ix_ufs_cache:
+  max_entries: 100000
+
+ix_ipv6_ufs_cache:
+  max_entries: 65535
+
+ix_static_routes_v4:
+  - dest: "default"
+    gw: "GigaEthernet0.1"
+  - dest: "default"
+    gw: "Tunnel0.0"
+
+# ---------------------------------------------------------------------------
+# IP access lists
+# ---------------------------------------------------------------------------
+ix_access_lists: []
+
+ix_ipv6_access_lists:
+  - name: "block-list"
+    entries:
+      - "deny ip src any dest any"
+  - name: "dhcpv6-list"
+    entries:
+      - "permit udp src any sport any dest any dport eq 546"
+      - "permit udp src any sport any dest any dport eq 547"
+  - name: "icmpv6-list"
+    entries:
+      - "permit icmp src any dest any"
+  - name: "other-list"
+    entries:
+      - "permit ip src any dest any"
+  - name: "tunnel-list"
+    entries:
+      - "permit 4 src any dest any"
+  - name: "dynamic"
+    special:
+      - "cache 65535"
+      - "dflt-list access other-list"
+
+# ---------------------------------------------------------------------------
+# DHCP profiles
+# ---------------------------------------------------------------------------
+# dhcp_profile は dhcp_assignments (RKE2 ノード) を登録するプロファイル名
+dhcp_profile: "vlan20"
+
+ix_dhcp_profiles:
+  # ------------------------------------------------------------------
+  # main: 移行期間中の後方互換プロファイル (192.168.0.0/24)
+  # VLAN 整備完了後は無効化する
+  # ------------------------------------------------------------------
+  - name: "main"
+    assignable_range: "192.168.0.1 192.168.0.50"
+    dns_server: "192.168.0.254"
+    fixed_assignments:
+      - { ip: "192.168.0.51",  mac: "52:54:00:99:00:01" } # mm-server-01      → VLAN 40
+      - { ip: "192.168.0.79",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch   → VLAN 40
+      - { ip: "192.168.0.80",  mac: "88:c9:e8:db:30:81" } # TV                → VLAN 40
+      - { ip: "192.168.0.101", mac: "52:54:00:25:01:01" } # dev-app-server    → VLAN 20
+      - { ip: "192.168.0.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 #1           → VLAN 10
+      - { ip: "192.168.0.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 #2           → VLAN 10
+      - { ip: "192.168.0.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 #3           → VLAN 10
+      - { ip: "192.168.0.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 #4           → VLAN 10
+      - { ip: "192.168.0.111", mac: "b8:27:eb:10:65:f8" } # RPi3 #1           → VLAN 10
+      - { ip: "192.168.0.112", mac: "b8:27:eb:54:33:22" } # RPi3 #2           → VLAN 10
+      - { ip: "192.168.0.113", mac: "b8:27:eb:b6:c1:8b" } # RPi3 #3           → VLAN 10
+      - { ip: "192.168.0.115", mac: "70:85:c2:da:b6:e1" } # pve-x570          → VLAN 10
+      - { ip: "192.168.0.117", mac: "e0:51:d8:10:35:e4" } # pve-nucbox-3 NIC1 → VLAN 10
+      - { ip: "192.168.0.118", mac: "80:b6:55:62:4e:59" } # pve-nucbox-3 NIC2 → VLAN 10
+      - { ip: "192.168.0.119", mac: "a8:a1:59:57:ce:43" } # pve-b550m         → VLAN 10
+      - { ip: "192.168.0.120", mac: "9c:6b:00:96:87:c6" } # gaming-pc         → VLAN 30
+      - { ip: "192.168.0.121", mac: "bc:24:11:db:b0:f6" } # bastion-01        → VLAN 20
+      - { ip: "192.168.0.122", mac: "bc:24:11:db:b0:f7" } # bastion-02        → VLAN 20
+      - { ip: "192.168.0.123", mac: "52:54:00:c1:3a:38" } # server VM         → VLAN 20
+      - { ip: "192.168.0.124", mac: "52:54:00:8c:83:18" } # windows-11-work   → VLAN 30
+      - { ip: "192.168.0.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC       → VLAN 10
+      - { ip: "192.168.0.141", mac: "00:1b:7a:c8:e4:88" } # Wii NIC           → VLAN 40
+      - { ip: "192.168.0.142", mac: "00:22:cf:ed:a9:7a" } # PLANEX            → VLAN 30
+      - { ip: "192.168.0.143", mac: "cc:e1:d5:40:32:d2" } # BUFFALO           → VLAN 30
+      - { ip: "192.168.0.144", mac: "00:e0:4d:ac:58:ec" } # 謎NIC             → VLAN 30
+      - { ip: "192.168.0.150", mac: "52:54:00:23:98:01" } # dev rec-server    → VLAN 20
+      - { ip: "192.168.0.151", mac: "52:54:00:23:99:01" } # prd rec-server    → VLAN 20
+      - { ip: "192.168.0.191", mac: "52:54:00:24:99:01" } # nas-01            → VLAN 20
+      - { ip: "192.168.0.192", mac: "52:54:00:24:99:02" } # nas-02            → VLAN 20
+      - { ip: "192.168.0.228", mac: "1c:90:ff:88:39:33" } # smart home        → VLAN 40
+      - { ip: "192.168.0.229", mac: "3c:61:05:ce:9c:15" } # smart home        → VLAN 40
+      - { ip: "192.168.0.230", mac: "94:e0:d6:67:7f:fb" } # smart home        → VLAN 40
+      - { ip: "192.168.0.231", mac: "38:56:10:c7:a3:e9" } # smart home        → VLAN 40
+      - { ip: "192.168.0.240", mac: "48:da:35:6f:c6:70" } # nanokvm #1        → VLAN 10
+      - { ip: "192.168.0.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2        → VLAN 10
+      - { ip: "192.168.0.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W          → VLAN 10
+      - { ip: "192.168.0.253", mac: "e4:3e:c6:34:1c:00" } # FS AP             → VLAN 10
+
+  # ------------------------------------------------------------------
+  # VLAN 10: 管理ネットワーク (192.168.10.0/24)
+  # PVE ノード / RPi / nanokvm / スイッチ / AP / CE LINK NIC
+  # ------------------------------------------------------------------
+  - name: "vlan10"
+    assignable_range: "192.168.10.1 192.168.10.50"
+    dns_server: "192.168.10.254"
+    fixed_assignments:
+      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 eth0
+      - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 wlan0
+      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 eth0
+      - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 wlan0
+      - { ip: "192.168.10.111", mac: "b8:27:eb:10:65:f8" } # RPiB eth0
+      - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0
+      - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0
+      - { ip: "192.168.10.115", mac: "70:85:c2:da:b6:e1" } # pve-x570
+      - { ip: "192.168.10.117", mac: "e0:51:d8:10:35:e4" } # pve-nucbox-3 NIC1
+      - { ip: "192.168.10.118", mac: "80:b6:55:62:4e:59" } # pve-nucbox-3 NIC2
+      - { ip: "192.168.10.119", mac: "a8:a1:59:57:ce:43" } # pve-b550m
+      - { ip: "192.168.10.240", mac: "48:da:35:6f:c6:70" } # nanokvm #1
+      - { ip: "192.168.10.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2
+      - { ip: "192.168.10.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W
+      - { ip: "192.168.10.253", mac: "e4:3e:c6:34:1c:00" } # FS AP
+
+  # ------------------------------------------------------------------
+  # VLAN 20: サーバネットワーク (192.168.20.0/24)
+  # VM サーバ / RKE2 クラスタ / NAS
+  # MetalLB プール: 192.168.20.200-226
+  # Keepalived VIP:  192.168.20.227
+  # ------------------------------------------------------------------
+  - name: "vlan20"
+    assignable_range: "192.168.20.1 192.168.20.50"
+    dns_server: "192.168.20.254"
+    fixed_assignments:
+      - { ip: "192.168.20.101", mac: "52:54:00:25:01:01" } # dev-app-server
+      - { ip: "192.168.20.121", mac: "bc:24:11:db:b0:f6" } # bastion-01
+      - { ip: "192.168.20.122", mac: "bc:24:11:db:b0:f7" } # bastion-02
+      - { ip: "192.168.20.123", mac: "52:54:00:c1:3a:38" } # server VM
+      - { ip: "192.168.20.126", mac: "bc:24:11:97:96:01" } # master-01 (RKE2 server)
+      - { ip: "192.168.20.127", mac: "bc:24:11:97:96:02" } # master-02 (RKE2 server)
+      - { ip: "192.168.20.128", mac: "bc:24:11:97:96:03" } # master-03 (RKE2 server)
+      - { ip: "192.168.20.129", mac: "bc:24:11:23:32:01" } # worker-01 (RKE2 agent)
+      - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # worker-02 (RKE2 agent)
+      - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01 (RKE2 LB)
+      - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02 (RKE2 LB)
+      - { ip: "192.168.20.150", mac: "52:54:00:23:98:01" } # dev rec-server
+      - { ip: "192.168.20.151", mac: "52:54:00:23:99:01" } # prd rec-server
+      - { ip: "192.168.20.191", mac: "52:54:00:24:99:01" } # nas-01
+      - { ip: "192.168.20.192", mac: "52:54:00:24:99:02" } # nas-02
+
+  # ------------------------------------------------------------------
+  # VLAN 30: クライアントネットワーク (192.168.30.0/24)
+  # PC / Windows VM / 謎NIC 類
+  # ------------------------------------------------------------------
+  - name: "vlan30"
+    assignable_range: "192.168.30.1 192.168.30.200"
+    dns_server: "192.168.30.254"
+    fixed_assignments:
+      - { ip: "192.168.30.120", mac: "9c:6b:00:96:87:c6" } # gaming-pc
+      - { ip: "192.168.30.124", mac: "52:54:00:8c:83:18" } # windows-11-work VM
+      - { ip: "192.168.30.142", mac: "00:22:cf:ed:a9:7a" } # PLANEX NIC
+      - { ip: "192.168.30.143", mac: "cc:e1:d5:40:32:d2" } # BUFFALO NIC
+      - { ip: "192.168.30.144", mac: "00:e0:4d:ac:58:ec" } # 謎NIC
+
+  # ------------------------------------------------------------------
+  # VLAN 40: IoT ネットワーク (192.168.40.0/24)
+  # MM2 サーバ / ゲーム機 / TV / スマートホーム
+  # ------------------------------------------------------------------
+  - name: "vlan40"
+    assignable_range: "192.168.40.1 192.168.40.100"
+    dns_server: "192.168.40.254"
+    fixed_assignments:
+      - { ip: "192.168.40.51",  mac: "52:54:00:99:00:01" } # mm-server-01
+      - { ip: "192.168.40.79",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch
+      - { ip: "192.168.40.80",  mac: "88:c9:e8:db:30:81" } # TV
+      - { ip: "192.168.40.141", mac: "00:1b:7a:c8:e4:88" } # Wii NIC
+      - { ip: "192.168.40.228", mac: "1c:90:ff:88:39:33" } # smart remocon
+      - { ip: "192.168.40.229", mac: "3c:61:05:ce:9c:15" } # ceiling light
+      - { ip: "192.168.40.230", mac: "94:e0:d6:67:7f:fb" } # security camera
+      - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
+
+# RKE2 クラスタノードの DHCP 静的リース (Terraform から更新)
+dhcp_assignments:
+  - name: lb-01-rke2-haproxy-keepalived
+    ip: "192.168.20.135"
+    mac: "BC:24:11:AD:44:01"
+  - name: lb-02-rke2-haproxy-keepalived
+    ip: "192.168.20.136"
+    mac: "BC:24:11:AD:44:02"
+  - name: master-01-rke2-server
+    ip: "192.168.20.126"
+    mac: "BC:24:11:97:96:01"
+  - name: master-02-rke2-server
+    ip: "192.168.20.127"
+    mac: "BC:24:11:97:96:02"
+  - name: master-03-rke2-server
+    ip: "192.168.20.128"
+    mac: "BC:24:11:97:96:03"
+  - name: worker-01-rke2-agent
+    ip: "192.168.20.129"
+    mac: "BC:24:11:23:32:01"
+  - name: worker-02-rke2-agent
+    ip: "192.168.20.130"
+    mac: "BC:24:11:23:32:02"
+
+# ---------------------------------------------------------------------------
+# DHCPv6
+# ---------------------------------------------------------------------------
+ix_dhcpv6_client_profiles:
+  - name: "dhcpv6-cl"
+    information_request: true
+    option_request: "dns-servers"
+
+ix_dhcpv6_server_profiles:
+  - name: "dhcpv6-sv"
+    dns_server: "dhcp"
+
+# ---------------------------------------------------------------------------
+# map-e (Tunnel0.0) - ikev2 default-profile
+# ---------------------------------------------------------------------------
+ix_map_e_ikev2:
+  dpd_interval: 10
+  source_address: "Tunnel0.0"
+
+# ---------------------------------------------------------------------------
+# Interfaces
+# ---------------------------------------------------------------------------
+ix_interfaces:
+  - name: "GigaEthernet0.0"
+    description: ~
+    ip_address: ~
+    ipv6_enable: true
+    ipv6_dhcp_client: "dhcpv6-cl"
+    ipv6_nd_proxy: "GigaEthernet2.0"
+    ipv6_filters_in:
+      - { seq: 1, list: "dhcpv6-list" }
+      - { seq: 2, list: "icmpv6-list" }
+      - { seq: 3, list: "tunnel-list" }
+      - { seq: 100, list: "block-list" }
+    ipv6_filters_out:
+      - { seq: 1, list: "dhcpv6-list" }
+      - { seq: 2, list: "icmpv6-list" }
+      - { seq: 3, list: "tunnel-list" }
+      - { seq: 100, list: "dflt-list" }
+    shutdown: false
+
+  - name: "GigaEthernet1.0"
+    shutdown: true
+
+  - name: "GigaEthernet2.0"
+    description: "MainLAN_AP_trunk_untag"
+    ip_address: "192.168.0.254/24"
+    ip_dhcp_binding: "main"
+    ipv6_enable: true
+    ipv6_dhcp_server: "dhcpv6-sv"
+    ipv6_nd_ra: true
+    ipv6_nd_ra_other_config_flag: true
+    bridge_group: 1
+    http_server_ip_enable: true
+    shutdown: false
+
+  - name: "GigaEthernet2.8"
+    description: "GuestLAN_AP_tagged_vlan8"
+    encapsulation: "dot1q 8 tpid 8100"
+    auto_connect: true
+    bridge_group: 8
+    shutdown: false
+
+  - name: "GigaEthernet2.10"
+    description: "MgmtLAN_AP_tagged_vlan10"
+    encapsulation: "dot1q 10 tpid 8100"
+    auto_connect: true
+    bridge_group: 10
+    shutdown: false
+
+  - name: "GigaEthernet2.20"
+    description: "ServerLAN_AP_tagged_vlan20"
+    encapsulation: "dot1q 20 tpid 8100"
+    auto_connect: true
+    bridge_group: 20
+    shutdown: false
+
+  - name: "GigaEthernet2.30"
+    description: "ClientLAN_AP_tagged_vlan30"
+    encapsulation: "dot1q 30 tpid 8100"
+    auto_connect: true
+    bridge_group: 30
+    shutdown: false
+
+  - name: "GigaEthernet2.4"
+    description: "IoTLAN_AP_tagged_vlan40"
+    encapsulation: "dot1q 40 tpid 8100"
+    auto_connect: true
+    bridge_group: 4
+    shutdown: false
+
+  - name: "BVI8"
+    description: "GuestLAN_Interface"
+    ip_address: "192.168.8.254/24"
+    ip_dhcp_binding: "guest"
+    ip_filter_in: { seq: 1, list: "guest-acl" }
+    bridge_group: 8
+    shutdown: false
+
+  - name: "BVI10"
+    description: "MgmtLAN_Interface"
+    ip_address: "192.168.10.254/24"
+    ip_dhcp_binding: "vlan10"
+    ipv6_enable: true
+    # ipv6_dhcp_server は省略: dhcpv6-sv は BVI1 に bind 済みで複数 BVI への二重 bind は不可
+    # IPv6 アドレス割り当ては SLAAC (ipv6 nd ra enable) で賄う
+    ipv6_nd_ra: true
+    ipv6_nd_ra_other_config_flag: true
+    bridge_group: 10
+    http_server_ip_enable: true
+    shutdown: false
+
+  - name: "BVI20"
+    description: "ServerLAN_Interface"
+    ip_address: "192.168.20.254/24"
+    ip_dhcp_binding: "vlan20"
+    ipv6_enable: true
+    ipv6_nd_ra: true
+    ipv6_nd_ra_other_config_flag: true
+    bridge_group: 20
+    shutdown: false
+
+  - name: "BVI30"
+    description: "ClientLAN_Interface"
+    ip_address: "192.168.30.254/24"
+    ip_dhcp_binding: "vlan30"
+    ipv6_enable: true
+    ipv6_nd_ra: true
+    ipv6_nd_ra_other_config_flag: true
+    bridge_group: 30
+    shutdown: false
+
+  - name: "BVI4"
+    description: "IoTLAN_Interface"
+    ip_address: "192.168.40.254/24"
+    # ip_dhcp_binding はグローバルの "ip dhcp binding vlan40" で代替
+    # NEC IX2215 は bridge-group 4 の BVI でインターフェース固有バインディングを保持できない?
+    bridge_group: 4
+    shutdown: false
+
+  - name: "Tunnel0.0"
+    tunnel_mode: "map-e"
+    ip_address: "map-e"
+    ip_tcp_adjust_mss: "auto"
+    ip_napt_enable: true
+    ip_napt_eim_mode: true
+    shutdown: false

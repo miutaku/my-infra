@@ -1,0 +1,21 @@
+---
+- name: Configure static routes and UFS cache
+  ansible.builtin.command:
+    cmd: python3 scripts/configure_static_routes.py
+    chdir: "{{ playbook_dir }}"
+  environment:
+    IX2215_HOST: "{{ ix2215_host }}"
+    IX2215_USER: "{{ ix2215_user }}"
+    IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+    IX_ROUTES_JSON: "{{ ix_static_routes_v4 | to_json }}"
+    IX_UFS_MAX: "{{ ix_ufs_cache.max_entries }}"
+    IX_IPV6_UFS_MAX: "{{ ix_ipv6_ufs_cache.max_entries }}"
+  register: result
+  changed_when: "'changed=true' in result.stdout"
+  failed_when: "'failed=true' in result.stdout or result.rc != 0"
+  check_mode: false
+
+- name: Show result
+  ansible.builtin.debug:
+    msg: "{{ result.stdout }}"

@@ -35,3 +35,6 @@ go.work.sum
 *.terraform*
 terraform.tfstate
 terraform.tfstate.backup
+
+# Local planning docs
+ROADMAP.md

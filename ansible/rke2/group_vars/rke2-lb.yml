@@ -1,4 +1,3 @@
----
 keepalived:
   vrrp_id: 51
 
@@ -11,3 +10,7 @@ sysctl_settings:
   - net.bridge.bridge-nf-call-iptables
   - net.bridge.bridge-nf-call-ip6tables
   - net.bridge.bridge-nf-call-arptables
+
+# BSM シークレット名: KEEPALIVED_AUTH_PASS
+# 値: keepalived ノード間で共有する認証パスワード (任意の文字列)
+bsm_keepalived_auth_pass_id: "e53f5b66-5f36-4529-bfbb-b43c0140886b"

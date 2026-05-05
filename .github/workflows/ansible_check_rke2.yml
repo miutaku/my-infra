@@ -1,36 +1,44 @@
----
-name: ansible CI
+name: 'Ansible CI for RKE2'
 
 on:
   push:
-    branches:
-      - '*'
+    branches: ['**']
     paths:
       - 'ansible/rke2/**'
   pull_request:
-    branches:
-      - '*'
+    branches: [main]
     paths:
       - 'ansible/rke2/**'
 
 env:
-  PYTHON_VERSION: 3.13.2
+  PYTHON_VERSION: '3.13'
 
 jobs:
-  site-ansible-check:
+  ansible-check:
+    name: 'Lint and syntax check'
     defaults:
       run:
         working-directory: ansible/rke2
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - run: |
+
+      - name: Install pipenv and dependencies
+        run: |
           pip3 install pipenv
           pipenv install --dev
-      - run: pipenv run ansible-galaxy install -r requirements.yml
-      - run: pipenv run ansible-galaxy collection install -r requirements.yml
-      - run: pipenv run ansible-lint site.yml
-      - run: pipenv run ansible-playbook site.yml --syntax-check
+
+      - name: Install Ansible collections
+        run: |
+          pipenv run ansible-galaxy install -r requirements.yml
+          pipenv run ansible-galaxy collection install -r requirements.yml
+
+      - name: Lint
+        run: pipenv run ansible-lint site.yml
+
+      - name: Syntax check
+        run: pipenv run ansible-playbook site.yml --syntax-check

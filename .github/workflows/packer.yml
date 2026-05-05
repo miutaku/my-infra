@@ -1,0 +1,44 @@
+name: 'Packer CI'
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'packer/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packer/**'
+
+jobs:
+  validate:
+    name: 'Validate (${{ matrix.template }})'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - template: ubuntu-26-04
+            extra_vars: >-
+              -var "proxmox_token_id=ci"
+              -var "proxmox_token_secret=ci"
+              -var "ssh_password=ci"
+              -var "ssh_password_hash=$6$ci"
+              -var "iso_checksum=abc123"
+          - template: truenas-scale
+            extra_vars: >-
+              -var "proxmox_token_id=ci"
+              -var "proxmox_token_secret=ci"
+              -var "admin_password=ci"
+    defaults:
+      run:
+        working-directory: packer/${{ matrix.template }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-packer@v3
+
+      - name: packer init
+        run: packer init .
+
+      - name: packer validate
+        run: packer validate ${{ matrix.extra_vars }} .

@@ -5,4 +5,5 @@ namespace: tailscale
 resources:
   - namespace.yaml
   - rbac.yaml
+  - tailscale-auth-secret.yaml
   - deployment.yaml
