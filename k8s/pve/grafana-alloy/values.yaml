@@ -65,8 +65,8 @@ alloy:
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
         ]
-        job_name         = "integrations/node_exporter"
-        scrape_interval  = "60s"
+        job_name        = "integrations/node_exporter"
+        scrape_interval = "60s"
       }
 
       // ── Kubernetes pod 自動検出 ───────────────────────────────────────────
@@ -113,16 +113,90 @@ alloy:
         scrape_interval = "60s"
       }
 
-      // ── blackbox-exporter 経由の外形監視 ─────────────────────────────────
-      // ターゲットは後で追加する。現在は IX2215 のみ。
+      // ── SNMP: IX2215 (snmp-exporter 経由) ────────────────────────────────
+      prometheus.scrape "snmp_ix2215" {
+        targets = [
+          {
+            "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
+            "__param_target"   = "192.168.0.254",
+            "__param_module"   = "ix2215_if",
+            "__param_auth"     = "ix2215_v2",
+            "instance"         = "ix2215",
+            "job"              = "snmp",
+          },
+        ]
+        metrics_path    = "/snmp"
+        forward_to      = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "60s"
+      }
+
+      // ── PVE exporter: pve-x570 / pve-b550m ───────────────────────────────
+      prometheus.scrape "pve_x570" {
+        targets = [
+          {
+            "__address__"    = "pve-exporter.monitoring.svc.cluster.local:9221",
+            "__param_target" = "192.168.10.115",
+            "instance"       = "pve-x570",
+            "job"            = "pve",
+          },
+        ]
+        metrics_path    = "/pve"
+        forward_to      = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "60s"
+      }
+
+      prometheus.scrape "pve_b550m" {
+        targets = [
+          {
+            "__address__"    = "pve-exporter.monitoring.svc.cluster.local:9221",
+            "__param_target" = "192.168.10.119",
+            "instance"       = "pve-b550m",
+            "job"            = "pve",
+          },
+        ]
+        metrics_path    = "/pve"
+        forward_to      = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "60s"
+      }
+
+      // ── node_exporter: 非 k8s VM (static) ───────────────────────────────
+      // node_exporter が各 VM にインストール済みであること (ansible/monitoring)
+      prometheus.scrape "node_static" {
+        targets = [
+          { "__address__" = "192.168.20.121:9100", "instance" = "bastion-01",       "job" = "node" },
+          { "__address__" = "192.168.20.122:9100", "instance" = "bastion-02",       "job" = "node" },
+          { "__address__" = "192.168.20.101:9100", "instance" = "dev-app-server",   "job" = "node" },
+          { "__address__" = "192.168.20.150:9100", "instance" = "dev-rec-server",   "job" = "node" },
+          { "__address__" = "192.168.20.151:9100", "instance" = "prd-rec-server",   "job" = "node" },
+          { "__address__" = "192.168.20.191:9100", "instance" = "nas-01",           "job" = "node" },
+          { "__address__" = "192.168.20.192:9100", "instance" = "nas-02",           "job" = "node" },
+        ]
+        forward_to = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        job_name        = "integrations/node_exporter"
+        scrape_interval = "60s"
+      }
+
+      // ── blackbox-exporter: HTTP 外形監視 ─────────────────────────────────
       prometheus.scrape "blackbox_http" {
         targets = [
           {
-            "__address__"      = "blackbox-exporter.monitoring.svc.cluster.local:9115",
-            "__param_target"   = "http://192.168.20.254",
-            "__param_module"   = "http_2xx",
-            "instance"         = "ix2215",
-            "job"              = "blackbox",
+            "__address__"    = "blackbox-exporter.monitoring.svc.cluster.local:9115",
+            "__param_target" = "http://192.168.20.254",
+            "__param_module" = "http_2xx",
+            "instance"       = "ix2215",
+            "job"            = "blackbox_http",
           },
         ]
         metrics_path    = "/probe"
@@ -131,6 +205,30 @@ alloy:
           prometheus.remote_write.grafana_cloud.receiver,
         ]
         scrape_interval = "60s"
+      }
+
+      // ── blackbox-exporter: ICMP 死活監視 ─────────────────────────────────
+      prometheus.scrape "blackbox_icmp" {
+        targets = [
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.254",   "__param_module" = "icmp", "instance" = "ix2215",          "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.115",  "__param_module" = "icmp", "instance" = "pve-x570",         "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.119",  "__param_module" = "icmp", "instance" = "pve-b550m",        "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.121",  "__param_module" = "icmp", "instance" = "bastion-01",       "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.122",  "__param_module" = "icmp", "instance" = "bastion-02",       "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.101",  "__param_module" = "icmp", "instance" = "dev-app-server",   "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.150",  "__param_module" = "icmp", "instance" = "dev-rec-server",   "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.151",  "__param_module" = "icmp", "instance" = "prd-rec-server",   "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.191",  "__param_module" = "icmp", "instance" = "nas-01",           "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.192",  "__param_module" = "icmp", "instance" = "nas-02",           "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.135",  "__param_module" = "icmp", "instance" = "lb-01",            "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.136",  "__param_module" = "icmp", "instance" = "lb-02",            "job" = "blackbox_icmp" },
+        ]
+        metrics_path    = "/probe"
+        forward_to      = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "30s"
       }
 
       // ── Remote write: VictoriaMetrics (クラスタ内) ────────────────────────

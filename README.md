@@ -162,6 +162,64 @@ kubens               # namespace 一覧
 | Packer TrueNAS | [packer/truenas-scale/README.md](./packer/truenas-scale/README.md) | テンプレートビルド |
 | Actions Runner (OKE) | [k8s/oci/apps/actions-runner/README.md](./k8s/oci/apps/actions-runner/README.md) | OKE 上の GitHub runner |
 
+## 監視アーキテクチャ
+
+```
+各ホスト/機器
+  ├─ node_exporter :9100    (VM: ansible/monitoring で導入)
+  ├─ snmp-exporter :9116    (IX2215 SNMP v2c, community: monitor)
+  └─ pve-exporter  :9221    (Proxmox API)
+         │
+         ▼
+  Grafana Alloy (RKE2 DaemonSet)
+  ├─ scrape: node / pods / SNMP / PVE / static VMs / blackbox
+  ├─ remote_write → VictoriaMetrics (クラスタ内 :8428)
+  └─ remote_write → Grafana Cloud (remote_write endpoint)
+         │
+         ▼
+  Grafana Cloud ← PDC Tunnel (VictoriaMetrics経由)
+```
+
+### メトリクス収集対象
+
+| ホスト / 機器 | IP | 収集方法 | 状態 |
+|---|---|---|---|
+| IX2215 | 192.168.0.254 | snmp-exporter (IF-MIB) | ✅ |
+| IX2215 | 192.168.0.254 | blackbox HTTP/ICMP | ✅ |
+| pve-x570 | 192.168.10.115 | pve-exporter | BSM 要設定 |
+| pve-b550m | 192.168.10.119 | pve-exporter | BSM 要設定 |
+| RKE2 nodes ×5 | 192.168.20.126-130 | Alloy DaemonSet (node) | ✅ |
+| LB ×2 | 192.168.20.135-136 | blackbox ICMP | ✅ |
+| bastion-01/02 | 192.168.20.121-122 | node_exporter :9100 | Ansible 要実行 |
+| dev-app-server | 192.168.20.101 | node_exporter :9100 | Ansible 要実行 |
+| dev-rec-server | 192.168.20.150 | node_exporter :9100 | Ansible 要実行 |
+| prd-rec-server | 192.168.20.151 | node_exporter :9100 | Ansible 要実行 |
+| nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | Ansible 要実行 |
+| OKE nodes ×2 | 10.0.1.x | Alloy DaemonSet (node) | ✅ |
+
+### node_exporter について
+
+node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
+テンプレートから作成した VM は起動時点で `:9100` でメトリクスを公開する。  
+既存 VM（テンプレート再ビルド前に作成済み）は手動で導入が必要。
+
+### PVE exporter の有効化（BSM シークレット登録後）
+
+Proxmox Web UI で API トークンを発行し BSM に登録:
+- `PVE_MONITORING_TOKEN_ID` — 例: `root@pam!monitoring`
+- `PVE_MONITORING_TOKEN_SECRET` — トークンシークレット
+
+### Grafana Cloud 推奨ダッシュボード
+
+| ダッシュボード | ID |
+|---|---|
+| Node Exporter Full | 1860 |
+| SNMP Interface Stats | 11169 |
+| Proxmox VE | 10347 |
+| Blackbox Exporter | 7587 |
+
+---
+
 ## CI / GitHub Actions
 
 | ワークフロー | トリガーパス | 内容 |
