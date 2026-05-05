@@ -55,7 +55,6 @@ alloy:
         procfs_path = "/host/proc"
         sysfs_path  = "/host/sys"
         rootfs_path = "/host/root"
-        uname_syscall_path = "/host/root/proc/sys/kernel/osrelease"
       }
 
       prometheus.scrape "node" {
