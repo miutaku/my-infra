@@ -1,17 +1,25 @@
 controller:
   type: daemonset
-  # 全ノードで動かす (taint があっても tolerationで通す)
   tolerations:
     - operator: Exists
-  # ノードメトリクス収集のため hostPID が必要
   hostPID: true
+  volumes:
+    extra:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: procfs
+        hostPath:
+          path: /proc
+      - name: sysfs
+        hostPath:
+          path: /sys
 
 alloy:
   securityContext:
     privileged: true
     allowPrivilegeEscalation: true
 
-  # Grafana Cloud 認証情報 (ExternalSecret grafana-cloud-credentials から注入)
   extraEnv:
     - name: GRAFANA_CLOUD_METRICS_URL
       valueFrom:
@@ -28,6 +36,17 @@ alloy:
         secretKeyRef:
           name: grafana-cloud-credentials
           key: metrics-password
+
+  extraVolumeMounts:
+    - name: rootfs
+      mountPath: /host/root
+      readOnly: true
+    - name: procfs
+      mountPath: /host/proc
+      readOnly: true
+    - name: sysfs
+      mountPath: /host/sys
+      readOnly: true
 
   configMap:
     create: true
@@ -130,29 +149,6 @@ alloy:
           }
         }
       }
-
-# ホスト filesystem をマウント (unix exporter 用)
-extraVolumes:
-  - name: rootfs
-    hostPath:
-      path: /
-  - name: procfs
-    hostPath:
-      path: /proc
-  - name: sysfs
-    hostPath:
-      path: /sys
-
-extraVolumeMounts:
-  - name: rootfs
-    mountPath: /host/root
-    readOnly: true
-  - name: procfs
-    mountPath: /host/proc
-    readOnly: true
-  - name: sysfs
-    mountPath: /host/sys
-    readOnly: true
 
 serviceAccount:
   create: true
