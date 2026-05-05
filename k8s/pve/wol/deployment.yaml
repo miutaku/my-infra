@@ -30,6 +30,9 @@ spec:
       containers:
         - name: gptwol
           image: misterbabou/gptwol:latest
+          securityContext:
+            capabilities:
+              add: ["NET_RAW"]
           env:
             - name: PORT
               value: "5000"
