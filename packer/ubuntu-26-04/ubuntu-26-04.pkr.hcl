@@ -80,6 +80,11 @@ build {
     destination = "/tmp/sync-hostname-from-pve.service"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/files/node_exporter.service"
+    destination = "/tmp/node_exporter.service"
+  }
+
   provisioner "shell" {
     environment_vars = ["DEBIAN_FRONTEND=noninteractive", "NEEDRESTART_MODE=l"]
     inline = [
@@ -93,6 +98,14 @@ build {
       "sudo install -m 0755 /tmp/sync-hostname-from-pve.sh /usr/local/bin/sync-hostname-from-pve",
       "sudo install -m 0644 /tmp/sync-hostname-from-pve.service /etc/systemd/system/sync-hostname-from-pve.service",
       "sudo systemctl enable sync-hostname-from-pve.service",
+      # Install node_exporter
+      "sudo useradd --system --shell /sbin/nologin --no-create-home node_exporter || true",
+      "curl -fsSL https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz -o /tmp/node_exporter.tar.gz",
+      "tar -xzf /tmp/node_exporter.tar.gz -C /tmp/",
+      "sudo install -m 0755 /tmp/node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin/node_exporter",
+      "sudo install -m 0644 /tmp/node_exporter.service /etc/systemd/system/node_exporter.service",
+      "sudo systemctl enable node_exporter.service",
+      "rm -rf /tmp/node_exporter*",
       # Configure cloud-init for Proxmox NoCloud datasource
       "echo 'datasource_list: [NoCloud, ConfigDrive]' | sudo tee /etc/cloud/cloud.cfg.d/99-pve.cfg",
       "sudo cloud-init clean --logs",

@@ -1,0 +1,128 @@
+serviceMonitor:
+  enabled: false
+
+service:
+  port: 9116
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+
+# IX2215 向け IF-MIB + system MIB モジュール定義
+# community: monitor (ix2215 group_vars/all.yml で設定済み)
+snmpConfig:
+  auths:
+    ix2215_v2:
+      community: monitor
+      security_level: noAuthNoPriv
+      version: 2
+  modules:
+    ix2215_if:
+      walk:
+        - 1.3.6.1.2.1.1.3    # sysUpTime
+        - 1.3.6.1.2.1.2.2    # interfaces table
+        - 1.3.6.1.2.1.31.1.1 # ifXTable (64-bit counters)
+      get:
+        - 1.3.6.1.2.1.1.1.0  # sysDescr
+        - 1.3.6.1.2.1.1.5.0  # sysName
+      metrics:
+        - name: sysUpTime
+          oid: 1.3.6.1.2.1.1.3.0
+          type: gauge
+          help: Uptime in hundredths of a second
+        - name: ifOperStatus
+          oid: 1.3.6.1.2.1.2.2.1.8
+          type: gauge
+          help: Current operational state of the interface
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifInOctets
+          oid: 1.3.6.1.2.1.2.2.1.10
+          type: counter
+          help: Total octets received on interface
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifOutOctets
+          oid: 1.3.6.1.2.1.2.2.1.16
+          type: counter
+          help: Total octets transmitted on interface
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifInErrors
+          oid: 1.3.6.1.2.1.2.2.1.14
+          type: counter
+          help: Inbound packet errors
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifOutErrors
+          oid: 1.3.6.1.2.1.2.2.1.20
+          type: counter
+          help: Outbound packet errors
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifHCInOctets
+          oid: 1.3.6.1.2.1.31.1.1.1.6
+          type: counter
+          help: 64-bit total octets received
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+            - labels: [ifIndex]
+              labelname: ifAlias
+              oid: 1.3.6.1.2.1.31.1.1.1.18
+              type: DisplayString
+        - name: ifHCOutOctets
+          oid: 1.3.6.1.2.1.31.1.1.1.10
+          type: counter
+          help: 64-bit total octets transmitted
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+            - labels: [ifIndex]
+              labelname: ifAlias
+              oid: 1.3.6.1.2.1.31.1.1.1.18
+              type: DisplayString
