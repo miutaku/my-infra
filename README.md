@@ -32,19 +32,33 @@
          │  - Grafana PDC agent  │    │  - tfc-agent            │
          │  - cloudflared        │    │  - grafana-alloy        │
          │  - MetalLB / Tailscale│    │  - actions-runner       │
+         │  - blackbox-exporter  │    │                          │
+         │  - CoreDNS            │    │                          │
+         │  - WoL (gptwol)       │    │                          │
+         │  - tfc-agent          │    │                          │
          │                       │    │                          │
          │  IX2215 (ルーター)     │    │                          │
+         │  - VLAN 10/20/30/40   │    │                          │
          │  - DHCP 静的リース     │    │                          │
          │  - map-e (IPv6)       │    │                          │
          │                       │    │                          │
-         │  PBS (192.168.0.117)  │    │                          │
-         │  - Proxmox Backup     │    │                          │
          └───────────────────────┘    └──────────────────────────┘
 ```
 
 ## ドメイン
 
-`miutaku.work` — Cloudflare で管理。Let's Encrypt (DNS01) で証明書取得。
+`miutaku.work` — Cloudflare で管理。Let's Encrypt (DNS01) で証明書取得。  
+`miutaku.local` — CoreDNS (RKE2 on MetalLB `192.168.20.201`) で内部名前解決。
+
+## ネットワーク構成
+
+| VLAN | サブネット | 用途 |
+|------|-----------|------|
+| (native) | 192.168.0.0/24 | レガシー / 移行期間中 |
+| VLAN 10 | 192.168.10.0/24 | 管理 (PVE / RPi / nanokvm / スイッチ / AP) |
+| VLAN 20 | 192.168.20.0/24 | サーバ (RKE2 / NAS / MetalLB pool: .200-.226) |
+| VLAN 30 | 192.168.30.0/24 | クライアント (PC / ゲーム機) |
+| VLAN 40 | 192.168.40.0/24 | IoT / スマートホーム |
 
 ## シークレット管理
 
@@ -62,7 +76,7 @@ my-infra/
 │   └── cloudflare/     Cloudflare Tunnel / DNS / Zero Trust (TFC workspace: cloudflare)
 ├── ansible/
 │   ├── rke2/           RKE2 クラスタ構成 (HAProxy + Keepalived + RKE2)
-│   ├── ix2215/         IX2215 DHCP 静的リース管理
+│   ├── ix2215/         IX2215 VLAN・DHCP 静的リース管理
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
 │   ├── pve/            宅内 RKE2 (ArgoCD App-of-Apps)
@@ -98,10 +112,10 @@ my-infra/
 | PVE Terraform | [terraform/pve/README.md](./terraform/pve/README.md) | VM 作成, MAC/IP 管理, Ansible 自動生成 |
 | Cloudflare Terraform | [terraform/cloudflare/README.md](./terraform/cloudflare/README.md) | Tunnel, DNS, Zero Trust |
 | RKE2 Ansible | [ansible/rke2/README.md](./ansible/rke2/README.md) | RKE2 HA クラスタ構成 |
-| IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | DHCP 静的リース |
+| IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | VLAN・DHCP 静的リース |
 | PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
 | ArgoCD Bootstrap (RKE2) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSM シークレット一覧, App-of-Apps |
-| Flux Bootstrap (OKE) | [k8s/oci/flux/README.md](./k8s/oci/flux/README.md) | BSM シークレット一覧, Kustomization 順序 |
+| Flux Bootstrap (OKE) | [k8s/oci/flux/README.md](./k8s/oci/flux/README.md) | BSM シークレット一覧, TLS cert 手順, Kustomization 順序 |
 | PDC Agent | [k8s/pve/pdc-agent/README.md](./k8s/pve/pdc-agent/README.md) | Grafana PDC トンネル |
 | Packer Ubuntu | [packer/ubuntu-26-04/README.md](./packer/ubuntu-26-04/README.md) | テンプレートビルド |
 | Packer TrueNAS | [packer/truenas-scale/README.md](./packer/truenas-scale/README.md) | テンプレートビルド |

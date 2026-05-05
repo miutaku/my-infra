@@ -15,4 +15,5 @@ spec:
         namespace: flux-system
   values:
     replicaCount: 1
-    # bitwarden provider は CRD インストール後に自動で有効化される
+    bitwarden-sdk-server:
+      enabled: true
