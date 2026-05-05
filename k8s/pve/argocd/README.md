@@ -115,12 +115,28 @@ kubectl apply -f k8s/pve/argocd/root-app.yaml
 
 Cloudflare Tunnel 経由でアクセスする (cloudflared が同期された後):
 ```
-https://argocd.<your-domain>
+https://argocd.miutaku.work
 ```
 
-初期パスワードの取得:
+> **Note**: Cloudflare Access で保護されているため、ArgoCD ログイン画面の前に
+> Cloudflare の SSO 認証 (メールアドレス確認) が求められる。
+
+### ログイン情報
+
+| 項目 | 値 |
+|------|----|
+| ユーザー名 | `admin` |
+| 初期パスワード | 下記コマンドで取得 |
+
 ```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+初回ログイン後は UI の **User Info → Update Password** からパスワードを変更すること。
+変更後は `argocd-initial-admin-secret` を削除して構わない:
+
+```bash
+kubectl -n argocd delete secret argocd-initial-admin-secret
 ```
 
 ## アプリの同期順序 (sync-wave)
