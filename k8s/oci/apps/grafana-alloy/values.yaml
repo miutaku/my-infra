@@ -2,6 +2,17 @@ controller:
   type: daemonset
   nodeSelector:
     kubernetes.io/arch: arm64
+  volumes:
+    extra:
+      - name: host-root
+        hostPath:
+          path: /
+      - name: host-proc
+        hostPath:
+          path: /proc
+      - name: host-sys
+        hostPath:
+          path: /sys
 
 alloy:
   extraEnv:
@@ -20,6 +31,22 @@ alloy:
         secretKeyRef:
           name: grafana-cloud-credentials
           key: GRAFANA_CLOUD_METRICS_PASSWORD
+
+  mounts:
+    extra:
+      - name: host-root
+        mountPath: /host/root
+        mountPropagation: HostToContainer
+        readOnly: true
+      - name: host-proc
+        mountPath: /host/proc
+        readOnly: true
+      - name: host-sys
+        mountPath: /host/sys
+        readOnly: true
+
+  securityContext:
+    privileged: true
 
   configMap:
     content: |
@@ -77,32 +104,5 @@ alloy:
         }
       }
 
-  mounts:
-    extra:
-      - name: host-root
-        mountPath: /host/root
-        mountPropagation: HostToContainer
-        readOnly: true
-      - name: host-proc
-        mountPath: /host/proc
-        readOnly: true
-      - name: host-sys
-        mountPath: /host/sys
-        readOnly: true
-
-  securityContext:
-    privileged: true
-
 podAnnotations:
   prometheus.io/scrape: "false"
-
-extraVolumes:
-  - name: host-root
-    hostPath:
-      path: /
-  - name: host-proc
-    hostPath:
-      path: /proc
-  - name: host-sys
-    hostPath:
-      path: /sys
