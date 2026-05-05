@@ -181,6 +181,7 @@ alloy:
           { "__address__" = "192.168.20.192:9100", "instance" = "nas-02",           "job" = "node" },
           { "__address__" = "192.168.20.135:9100", "instance" = "lb-01",            "job" = "node" },
           { "__address__" = "192.168.20.136:9100", "instance" = "lb-02",            "job" = "node" },
+          { "__address__" = "192.168.40.1:9100",   "instance" = "mm-server-01",     "job" = "node" },
         ]
         forward_to = [
           prometheus.remote_write.victoria_metrics.receiver,
