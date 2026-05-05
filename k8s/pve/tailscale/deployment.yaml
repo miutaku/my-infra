@@ -33,7 +33,7 @@ spec:
                   key: TS_AUTHKEY
             # 広報するsubnet routes
             - name: TS_ROUTES
-              value: "192.168.0.0/24"
+              value: "192.168.0.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24"
             # Tailscaleのホスト名をk8sのノード名に設定
             - name: TS_HOSTNAME
               valueFrom:

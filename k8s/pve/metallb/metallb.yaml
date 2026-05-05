@@ -25,7 +25,7 @@ spec:
 #spec:
 #  myASN: 64520        # MetalLB 側 ASN
 #  peerASN: 64512      # ルータ側 ASN
-#  peerAddress: 192.168.0.254
+#  peerAddress: 192.168.20.254
 #---
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
