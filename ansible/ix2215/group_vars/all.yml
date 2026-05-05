@@ -225,6 +225,7 @@ ix_dhcp_profiles:
   # ------------------------------------------------------------------
   - name: "vlan40"
     assignable_range: "192.168.40.1 192.168.40.100"
+    default_gateway: "192.168.40.254"
     dns_server: "192.168.40.254"
     fixed_assignments:
       - { ip: "192.168.40.51",  mac: "52:54:00:99:00:01" } # mm-server-01

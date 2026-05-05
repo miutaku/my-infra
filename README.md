@@ -193,7 +193,7 @@ kubens               # namespace 一覧
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
 | dev-rec-server | 192.168.20.150 | node_exporter :9100 | ✅ |
 | prd-rec-server | 192.168.20.151 | node_exporter :9100 | ✅ |
-| mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | IX2215 VLAN20↔40 ルーティング追加後に有効化 |
+| mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | ✅ (VLAN40) |
 | nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
 | OKE nodes ×2 | 10.0.1.x | Alloy DaemonSet (node) | ✅ |
 
