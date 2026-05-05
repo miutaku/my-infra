@@ -37,16 +37,17 @@ alloy:
           name: grafana-cloud-credentials
           key: metrics-password
 
-  extraVolumeMounts:
-    - name: rootfs
-      mountPath: /host/root
-      readOnly: true
-    - name: procfs
-      mountPath: /host/proc
-      readOnly: true
-    - name: sysfs
-      mountPath: /host/sys
-      readOnly: true
+  mounts:
+    extra:
+      - name: rootfs
+        mountPath: /host/root
+        readOnly: true
+      - name: procfs
+        mountPath: /host/proc
+        readOnly: true
+      - name: sysfs
+        mountPath: /host/sys
+        readOnly: true
 
   configMap:
     create: true
