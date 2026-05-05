@@ -38,3 +38,7 @@ terraform.tfstate.backup
 
 # Local planning docs
 ROADMAP.md
+
+# SNMP MIB files (vendor licensing / NEC terms of use)
+*.mib
+k8s/pve/snmp-exporter/generator/snmp.yml
