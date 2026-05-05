@@ -4,6 +4,8 @@ resources:
   - namespace.yaml
   - grafana-cloud-secret.yaml
   - helmrelease.yaml
+generatorOptions:
+  disableNameSuffixHash: true
 configMapGenerator:
   - name: grafana-alloy-values
     namespace: monitoring

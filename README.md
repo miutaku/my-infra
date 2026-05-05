@@ -102,6 +102,47 @@ my-infra/
 [2] k8s/oci/flux/         → Flux v2 Bootstrap → GitOps 開始
 ```
 
+## kubectl 操作環境
+
+2 つの k8s クラスタを管理するために、kubeconfig を統合して使う。
+
+### コンテキスト一覧
+
+| コンテキスト名 | クラスタ | 取得方法 |
+|---|---|---|
+| `rke2-pve` | 宅内 RKE2 (Proxmox) | `scp bastion-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml` |
+| `oke-cloud` | OCI OKE | `oci ce cluster create-kubeconfig --cluster-id <id> --file ~/.kube/oke.yaml --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT` |
+
+### セットアップ手順
+
+```bash
+# 1. 各クラスタの kubeconfig を取得して名前変更
+scp bastion-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml
+oci ce cluster create-kubeconfig --cluster-id <cluster-ocid> --file ~/.kube/oke.yaml \
+  --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT
+
+# 2. context 名を変更 (rke2.yaml)
+kubectl --kubeconfig ~/.kube/rke2.yaml config rename-context default rke2-pve
+
+# 3. 統合
+KUBECONFIG=~/.kube/rke2.yaml:~/.kube/oke.yaml kubectl config view --flatten > ~/.kube/config
+
+# 4. kubectx / kubens インストール (~/bin/ へ)
+curl -sLo ~/bin/kubectx https://raw.githubusercontent.com/ahmetb/kubectx/master/kubectx && chmod +x ~/bin/kubectx
+curl -sLo ~/bin/kubens  https://raw.githubusercontent.com/ahmetb/kubectx/master/kubens  && chmod +x ~/bin/kubens
+```
+
+### 日常操作
+
+```bash
+kubectx              # コンテキスト一覧
+kubectx rke2-pve     # 宅内 RKE2 に切り替え
+kubectx oke-cloud    # OCI OKE  に切り替え
+kubens               # namespace 一覧
+```
+
+---
+
 ## 各コンポーネントの README
 
 作業前に必ず該当 README を読むこと。
