@@ -1,20 +1,19 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: oci-ingress-nginx
+  name: oci-cert-manager-config
   namespace: flux-system
 spec:
   interval: 10m
   dependsOn:
-    - name: oci-cert-manager-config
+    - name: oci-cert-manager
   sourceRef:
     kind: GitRepository
     name: my-infra
-  path: ./k8s/oci/infrastructure/ingress-nginx
+  path: ./k8s/oci/infrastructure/cert-manager-config
   prune: true
   timeout: 5m
   healthChecks:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: ingress-nginx-controller
-      namespace: ingress-nginx
+    - apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      name: letsencrypt-prod

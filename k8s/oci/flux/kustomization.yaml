@@ -6,6 +6,7 @@ resources:
   - kustomization-external-secrets.yaml
   - kustomization-external-secrets-config.yaml
   - kustomization-cert-manager.yaml
+  - kustomization-cert-manager-config.yaml
   - kustomization-ingress-nginx.yaml
   - kustomization-longhorn.yaml
   - kustomization-apps.yaml
