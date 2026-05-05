@@ -17,7 +17,8 @@ import os
 import re
 import sys
 
-from netmiko import ConnectHandler
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
+from ix_connect import connect, get_running_config
 
 
 def to_ix_mac(mac: str) -> str:
@@ -28,31 +29,34 @@ def to_ix_mac(mac: str) -> str:
     return f"{clean[0:4]}.{clean[4:8]}.{clean[8:12]}"
 
 
-def parse_existing_assignments(config_output: str) -> dict[str, str]:
-    """show ip dhcp profile の Fixed assignments テーブルから ip -> mac (IX形式) の辞書で返す"""
-    result: dict[str, str] = {}
-    in_fixed = False
-    ip_mac_pattern = re.compile(
-        r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+def parse_existing_assignments(running: str, dhcp_profile: str) -> dict[str, str]:
+    """running-config の ip dhcp profile ブロックから fixed-assignment を ip -> mac (IX形式) の辞書で返す。
+
+    show ip dhcp profile コマンドは fixed-assignment を表示しないため running-config をパースする。
+    """
+    block_match = re.search(
+        r"^ip dhcp profile " + re.escape(dhcp_profile) + r"\n((?:[ \t]+.*\n)*)",
+        running,
+        re.MULTILINE,
     )
-    for line in config_output.splitlines():
-        if "Fixed assignments" in line:
-            in_fixed = True
-            continue
-        if "Dynamic assignments" in line:
-            in_fixed = False
-            continue
-        if in_fixed:
-            m = ip_mac_pattern.search(line)
-            if m:
-                result[m.group(1)] = to_ix_mac(m.group(2))
+    if not block_match:
+        return {}
+
+    fixed_pattern = re.compile(
+        r"fixed-assignment\s+"
+        r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+"
+        r"([0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}"
+        r"|[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+    )
+    result: dict[str, str] = {}
+    for line in block_match.group(1).splitlines():
+        m = fixed_pattern.search(line)
+        if m:
+            result[m.group(1)] = to_ix_mac(m.group(2))
     return result
 
 
 def main() -> None:
-    host = os.environ["IX2215_HOST"]
-    username = os.environ["IX2215_USER"]
-    password = os.environ["IX2215_PASSWORD"]
     dhcp_profile = os.environ.get("DHCP_PROFILE", "main")
     assignments_raw = json.loads(os.environ["DHCP_ASSIGNMENTS_JSON"])
     dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
@@ -65,46 +69,39 @@ def main() -> None:
         except ValueError:
             print(f"SKIP {a['name']}: invalid MAC '{a['mac']}' (update group_vars/all.yml)", flush=True)
 
-    device = {
-        "device_type": "nec_ix",
-        "host": host,
-        "username": username,
-        "password": password,
-    }
+    with connect() as conn:
+        running = get_running_config(conn)
 
-    with ConnectHandler(**device) as conn:
-        conn.config_mode()
-        output = conn.send_command(f"show ip dhcp profile {dhcp_profile}", read_timeout=60)
-        conn.exit_config_mode()
-        existing = parse_existing_assignments(output)
+    existing = parse_existing_assignments(running, dhcp_profile)
 
-        missing = [
-            a for a in assignments
-            if existing.get(a["ip"]) != a["mac"]
-        ]
+    missing = [
+        a for a in assignments
+        if existing.get(a["ip"]) != a["mac"]
+    ]
 
-        if not missing:
-            dry = " dry_run=true" if dry_run else ""
-            print(f"changed=false{dry} msg='All DHCP static leases already configured'")
-            return
+    if not missing:
+        dry = " dry_run=true" if dry_run else ""
+        print(f"changed=false{dry} msg='All DHCP static leases already configured'")
+        return
 
-        names = [a["name"] for a in missing]
+    names = [a["name"] for a in missing]
 
-        if dry_run:
-            print(f"changed=false dry_run=true msg='Would add {len(missing)} DHCP lease(s): {names}'")
-            for a in missing:
-                print(f"  + fixed-assignment {a['ip']} {a['mac']}  # {a['name']}")
-            return
-
-        config_commands = [f"ip dhcp profile {dhcp_profile}"]
+    if dry_run:
+        print(f"changed=false dry_run=true msg='Would add {len(missing)} DHCP lease(s): {names}'")
         for a in missing:
-            config_commands.append(f"  fixed-assignment {a['ip']} {a['mac']}")
-        config_commands.append("  exit")
+            print(f"  + fixed-assignment {a['ip']} {a['mac']}  # {a['name']}")
+        return
 
+    config_commands = [f"ip dhcp profile {dhcp_profile}"]
+    for a in missing:
+        config_commands.append(f"  fixed-assignment {a['ip']} {a['mac']}")
+    config_commands.append("  exit")
+
+    with connect() as conn:
         conn.send_config_set(config_commands)
         conn.save_config()
 
-        print(f"changed=true msg='Added {len(missing)} DHCP lease(s): {names}'")
+    print(f"changed=true msg='Added {len(missing)} DHCP lease(s): {names}'")
 
 
 if __name__ == "__main__":

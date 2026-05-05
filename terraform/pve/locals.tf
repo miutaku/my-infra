@@ -1,5 +1,5 @@
 locals {
   ubuntu_template  = "template-ubuntu-26-04-home-amd64"
-  truenas_template = "template-nas-truenas-scale-home-amd64"
+  truenas_template = "template-nas-truenas-scale-23-10-home-amd64"
   all_nodes        = ["pve-x570", "pve-b550m"]
 }

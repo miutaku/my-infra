@@ -7,10 +7,26 @@
 
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from ix_connect import connect, get_running_config, emit
+
+
+def get_interface_block(running: str, iface_name: str) -> str:
+    """running-config から特定インターフェースのブロックのみ抽出する。
+
+    全体の文字列で検索すると 'no shutdown' や 'ipv6 enable' が別インターフェースに
+    存在するため false-positive が発生する。インターフェース単位で照合することで
+    それを防ぐ。
+    """
+    m = re.search(
+        r"^interface " + re.escape(iface_name) + r"\n((?:[ \t]+.*\n)*)",
+        running,
+        re.MULTILINE,
+    )
+    return m.group(0) if m else ""
 
 
 def iface_lines(iface: dict) -> list[str]:
@@ -90,7 +106,8 @@ def main() -> None:
     # interface blocks
     for iface in ifaces:
         lines = iface_lines(iface)
-        missing = [l for l in lines if l.strip() not in running]
+        iface_block = get_interface_block(running, iface["name"])
+        missing = [l for l in lines if l.strip() not in iface_block]
         if missing:
             missing_blocks.append((f"interface {iface['name']}", missing))
 
@@ -114,23 +131,26 @@ def main() -> None:
         emit(False, True, f"Would update {len(missing_blocks)} block(s)", diff)
         return
 
-    config_cmds = []
-    for iface in ifaces:
-        lines = iface_lines(iface)
-        missing = [l for l in lines if l.strip() not in running]
-        if missing:
-            config_cmds.append(f"interface {iface['name']}")
-            config_cmds.extend(missing)
-            config_cmds.append("  exit")
-
-    if ikev2_lines:
-        missing_ikev2 = [l for l in ikev2_lines if l.strip() not in running]
-        if missing_ikev2:
-            config_cmds.extend(ikev2_lines)
-            config_cmds.append("  exit")
-
+    # 1インターフェースずつ送信する。一括送信するとNEC IXがBVI/サブインターフェース
+    # 作成時に出力するメッセージでNetmikoのプロンプト検出が失敗するため。
     with connect() as conn:
-        conn.send_config_set(config_cmds)
+        for iface in ifaces:
+            lines = iface_lines(iface)
+            iface_block = get_interface_block(running, iface["name"])
+            missing = [l for l in lines if l.strip() not in iface_block]
+            if missing:
+                cmds = [f"interface {iface['name']}"] + missing + ["  exit"]
+                conn.send_config_set(cmds, read_timeout=60, cmd_verify=False)
+
+        if ikev2_lines:
+            missing_ikev2 = [l for l in ikev2_lines if l.strip() not in running]
+            if missing_ikev2:
+                conn.send_config_set(
+                    ikev2_lines + ["  exit"],
+                    read_timeout=60,
+                    cmd_verify=False,
+                )
+
         conn.save_config()
 
     emit(True, False, f"Updated {len(missing_blocks)} block(s)")

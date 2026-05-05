@@ -27,7 +27,7 @@ resource "proxmox_vm_qemu" "vm" {
   machine     = var.machine
   target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
   clone       = var.clone_template
-  full_clone  = false
+  full_clone  = true
   scsihw      = "virtio-scsi-single"
 
   # cpu
