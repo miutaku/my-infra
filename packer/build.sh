@@ -10,10 +10,17 @@ shift
 
 NODE_VAR=""
 VMID_VAR=""
+URL_VAR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --node) NODE_VAR="-var proxmox_node=${2}"; shift 2 ;;
-    --vmid) VMID_VAR="-var vmid=${2}";        shift 2 ;;
+    --node)
+      case "$2" in
+        pve-x570)  URL_VAR="-var proxmox_url=https://192.168.10.115:8006/api2/json" ;;
+        pve-b550m) URL_VAR="-var proxmox_url=https://192.168.10.119:8006/api2/json" ;;
+      esac
+      NODE_VAR="-var proxmox_node=${2}"
+      shift 2 ;;
+    --vmid) VMID_VAR="-var vmid=${2}"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -45,7 +52,7 @@ case "$TEMPLATE" in
       -var "ssh_password_hash=${SSH_PASSWORD_HASH}" \
       -var "ssh_public_key=$(cat ~/.ssh/id_rsa.pub)" \
       -var "memory=4096" \
-      ${NODE_VAR} ${VMID_VAR} \
+      ${URL_VAR} ${NODE_VAR} ${VMID_VAR} \
       .
     ;;
   truenas-scale)
