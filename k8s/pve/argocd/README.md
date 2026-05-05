@@ -85,8 +85,11 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 
 | wave | アプリ |
 |------|--------|
-| -2 | external-secrets (ESO operator) |
-| -1 | bitwarden-sdk-server |
+| -2 | external-secrets (ESO operator + bitwarden-sdk-server サブチャート) |
 | 0 | external-secrets-config (ClusterSecretStore) |
 | 1 | coredns, metallb, tailscale, wol |
 | 2 | victoria-metrics, grafana-alloy, blackbox-exporter, cloudflared |
+
+> **Note**: `bitwarden-sdk-server` は `external-secrets` Helm チャートの sub-chart として提供される。
+> 独立した Helm chart (`https://charts.external-secrets.io bitwarden-sdk-server`) は存在しないため、
+> `external-secrets` の values に `bitwarden-sdk-server.enabled: true` を設定して有効化すること。
