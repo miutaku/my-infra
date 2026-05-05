@@ -1,0 +1,26 @@
+server:
+  enabled: true
+  replicaCount: 1
+
+  # 30日保持。home lab では十分
+  retentionPeriod: 30d
+
+  persistentVolume:
+    enabled: true
+    size: 20Gi
+    storageClassName: local-path  # RKE2 デフォルトの local-path-provisioner
+
+  service:
+    servicePort: 8428
+    type: ClusterIP
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+  # /api/v1/write エンドポイントで Prometheus remote_write を受け付ける
+  extraArgs:
+    httpListenAddr: ":8428"

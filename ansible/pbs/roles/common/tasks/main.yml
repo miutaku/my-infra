@@ -1,0 +1,63 @@
+---
+- name: Changed hostname
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"
+    use: systemd
+
+- name: Set timezone to Asia/Tokyo
+  community.general.timezone:
+    name: Asia/Tokyo
+
+- name: Disabled install-recommends
+  ansible.builtin.lineinfile:
+    path: "/etc/apt/apt.conf.d/00-no-install-recommends"
+    line: "{{ item }}"
+    create: true
+    state: present
+    mode: "0644"
+    owner: root
+    group: root
+  with_items:
+    - 'APT::Install-Suggests 0;'
+    - 'APT::Install-Recommends 0;'
+
+- name: Upgraded apt packages
+  ansible.builtin.apt:
+    name: '*'
+    state: present
+    update_cache: true
+    autoremove: true
+  retries: 300
+  delay: 5
+
+- name: Installed packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  with_items:
+    - vim
+  retries: 100
+  delay: 5
+
+- name: Pushed ssh public key
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    state: present
+    key: "{{ lookup('file', ssh_public_key_path) }}"
+
+- name: Disabled ssh password authentication
+  ansible.builtin.lineinfile:
+    path: "/etc/ssh/sshd_config"
+    line: "{{ item }}"
+    create: true
+    state: present
+    mode: "0644"
+    owner: root
+    group: root
+    validate: "/usr/sbin/sshd -t -f %s"
+  with_items:
+    - "PasswordAuthentication no"
+    - "PermitRootLogin yes"
+  notify:
+    - Restarted ssh

@@ -1,0 +1,20 @@
+---
+- name: Configure IP/IPv6 access lists
+  ansible.builtin.command:
+    cmd: python3 scripts/configure_access_lists.py
+    chdir: "{{ playbook_dir }}"
+  environment:
+    IX2215_HOST: "{{ ix2215_host }}"
+    IX2215_USER: "{{ ix2215_user }}"
+    IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+    IX_ACL_JSON: "{{ ix_access_lists | to_json }}"
+    IX_IPV6_ACL_JSON: "{{ ix_ipv6_access_lists | to_json }}"
+  register: result
+  changed_when: "'changed=true' in result.stdout"
+  failed_when: "'failed=true' in result.stdout or result.rc != 0"
+  check_mode: false
+
+- name: Show result
+  ansible.builtin.debug:
+    msg: "{{ result.stdout }}"

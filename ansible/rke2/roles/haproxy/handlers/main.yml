@@ -6,11 +6,3 @@
   when: not (install_haproxy.changed and ansible_check_mode)
   retries: 5
   delay: 5
-
-- name: Locked bitwarden vault
-  ansible.builtin.shell:
-    cmd: "bw lock"
-    executable: "/bin/bash"
-  delegate_to: localhost
-  check_mode: false
-  changed_when: false

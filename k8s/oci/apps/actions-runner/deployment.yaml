@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actions-runner-reventer
+  namespace: actions-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: actions-runner-reventer
+  template:
+    metadata:
+      labels:
+        app: actions-runner-reventer
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      # runner が自分自身を deregister できるよう graceful termination を長めに取る
+      terminationGracePeriodSeconds: 90
+      containers:
+        - name: runner
+          image: myoung34/github-runner:ubuntu-jammy
+          env:
+            - name: REPO_URL
+              value: "https://github.com/miutaku/reventer"
+            - name: RUNNER_NAME_PREFIX
+              value: "oci-oke"
+            - name: LABELS
+              value: "oci,oke,linux,arm64,reventer"
+            - name: EPHEMERAL
+              value: "false"
+            - name: ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: actions-runner-credentials
+                  key: github-pat
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"

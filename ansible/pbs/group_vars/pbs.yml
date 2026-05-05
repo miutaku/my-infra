@@ -1,0 +1,23 @@
+---
+zfs:
+  pool_name: pbs-data
+  devices:
+    - CHANGE_ME_TO_ACTUAL_DISK_ID
+  ashift: 12
+  compression: lz4
+  atime: "off"
+  xattr: sa
+  mountpoint: /mnt/datastore/pbs-data
+
+pbs:
+  datastore_name: main
+  admin_user: admin@pbs
+  gc_schedule: "sat 02:30"
+  prune_schedule: "sun 03:00"
+  keep_last: 3
+  keep_daily: 7
+  keep_weekly: 4
+  keep_monthly: 6
+
+# BSM シークレット ID (bws secret list で確認)
+bsm_pbs_admin_password_id: "ee95c63d-5cb8-4797-bd9c-b43c01404312"

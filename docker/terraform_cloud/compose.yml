@@ -5,5 +5,5 @@ services:
     container_name: tfc-agent
     restart: always
     environment:
-      - TFC_AGENT_TOKEN=xxxxxxxxxx
+      - TFC_AGENT_TOKEN=${TFC_AGENT_TOKEN}
       - TFC_AGENT_NAME=${HOSTNAME}

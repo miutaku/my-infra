@@ -1,0 +1,20 @@
+---
+- name: Configure DHCP static leases on IX2215
+  ansible.builtin.command:
+    cmd: python3 scripts/configure_dhcp_leases.py
+    chdir: "{{ playbook_dir }}"
+  environment:
+    IX2215_HOST: "{{ ix2215_host }}"
+    IX2215_USER: "{{ ix2215_user }}"
+    IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+    DHCP_PROFILE: "{{ dhcp_profile }}"
+    DHCP_ASSIGNMENTS_JSON: "{{ dhcp_assignments | to_json }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+  register: dhcp_result
+  changed_when: "'changed=true' in dhcp_result.stdout"
+  failed_when: "'failed=true' in dhcp_result.stdout or dhcp_result.rc != 0"
+  check_mode: false
+
+- name: Show result
+  ansible.builtin.debug:
+    msg: "{{ dhcp_result.stdout }}"

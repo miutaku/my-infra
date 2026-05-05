@@ -1,6 +1,6 @@
 locals {
   vm_names = [for i in range(var.vm_count) : format("%s-%02d-%s", var.name_prefix, i + 1, var.name_suffix)]
-  macaddrs = [for i in range(var.vm_count) : format("%s%02X", substr(var.base_macaddr, 0, length(var.base_macaddr) - 2), i + 1)]
+  macaddrs = var.macaddrs_override != null ? var.macaddrs_override : [for i in range(var.vm_count) : format("%s%02X", substr(var.base_macaddr, 0, length(var.base_macaddr) - 2), i + 1)]
   vmids    = [for i in range(var.vm_count) : var.vmid_start + i]
 }
 
@@ -17,19 +17,22 @@ resource "proxmox_vm_qemu" "vm" {
   onboot           = true
   automatic_reboot = true
 
+  # cloud-init: Proxmox injects PVE VM name as hostname via NoCloud datasource
+  ipconfig0 = var.cloudinit_storage != null ? "ip=dhcp" : null
+  ciupgrade  = var.cloudinit_storage != null ? false : null
+
   # hardware
-  ## boot
-  bios        = "seabios"
+  bios        = var.bios
   boot        = "order=scsi0"
   machine     = var.machine
   target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
   clone       = var.clone_template
-  full_clone  = false
+  full_clone  = true
   scsihw      = "virtio-scsi-single"
 
   # cpu
   cpu {
-    vcores  = 0 # this is set automatically by Proxmox to sockets * cores. https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/resources/vm_qemu
+    vcores  = 0
     cores   = var.cpu_cores
     sockets = 1
     type    = "host"
@@ -37,11 +40,11 @@ resource "proxmox_vm_qemu" "vm" {
 
   # vga
   vga {
-    type    = var.kvm_vga_type
-    memory  = var.kvm_vga_memory
+    type   = var.kvm_vga_type
+    memory = var.kvm_vga_memory
   }
 
-  ## memory
+  # memory
   memory  = var.memory
   balloon = substr(var.os_type, 0, 1) == "w" ? 1 : 0
 
@@ -51,9 +54,21 @@ resource "proxmox_vm_qemu" "vm" {
     model    = "virtio"
     bridge   = "vmbr0"
     firewall = false
+    tag      = var.vlan_tag
     macaddr  = each.value.macaddr
   }
-  # disk
+
+  # EFI disk — only when bios=ovmf
+  dynamic "efidisk" {
+    for_each = var.efi_storage_pool != null ? [1] : []
+    content {
+      storage           = var.efi_storage_pool
+      efitype           = "4m"
+      pre_enrolled_keys = false
+    }
+  }
+
+  # disks
   disks {
     scsi {
       scsi0 {
@@ -62,6 +77,27 @@ resource "proxmox_vm_qemu" "vm" {
           emulatessd = true
           size       = "${var.disk_size}G"
           storage    = "local-zfs"
+        }
+      }
+      dynamic "scsi1" {
+        for_each = var.data_disk_size != null ? [1] : []
+        content {
+          disk {
+            backup     = true
+            emulatessd = true
+            size       = "${var.data_disk_size}G"
+            storage    = var.data_disk_storage
+          }
+        }
+      }
+    }
+    dynamic "ide" {
+      for_each = var.cloudinit_storage != null ? [1] : []
+      content {
+        ide2 {
+          cloudinit {
+            storage = var.cloudinit_storage
+          }
         }
       }
     }

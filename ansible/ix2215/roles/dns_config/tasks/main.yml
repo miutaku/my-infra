@@ -1,0 +1,22 @@
+---
+- name: Configure DNS (name-servers/cache/proxy-dns)
+  ansible.builtin.command:
+    cmd: python3 scripts/configure_dns.py
+    chdir: "{{ playbook_dir }}"
+  environment:
+    IX2215_HOST: "{{ ix2215_host }}"
+    IX2215_USER: "{{ ix2215_user }}"
+    IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+    IX_DNS_V4_JSON: "{{ ix_dns_servers_v4 | to_json }}"
+    IX_DNS_V6_JSON: "{{ ix_dns_servers_v6 | to_json }}"
+    IX_DNS_CACHE_JSON: "{{ ix_dns_cache | to_json }}"
+    IX_PROXY_DNS_JSON: "{{ ix_proxy_dns | to_json }}"
+  register: result
+  changed_when: "'changed=true' in result.stdout"
+  failed_when: "'failed=true' in result.stdout or result.rc != 0"
+  check_mode: false
+
+- name: Show result
+  ansible.builtin.debug:
+    msg: "{{ result.stdout }}"
