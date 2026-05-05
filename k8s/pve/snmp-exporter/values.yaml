@@ -15,7 +15,7 @@ resources:
 # IX2215 向け IF-MIB + NEC enterprise MIB モジュール定義
 # community: monitor (ix2215 group_vars/all.yml で設定済み)
 # NEC enterprise OID prefix: 1.3.6.1.4.1.119.2.3.84 (PICO-SMI-MIB)
-snmpConfig:
+config: |
   auths:
     ix2215_v2:
       community: monitor
