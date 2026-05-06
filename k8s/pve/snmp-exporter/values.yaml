@@ -21,7 +21,38 @@ config: |
       community: monitor
       security_level: noAuthNoPriv
       version: 2
+    truenas_v2:
+      community: public
+      security_level: noAuthNoPriv
+      version: 2
   modules:
+    truenas:
+      walk:
+        - 1.3.6.1.2.1.2.2          # ifTable (interfaces)
+        - 1.3.6.1.2.1.31.1.1       # ifXTable (64-bit counters + ifAlias)
+        - 1.3.6.1.2.1.25.2.3       # hrStorageTable (dataset/pool usage)
+        - 1.3.6.1.2.1.25.3.3       # hrProcessorTable (per-CPU load)
+        - 1.3.6.1.4.1.2021.4       # UCD memTable (memory)
+        - 1.3.6.1.4.1.2021.11      # UCD systemStats (CPU user/sys/idle)
+        - 1.3.6.1.4.1.2021.13.15   # UCD diskIOTable (disk I/O per device)
+      lookups:
+        - source_indexes: [ifIndex]
+          lookup: 1.3.6.1.2.1.2.2.1.2      # ifDescr
+          drop_source_indexes: false
+        - source_indexes: [ifIndex]
+          lookup: 1.3.6.1.2.1.31.1.1.1.18  # ifAlias
+          drop_source_indexes: false
+        - source_indexes: [hrStorageIndex]
+          lookup: 1.3.6.1.2.1.25.2.3.1.3   # hrStorageDescr
+          drop_source_indexes: false
+        - source_indexes: [diskIOIndex]
+          lookup: 1.3.6.1.4.1.2021.13.15.1.2  # diskIODevice
+          drop_source_indexes: false
+      overrides:
+        1.3.6.1.2.1.25.2.3.1.4:    # hrStorageAllocationUnits (use size/used instead)
+          ignore: true
+        1.3.6.1.2.1.25.2.3.1.2:    # hrStorageType (enum, not useful as metric)
+          ignore: true
     ix2215:
       walk:
         - 1.3.6.1.2.1.1.3          # sysUpTime
