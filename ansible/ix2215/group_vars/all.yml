@@ -71,8 +71,6 @@ ix_ipv6_ufs_cache:
 
 ix_static_routes_v4:
   - dest: "default"
-    gw: "GigaEthernet0.1"
-  - dest: "default"
     gw: "Tunnel0.0"
 
 # ---------------------------------------------------------------------------
