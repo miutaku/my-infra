@@ -192,7 +192,7 @@ alloy:
         targets = [
           {
             "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
-            "__param_target"   = "192.168.20.191",
+            "__param_target"   = "192.168.20.4",
             "__param_module"   = "truenas",
             "__param_auth"     = "truenas_v2",
             "instance"         = "nas-01",
@@ -200,7 +200,7 @@ alloy:
           },
           {
             "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
-            "__param_target"   = "192.168.20.192",
+            "__param_target"   = "192.168.20.5",
             "__param_module"   = "truenas",
             "__param_auth"     = "truenas_v2",
             "instance"         = "nas-02",
@@ -243,8 +243,8 @@ alloy:
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.101",  "__param_module" = "icmp", "instance" = "dev-app-server",   "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.150",  "__param_module" = "icmp", "instance" = "dev-rec-server",   "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.151",  "__param_module" = "icmp", "instance" = "prd-rec-server",   "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.191",  "__param_module" = "icmp", "instance" = "nas-01",           "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.192",  "__param_module" = "icmp", "instance" = "nas-02",           "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.4",    "__param_module" = "icmp", "instance" = "nas-01",           "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.5",    "__param_module" = "icmp", "instance" = "nas-02",           "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.135",  "__param_module" = "icmp", "instance" = "lb-01",            "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.136",  "__param_module" = "icmp", "instance" = "lb-02",            "job" = "blackbox_icmp" },
         ]
