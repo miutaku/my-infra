@@ -234,7 +234,16 @@ ix_dhcp_profiles:
       - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
 
 # RKE2 クラスタノードの DHCP 静的リース (Terraform から更新)
+# vlan20 profile から削除するIP (旧エントリのクリーンアップ用)
+dhcp_remove_ips: []
+
 dhcp_assignments:
+  - name: nas-01-truenas-scale
+    ip: "192.168.20.4"
+    mac: "52:54:00:24:99:02"
+  - name: nas-02-truenas-scale
+    ip: "192.168.20.5"
+    mac: "52:54:00:24:99:01"
   - name: lb-01-rke2-haproxy-keepalived
     ip: "192.168.20.135"
     mac: "BC:24:11:AD:44:01"
