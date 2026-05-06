@@ -172,13 +172,9 @@ alloy:
       // node_exporter が各 VM にインストール済みであること (ansible/monitoring)
       prometheus.scrape "node_static" {
         targets = [
-          { "__address__" = "192.168.20.121:9100", "instance" = "bastion-01",       "job" = "node" },
-          { "__address__" = "192.168.20.122:9100", "instance" = "bastion-02",       "job" = "node" },
           { "__address__" = "192.168.20.101:9100", "instance" = "dev-app-server",   "job" = "node" },
           { "__address__" = "192.168.20.150:9100", "instance" = "dev-rec-server",   "job" = "node" },
           { "__address__" = "192.168.20.151:9100", "instance" = "prd-rec-server",   "job" = "node" },
-          { "__address__" = "192.168.20.191:9100", "instance" = "nas-01",           "job" = "node" },
-          { "__address__" = "192.168.20.192:9100", "instance" = "nas-02",           "job" = "node" },
           { "__address__" = "192.168.20.135:9100", "instance" = "lb-01",            "job" = "node" },
           { "__address__" = "192.168.20.136:9100", "instance" = "lb-02",            "job" = "node" },
           { "__address__" = "192.168.40.1:9100",   "instance" = "mm-server-01",     "job" = "node" },
@@ -188,6 +184,34 @@ alloy:
           prometheus.remote_write.grafana_cloud.receiver,
         ]
         job_name        = "integrations/node_exporter"
+        scrape_interval = "60s"
+      }
+
+      // ── SNMP: TrueNAS Scale (nas-01 / nas-02) ───────────────────────────────
+      prometheus.scrape "snmp_truenas" {
+        targets = [
+          {
+            "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
+            "__param_target"   = "192.168.20.191",
+            "__param_module"   = "truenas",
+            "__param_auth"     = "truenas_v2",
+            "instance"         = "nas-01",
+            "job"              = "snmp_truenas",
+          },
+          {
+            "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
+            "__param_target"   = "192.168.20.192",
+            "__param_module"   = "truenas",
+            "__param_auth"     = "truenas_v2",
+            "instance"         = "nas-02",
+            "job"              = "snmp_truenas",
+          },
+        ]
+        metrics_path    = "/snmp"
+        forward_to      = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
         scrape_interval = "60s"
       }
 
@@ -216,8 +240,6 @@ alloy:
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.254",   "__param_module" = "icmp", "instance" = "ix2215",          "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.115",  "__param_module" = "icmp", "instance" = "pve-x570",         "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.119",  "__param_module" = "icmp", "instance" = "pve-b550m",        "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.121",  "__param_module" = "icmp", "instance" = "bastion-01",       "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.122",  "__param_module" = "icmp", "instance" = "bastion-02",       "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.101",  "__param_module" = "icmp", "instance" = "dev-app-server",   "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.150",  "__param_module" = "icmp", "instance" = "dev-rec-server",   "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.151",  "__param_module" = "icmp", "instance" = "prd-rec-server",   "job" = "blackbox_icmp" },

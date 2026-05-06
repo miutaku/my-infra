@@ -110,14 +110,14 @@ my-infra/
 
 | コンテキスト名 | クラスタ | 取得方法 |
 |---|---|---|
-| `rke2-pve` | 宅内 RKE2 (Proxmox) | `scp bastion-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml` |
+| `rke2-pve` | 宅内 RKE2 (Proxmox) | `scp master-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml` |
 | `oke-cloud` | OCI OKE | `oci ce cluster create-kubeconfig --cluster-id <id> --file ~/.kube/oke.yaml --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT` |
 
 ### セットアップ手順
 
 ```bash
 # 1. 各クラスタの kubeconfig を取得して名前変更
-scp bastion-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml
+scp master-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml
 oci ce cluster create-kubeconfig --cluster-id <cluster-ocid> --file ~/.kube/oke.yaml \
   --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT
 

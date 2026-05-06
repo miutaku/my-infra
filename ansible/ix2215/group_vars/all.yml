@@ -133,8 +133,6 @@ ix_dhcp_profiles:
       - { ip: "192.168.0.118", mac: "80:b6:55:62:4e:59" } # pve-nucbox-3 NIC2 → VLAN 10
       - { ip: "192.168.0.119", mac: "a8:a1:59:57:ce:43" } # pve-b550m         → VLAN 10
       - { ip: "192.168.0.120", mac: "9c:6b:00:96:87:c6" } # gaming-pc         → VLAN 30
-      - { ip: "192.168.0.121", mac: "bc:24:11:db:b0:f6" } # bastion-01        → VLAN 20
-      - { ip: "192.168.0.122", mac: "bc:24:11:db:b0:f7" } # bastion-02        → VLAN 20
       - { ip: "192.168.0.123", mac: "52:54:00:c1:3a:38" } # server VM         → VLAN 20
       - { ip: "192.168.0.124", mac: "52:54:00:8c:83:18" } # windows-11-work   → VLAN 30
       - { ip: "192.168.0.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC       → VLAN 10
@@ -190,8 +188,6 @@ ix_dhcp_profiles:
     dns_server: "192.168.20.254"
     fixed_assignments:
       - { ip: "192.168.20.101", mac: "52:54:00:25:01:01" } # dev-app-server
-      - { ip: "192.168.20.121", mac: "bc:24:11:db:b0:f6" } # bastion-01
-      - { ip: "192.168.20.122", mac: "bc:24:11:db:b0:f7" } # bastion-02
       - { ip: "192.168.20.123", mac: "52:54:00:c1:3a:38" } # server VM
       - { ip: "192.168.20.126", mac: "bc:24:11:97:96:01" } # master-01 (RKE2 server)
       - { ip: "192.168.20.127", mac: "bc:24:11:97:96:02" } # master-02 (RKE2 server)
