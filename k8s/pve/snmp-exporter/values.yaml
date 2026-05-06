@@ -28,31 +28,142 @@ config: |
   modules:
     truenas:
       walk:
-        - 1.3.6.1.2.1.2.2          # ifTable (interfaces)
+        - 1.3.6.1.2.1.2.2          # ifTable
         - 1.3.6.1.2.1.31.1.1       # ifXTable (64-bit counters + ifAlias)
         - 1.3.6.1.2.1.25.2.3       # hrStorageTable (dataset/pool usage)
-        - 1.3.6.1.2.1.25.3.3       # hrProcessorTable (per-CPU load)
         - 1.3.6.1.4.1.2021.4       # UCD memTable (memory)
         - 1.3.6.1.4.1.2021.11      # UCD systemStats (CPU user/sys/idle)
         - 1.3.6.1.4.1.2021.13.15   # UCD diskIOTable (disk I/O per device)
-      lookups:
-        - source_indexes: [ifIndex]
-          lookup: 1.3.6.1.2.1.2.2.1.2      # ifDescr
-          drop_source_indexes: false
-        - source_indexes: [ifIndex]
-          lookup: 1.3.6.1.2.1.31.1.1.1.18  # ifAlias
-          drop_source_indexes: false
-        - source_indexes: [hrStorageIndex]
-          lookup: 1.3.6.1.2.1.25.2.3.1.3   # hrStorageDescr
-          drop_source_indexes: false
-        - source_indexes: [diskIOIndex]
-          lookup: 1.3.6.1.4.1.2021.13.15.1.2  # diskIODevice
-          drop_source_indexes: false
-      overrides:
-        1.3.6.1.2.1.25.2.3.1.4:    # hrStorageAllocationUnits (use size/used instead)
-          ignore: true
-        1.3.6.1.2.1.25.2.3.1.2:    # hrStorageType (enum, not useful as metric)
-          ignore: true
+      metrics:
+        # ── IF-MIB ──────────────────────────────────────────────────────────
+        - name: ifOperStatus
+          oid: 1.3.6.1.2.1.2.2.1.8
+          type: gauge
+          help: Interface operational status (1=up, 2=down)
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+        - name: ifHCInOctets
+          oid: 1.3.6.1.2.1.31.1.1.1.6
+          type: counter
+          help: 64-bit total octets received
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+            - labels: [ifIndex]
+              labelname: ifAlias
+              oid: 1.3.6.1.2.1.31.1.1.1.18
+              type: DisplayString
+        - name: ifHCOutOctets
+          oid: 1.3.6.1.2.1.31.1.1.1.10
+          type: counter
+          help: 64-bit total octets transmitted
+          indexes:
+            - labelname: ifIndex
+              type: gauge
+          lookups:
+            - labels: [ifIndex]
+              labelname: ifDescr
+              oid: 1.3.6.1.2.1.2.2.1.2
+              type: DisplayString
+            - labels: [ifIndex]
+              labelname: ifAlias
+              oid: 1.3.6.1.2.1.31.1.1.1.18
+              type: DisplayString
+        # ── HOST-RESOURCES-MIB: ストレージ (ZFS dataset / physical memory) ──
+        - name: hrStorageSize
+          oid: 1.3.6.1.2.1.25.2.3.1.5
+          type: gauge
+          help: Total storage size in allocation units
+          indexes:
+            - labelname: hrStorageIndex
+              type: gauge
+          lookups:
+            - labels: [hrStorageIndex]
+              labelname: hrStorageDescr
+              oid: 1.3.6.1.2.1.25.2.3.1.3
+              type: DisplayString
+        - name: hrStorageUsed
+          oid: 1.3.6.1.2.1.25.2.3.1.6
+          type: gauge
+          help: Used storage in allocation units
+          indexes:
+            - labelname: hrStorageIndex
+              type: gauge
+          lookups:
+            - labels: [hrStorageIndex]
+              labelname: hrStorageDescr
+              oid: 1.3.6.1.2.1.25.2.3.1.3
+              type: DisplayString
+        - name: hrStorageAllocationUnits
+          oid: 1.3.6.1.2.1.25.2.3.1.4
+          type: gauge
+          help: Bytes per allocation unit (multiply by hrStorageSize/Used for bytes)
+          indexes:
+            - labelname: hrStorageIndex
+              type: gauge
+          lookups:
+            - labels: [hrStorageIndex]
+              labelname: hrStorageDescr
+              oid: 1.3.6.1.2.1.25.2.3.1.3
+              type: DisplayString
+        # ── UCD-SNMP-MIB: CPU ───────────────────────────────────────────────
+        - name: ssCpuUser
+          oid: 1.3.6.1.4.1.2021.11.9.0
+          type: gauge
+          help: CPU time in user mode (%)
+        - name: ssCpuSystem
+          oid: 1.3.6.1.4.1.2021.11.10.0
+          type: gauge
+          help: CPU time in system mode (%)
+        - name: ssCpuIdle
+          oid: 1.3.6.1.4.1.2021.11.11.0
+          type: gauge
+          help: CPU idle time (%)
+        # ── UCD-SNMP-MIB: Memory ────────────────────────────────────────────
+        - name: memTotalReal
+          oid: 1.3.6.1.4.1.2021.4.5.0
+          type: gauge
+          help: Total physical memory (kB)
+        - name: memAvailReal
+          oid: 1.3.6.1.4.1.2021.4.6.0
+          type: gauge
+          help: Available physical memory (kB)
+        # ── UCD-SNMP-MIB: Disk I/O ──────────────────────────────────────────
+        - name: diskIONRead
+          oid: 1.3.6.1.4.1.2021.13.15.1.3
+          type: counter
+          help: Bytes read from disk
+          indexes:
+            - labelname: diskIOIndex
+              type: gauge
+          lookups:
+            - labels: [diskIOIndex]
+              labelname: diskIODevice
+              oid: 1.3.6.1.4.1.2021.13.15.1.2
+              type: DisplayString
+        - name: diskIONWrite
+          oid: 1.3.6.1.4.1.2021.13.15.1.4
+          type: counter
+          help: Bytes written to disk
+          indexes:
+            - labelname: diskIOIndex
+              type: gauge
+          lookups:
+            - labels: [diskIOIndex]
+              labelname: diskIODevice
+              oid: 1.3.6.1.4.1.2021.13.15.1.2
+              type: DisplayString
     ix2215:
       walk:
         - 1.3.6.1.2.1.1.3          # sysUpTime
