@@ -9,6 +9,7 @@ Ansible の roles/dhcp_static_lease から呼び出される。
   IX2215_PASSWORD       - SSHパスワード (BSMから取得)
   DHCP_PROFILE          - DHCPプロファイル名 (デフォルト: main)
   DHCP_ASSIGNMENTS_JSON - JSON配列 [{name, ip, mac}, ...]
+  DHCP_REMOVE_IPS       - カンマ区切りIPリスト (これらの fixed-assignment を削除)
   DRY_RUN               - "true" の場合は変更せず差分のみ表示 (デフォルト: false)
 """
 
@@ -59,6 +60,11 @@ def parse_existing_assignments(running: str, dhcp_profile: str) -> dict[str, str
 def main() -> None:
     dhcp_profile = os.environ.get("DHCP_PROFILE", "main")
     assignments_raw = json.loads(os.environ["DHCP_ASSIGNMENTS_JSON"])
+    remove_ips = [
+        ip.strip()
+        for ip in os.environ.get("DHCP_REMOVE_IPS", "").split(",")
+        if ip.strip()
+    ]
     dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
 
     # MAC を NEC IX 形式に正規化 (無効な値はスキップして警告)
@@ -79,20 +85,28 @@ def main() -> None:
         if existing.get(a["ip"]) != a["mac"]
     ]
 
-    if not missing:
+    # 削除対象: DHCP_REMOVE_IPS で指定されかつ existing に存在するもの
+    to_remove = [ip for ip in remove_ips if ip in existing]
+
+    if not missing and not to_remove:
         dry = " dry_run=true" if dry_run else ""
         print(f"changed=false{dry} msg='All DHCP static leases already configured'")
         return
 
-    names = [a["name"] for a in missing]
-
     if dry_run:
-        print(f"changed=false dry_run=true msg='Would add {len(missing)} DHCP lease(s): {names}'")
-        for a in missing:
-            print(f"  + fixed-assignment {a['ip']} {a['mac']}  # {a['name']}")
+        if missing:
+            print(f"changed=false dry_run=true msg='Would add {len(missing)} lease(s)'")
+            for a in missing:
+                print(f"  + fixed-assignment {a['ip']} {a['mac']}  # {a['name']}")
+        if to_remove:
+            print(f"changed=false dry_run=true msg='Would remove {len(to_remove)} lease(s)'")
+            for ip in to_remove:
+                print(f"  - fixed-assignment {ip} {existing[ip]}")
         return
 
     config_commands = [f"ip dhcp profile {dhcp_profile}"]
+    for ip in to_remove:
+        config_commands.append(f"  no fixed-assignment {ip}")
     for a in missing:
         config_commands.append(f"  fixed-assignment {a['ip']} {a['mac']}")
     config_commands.append("  exit")
@@ -101,7 +115,12 @@ def main() -> None:
         conn.send_config_set(config_commands)
         conn.save_config()
 
-    print(f"changed=true msg='Added {len(missing)} DHCP lease(s): {names}'")
+    parts = []
+    if missing:
+        parts.append(f"added {len(missing)}: {[a['name'] for a in missing]}")
+    if to_remove:
+        parts.append(f"removed {len(to_remove)}: {to_remove}")
+    print(f"changed=true msg='{'; '.join(parts)}'")
 
 
 if __name__ == "__main__":

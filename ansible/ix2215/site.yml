@@ -26,3 +26,25 @@
     - dhcp_profiles
     - dhcp_static_lease
     - interfaces
+
+  tasks:
+    - name: Remove stale entries from main DHCP profile
+      ansible.builtin.command:
+        cmd: python3 scripts/configure_dhcp_leases.py
+        chdir: "{{ playbook_dir }}"
+      environment:
+        IX2215_HOST: "{{ ix2215_host }}"
+        IX2215_USER: "{{ ix2215_user }}"
+        IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+        DHCP_PROFILE: "main"
+        DHCP_ASSIGNMENTS_JSON: "[]"
+        DHCP_REMOVE_IPS: "192.168.0.121,192.168.0.122,192.168.0.191,192.168.0.192"
+        DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+      register: main_cleanup_result
+      changed_when: "'changed=true' in main_cleanup_result.stdout"
+      failed_when: "'failed=true' in main_cleanup_result.stdout or main_cleanup_result.rc != 0"
+      check_mode: false
+
+    - name: Show main profile cleanup result
+      ansible.builtin.debug:
+        msg: "{{ main_cleanup_result.stdout }}"

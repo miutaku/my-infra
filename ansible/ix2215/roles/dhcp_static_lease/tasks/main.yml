@@ -9,6 +9,7 @@
     IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
     DHCP_PROFILE: "{{ dhcp_profile }}"
     DHCP_ASSIGNMENTS_JSON: "{{ dhcp_assignments | to_json }}"
+    DHCP_REMOVE_IPS: "{{ dhcp_remove_ips | default([]) | join(',') }}"
     DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
   register: dhcp_result
   changed_when: "'changed=true' in dhcp_result.stdout"
