@@ -16,6 +16,9 @@ controller:
           path: /sys
 
 alloy:
+  clustering:
+    enabled: true
+
   securityContext:
     privileged: true
     allowPrivilegeEscalation: true
@@ -225,6 +228,9 @@ alloy:
             "job"         = "speedtest",
           },
         ]
+        clustering {
+          enabled = true
+        }
         forward_to = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,

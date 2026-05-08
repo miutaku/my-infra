@@ -1,5 +1,5 @@
 ---
-- name: Configure DHCP/DHCPv6 profiles (settings excluding fixed-assignments)
+- name: Configure DHCP/DHCPv6 profiles (including fixed-assignments)
   ansible.builtin.command:
     cmd: python3 scripts/configure_dhcp_profiles.py
     chdir: "{{ playbook_dir }}"

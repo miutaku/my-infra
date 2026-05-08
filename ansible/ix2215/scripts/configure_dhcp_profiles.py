@@ -1,22 +1,53 @@
 #!/usr/bin/env python3
 """
-DHCP プロファイル (assignable-range / dns-server / gateway / lease-time) および
-DHCPv6 client/server プロファイル設定
-fixed-assignment は dhcp_static_lease ロールで管理するため対象外
+DHCP プロファイル (assignable-range / dns-server / gateway / lease-time /
+fixed-assignment) および DHCPv6 client/server プロファイル設定
 環境変数: IX2215_HOST, IX2215_USER, IX2215_PASSWORD, DRY_RUN
          IX_DHCP_PROFILES_JSON, IX_DHCPV6_CLIENT_PROFILES_JSON, IX_DHCPV6_SERVER_PROFILES_JSON
 """
 
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from ix_connect import connect, get_running_config, emit
 
 
-def dhcp_profile_lines(profile: dict) -> list[str]:
-    """プロファイル設定行を返す (fixed-assignment は除く)"""
+def to_ix_mac(mac: str) -> str:
+    """任意形式のMAC -> NEC IX形式 (xxxx.xxxx.xxxx) に変換"""
+    clean = mac.replace(":", "").replace("-", "").replace(".", "").lower()
+    if len(clean) != 12:
+        raise ValueError(f"Invalid MAC address: {mac}")
+    return f"{clean[0:4]}.{clean[4:8]}.{clean[8:12]}"
+
+
+def parse_existing_fixed_assignments(running: str, profile_name: str) -> dict[str, str]:
+    """running-config から profile の fixed-assignment を ip -> mac (IX形式) で返す"""
+    block_match = re.search(
+        r"^ip dhcp profile " + re.escape(profile_name) + r"\n((?:[ \t]+.*\n)*)",
+        running,
+        re.MULTILINE,
+    )
+    if not block_match:
+        return {}
+    fixed_pattern = re.compile(
+        r"fixed-assignment\s+"
+        r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+"
+        r"([0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}"
+        r"|[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
+    )
+    result: dict[str, str] = {}
+    for line in block_match.group(1).splitlines():
+        m = fixed_pattern.search(line)
+        if m:
+            result[m.group(1)] = to_ix_mac(m.group(2))
+    return result
+
+
+def dhcp_profile_setting_lines(profile: dict) -> list[str]:
+    """fixed-assignment 以外の設定行を返す"""
     lines = []
     if "assignable_range" in profile:
         lines.append(f"  assignable-range {profile['assignable_range']}")
@@ -62,8 +93,16 @@ def main() -> None:
 
     # IPv4 DHCP profiles
     for p in profiles:
-        setting_lines = dhcp_profile_lines(p)
+        setting_lines = dhcp_profile_setting_lines(p)
         missing = [l for l in setting_lines if l.strip() not in running]
+
+        # fixed-assignments: normalize MAC format for comparison
+        existing_fas = parse_existing_fixed_assignments(running, p["name"])
+        for fa in p.get("fixed_assignments", []):
+            ix_mac = to_ix_mac(fa["mac"])
+            if existing_fas.get(fa["ip"]) != ix_mac:
+                missing.append(f"  fixed-assignment {fa['ip']} {ix_mac}")
+
         if missing:
             missing_cmds.append(f"ip dhcp profile {p['name']}")
             missing_cmds.extend(missing)
