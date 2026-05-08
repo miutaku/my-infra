@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-インターフェース設定 (map-e Tunnel0.0 + ikev2 default-profile 含む)
+インターフェース設定 (4-over-6 Tunnel0.0 含む)
 環境変数: IX2215_HOST, IX2215_USER, IX2215_PASSWORD, DRY_RUN
-         IX_INTERFACES_JSON, IX_MAP_E_IKEV2_JSON
+         IX_INTERFACES_JSON
 """
 
 import json
@@ -38,6 +38,10 @@ def iface_lines(iface: dict) -> list[str]:
         lines.append(f"  encapsulation {iface['encapsulation']}")
     if iface.get("tunnel_mode"):
         lines.append(f"  tunnel mode {iface['tunnel_mode']}")
+    if iface.get("tunnel_destination"):
+        lines.append(f"  tunnel destination {iface['tunnel_destination']}")
+    if iface.get("tunnel_source"):
+        lines.append(f"  tunnel source {iface['tunnel_source']}")
     if iface.get("ip_address"):
         lines.append(f"  ip address {iface['ip_address']}")
     if iface.get("ip_dhcp_binding"):
@@ -53,6 +57,8 @@ def iface_lines(iface: dict) -> list[str]:
         lines.append("  ip napt eim-mode")
     if iface.get("ipv6_enable"):
         lines.append("  ipv6 enable")
+    if iface.get("ipv6_interface_identifier"):
+        lines.append(f"  ipv6 interface-identifier {iface['ipv6_interface_identifier']}")
     if iface.get("ipv6_dhcp_client"):
         lines.append(f"  ipv6 dhcp client {iface['ipv6_dhcp_client']}")
     if iface.get("ipv6_dhcp_server"):
@@ -82,41 +88,21 @@ def iface_lines(iface: dict) -> list[str]:
     return lines
 
 
-def ikev2_default_lines(cfg: dict) -> list[str]:
-    if not cfg:
-        return []
-    lines = ["ikev2 default-profile"]
-    if "dpd_interval" in cfg:
-        lines.append(f"  dpd interval {cfg['dpd_interval']}")
-    if "source_address" in cfg:
-        lines.append(f"  source-address {cfg['source_address']}")
-    return lines
-
-
 def main() -> None:
     dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
     ifaces = json.loads(os.environ.get("IX_INTERFACES_JSON", "[]"))
-    map_e_ikev2 = json.loads(os.environ.get("IX_MAP_E_IKEV2_JSON", "{}"))
 
     with connect() as conn:
         running = get_running_config(conn)
 
     missing_blocks: list[tuple[str, list[str]]] = []
 
-    # interface blocks
     for iface in ifaces:
         lines = iface_lines(iface)
         iface_block = get_interface_block(running, iface["name"])
         missing = [l for l in lines if l.strip() not in iface_block]
         if missing:
             missing_blocks.append((f"interface {iface['name']}", missing))
-
-    # ikev2 default-profile
-    ikev2_lines = ikev2_default_lines(map_e_ikev2)
-    if ikev2_lines:
-        missing_ikev2 = [l for l in ikev2_lines if l.strip() not in running]
-        if missing_ikev2:
-            missing_blocks.append(("ikev2 default-profile", missing_ikev2[1:]))
 
     if not missing_blocks:
         emit(False, dry_run, "Interfaces already configured")
@@ -141,15 +127,6 @@ def main() -> None:
             if missing:
                 cmds = [f"interface {iface['name']}"] + missing + ["  exit"]
                 conn.send_config_set(cmds, read_timeout=60, cmd_verify=False)
-
-        if ikev2_lines:
-            missing_ikev2 = [l for l in ikev2_lines if l.strip() not in running]
-            if missing_ikev2:
-                conn.send_config_set(
-                    ikev2_lines + ["  exit"],
-                    read_timeout=60,
-                    cmd_verify=False,
-                )
 
         conn.save_config()
 

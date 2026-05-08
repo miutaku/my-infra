@@ -1,14 +1,16 @@
 ---
-- name: Configure interfaces (including 4-over-6 Tunnel0.0)
+- name: Configure DDNS (v6plus fixed IP update)
   ansible.builtin.command:
-    cmd: python3 scripts/configure_interfaces.py
+    cmd: python3 scripts/configure_ddns.py
     chdir: "{{ playbook_dir }}"
   environment:
     IX2215_HOST: "{{ ix2215_host }}"
     IX2215_USER: "{{ ix2215_user }}"
     IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
     DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
-    IX_INTERFACES_JSON: "{{ ix_interfaces | to_json }}"
+    IX_DDNS_ENABLE: "{{ ix_ddns_enable | string | lower }}"
+    IX_DDNS_PROFILES_JSON: "{{ ix_ddns_profiles | to_json }}"
+    IX_DDNS_QUERY: "{{ ix2215_ddns_query.stdout | trim }}"
   register: result
   changed_when: "'changed=true' in result.stdout"
   failed_when: "'failed=true' in result.stdout or result.rc != 0"
