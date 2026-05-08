@@ -13,7 +13,7 @@
         PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
       delegate_to: localhost
       become: false
-      run_once: true
+
       register: ix2215_ssh_password
       changed_when: false
       check_mode: false
@@ -28,7 +28,7 @@
         PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
       delegate_to: localhost
       become: false
-      run_once: true
+
       register: ix2215_ddns_query
       changed_when: false
       check_mode: false
@@ -44,7 +44,7 @@
         PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
       delegate_to: localhost
       become: false
-      run_once: true
+
       register: ix2215_ipv6_iid
       changed_when: false
       check_mode: false
@@ -59,7 +59,7 @@
         PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
       delegate_to: localhost
       become: false
-      run_once: true
+
       register: ix2215_tunnel_dest
       changed_when: false
       check_mode: false
@@ -74,7 +74,7 @@
         PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
       delegate_to: localhost
       become: false
-      run_once: true
+
       register: ix2215_tunnel_ip
       changed_when: false
       check_mode: false
