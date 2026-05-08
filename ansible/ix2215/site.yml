@@ -111,3 +111,20 @@
     - name: Show main profile cleanup result
       ansible.builtin.debug:
         msg: "{{ main_cleanup_result.stdout }}"
+
+  post_tasks:
+    - name: Fetch running-config for verification
+      ansible.builtin.command:
+        cmd: python3 scripts/fetch_running_config.py
+        chdir: "{{ playbook_dir }}"
+      environment:
+        IX2215_HOST: "{{ ix2215_host }}"
+        IX2215_USER: "{{ ix2215_user }}"
+        IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+      register: running_config
+      changed_when: false
+      check_mode: false
+
+    - name: Show running-config
+      ansible.builtin.debug:
+        msg: "{{ running_config.stdout }}"
