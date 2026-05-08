@@ -25,8 +25,7 @@ def dhcp_profile_lines(profile: dict) -> list[str]:
     if "dns_server" in profile:
         servers = profile["dns_server"]
         if isinstance(servers, list):
-            for s in servers:
-                lines.append(f"  dns-server {s}")
+            lines.append(f"  dns-server {' '.join(servers)}")
         else:
             lines.append(f"  dns-server {servers}")
     if "lease_time" in profile:
@@ -92,15 +91,17 @@ def main() -> None:
         emit(False, dry_run, "DHCP/DHCPv6 profiles already configured")
         return
 
+    diff = [f"+ {c}" for c in missing_cmds]
+
     if dry_run:
-        emit(False, True, "Would apply DHCP/DHCPv6 profile settings", [f"+ {c}" for c in missing_cmds])
+        emit(True, True, "Would apply DHCP/DHCPv6 profile settings", diff)
         return
 
     with connect() as conn:
         conn.send_config_set(missing_cmds)
         conn.save_config()
 
-    emit(True, False, "Applied DHCP/DHCPv6 profile settings")
+    emit(True, False, "Applied DHCP/DHCPv6 profile settings", diff)
 
 
 if __name__ == "__main__":

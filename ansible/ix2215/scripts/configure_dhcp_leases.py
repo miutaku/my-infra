@@ -93,15 +93,21 @@ def main() -> None:
         print(f"changed=false{dry} msg='All DHCP static leases already configured'")
         return
 
+    diff_lines = []
+    for a in missing:
+        diff_lines.append(f"  + fixed-assignment {a['ip']} {a['mac']}  # {a['name']}")
+    for ip in to_remove:
+        diff_lines.append(f"  - fixed-assignment {ip} {existing[ip]}")
+
     if dry_run:
+        parts = []
         if missing:
-            print(f"changed=false dry_run=true msg='Would add {len(missing)} lease(s)'")
-            for a in missing:
-                print(f"  + fixed-assignment {a['ip']} {a['mac']}  # {a['name']}")
+            parts.append(f"Would add {len(missing)} lease(s)")
         if to_remove:
-            print(f"changed=false dry_run=true msg='Would remove {len(to_remove)} lease(s)'")
-            for ip in to_remove:
-                print(f"  - fixed-assignment {ip} {existing[ip]}")
+            parts.append(f"Would remove {len(to_remove)} lease(s)")
+        print(f"changed=true dry_run=true msg='{'; '.join(parts)}'")
+        for line in diff_lines:
+            print(line)
         return
 
     config_commands = [f"ip dhcp profile {dhcp_profile}"]
@@ -121,6 +127,8 @@ def main() -> None:
     if to_remove:
         parts.append(f"removed {len(to_remove)}: {to_remove}")
     print(f"changed=true msg='{'; '.join(parts)}'")
+    for line in diff_lines:
+        print(line)
 
 
 if __name__ == "__main__":

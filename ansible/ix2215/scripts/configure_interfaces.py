@@ -114,7 +114,7 @@ def main() -> None:
         diff.extend([f"  + {l.strip()}" for l in lines])
 
     if dry_run:
-        emit(False, True, f"Would update {len(missing_blocks)} block(s)", diff)
+        emit(True, True, f"Would update {len(missing_blocks)} block(s)", diff)
         return
 
     # 1インターフェースずつ送信する。一括送信するとNEC IXがBVI/サブインターフェース
@@ -130,7 +130,7 @@ def main() -> None:
 
         conn.save_config()
 
-    emit(True, False, f"Updated {len(missing_blocks)} block(s)")
+    emit(True, False, f"Updated {len(missing_blocks)} block(s)", diff)
 
 
 if __name__ == "__main__":
