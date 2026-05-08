@@ -215,6 +215,24 @@ alloy:
         scrape_interval = "60s"
       }
 
+      // ── speedtest-exporter: 回線速度計測 ─────────────────────────────────
+      // speedtest 実行に約35秒かかるため scrape_interval=5m / scrape_timeout=60s
+      prometheus.scrape "speedtest" {
+        targets = [
+          {
+            "__address__" = "speedtest-exporter.monitoring.svc.cluster.local:8080",
+            "instance"    = "speedtest",
+            "job"         = "speedtest",
+          },
+        ]
+        forward_to = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "5m"
+        scrape_timeout  = "60s"
+      }
+
       // ── blackbox-exporter: HTTP 外形監視 ─────────────────────────────────
       prometheus.scrape "blackbox_http" {
         targets = [
