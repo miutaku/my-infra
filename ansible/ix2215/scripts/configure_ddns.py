@@ -72,7 +72,7 @@ def main() -> None:
     total = len(missing_global) + len(missing_blocks)
 
     if dry_run:
-        emit(False, True, f"Would apply {total} DDNS change(s)", diff)
+        emit(True, True, f"Would apply {total} DDNS change(s)", diff)
         return
 
     cmds = list(missing_global)
@@ -83,7 +83,7 @@ def main() -> None:
         conn.send_config_set(cmds)
         conn.save_config()
 
-    emit(True, False, f"Applied {total} DDNS change(s)")
+    emit(True, False, f"Applied {total} DDNS change(s)", diff)
 
 
 if __name__ == "__main__":

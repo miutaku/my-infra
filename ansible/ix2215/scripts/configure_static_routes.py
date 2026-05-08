@@ -45,15 +45,17 @@ def main() -> None:
         emit(False, dry_run, "Static routes already configured")
         return
 
+    diff = [f"+ {l}" for l in missing]
+
     if dry_run:
-        emit(False, True, f"Would apply {len(missing)} line(s)", [f"+ {l}" for l in missing])
+        emit(True, True, f"Would apply {len(missing)} line(s)", diff)
         return
 
     with connect() as conn:
         conn.send_config_set(missing)
         conn.save_config()
 
-    emit(True, False, f"Applied {len(missing)} route/cache line(s)")
+    emit(True, False, f"Applied {len(missing)} route/cache line(s)", diff)
 
 
 if __name__ == "__main__":
