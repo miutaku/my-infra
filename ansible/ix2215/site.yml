@@ -2,6 +2,7 @@
 - name: Configure IX2215
   hosts: ix2215
   gather_facts: false
+  strategy: linear
   pre_tasks:
     - name: Get IX2215 SSH password from BSM
       ansible.builtin.shell:
