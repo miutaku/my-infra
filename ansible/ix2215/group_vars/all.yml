@@ -368,7 +368,7 @@ ix_interfaces:
   - name: "BVI31"
     description: "GuestLAN_Interface"
     ip_address: "192.168.31.254/24"
-    ip_dhcp_binding: "guest"
+    # ip_dhcp_binding はグローバルの "ip dhcp binding guest" で代替 (BVI4 と同様)
     ip_filter_in: { seq: 1, list: "guest-acl" }
     bridge_group: 31
     shutdown: false
