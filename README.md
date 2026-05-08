@@ -226,6 +226,24 @@ Proxmox Web UI で API トークンを発行し BSM に登録:
 
 ---
 
+## 開発環境セットアップ
+
+クローン後に一度だけ実行する:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+push 前に変更があったディレクトリのみ自動で lint が走る:
+
+| 変更パス | 実行内容 |
+|---|---|
+| `ansible/ix2215/**` | `pipenv run ansible-lint site.yml` |
+| `packer/ubuntu-26-04/**` | `packer validate` |
+| `packer/truenas-scale/**` | `packer validate` |
+
+---
+
 ## CI / GitHub Actions
 
 | ワークフロー | トリガーパス | 内容 |
