@@ -133,7 +133,9 @@ ix_dhcp_profiles:
   # ------------------------------------------------------------------
   - name: "main"
     assignable_range: "192.168.0.1 192.168.0.50"
-    dns_server: "192.168.0.254"
+    dns_server:
+      - "192.168.20.201"  # CoreDNS (primary)
+      - "192.168.0.254"   # BVI (secondary)
 
   # ------------------------------------------------------------------
   # guest: 来客ネットワーク (192.168.31.0/24) VLAN 31
@@ -150,12 +152,14 @@ ix_dhcp_profiles:
   # ------------------------------------------------------------------
   - name: "vlan10"
     assignable_range: "192.168.10.1 192.168.10.50"
-    dns_server: "192.168.10.254"
+    dns_server:
+      - "192.168.20.201"  # CoreDNS (primary)
+      - "192.168.10.254"  # BVI10 (secondary)
     fixed_assignments:
-      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 eth0
-      - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 wlan0
-      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 eth0
-      - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 wlan0
+      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 4GB eth0
+      - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 4GB wlan0
+      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 2GB eth0
+      - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 2GB wlan0
       - { ip: "192.168.10.111", mac: "b8:27:eb:10:65:f8" } # RPiB eth0
       - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0
       - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0
@@ -177,7 +181,9 @@ ix_dhcp_profiles:
   # ------------------------------------------------------------------
   - name: "vlan20"
     assignable_range: "192.168.20.1 192.168.20.50"
-    dns_server: "192.168.20.254"
+    dns_server:
+      - "192.168.20.201"  # CoreDNS (primary)
+      - "192.168.20.254"  # BVI20 (secondary)
     fixed_assignments:
       - { ip: "192.168.20.101", mac: "52:54:00:25:01:01" } # dev-app-server
       - { ip: "192.168.20.123", mac: "52:54:00:c1:3a:38" } # server VM
@@ -199,7 +205,9 @@ ix_dhcp_profiles:
   # ------------------------------------------------------------------
   - name: "vlan30"
     assignable_range: "192.168.30.1 192.168.30.200"
-    dns_server: "192.168.30.254"
+    dns_server:
+      - "192.168.20.201"  # CoreDNS (primary)
+      - "192.168.30.254"  # BVI30 (secondary)
     fixed_assignments:
       - { ip: "192.168.30.120", mac: "9c:6b:00:96:87:c6" } # gaming-pc
       - { ip: "192.168.30.124", mac: "52:54:00:8c:83:18" } # windows-11-work VM
@@ -214,7 +222,9 @@ ix_dhcp_profiles:
   - name: "vlan40"
     assignable_range: "192.168.40.1 192.168.40.100"
     default_gateway: "192.168.40.254"
-    dns_server: "192.168.40.254"
+    dns_server:
+      - "192.168.20.201"  # CoreDNS (primary)
+      - "192.168.40.254"  # BVI4 (secondary)
     fixed_assignments:
       - { ip: "192.168.40.51",  mac: "52:54:00:99:00:01" } # mm-server-01
       - { ip: "192.168.40.79",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch

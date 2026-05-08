@@ -23,7 +23,12 @@ def dhcp_profile_lines(profile: dict) -> list[str]:
     if "default_gateway" in profile:
         lines.append(f"  default-gateway {profile['default_gateway']}")
     if "dns_server" in profile:
-        lines.append(f"  dns-server {profile['dns_server']}")
+        servers = profile["dns_server"]
+        if isinstance(servers, list):
+            for s in servers:
+                lines.append(f"  dns-server {s}")
+        else:
+            lines.append(f"  dns-server {servers}")
     if "lease_time" in profile:
         lines.append(f"  lease-time {profile['lease_time']}")
     return lines

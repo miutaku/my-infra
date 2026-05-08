@@ -5,6 +5,10 @@
     }
     ready
     prometheus :9153
+    acl {
+        block net 192.168.31.0/24
+        allow net 0.0.0.0/0
+    }
     forward . 1.1.1.1 8.8.8.8 {
        max_concurrent 1000
     }
@@ -13,23 +17,46 @@
     reload
     loadbalance
     hosts {
-      192.168.40.80   tv.miutaku.local
+      # VLAN 10: 管理ネットワーク
+      192.168.10.107  rpi4-4g-01.miutaku.local
+      192.168.10.108  rpi4-4g-01-wifi.miutaku.local
+      192.168.10.109  rpi4-2g-01.miutaku.local
+      192.168.10.110  rpi4-2g-01-wifi.miutaku.local
+      192.168.10.111  rpib-512m-01.miutaku.local
+      192.168.10.112  rpib-plus-512m-01.miutaku.local
+      192.168.10.113  rpib-plus-512m-02.miutaku.local
       192.168.10.117  pve-nucbox-3-wired.miutaku.local
       192.168.10.118  pve-nucbox-3-wifi.miutaku.local
       192.168.10.119  pve-b550m.miutaku.local
-      192.168.30.120  gaming-pc.miutaku.local
+      192.168.10.240  nanokvm-01.miutaku.local
+      192.168.10.241  nanokvm-02.miutaku.local
+      192.168.10.252  us-8-60w.miutaku.local
+      192.168.10.253  fs-ap-01.miutaku.local
+
+      # VLAN 20: サーバネットワーク
+      192.168.20.101  dev-app-server.miutaku.local
       192.168.20.121  bastion-01.miutaku.local
       192.168.20.122  bastion-02.miutaku.local
-      192.168.30.124  work-windows.miutaku.local
       192.168.20.126  master-01-rke2-server.miutaku.local
       192.168.20.127  master-02-rke2-server.miutaku.local
       192.168.20.128  master-03-rke2-server.miutaku.local
-      192.168.20.129  worker-01-rke2-server.miutaku.local
-      192.168.20.130  worker-02-rke2-server.miutaku.local
+      192.168.20.129  worker-01-rke2-agent.miutaku.local
+      192.168.20.130  worker-02-rke2-agent.miutaku.local
       192.168.20.135  lb-01-rke2.miutaku.local
       192.168.20.136  lb-02-rke2.miutaku.local
       192.168.20.150  dev-rec-server.miutaku.local
       192.168.20.151  prd-rec-server.miutaku.local
+      192.168.20.191  nas-01.miutaku.local
+      192.168.20.192  nas-02.miutaku.local
+      192.168.20.227  rke2-vip.miutaku.local
+
+      # VLAN 30: クライアントネットワーク
+      192.168.30.120  gaming-pc.miutaku.local
+      192.168.30.124  work-windows.miutaku.local
+
+      # VLAN 40: IoT ネットワーク
+      192.168.40.80   tv.miutaku.local
+
       fallthrough
     }
 }
