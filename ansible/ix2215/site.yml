@@ -18,6 +18,67 @@
       check_mode: false
       no_log: true
 
+    - name: Get DDNS query string from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_ix2215_ddns_query_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      run_once: true
+      register: ix2215_ddns_query
+      changed_when: false
+      check_mode: false
+      no_log: true
+      when: bsm_ix2215_ddns_query_id | length > 0
+
+    - name: Get GigaEthernet2.0 IPv6 interface-identifier from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_ix2215_ipv6_iid_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      run_once: true
+      register: ix2215_ipv6_iid
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Get Tunnel0.0 destination (IPv6) from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_ix2215_tunnel_dest_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      run_once: true
+      register: ix2215_tunnel_dest
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Get Tunnel0.0 fixed IPv4 address from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_ix2215_tunnel_ip_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      run_once: true
+      register: ix2215_tunnel_ip
+      changed_when: false
+      check_mode: false
+      no_log: true
+
   roles:
     - system_base
     - dns_config
@@ -26,6 +87,7 @@
     - dhcp_profiles
     - dhcp_static_lease
     - interfaces
+    - ddns_config
 
   tasks:
     - name: Remove stale entries from main DHCP profile

@@ -1,5 +1,5 @@
 ---
-- name: Configure interfaces (including map-e Tunnel0.0)
+- name: Configure interfaces (including 4-over-6 Tunnel0.0)
   ansible.builtin.command:
     cmd: python3 scripts/configure_interfaces.py
     chdir: "{{ playbook_dir }}"
@@ -9,7 +9,6 @@
     IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
     DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
     IX_INTERFACES_JSON: "{{ ix_interfaces | to_json }}"
-    IX_MAP_E_IKEV2_JSON: "{{ ix_map_e_ikev2 | to_json }}"
   register: result
   changed_when: "'changed=true' in result.stdout"
   failed_when: "'failed=true' in result.stdout or result.rc != 0"

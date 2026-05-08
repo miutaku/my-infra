@@ -4,6 +4,9 @@ ix2215_user: "miutaku"
 
 # BSM シークレット ID (bws secret list で確認)
 bsm_ix2215_ssh_password_id: "ad6bded6-0308-443e-964e-b43b00fab5d5"
+bsm_ix2215_ipv6_iid_id:     "24501c2d-377c-4b1e-a440-b444009d4216" # GigaEthernet2.0 ipv6 interface-identifier
+bsm_ix2215_tunnel_dest_id:  "4885fba3-09a3-4e3c-b82e-b444009ed122" # Tunnel0.0 tunnel destination (IPv6)
+bsm_ix2215_tunnel_ip_id:    "50e7e234-91ee-41e9-a205-b444009f0d6f" # Tunnel0.0 ip address (固定IPv4)
 
 # ---------------------------------------------------------------------------
 # System
@@ -11,7 +14,8 @@ bsm_ix2215_ssh_password_id: "ad6bded6-0308-443e-964e-b43b00fab5d5"
 ix_timezone: "+09 00"
 
 ix_logging:
-  - "subsystem ike info"
+  - "buffered 131072"
+  - "subsystem all warn"
   - "timestamp datetime"
 
 ix_ntp:
@@ -48,6 +52,8 @@ ix_dns_servers_v6:
   - "2001:4860:4860::8844" # Google DNS
   - "2606:4700:4700::1111" # Cloudflare DNS
   - "2606:4700:4700::1001" # Cloudflare DNS
+  - "2404:1a8:7f01:a::3"   # NTT-East DNS
+  - "2404:1a8:7f01:b::3"   # NTT-East DNS
 
 ix_dns_cache:
   enable: true
@@ -277,11 +283,18 @@ ix_dhcpv6_server_profiles:
     dns_server: "dhcp"
 
 # ---------------------------------------------------------------------------
-# map-e (Tunnel0.0) - ikev2 default-profile
+# DDNS (v6プラス固定IP 更新用)
 # ---------------------------------------------------------------------------
-ix_map_e_ikev2:
-  dpd_interval: 10
-  source_address: "Tunnel0.0"
+bsm_ix2215_ddns_query_id: "28ed26db-308d-4903-83e5-b444009cbe2a" # user=xxxxx@pass=yyyy のクエリを返すシークレット
+
+ix_ddns_enable: true
+ix_ddns_profiles:
+  - name: "v6plus-update"
+    url: "http://fcs.enabler.ne.jp/update"
+    # query は site.yml の pre_task で BSM から取得した値 (ix2215_ddns_query.stdout) を使用
+    transport: "ipv6"
+    source_interface: "GigaEthernet2.0"
+    update_interval: 10
 
 # ---------------------------------------------------------------------------
 # Interfaces
@@ -313,18 +326,10 @@ ix_interfaces:
     ip_address: "192.168.0.254/24"
     ip_dhcp_binding: "main"
     ipv6_enable: true
+    ipv6_interface_identifier: "{{ ix2215_ipv6_iid.stdout | trim }}"
     ipv6_dhcp_server: "dhcpv6-sv"
-    ipv6_nd_ra: true
-    ipv6_nd_ra_other_config_flag: true
     bridge_group: 1
     http_server_ip_enable: true
-    shutdown: false
-
-  - name: "GigaEthernet2.8"
-    description: "GuestLAN_AP_tagged_vlan8"
-    encapsulation: "dot1q 8 tpid 8100"
-    auto_connect: true
-    bridge_group: 8
     shutdown: false
 
   - name: "GigaEthernet2.10"
@@ -355,23 +360,10 @@ ix_interfaces:
     bridge_group: 4
     shutdown: false
 
-  - name: "BVI8"
-    description: "GuestLAN_Interface"
-    ip_address: "192.168.8.254/24"
-    ip_dhcp_binding: "guest"
-    ip_filter_in: { seq: 1, list: "guest-acl" }
-    bridge_group: 8
-    shutdown: false
-
   - name: "BVI10"
     description: "MgmtLAN_Interface"
     ip_address: "192.168.10.254/24"
     ip_dhcp_binding: "vlan10"
-    ipv6_enable: true
-    # ipv6_dhcp_server は省略: dhcpv6-sv は BVI1 に bind 済みで複数 BVI への二重 bind は不可
-    # IPv6 アドレス割り当ては SLAAC (ipv6 nd ra enable) で賄う
-    ipv6_nd_ra: true
-    ipv6_nd_ra_other_config_flag: true
     bridge_group: 10
     http_server_ip_enable: true
     shutdown: false
@@ -380,9 +372,6 @@ ix_interfaces:
     description: "ServerLAN_Interface"
     ip_address: "192.168.20.254/24"
     ip_dhcp_binding: "vlan20"
-    ipv6_enable: true
-    ipv6_nd_ra: true
-    ipv6_nd_ra_other_config_flag: true
     bridge_group: 20
     shutdown: false
 
@@ -390,9 +379,6 @@ ix_interfaces:
     description: "ClientLAN_Interface"
     ip_address: "192.168.30.254/24"
     ip_dhcp_binding: "vlan30"
-    ipv6_enable: true
-    ipv6_nd_ra: true
-    ipv6_nd_ra_other_config_flag: true
     bridge_group: 30
     shutdown: false
 
@@ -405,8 +391,10 @@ ix_interfaces:
     shutdown: false
 
   - name: "Tunnel0.0"
-    tunnel_mode: "map-e"
-    ip_address: "map-e"
+    tunnel_mode: "4-over-6"
+    tunnel_destination: "{{ ix2215_tunnel_dest.stdout | trim }}"
+    tunnel_source: "GigaEthernet2.0"
+    ip_address: "{{ ix2215_tunnel_ip.stdout | trim }}/32"
     ip_tcp_adjust_mss: "auto"
     ip_napt_enable: true
     ip_napt_eim_mode: true
