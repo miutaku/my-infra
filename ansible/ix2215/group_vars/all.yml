@@ -134,42 +134,6 @@ ix_dhcp_profiles:
   - name: "main"
     assignable_range: "192.168.0.1 192.168.0.50"
     dns_server: "192.168.0.254"
-    fixed_assignments:
-      - { ip: "192.168.0.51",  mac: "52:54:00:99:00:01" } # mm-server-01      → VLAN 40
-      - { ip: "192.168.0.79",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch   → VLAN 40
-      - { ip: "192.168.0.80",  mac: "88:c9:e8:db:30:81" } # TV                → VLAN 40
-      - { ip: "192.168.0.101", mac: "52:54:00:25:01:01" } # dev-app-server    → VLAN 20
-      - { ip: "192.168.0.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 #1           → VLAN 10
-      - { ip: "192.168.0.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 #2           → VLAN 10
-      - { ip: "192.168.0.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 #3           → VLAN 10
-      - { ip: "192.168.0.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 #4           → VLAN 10
-      - { ip: "192.168.0.111", mac: "b8:27:eb:10:65:f8" } # RPi3 #1           → VLAN 10
-      - { ip: "192.168.0.112", mac: "b8:27:eb:54:33:22" } # RPi3 #2           → VLAN 10
-      - { ip: "192.168.0.113", mac: "b8:27:eb:b6:c1:8b" } # RPi3 #3           → VLAN 10
-      - { ip: "192.168.0.115", mac: "70:85:c2:da:b6:e1" } # pve-x570          → VLAN 10
-      - { ip: "192.168.0.117", mac: "e0:51:d8:10:35:e4" } # pve-nucbox-3 NIC1 → VLAN 10
-      - { ip: "192.168.0.118", mac: "80:b6:55:62:4e:59" } # pve-nucbox-3 NIC2 → VLAN 10
-      - { ip: "192.168.0.119", mac: "a8:a1:59:57:ce:43" } # pve-b550m         → VLAN 10
-      - { ip: "192.168.0.120", mac: "9c:6b:00:96:87:c6" } # gaming-pc         → VLAN 30
-      - { ip: "192.168.0.123", mac: "52:54:00:c1:3a:38" } # server VM         → VLAN 20
-      - { ip: "192.168.0.124", mac: "52:54:00:8c:83:18" } # windows-11-work   → VLAN 30
-      - { ip: "192.168.0.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC       → VLAN 10
-      - { ip: "192.168.0.141", mac: "00:1b:7a:c8:e4:88" } # Wii NIC           → VLAN 40
-      - { ip: "192.168.0.142", mac: "00:22:cf:ed:a9:7a" } # PLANEX            → VLAN 30
-      - { ip: "192.168.0.143", mac: "cc:e1:d5:40:32:d2" } # BUFFALO           → VLAN 30
-      - { ip: "192.168.0.144", mac: "00:e0:4d:ac:58:ec" } # 謎NIC             → VLAN 30
-      - { ip: "192.168.0.150", mac: "52:54:00:23:98:01" } # dev rec-server    → VLAN 20
-      - { ip: "192.168.0.151", mac: "52:54:00:23:99:01" } # prd rec-server    → VLAN 20
-      - { ip: "192.168.0.191", mac: "52:54:00:24:99:02" } # nas-01            → VLAN 20
-      - { ip: "192.168.0.192", mac: "52:54:00:24:99:01" } # nas-02            → VLAN 20
-      - { ip: "192.168.0.228", mac: "1c:90:ff:88:39:33" } # smart home        → VLAN 40
-      - { ip: "192.168.0.229", mac: "3c:61:05:ce:9c:15" } # smart home        → VLAN 40
-      - { ip: "192.168.0.230", mac: "94:e0:d6:67:7f:fb" } # smart home        → VLAN 40
-      - { ip: "192.168.0.231", mac: "38:56:10:c7:a3:e9" } # smart home        → VLAN 40
-      - { ip: "192.168.0.240", mac: "48:da:35:6f:c6:70" } # nanokvm #1        → VLAN 10
-      - { ip: "192.168.0.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2        → VLAN 10
-      - { ip: "192.168.0.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W          → VLAN 10
-      - { ip: "192.168.0.253", mac: "e4:3e:c6:34:1c:00" } # FS AP             → VLAN 10
 
   # ------------------------------------------------------------------
   # guest: 来客ネットワーク (192.168.31.0/24) VLAN 31
@@ -199,6 +163,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.10.117", mac: "e0:51:d8:10:35:e4" } # pve-nucbox-3 NIC1
       - { ip: "192.168.10.118", mac: "80:b6:55:62:4e:59" } # pve-nucbox-3 NIC2
       - { ip: "192.168.10.119", mac: "a8:a1:59:57:ce:43" } # pve-b550m
+      - { ip: "192.168.10.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC
       - { ip: "192.168.10.240", mac: "48:da:35:6f:c6:70" } # nanokvm #1
       - { ip: "192.168.10.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2
       - { ip: "192.168.10.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W
@@ -225,8 +190,8 @@ ix_dhcp_profiles:
       - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02 (RKE2 LB)
       - { ip: "192.168.20.150", mac: "52:54:00:23:98:01" } # dev rec-server
       - { ip: "192.168.20.151", mac: "52:54:00:23:99:01" } # prd rec-server
-      - { ip: "192.168.20.4",   mac: "52:54:00:24:99:02" } # nas-01 (TrueNAS Scale)
-      - { ip: "192.168.20.5",   mac: "52:54:00:24:99:01" } # nas-02 (TrueNAS Scale)
+      - { ip: "192.168.20.191", mac: "52:54:00:24:99:02" } # nas-01 (TrueNAS Scale)
+      - { ip: "192.168.20.192", mac: "52:54:00:24:99:01" } # nas-02 (TrueNAS Scale)
 
   # ------------------------------------------------------------------
   # VLAN 30: クライアントネットワーク (192.168.30.0/24)
@@ -266,10 +231,10 @@ dhcp_remove_ips: []
 
 dhcp_assignments:
   - name: nas-01-truenas-scale
-    ip: "192.168.20.4"
+    ip: "192.168.20.191"
     mac: "52:54:00:24:99:02"
   - name: nas-02-truenas-scale
-    ip: "192.168.20.5"
+    ip: "192.168.20.192"
     mac: "52:54:00:24:99:01"
   - name: lb-01-rke2-haproxy-keepalived
     ip: "192.168.20.135"
