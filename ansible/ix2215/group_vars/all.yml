@@ -82,7 +82,21 @@ ix_static_routes_v4:
 # ---------------------------------------------------------------------------
 # IP access lists
 # ---------------------------------------------------------------------------
-ix_access_lists: []
+ix_access_lists:
+  - name: "guest-acl"
+    entries:
+      # DHCP Discover/Request: IP取得前は src=0.0.0.0 → broadcast のため個別許可
+      - "5 permit ip src 0.0.0.0/32 dest 255.255.255.255/32"
+      # 自サブネット内通信を全許可 (DHCP Renew / DNS / ICMP to GW をまとめて解決)
+      # 192.168.31.x → 192.168.31.254 の全プロトコルを許可することで
+      # rule 20 の deny 192.168.0.0/16 に含まれる問題も回避できる
+      - "10 permit ip src 192.168.31.0/24 dest 192.168.31.0/24"
+      # 他の内部ネットワークへのアクセスを拒否
+      - "20 deny ip src 192.168.31.0/24 dest 192.168.0.0/16"
+      - "21 deny ip src 192.168.31.0/24 dest 10.0.0.0/8"
+      - "22 deny ip src 192.168.31.0/24 dest 172.16.0.0/12"
+      # インターネットへのアクセスを許可
+      - "100 permit ip src any dest any"
 
 ix_ipv6_access_lists:
   - name: "block-list"
@@ -156,6 +170,15 @@ ix_dhcp_profiles:
       - { ip: "192.168.0.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2        → VLAN 10
       - { ip: "192.168.0.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W          → VLAN 10
       - { ip: "192.168.0.253", mac: "e4:3e:c6:34:1c:00" } # FS AP             → VLAN 10
+
+  # ------------------------------------------------------------------
+  # guest: 来客ネットワーク (192.168.31.0/24) VLAN 31
+  # BVI31 に guest-acl (in) を適用し他 VLAN への横断を遮断
+  # ------------------------------------------------------------------
+  - name: "guest"
+    assignable_range: "192.168.31.1 192.168.31.100"
+    default_gateway: "192.168.31.254"
+    dns_server: "192.168.31.254"
 
   # ------------------------------------------------------------------
   # VLAN 10: 管理ネットワーク (192.168.10.0/24)
@@ -332,6 +355,13 @@ ix_interfaces:
     http_server_ip_enable: true
     shutdown: false
 
+  - name: "GigaEthernet2.31"
+    description: "GuestLAN_AP_tagged_vlan31"
+    encapsulation: "dot1q 31 tpid 8100"
+    auto_connect: true
+    bridge_group: 31
+    shutdown: false
+
   - name: "GigaEthernet2.10"
     description: "MgmtLAN_AP_tagged_vlan10"
     encapsulation: "dot1q 10 tpid 8100"
@@ -358,6 +388,14 @@ ix_interfaces:
     encapsulation: "dot1q 40 tpid 8100"
     auto_connect: true
     bridge_group: 4
+    shutdown: false
+
+  - name: "BVI31"
+    description: "GuestLAN_Interface"
+    ip_address: "192.168.31.254/24"
+    ip_dhcp_binding: "guest"
+    ip_filter_in: { seq: 1, list: "guest-acl" }
+    bridge_group: 31
     shutdown: false
 
   - name: "BVI10"
