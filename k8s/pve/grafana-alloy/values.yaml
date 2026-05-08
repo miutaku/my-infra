@@ -177,7 +177,7 @@ alloy:
           { "__address__" = "192.168.20.151:9100", "instance" = "prd-rec-server",   "job" = "node" },
           { "__address__" = "192.168.20.135:9100", "instance" = "lb-01",            "job" = "node" },
           { "__address__" = "192.168.20.136:9100", "instance" = "lb-02",            "job" = "node" },
-          { "__address__" = "192.168.40.1:9100",   "instance" = "mm-server-01",     "job" = "node" },
+          { "__address__" = "192.168.40.51:9100",  "instance" = "mm-server-01",     "job" = "node" },
         ]
         forward_to = [
           prometheus.remote_write.victoria_metrics.receiver,
@@ -192,7 +192,7 @@ alloy:
         targets = [
           {
             "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
-            "__param_target"   = "192.168.20.4",
+            "__param_target"   = "192.168.20.191",
             "__param_module"   = "truenas",
             "__param_auth"     = "truenas_v2",
             "instance"         = "nas-01",
@@ -200,7 +200,7 @@ alloy:
           },
           {
             "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
-            "__param_target"   = "192.168.20.5",
+            "__param_target"   = "192.168.20.192",
             "__param_module"   = "truenas",
             "__param_auth"     = "truenas_v2",
             "instance"         = "nas-02",
@@ -255,16 +255,22 @@ alloy:
       // ── blackbox-exporter: ICMP 死活監視 ─────────────────────────────────
       prometheus.scrape "blackbox_icmp" {
         targets = [
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.254",   "__param_module" = "icmp", "instance" = "ix2215",          "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.115",  "__param_module" = "icmp", "instance" = "pve-x570",         "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.119",  "__param_module" = "icmp", "instance" = "pve-b550m",        "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.101",  "__param_module" = "icmp", "instance" = "dev-app-server",   "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.150",  "__param_module" = "icmp", "instance" = "dev-rec-server",   "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.151",  "__param_module" = "icmp", "instance" = "prd-rec-server",   "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.4",    "__param_module" = "icmp", "instance" = "nas-01",           "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.5",    "__param_module" = "icmp", "instance" = "nas-02",           "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.135",  "__param_module" = "icmp", "instance" = "lb-01",            "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.136",  "__param_module" = "icmp", "instance" = "lb-02",            "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.254",   "__param_module" = "icmp", "instance" = "ix2215",             "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.115",  "__param_module" = "icmp", "instance" = "pve-x570",            "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.119",  "__param_module" = "icmp", "instance" = "pve-b550m",           "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.101",  "__param_module" = "icmp", "instance" = "dev-app-server",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.126",  "__param_module" = "icmp", "instance" = "master-01-rke2",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.127",  "__param_module" = "icmp", "instance" = "master-02-rke2",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.128",  "__param_module" = "icmp", "instance" = "master-03-rke2",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.129",  "__param_module" = "icmp", "instance" = "worker-01-rke2",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.130",  "__param_module" = "icmp", "instance" = "worker-02-rke2",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.135",  "__param_module" = "icmp", "instance" = "lb-01",               "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.136",  "__param_module" = "icmp", "instance" = "lb-02",               "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.150",  "__param_module" = "icmp", "instance" = "dev-rec-server",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.151",  "__param_module" = "icmp", "instance" = "prd-rec-server",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.191",  "__param_module" = "icmp", "instance" = "nas-01",              "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.192",  "__param_module" = "icmp", "instance" = "nas-02",              "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.227",  "__param_module" = "icmp", "instance" = "rke2-vip",            "job" = "blackbox_icmp" },
         ]
         metrics_path    = "/probe"
         forward_to      = [
