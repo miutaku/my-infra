@@ -1,6 +1,6 @@
 # my-infra
 
-自宅ホームラボ + OCI クラウドのインフラ全体を管理するリポジトリ。
+自宅ホームラボ + クラウドサービス等、インフラ全体を管理するリポジトリ。
 
 ## アーキテクチャ概要
 
@@ -47,14 +47,14 @@
 
 ## ドメイン
 
-`miutaku.work` — Cloudflare で管理。Let's Encrypt (DNS01) で証明書取得。  
-`miutaku.local` — CoreDNS (RKE2 on MetalLB `192.168.20.201`) で内部名前解決。
+`miutaku.work` — Cloudflare で管理。
+`miutaku.internal` — CoreDNS (RKE2 on MetalLB `192.168.20.201`) で内部名前解決。
 
 ## ネットワーク構成
 
 | VLAN | サブネット | 用途 |
 |------|-----------|------|
-| (native) | 192.168.0.0/24 | レガシー / 移行期間中 |
+| (native) | 192.168.0.0/24 | |
 | VLAN 10 | 192.168.10.0/24 | 管理 (PVE / RPi / nanokvm / スイッチ / AP) |
 | VLAN 20 | 192.168.20.0/24 | サーバ (RKE2 / NAS / MetalLB pool: .200-.226) |
 | VLAN 30 | 192.168.30.0/24 | クライアント (PC / ゲーム機) |
