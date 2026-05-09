@@ -117,8 +117,8 @@ my-infra/
 
 ```bash
 # 1. 各クラスタの kubeconfig を取得して名前変更
-scp master-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml
-oci ce cluster create-kubeconfig --cluster-id <cluster-ocid> --file ~/.kube/oke.yaml \
+scp master-01:/etc/rancher/rke2/rke2.yaml ~/.kube/config-rke2.yaml
+oci ce cluster create-kubeconfig --cluster-id <cluster-ocid> --file ~/.kube/config-oke.yaml \
   --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT
 
 # 2. context 名を変更 (rke2.yaml)
