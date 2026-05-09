@@ -51,6 +51,8 @@ def dhcp_profile_setting_lines(profile: dict) -> list[str]:
     lines = []
     if "assignable_range" in profile:
         lines.append(f"  assignable-range {profile['assignable_range']}")
+    if "domain_name" in profile:
+        lines.append(f"  domain-name {profile['domain_name']}")
     if "default_gateway" in profile:
         lines.append(f"  default-gateway {profile['default_gateway']}")
     if "dns_server" in profile:
