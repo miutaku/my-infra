@@ -12,7 +12,7 @@ data:
 
     [[inputs.netflow]]
       service_address = "udp://:2055"
-      protocol = "netflow v9"
+      protocol = "ipfix"
 
     # src/dst/protocol/tcp_flags/interface を Prometheus ラベル (tag) に昇格させる
     # src_port/dst_port はカーディナリティ抑制のため除外
