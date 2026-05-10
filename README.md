@@ -33,7 +33,7 @@
          │  - cloudflared        │    │  - grafana-alloy        │
          │  - MetalLB / Tailscale│    │  - actions-runner       │
          │  - blackbox-exporter  │    │                          │
-         │  - pmacct (nfacctd)   │    │                          │
+         │                       │    │                          │
          │  - CoreDNS            │    │                          │
          │  - WoL (gptwol)       │    │                          │
          │  - tfc-agent          │    │                          │
@@ -162,7 +162,6 @@ kubens               # namespace 一覧
 | Packer Ubuntu | [packer/ubuntu-26-04/README.md](./packer/ubuntu-26-04/README.md) | テンプレートビルド |
 | Packer TrueNAS | [packer/truenas-scale/README.md](./packer/truenas-scale/README.md) | テンプレートビルド |
 | Actions Runner (OKE) | [k8s/oci/apps/actions-runner/README.md](./k8s/oci/apps/actions-runner/README.md) | OKE 上の GitHub runner |
-| pmacct | [k8s/pve/pmacct/](./k8s/pve/pmacct/) | IX2215 NetFlow v9 受信・Prometheus メトリクス公開 |
 
 ## 監視アーキテクチャ
 
@@ -174,7 +173,7 @@ kubens               # namespace 一覧
          │
          ▼
   Grafana Alloy (RKE2 DaemonSet)
-  ├─ scrape: node / pods / SNMP / PVE / static VMs / blackbox / pmacct
+  ├─ scrape: node / pods / SNMP / PVE / static VMs / blackbox
   ├─ remote_write → VictoriaMetrics (クラスタ内 :8428)
   └─ remote_write → Grafana Cloud (remote_write endpoint)
          │
@@ -188,7 +187,6 @@ kubens               # namespace 一覧
 |---|---|---|---|
 | IX2215 | 192.168.0.254 | snmp-exporter (IF-MIB) | ✅ |
 | IX2215 | 192.168.0.254 | blackbox HTTP/ICMP | ✅ |
-| IX2215 | 192.168.0.254 | pmacct nfacctd (NetFlow v9 → 192.168.20.210) | ✅ |
 | pve-x570 | 192.168.10.115 | pve-exporter | BSM 要設定 |
 | pve-b550m | 192.168.10.119 | pve-exporter | BSM 要設定 |
 | RKE2 nodes ×5 | 192.168.20.126-130 | Alloy DaemonSet (node) | ✅ |

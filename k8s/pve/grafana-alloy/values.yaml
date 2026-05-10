@@ -286,22 +286,6 @@ alloy:
         scrape_interval = "30s"
       }
 
-      // ── pmacct: IX2215 NetFlow フローメトリクス (src/dst/proto/tcp_flags) ────
-      prometheus.scrape "pmacct" {
-        targets = [
-          {
-            "__address__" = "pmacct-metrics.monitoring.svc.cluster.local:9273",
-            "instance"    = "ix2215-netflow",
-            "job"         = "pmacct",
-          },
-        ]
-        forward_to = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
-        scrape_interval = "60s"
-      }
-
       // ── Remote write: VictoriaMetrics (クラスタ内) ────────────────────────
       prometheus.remote_write "victoria_metrics" {
         endpoint {
