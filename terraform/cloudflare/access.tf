@@ -9,10 +9,10 @@ resource "cloudflare_zero_trust_access_application" "protected" {
 }
 
 resource "cloudflare_zero_trust_access_policy" "allow_emails" {
-  for_each = cloudflare_zero_trust_access_application.protected
+  for_each = local.access_protected_subdomains
 
   account_id     = var.account_id
-  application_id = each.value.id
+  application_id = cloudflare_zero_trust_access_application.protected[each.key].id
   name           = "allow-${each.key}-managed-by-tf"
   precedence     = 1
   decision       = "allow"

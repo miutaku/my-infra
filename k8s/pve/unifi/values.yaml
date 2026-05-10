@@ -15,21 +15,21 @@ controllerService:
   type: LoadBalancer
   port: 8080
   annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.20.201"
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
     metallb.universe.tf/allow-shared-ip: "unifi"
 
 stunService:
   type: LoadBalancer
   port: 3478
   annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.20.201"
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
     metallb.universe.tf/allow-shared-ip: "unifi"
 
 discoveryService:
   type: LoadBalancer
   port: 10001
   annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.20.201"
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
     metallb.universe.tf/allow-shared-ip: "unifi"
 
 jvmMaxHeap: 1024m
