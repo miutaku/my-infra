@@ -1,6 +1,7 @@
 FROM ubuntu:24.04 AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     build-essential git autoconf automake libtool pkg-config \
     libpcap-dev libmicrohttpd-dev \
     && rm -rf /var/lib/apt/lists/*
