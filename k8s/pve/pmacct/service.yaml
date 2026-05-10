@@ -29,6 +29,6 @@ spec:
     app: pmacct
   ports:
     - name: metrics
-      port: 9514
-      targetPort: 9514
+      port: 9273
+      targetPort: 9273
       protocol: TCP

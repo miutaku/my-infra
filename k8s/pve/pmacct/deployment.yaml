@@ -14,23 +14,23 @@ spec:
         app: pmacct
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9514"
+        prometheus.io/port: "9273"
         prometheus.io/path: "/metrics"
     spec:
       containers:
-        - name: nfacctd
-          image: ghcr.io/miutaku/nfacctd-prometheus:v1.7.9
-          args: ["-f", "/etc/pmacct/nfacctd.conf"]
+        - name: telegraf
+          image: telegraf:1.33
+          args: ["--config", "/etc/telegraf/telegraf.conf"]
           ports:
             - name: netflow
               containerPort: 2055
               protocol: UDP
             - name: metrics
-              containerPort: 9514
+              containerPort: 9273
               protocol: TCP
           volumeMounts:
             - name: config
-              mountPath: /etc/pmacct
+              mountPath: /etc/telegraf
               readOnly: true
           resources:
             requests:

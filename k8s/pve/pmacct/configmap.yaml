@@ -4,20 +4,24 @@ metadata:
   name: pmacct-config
   namespace: monitoring
 data:
-  nfacctd.conf: |
-    # IX2215 から NetFlow v9 を受信し Prometheus メトリクスとして公開する
+  telegraf.conf: |
+    [agent]
+      interval = "10s"
+      flush_interval = "60s"
+      omit_hostname = true
 
-    daemonize: false
-    nfacctd_port: 2055
-    nfacctd_ip: 0.0.0.0
+    [[inputs.netflow]]
+      service_address = "udp://:2055"
+      protocol = "netflow v9"
 
-    plugins: prom[metrics]
+    # src/dst/protocol/tcp_flags/interface を Prometheus ラベル (tag) に昇格させる
+    # src_port/dst_port はカーディナリティ抑制のため除外
+    [[processors.converter]]
+      [processors.converter.fields]
+        tag = ["src", "dst", "protocol", "tcp_flags", "in_snmp", "out_snmp"]
 
-    # src_host / dst_host でトップトーカーを特定
-    # proto / src_port / dst_port でプロトコル・サービス別分析
-    # in_iface / out_iface は IX2215 の SNMP ifIndex と対応 (snmp-exporter の ifIndex ラベルと一致)
-    # tcp_flags: RST/SYN-only フローで失敗した通信を検出する
-    aggregate[metrics]: src_host, dst_host, proto, src_port, dst_port, in_iface, out_iface, tcp_flags
-    type[metrics]: prom
-    prom_output[metrics]: standard
-    prom_port[metrics]: 9514
+    [[outputs.prometheus_client]]
+      listen = ":9273"
+      path = "/metrics"
+      metric_version = 2
+      expiration_interval = "120s"
