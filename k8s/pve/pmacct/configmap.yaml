@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pmacct-config
+  namespace: monitoring
+data:
+  nfacctd.conf: |
+    # IX2215 から NetFlow v9 を受信し Prometheus メトリクスとして公開する
+
+    daemonize: false
+    nfacctd_port: 2055
+    nfacctd_ip: 0.0.0.0
+
+    plugins: prom[metrics]
+
+    # src_host / dst_host でトップトーカーを特定
+    # proto / src_port / dst_port でプロトコル・サービス別分析
+    # in_iface / out_iface は IX2215 の SNMP ifIndex と対応 (snmp-exporter の ifIndex ラベルと一致)
+    # tcp_flags: RST/SYN-only フローで失敗した通信を検出する
+    aggregate[metrics]: src_host, dst_host, proto, src_port, dst_port, in_iface, out_iface, tcp_flags
+    type[metrics]: prom
+    prom_output[metrics]: standard
+    prom_port[metrics]: 9514

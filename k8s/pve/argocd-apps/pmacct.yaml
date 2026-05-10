@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ntopng-exporter
+  name: pmacct
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/miutaku/my-infra.git
     targetRevision: main
-    path: k8s/pve/ntopng-exporter
+    path: k8s/pve/pmacct
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
