@@ -18,7 +18,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 
   if echo "$changed_files" | grep -q "^ansible/ix2215/"; then
     echo ">>> ansible-lint (ansible/ix2215)"
-    if ! (cd "$REPO_ROOT/ansible/ix2215" && pipenv run ansible-lint site.yml); then
+    if ! (cd "$REPO_ROOT/ansible/ix2215" && PIPENV_IGNORE_VIRTUALENVS=1 pipenv run ansible-lint site.yml); then
       echo "FAILED: ansible-lint"
       FAILED=1
     fi
