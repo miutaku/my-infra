@@ -89,7 +89,6 @@
     - dhcp_static_lease
     - interfaces
     - ddns_config
-    - netflow
 
   tasks:
     - name: Remove stale entries from main DHCP profile
