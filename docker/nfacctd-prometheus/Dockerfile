@@ -12,7 +12,7 @@ RUN git clone --depth 1 --branch ${PMACCT_VERSION} \
 
 WORKDIR /src/pmacct
 RUN ./autogen.sh && \
-    ./configure && \
+    ./configure --with-microhttpd && \
     make -j"$(nproc)" && \
     strip src/nfacctd
 
