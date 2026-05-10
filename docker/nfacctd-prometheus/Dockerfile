@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:22.04 AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -12,13 +12,13 @@ RUN git clone --depth 1 --branch ${PMACCT_VERSION} \
 
 WORKDIR /src/pmacct
 RUN ./autogen.sh && \
-    ./configure --enable-prometheus && \
-    make -j"$(nproc)" nfacctd && \
+    ./configure && \
+    make -j"$(nproc)" && \
     strip src/nfacctd
 
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpcap0.8t64 libmicrohttpd12t64 \
+    libpcap0.8 libmicrohttpd12 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/pmacct/src/nfacctd /usr/local/sbin/nfacctd
