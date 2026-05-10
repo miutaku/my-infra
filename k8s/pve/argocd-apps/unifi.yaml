@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: unifi
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/mkilchhofer/unifi-chart.git
+      targetRevision: main
+      path: charts/unifi
+      helm:
+        releaseName: unifi
+        valueFiles:
+          - $values/k8s/pve/unifi/values.yaml
+    - repoURL: https://github.com/miutaku/my-infra.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: unifi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

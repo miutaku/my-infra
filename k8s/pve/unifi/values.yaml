@@ -1,0 +1,42 @@
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 10Gi
+
+# GUI (8443) は ClusterIP のまま、port-forward またはインテグレーションで利用
+guiService:
+  type: ClusterIP
+  port: 8443
+
+# デバイス通信用ポートを MetalLB LoadBalancer で固定 IP 公開
+# 192.168.20.201 は MetalLB プール (200-226) 内の未使用 IP
+# 複数 Service で IP を共有するため allow-shared-ip を設定
+controllerService:
+  type: LoadBalancer
+  port: 8080
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.201"
+    metallb.universe.tf/allow-shared-ip: "unifi"
+
+stunService:
+  type: LoadBalancer
+  port: 3478
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.201"
+    metallb.universe.tf/allow-shared-ip: "unifi"
+
+discoveryService:
+  type: LoadBalancer
+  port: 10001
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.201"
+    metallb.universe.tf/allow-shared-ip: "unifi"
+
+jvmMaxHeap: 1024m
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    memory: 1536Mi
