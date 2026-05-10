@@ -1,36 +1,34 @@
 ---
-# NetFlow 受信用 LoadBalancer (UDP 2055)
-# IX2215 が 192.168.20.210:2055 に NetFlow v9 を送信する
+# IX2215 が NetFlow v9 を送信する宛先 (MetalLB IP は ntopng から引き継ぎ)
 apiVersion: v1
 kind: Service
 metadata:
-  name: ntopng-netflow
+  name: pmacct-netflow
   namespace: monitoring
   annotations:
     metallb.universe.tf/loadBalancerIPs: "192.168.20.210"
-    metallb.universe.tf/allow-shared-ip: "ntopng"
 spec:
   type: LoadBalancer
   selector:
-    app: ntopng
+    app: pmacct
   ports:
     - name: netflow
       port: 2055
       targetPort: 2055
       protocol: UDP
 ---
-# Web UI 用 ClusterIP (Cloudflare Tunnel 経由でアクセス)
+# Grafana Alloy が Prometheus メトリクスをスクレイプする
 apiVersion: v1
 kind: Service
 metadata:
-  name: ntopng-web
+  name: pmacct-metrics
   namespace: monitoring
 spec:
   type: ClusterIP
   selector:
-    app: ntopng
+    app: pmacct
   ports:
-    - name: http
-      port: 3000
-      targetPort: 3000
+    - name: metrics
+      port: 9514
+      targetPort: 9514
       protocol: TCP

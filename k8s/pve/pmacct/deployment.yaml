@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pmacct
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pmacct
+  template:
+    metadata:
+      labels:
+        app: pmacct
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9514"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: nfacctd
+          image: pmacct/pmacct:latest
+          command: ["nfacctd"]
+          args: ["-f", "/etc/pmacct/nfacctd.conf"]
+          ports:
+            - name: netflow
+              containerPort: 2055
+              protocol: UDP
+            - name: metrics
+              containerPort: 9514
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pmacct
+              readOnly: true
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: pmacct-config
+      restartPolicy: Always

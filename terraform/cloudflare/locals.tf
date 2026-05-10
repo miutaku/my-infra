@@ -54,11 +54,6 @@ locals {
       backend       = "http://192.168.10.241"
       no_tls_verify = false
     }
-    ntopng = {
-      # ntopng Web UI (MetalLB: 192.168.20.210 → ClusterIP service port 3000)
-      backend       = "http://ntopng-web.monitoring.svc.cluster.local:3000"
-      no_tls_verify = false
-    }
   }
 
   # Services exposed through the OKE (cloud) tunnel.
@@ -76,7 +71,6 @@ locals {
     "nas-01", "nas-02",
     "pve-x570", "pve-b550m",
     "nanokvm-1", "nanokvm-2",
-    "ntopng",
   ])
 
   # Validate: all protected subdomains must be declared in a service map.
