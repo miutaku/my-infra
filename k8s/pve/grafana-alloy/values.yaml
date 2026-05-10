@@ -286,6 +286,22 @@ alloy:
         scrape_interval = "30s"
       }
 
+      // ── ntopng-exporter: per-host / per-interface / L7 フローメトリクス ─────
+      prometheus.scrape "ntopng_exporter" {
+        targets = [
+          {
+            "__address__" = "ntopng-exporter.monitoring.svc.cluster.local:3001",
+            "instance"    = "ntopng",
+            "job"         = "ntopng",
+          },
+        ]
+        forward_to = [
+          prometheus.remote_write.victoria_metrics.receiver,
+          prometheus.remote_write.grafana_cloud.receiver,
+        ]
+        scrape_interval = "30s"
+      }
+
       // ── Remote write: VictoriaMetrics (クラスタ内) ────────────────────────
       prometheus.remote_write "victoria_metrics" {
         endpoint {
