@@ -37,7 +37,6 @@ spec:
               mountPath: /var/lib/ntopng
           resources:
             requests:
-              cpu: 50m
               memory: 256Mi
             limits:
               memory: 1Gi
