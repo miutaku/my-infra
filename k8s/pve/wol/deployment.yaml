@@ -38,6 +38,8 @@ spec:
               value: "5000"
             - name: TZ
               value: "Asia/Tokyo"
+            - name: WEB_CONCURRENCY
+              value: "2"
           ports:
             - containerPort: 5000
               name: http
