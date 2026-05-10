@@ -19,9 +19,10 @@ data:
         - l7protocols
 
     host:
-      # NetFlow 受信時のインターフェース名は ntopng の Web UI で確認する。
-      # 空リストの場合は全インターフェースを対象にする。
-      interfacesToMonitor: []
+      # ntopng が -i nf://@2055 で起動すると "nf" という仮想 IF が作成される。
+      # 実際の名前は ntopng Web UI の Interfaces 画面で確認して必要に応じて修正する。
+      interfacesToMonitor:
+        - nf
 
     metric:
       localSubnetsOnly:
