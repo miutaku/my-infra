@@ -19,8 +19,7 @@ spec:
     spec:
       containers:
         - name: nfacctd
-          image: pmacct/pmacct:latest
-          command: ["nfacctd"]
+          image: pmacct/nfacctd:v1.7.9
           args: ["-f", "/etc/pmacct/nfacctd.conf"]
           ports:
             - name: netflow
