@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: ntopng
-          image: ntop/ntopng:stable
+          image: ntop/ntopng:latest
           args:
             - --community
             - -i
