@@ -1,0 +1,36 @@
+---
+# NetFlow 受信用 LoadBalancer (UDP 2055)
+# IX2215 が 192.168.20.210:2055 に NetFlow v9 を送信する
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntopng-netflow
+  namespace: monitoring
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.210"
+    metallb.universe.tf/allow-shared-ip: "ntopng"
+spec:
+  type: LoadBalancer
+  selector:
+    app: ntopng
+  ports:
+    - name: netflow
+      port: 2055
+      targetPort: 2055
+      protocol: UDP
+---
+# Web UI 用 ClusterIP (Cloudflare Tunnel 経由でアクセス)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntopng-web
+  namespace: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app: ntopng
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

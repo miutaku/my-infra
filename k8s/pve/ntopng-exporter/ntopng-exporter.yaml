@@ -1,0 +1,90 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntopng-exporter-config
+  namespace: monitoring
+data:
+  ntopng-exporter.yaml: |
+    ntopng:
+      endpoint: "http://ntopng-web.monitoring.svc.cluster.local:3000"
+      allowUnsafeTLS: false
+      user: admin
+      password: admin
+      authMethod: cookie
+      scrapeInterval: 15s
+      scrapeTargets:
+        - hosts
+        - interfaces
+        - l7protocols
+
+    host:
+      # NetFlow 受信時のインターフェース名は ntopng の Web UI で確認する。
+      # 空リストの場合は全インターフェースを対象にする。
+      interfacesToMonitor: []
+
+    metric:
+      localSubnetsOnly:
+        - "192.168.0.0/16"
+        - "224.0.0.0/4"
+      excludeDNSMetrics: false
+      serve:
+        ip: 0.0.0.0
+        port: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntopng-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ntopng-exporter
+  template:
+    metadata:
+      labels:
+        app: ntopng-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ntopng-exporter
+          image: aauren/ntopng-exporter:v1.5.0
+          ports:
+            - name: metrics
+              containerPort: 3001
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: config
+          configMap:
+            name: ntopng-exporter-config
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntopng-exporter
+  namespace: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app: ntopng-exporter
+  ports:
+    - name: metrics
+      port: 3001
+      targetPort: 3001
+      protocol: TCP

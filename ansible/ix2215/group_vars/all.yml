@@ -28,6 +28,21 @@ ix_snmp:
     - "monitor"
     - "public"
 
+# ---------------------------------------------------------------------------
+# NetFlow (ntopng)
+# ---------------------------------------------------------------------------
+# destination_ip: MetalLB で払い出した ntopng-netflow Service の IP
+# interfaces: フロー収集対象インターフェース
+#   GigaEthernet0.0 ... WAN (PPPoE/IPoE 受信側)
+#   Tunnel0.0       ... MAP-E トンネル (実際のインターネット上り下り)
+ix_netflow:
+  version: 9
+  destination_ip: "192.168.20.210"
+  destination_port: 2055
+  interfaces:
+    - "GigaEthernet0.0"
+    - "Tunnel0.0"
+
 ix_system_services:
   ssh_server_ip: true
   vrrp: true
