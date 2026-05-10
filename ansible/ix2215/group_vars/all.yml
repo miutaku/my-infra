@@ -40,8 +40,19 @@ ix_netflow:
   destination_ip: "192.168.20.210"
   destination_port: 2055
   interfaces:
-    - "GigaEthernet0.0"
-    - "Tunnel0.0"
+    - "GigaEthernet0.0"    # WAN
+    - "GigaEthernet2.0"    # MainLAN (AP trunk untag)
+    - "GigaEthernet2.10"   # MgmtLAN  VLAN10
+    - "GigaEthernet2.20"   # ServerLAN VLAN20
+    - "GigaEthernet2.30"   # ClientLAN VLAN30
+    - "GigaEthernet2.31"   # GuestLAN  VLAN31
+    - "GigaEthernet2.4"    # IoTLAN    VLAN40
+    - "BVI10"              # MgmtLAN   192.168.10.254
+    - "BVI20"              # ServerLAN 192.168.20.254
+    - "BVI30"              # ClientLAN 192.168.30.254
+    - "BVI31"              # GuestLAN  192.168.31.254
+    - "BVI4"               # IoTLAN    192.168.40.254
+    - "Tunnel0.0"          # MAP-E トンネル
 
 ix_system_services:
   ssh_server_ip: true
