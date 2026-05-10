@@ -290,7 +290,7 @@ alloy:
       prometheus.scrape "pmacct" {
         targets = [
           {
-            "__address__" = "pmacct-metrics.monitoring.svc.cluster.local:9514",
+            "__address__" = "pmacct-metrics.monitoring.svc.cluster.local:9273",
             "instance"    = "ix2215-netflow",
             "job"         = "pmacct",
           },
