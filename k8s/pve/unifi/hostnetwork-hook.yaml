@@ -70,7 +70,7 @@ spec:
                       "initContainers": [{
                         "name": "write-system-properties",
                         "image": "busybox:latest",
-                        "command": ["sh", "-c", "mkdir -p /config/data && printf 'db.mongo.uri=mongodb+srv://%s:%s@unifi.ps73pvx.mongodb.net/unifi?authSource=admin\\ndb.mongo.dbname=unifi\\n' \"$MONGO_USER\" \"$MONGO_PASS\" > /config/data/system.properties"],
+                        "command": ["sh", "-c", "mkdir -p /config/data && printf 'db.mongo.uri=mongodb+srv://%s:%s@unifi.ps73pvx.mongodb.net/ace?authSource=admin\\ndb.mongo.dbname=ace\\n' \"$MONGO_USER\" \"$MONGO_PASS\" > /config/data/system.properties"],
                         "env": [{
                           "name": "MONGO_USER",
                           "valueFrom": {
