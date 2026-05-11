@@ -18,9 +18,20 @@ spec:
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
       ref: values
+    - repoURL: https://github.com/miutaku/my-infra.git
+      targetRevision: main
+      path: k8s/pve/unifi
   destination:
     server: https://kubernetes.default.svc
     namespace: unifi
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: unifi
+      namespace: unifi
+      jsonPointers:
+        - /spec/template/spec/hostNetwork
+        - /spec/template/spec/dnsPolicy
   syncPolicy:
     automated:
       prune: true
