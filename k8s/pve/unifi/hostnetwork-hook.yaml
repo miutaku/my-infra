@@ -30,9 +30,10 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 # Post-Sync Hook:
-# hostNetwork: true + initContainer (system.properties削除) を Deployment にパッチする
-# initContainer が毎回起動前に system.properties を削除することで
-# linuxserver が MONGO_* 変数から常に最新の認証情報で再生成する
+# hostNetwork: true + initContainer (system.properties書き込み) を Deployment にパッチする
+# linuxserver は MONGO_* env からレプリカセット対応URIを生成できないため、
+# initContainer が毎回起動前に mongodb+srv:// URIを system.properties に直接書き込む
+# (--type merge で initContainers 配列をまるごと置換し古いコンテナが残らないようにする)
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -57,7 +58,7 @@ spec:
             - -n
             - unifi
             - --type
-            - strategic
+            - merge
             - -p
             - |
               {
@@ -67,9 +68,26 @@ spec:
                       "hostNetwork": true,
                       "dnsPolicy": "ClusterFirstWithHostNet",
                       "initContainers": [{
-                        "name": "remove-system-properties",
+                        "name": "write-system-properties",
                         "image": "busybox:latest",
-                        "command": ["sh", "-c", "rm -f /config/data/system.properties"],
+                        "command": ["sh", "-c", "mkdir -p /config/data && printf 'db.mongo.uri=mongodb+srv://%s:%s@unifi.ps73pvx.mongodb.net/unifi?authSource=admin\\ndb.mongo.dbname=unifi\\n' \"$MONGO_USER\" \"$MONGO_PASS\" > /config/data/system.properties"],
+                        "env": [{
+                          "name": "MONGO_USER",
+                          "valueFrom": {
+                            "secretKeyRef": {
+                              "name": "unifi-mongodb-secret",
+                              "key": "username"
+                            }
+                          }
+                        }, {
+                          "name": "MONGO_PASS",
+                          "valueFrom": {
+                            "secretKeyRef": {
+                              "name": "unifi-mongodb-secret",
+                              "key": "password"
+                            }
+                          }
+                        }],
                         "volumeMounts": [{
                           "name": "unifi-data",
                           "mountPath": "/config"
