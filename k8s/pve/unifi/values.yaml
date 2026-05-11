@@ -40,7 +40,7 @@ extraEnvVars:
   - name: MONGO_PORT
     value: "27017"
   - name: MONGO_DBNAME
-    value: "unifi"
+    value: "ace"
   - name: MONGO_AUTHSOURCE
     value: "admin"
   - name: MONGO_TLS
