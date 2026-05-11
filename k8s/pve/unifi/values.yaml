@@ -1,3 +1,6 @@
+image:
+  tag: "v10.3.58"
+
 persistence:
   enabled: true
   storageClass: local-path
