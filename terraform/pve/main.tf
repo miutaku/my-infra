@@ -158,7 +158,6 @@ module "rke2_unifi_worker" {
   memory            = 4096
   clone_template    = local.ubuntu_template
   proxmox_nodes     = ["pve-x570"]
-  vlan_tag          = 10
   cloudinit_storage = "local-zfs"
 }
 
