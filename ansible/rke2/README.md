@@ -82,6 +82,11 @@ kubectl label nodes $(kubectl get nodes --no-headers | awk '$3 == "<none>" { pri
   kubernetes.io/role=agent --overwrite=true
 ```
 
+NWのためにVLAN10に割当たるノードのために以下のラベル付けもする。
+```bash
+kubectl label node worker-nw-01-rke2-agent-ubuntu-26-04-home-amd64 unifi=true
+```
+
 ## 次のステップ
 
 RKE2 クラスタ起動後、`k8s/pve/argocd/README.md` の手順で ArgoCD を Bootstrap する。
