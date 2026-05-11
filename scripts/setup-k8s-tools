@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# 新規マシンに k8s 操作ツール一式をインストールする (冪等)
+# 対象: kubectl, kubectx, kubens, OCI CLI, bws
+#
+# 前提: BWS_ACCESS_TOKEN 環境変数を設定してから実行すること
+#   export BWS_ACCESS_TOKEN=<token>
+#   setup-k8s-tools
+set -euo pipefail
+
+BWS_VERSION="2.0.0"
+
+step() { echo; echo "==> $*"; }
+
+# ---------- ディレクトリ ----------
+step "ディレクトリ作成"
+mkdir -p ~/bin
+mkdir -p ~/.kube && chmod 700 ~/.kube
+mkdir -p ~/.oci  && chmod 700 ~/.oci
+
+# ---------- kubectl ----------
+step "kubectl"
+if command -v kubectl &>/dev/null; then
+  echo "  既インストール: $(kubectl version --client --short 2>/dev/null || kubectl version --client | head -1)"
+else
+  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key \
+    | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' \
+    | sudo tee /etc/apt/sources.list.d/kubernetes.list
+  sudo apt-get update -q && sudo apt-get install -y kubectl
+  echo "  インストール完了: $(kubectl version --client --short 2>/dev/null)"
+fi
+
+# ---------- kubectx / kubens ----------
+for tool in kubectx kubens; do
+  step "$tool"
+  if [[ -x ~/bin/$tool ]]; then
+    echo "  既インストール"
+  else
+    curl -sLo ~/bin/$tool \
+      "https://raw.githubusercontent.com/ahmetb/kubectx/master/$tool"
+    chmod +x ~/bin/$tool
+    echo "  インストール完了"
+  fi
+done
+
+# ---------- OCI CLI ----------
+step "OCI CLI"
+if [[ -x ~/bin/oci ]]; then
+  echo "  既インストール: $(~/bin/oci --version 2>/dev/null)"
+else
+  bash -c "$(curl -fsSL \
+    https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh \
+  )" -- --accept-all-defaults
+  echo "  インストール完了: $(~/bin/oci --version 2>/dev/null)"
+fi
+
+# kubectl が exec plugin として PATH 上の oci を探すためシンボリックリンクを作成
+if [[ ! -e /usr/local/bin/oci ]]; then
+  sudo ln -sf "$HOME/bin/oci" /usr/local/bin/oci
+  echo "  /usr/local/bin/oci -> $HOME/bin/oci を作成"
+fi
+
+# ---------- bws ----------
+step "bws (Bitwarden Secrets Manager CLI)"
+if [[ -x ~/bin/bws ]]; then
+  echo "  既インストール: $(~/bin/bws --version 2>/dev/null)"
+else
+  local_zip="/tmp/bws-${BWS_VERSION}.zip"
+  curl -fsSL \
+    "https://github.com/bitwarden/sdk-sm/releases/download/bws-v${BWS_VERSION}/bws-x86_64-unknown-linux-gnu-${BWS_VERSION}.zip" \
+    -o "$local_zip"
+  python3 -c "import zipfile; zipfile.ZipFile('$local_zip').extract('bws', '$HOME/bin/')"
+  chmod +x ~/bin/bws
+  rm "$local_zip"
+  echo "  インストール完了: $(~/bin/bws --version 2>/dev/null)"
+fi
+
+# ---------- OCI config (BSM から取得) ----------
+step "OCI 認証設定 (~/.oci/)"
+if [[ -f ~/.oci/config && -f ~/.oci/oci_api_key.pem ]]; then
+  echo "  既設定済み (スキップ)"
+else
+  if [[ -z "${BWS_ACCESS_TOKEN:-}" ]]; then
+    echo "  BWS_ACCESS_TOKEN が未設定のためスキップ。" >&2
+    echo "  後で手動で ~/.oci/config と ~/.oci/oci_api_key.pem を配置し、" >&2
+    echo "  BWS_ACCESS_TOKEN を設定してから再実行してください。" >&2
+  else
+    echo "  BSM から OCI 認証情報を取得..."
+    bws_get() { ~/bin/bws secret list 2>/dev/null \
+      | python3 -c "import sys,json; s=[x for x in json.load(sys.stdin) if x['key']=='$1']; print(s[0]['value'] if s else '', end='')"; }
+
+    TENANCY=$(bws_get OCI_TENANCY_OCID)
+    USER=$(bws_get OCI_USER_OCID)
+    FINGERPRINT=$(bws_get OCI_FINGERPRINT)
+    REGION=$(bws_get OCI_REGION)
+    PEM=$(bws_get OCI_API_KEY_PEM)
+
+    if [[ -z "$TENANCY" || -z "$USER" || -z "$FINGERPRINT" || -z "$PEM" ]]; then
+      echo "  BSM に OCI_* シークレットが見つかりません。" >&2
+      echo "  Bitwarden Web UI でプロジェクト my-infra に以下を登録してください:" >&2
+      echo "    OCI_TENANCY_OCID / OCI_USER_OCID / OCI_FINGERPRINT / OCI_REGION / OCI_API_KEY_PEM" >&2
+      exit 1
+    fi
+
+    cat > ~/.oci/config << EOF
+[DEFAULT]
+user=$USER
+fingerprint=$FINGERPRINT
+tenancy=$TENANCY
+region=${REGION:-ap-tokyo-1}
+key_file=$HOME/.oci/oci_api_key.pem
+EOF
+    printf '%s' "$PEM" > ~/.oci/oci_api_key.pem
+    chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
+    echo "  ~/.oci/config と ~/.oci/oci_api_key.pem を作成しました"
+  fi
+fi
+
+# ---------- ~/.bashrc ----------
+step "~/.bashrc"
+if grep -q "# kubectl" ~/.bashrc; then
+  echo "  設定済み (スキップ)"
+else
+  cat >> ~/.bashrc << 'EOF'
+
+# ~/bin (kubectx, kubens, oci, bws など)
+[[ ":$PATH:" != *":$HOME/bin:"* ]] && export PATH="$HOME/bin:$PATH"
+
+# kubectl 補完
+source <(kubectl completion bash)
+EOF
+  echo "  kubectl 設定を追記しました"
+fi
+
+OCI_COMPLETE="$HOME/lib/oracle-cli/lib/python3.14/site-packages/oci_cli/bin/oci_autocomplete.sh"
+if [[ -f "$OCI_COMPLETE" ]] && ! grep -q "oci_autocomplete" ~/.bashrc; then
+  echo "[[ -e \"$OCI_COMPLETE\" ]] && source \"$OCI_COMPLETE\"" >> ~/.bashrc
+  echo "  OCI 補完を追記しました"
+fi
+
+step "完了"
+echo "  'source ~/.bashrc' を実行してから setup-kubeconfig を実行してください。"

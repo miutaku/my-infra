@@ -109,29 +109,45 @@ my-infra/
 
 ### コンテキスト一覧
 
-| コンテキスト名 | クラスタ | 取得方法 |
+| コンテキスト名 | クラスタ | 接続先 |
 |---|---|---|
-| `rke2-pve` | 宅内 RKE2 (Proxmox) | `scp master-01:/etc/rancher/rke2/rke2.yaml ~/.kube/rke2.yaml` |
-| `oke-cloud` | OCI OKE | `oci ce cluster create-kubeconfig --cluster-id <id> --file ~/.kube/oke.yaml --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT` |
+| `rke2-pve` | 宅内 RKE2 (Proxmox) | LB VIP `192.168.20.227:6443` |
+| `oke-cloud` | OCI OKE | Public Endpoint `168.110.55.86:6443` |
 
-### セットアップ手順
+### セットアップ手順 (新規マシン)
+
+セットアップ用スクリプトを `scripts/` に用意している。
+
+**Step 1: ツール一式をインストール**
+
+`BWS_ACCESS_TOKEN` は BSMから取得しておく。
 
 ```bash
-# 1. 各クラスタの kubeconfig を取得して名前変更
-scp master-01:/etc/rancher/rke2/rke2.yaml ~/.kube/config-rke2.yaml
-oci ce cluster create-kubeconfig --cluster-id <cluster-ocid> --file ~/.kube/config-oke.yaml \
-  --region ap-tokyo-1 --kube-endpoint PUBLIC_ENDPOINT
-
-# 2. context 名を変更 (rke2.yaml)
-kubectl --kubeconfig ~/.kube/rke2.yaml config rename-context default rke2-pve
-
-# 3. 統合
-KUBECONFIG=~/.kube/rke2.yaml:~/.kube/oke.yaml kubectl config view --flatten > ~/.kube/config
-
-# 4. kubectx / kubens インストール (~/bin/ へ)
-curl -sLo ~/bin/kubectx https://raw.githubusercontent.com/ahmetb/kubectx/master/kubectx && chmod +x ~/bin/kubectx
-curl -sLo ~/bin/kubens  https://raw.githubusercontent.com/ahmetb/kubectx/master/kubens  && chmod +x ~/bin/kubens
+echo 'export BWS_ACCESS_TOKEN="<ACCESS_TOKEN>"' >> ~/.bashrc
+bash scripts/setup-k8s-tools
+source ~/.bashrc
 ```
+
+インストールされるもの: `kubectl`, `kubectx`, `kubens`, `oci` (OCI CLI), `bws` (Bitwarden SM CLI)  
+OCI 認証情報 (`~/.oci/config`, `~/.oci/oci_api_key.pem`) は BSM の `OCI_*` シークレットから自動生成される。
+
+**Step 2: kubeconfig を取得・統合**
+
+```bash
+bash scripts/setup-kubeconfig   # RKE2 + OKE 両方取得して ~/.kube/config に統合
+# 個別に設定も可能:
+bash scripts/setup-kubeconfig --rke2-only
+bash scripts/setup-kubeconfig --oke-only
+```
+
+> **RKE2 の注意点**
+> - `/etc/rancher/rke2/rke2.yaml` は root 所有のため `sudo cat` 経由で取得する (scp 不可)
+> - kubeconfig 内の `server` が `127.0.0.1:6443` になっているため LB VIP (`192.168.20.227`) に自動書き換え
+> - SSH 接続先は `master-01` (IP: `192.168.20.126`)
+
+> **OKE の注意点**
+> - kubeconfig の認証に `oci` コマンドを使う exec plugin が埋め込まれる
+> - `oci` が PATH 上にある必要があるため `/usr/local/bin/oci -> ~/bin/oci` のシンボリックリンクを作成する
 
 ### 日常操作
 
