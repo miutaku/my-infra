@@ -16,6 +16,10 @@ output "rke2_worker_mac_addresses" {
   description = "Worker VM の MAC アドレス。ルーターの DHCP 静的リース設定に使用する。"
   value       = module.rke2_worker.mac_addresses
 }
+output "rke2_unifi_worker_mac_addresses" {
+  description = "UniFi worker VM の MAC アドレス。VLAN 10 DHCP 静的リース設定に使用する。"
+  value       = module.rke2_unifi_worker.mac_addresses
+}
 
 output "prd_rec_server_vm_names" {
   value = [for vm in values(module.prd_rec_server.vms) : vm.name]

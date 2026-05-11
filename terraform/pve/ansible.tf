@@ -1,7 +1,8 @@
 locals {
-  lb_hostnames     = sort(keys(module.rke2_lb.mac_addresses))
-  server_hostnames = sort(keys(module.rke2_server.mac_addresses))
-  agent_hostnames  = sort(keys(module.rke2_worker.mac_addresses))
+  lb_hostnames           = sort(keys(module.rke2_lb.mac_addresses))
+  server_hostnames       = sort(keys(module.rke2_server.mac_addresses))
+  agent_hostnames        = sort(keys(module.rke2_worker.mac_addresses))
+  unifi_worker_hostnames = sort(keys(module.rke2_unifi_worker.mac_addresses))
 }
 
 resource "local_file" "ansible_hosts_prd" {
@@ -26,12 +27,16 @@ resource "local_file" "ansible_hosts_prd" {
         hostname = hostname
       } if i > 0
     ]
-    agent_hosts = [
-      for i, hostname in local.agent_hostnames : {
+    agent_hosts = concat(
+      [for i, hostname in local.agent_hostnames : {
         ip       = var.rke2_worker_ips[i]
         hostname = hostname
-      }
-    ]
+      }],
+      [for i, hostname in local.unifi_worker_hostnames : {
+        ip       = var.rke2_unifi_worker_ip
+        hostname = hostname
+      }]
+    )
   })
 }
 

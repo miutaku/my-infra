@@ -172,6 +172,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.10.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC
       - { ip: "192.168.10.240", mac: "48:da:35:6f:c6:70" } # nanokvm #1
       - { ip: "192.168.10.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2
+      - { ip: "192.168.10.131", mac: "bc:24:11:10:10:01" } # worker-nw-01 (RKE2 agent, UniFi 専用)
       - { ip: "192.168.10.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W
       - { ip: "192.168.10.253", mac: "e4:3e:c6:34:1c:00" } # FS AP
 
