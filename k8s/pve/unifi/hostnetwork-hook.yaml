@@ -29,8 +29,10 @@ roleRef:
   name: unifi-deployment-patcher
   apiGroup: rbac.authorization.k8s.io
 ---
-# hostNetwork: true を Deployment に適用する Post-Sync Hook
-# L2 SW のブロードキャスト discovery (UDP 10001) を Pod が受信できるようにする
+# Post-Sync Hook:
+# hostNetwork: true + initContainer (system.properties削除) を Deployment にパッチする
+# initContainer が毎回起動前に system.properties を削除することで
+# linuxserver が MONGO_* 変数から常に最新の認証情報で再生成する
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -55,6 +57,25 @@ spec:
             - -n
             - unifi
             - --type
-            - merge
+            - strategic
             - -p
-            - '{"spec":{"template":{"spec":{"hostNetwork":true,"dnsPolicy":"ClusterFirstWithHostNet"}}}}'
+            - |
+              {
+                "spec": {
+                  "template": {
+                    "spec": {
+                      "hostNetwork": true,
+                      "dnsPolicy": "ClusterFirstWithHostNet",
+                      "initContainers": [{
+                        "name": "remove-system-properties",
+                        "image": "busybox:latest",
+                        "command": ["sh", "-c", "rm -f /config/data/system.properties"],
+                        "volumeMounts": [{
+                          "name": "unifi-data",
+                          "mountPath": "/config"
+                        }]
+                      }]
+                    }
+                  }
+                }
+              }

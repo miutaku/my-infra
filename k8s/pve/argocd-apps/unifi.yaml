@@ -32,6 +32,7 @@ spec:
       jsonPointers:
         - /spec/template/spec/hostNetwork
         - /spec/template/spec/dnsPolicy
+        - /spec/template/spec/initContainers
   syncPolicy:
     automated:
       prune: true
