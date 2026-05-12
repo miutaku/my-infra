@@ -24,3 +24,37 @@ resources:
   limits:
     cpu: "4"
     memory: 8Gi
+
+probes:
+  liveness:
+    enabled: true
+    exec:
+      command:
+        - curl
+        - -k
+        - -L
+        - -m
+        - "5"
+        - -fsS
+        - http://127.0.0.1/api/ping
+    initialDelaySeconds: 180
+    periodSeconds: 60
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1
+  readiness:
+    enabled: true
+    exec:
+      command:
+        - curl
+        - -k
+        - -L
+        - -m
+        - "5"
+        - -fsS
+        - http://127.0.0.1/api/ping
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 10
+    failureThreshold: 10
+    successThreshold: 1
