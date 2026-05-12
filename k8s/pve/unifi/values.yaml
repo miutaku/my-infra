@@ -1,4 +1,4 @@
-systemIp: "192.168.20.202"
+systemIp: "192.168.0.202"
 
 service:
   type: LoadBalancer

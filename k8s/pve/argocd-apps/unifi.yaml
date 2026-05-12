@@ -35,7 +35,11 @@ spec:
       namespace: unifi
       jsonPointers:
         - /spec/template/spec/initContainers
+        - /spec/template/metadata/annotations
         - /spec/template/spec/volumes
+        - /spec/template/spec/containers/0/env
+        - /spec/template/spec/containers/0/livenessProbe
+        - /spec/template/spec/containers/0/readinessProbe
         - /spec/template/spec/containers/0/volumeMounts
         - /spec/template/spec/hostNetwork
         - /spec/template/spec/dnsPolicy

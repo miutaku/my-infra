@@ -20,7 +20,7 @@ resource "proxmox_vm_qemu" "vm" {
   # cloud-init: Proxmox injects PVE VM name as hostname via NoCloud datasource
   ipconfig0 = var.cloudinit_storage != null ? "ip=dhcp" : null
   ipconfig1 = var.cloudinit_storage != null && var.secondary_vlan_tag != null ? "ip=dhcp" : null
-  ciupgrade  = var.cloudinit_storage != null ? false : null
+  ciupgrade = var.cloudinit_storage != null ? false : null
 
   # hardware
   bios        = var.bios

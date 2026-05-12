@@ -82,7 +82,7 @@ kubectl label nodes $(kubectl get nodes --no-headers | awk '$3 == "<none>" { pri
   kubernetes.io/role=agent --overwrite=true
 ```
 
-NWのためにVLAN10に割当たるノードのために以下のラベル付けもする。
+UniFi OS Server を配置する worker-nw-01 に以下のラベル付けもする。
 ```bash
 kubectl label node worker-nw-01-rke2-agent-ubuntu-26-04-home-amd64 unifi=true
 ```
