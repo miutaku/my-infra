@@ -15,48 +15,24 @@ spec:
         releaseName: unifi
         valueFiles:
           - $values/k8s/pve/unifi/values.yaml
-        postRenderers:
-          - kustomize:
-              patches:
-                - target:
-                    group: apps
-                    version: v1
-                    kind: Deployment
-                    name: unifi-unifi-os-server
-                  patch: |-
-                    apiVersion: apps/v1
-                    kind: Deployment
-                    metadata:
-                      name: unifi-unifi-os-server
-                    spec:
-                      template:
-                        spec:
-                          initContainers:
-                            - name: patch-uv-threadpool
-                              image: busybox:latest
-                              command:
-                                - sh
-                                - -c
-                                - |-
-                                  printf 'NODE_ENV="production"\nUV_THREADPOOL_SIZE=4\nNODE_CONFIG_DIR="/usr/share/unifi-core/app/config/:/data/unifi-core/config/overrides/"\n' > /override/unifi-core
-                              volumeMounts:
-                                - name: env-override
-                                  mountPath: /override
-                          volumes:
-                            - name: env-override
-                              emptyDir: {}
-                          containers:
-                            - name: unifi-os-server
-                              volumeMounts:
-                                - name: env-override
-                                  mountPath: /etc/default/unifi-core
-                                  subPath: unifi-core
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: unifi
+  # ArgoCD v3 does not include postRenderers in the CRD schema for multi-source apps.
+  # initContainers/volumes are patched manually via kubectl to fix UV_THREADPOOL_SIZE=256
+  # crash on kernel 7.0. ignoreDifferences prevents ArgoCD from treating the patch as drift.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: unifi-unifi-os-server
+      namespace: unifi
+      jsonPointers:
+        - /spec/template/spec/initContainers
+        - /spec/template/spec/volumes
+        - /spec/template/spec/containers/0/volumeMounts
   syncPolicy:
     automated:
       prune: true
