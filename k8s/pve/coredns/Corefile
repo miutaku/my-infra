@@ -17,6 +17,11 @@
     reload
     loadbalance
     hosts {
+      # native VLAN
+      192.168.0.115  pve-x570.miutaku.internal
+      192.168.0.119  pve-b550m.miutaku.internal
+      192.168.0.252  us-8-60w.miutaku.internal
+
       # VLAN 10: 管理ネットワーク
       192.168.10.107  rpi4-4g-01.miutaku.internal
       192.168.10.108  rpi4-4g-01-wifi.miutaku.internal
@@ -25,12 +30,10 @@
       192.168.10.111  rpib-512m-01.miutaku.internal
       192.168.10.112  rpib-plus-512m-01.miutaku.internal
       192.168.10.113  rpib-plus-512m-02.miutaku.internal
-      192.168.10.117  pve-nucbox-3-wired.miutaku.internal
-      192.168.10.118  pve-nucbox-3-wifi.miutaku.internal
-      192.168.10.119  pve-b550m.miutaku.internal
+      192.168.10.117  nucbox-3-wired.miutaku.internal
+      192.168.10.118  nucbox-3-wifi.miutaku.internal
       192.168.10.240  nanokvm-01.miutaku.internal
       192.168.10.241  nanokvm-02.miutaku.internal
-      192.168.10.252  us-8-60w.miutaku.internal
       192.168.10.253  fs-ap-01.miutaku.internal
 
       # VLAN 20: サーバネットワーク
@@ -50,7 +53,6 @@
       192.168.20.192  nas-02.miutaku.internal
       192.168.20.227  rke2-vip.miutaku.internal
       192.168.20.202  unifi.miutaku.internal
-      192.168.20.202  unifi
 
       # VLAN 30: クライアントネットワーク
       192.168.30.120  gaming-pc.miutaku.internal

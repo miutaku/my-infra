@@ -15,8 +15,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --node)
       case "$2" in
-        pve-x570)  URL_VAR="-var proxmox_url=https://192.168.10.115:8006/api2/json" ;;
-        pve-b550m) URL_VAR="-var proxmox_url=https://192.168.10.119:8006/api2/json" ;;
+        pve-x570)  URL_VAR="-var proxmox_url=https://192.168.0.115:8006/api2/json" ;;
+        pve-b550m) URL_VAR="-var proxmox_url=https://192.168.0.119:8006/api2/json" ;;
       esac
       NODE_VAR="-var proxmox_node=${2}"
       shift 2 ;;

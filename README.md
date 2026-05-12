@@ -208,8 +208,8 @@ kubens               # namespace 一覧
 |---|---|---|---|
 | IX2215 | 192.168.0.254 | snmp-exporter (IF-MIB) | ✅ |
 | IX2215 | 192.168.0.254 | blackbox HTTP/ICMP | ✅ |
-| pve-x570 | 192.168.10.115 | pve-exporter | BSM 要設定 |
-| pve-b550m | 192.168.10.119 | pve-exporter | BSM 要設定 |
+| pve-x570 | 192.168.0.115 | pve-exporter | BSM 要設定 |
+| pve-b550m | 192.168.0.119 | pve-exporter | BSM 要設定 |
 | RKE2 nodes ×5 | 192.168.20.126-130 | Alloy DaemonSet (node) | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
