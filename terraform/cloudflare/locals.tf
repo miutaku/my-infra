@@ -35,13 +35,13 @@ locals {
       no_tls_verify = true
     }
     "pve-x570" = {
-      # Proxmox VE pve-x570 (192.168.10.115), web UI on 8006
-      backend       = "https://192.168.10.115:8006"
+      # Proxmox VE pve-x570 (192.168.0.115), web UI on 8006
+      backend       = "https://192.168.0.115:8006"
       no_tls_verify = true
     }
     "pve-b550m" = {
-      # Proxmox VE pve-b550m (192.168.10.119), web UI on 8006
-      backend       = "https://192.168.10.119:8006"
+      # Proxmox VE pve-b550m (192.168.0.119), web UI on 8006
+      backend       = "https://192.168.0.119:8006"
       no_tls_verify = true
     }
     "nanokvm-1" = {

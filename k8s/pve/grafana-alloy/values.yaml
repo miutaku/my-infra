@@ -141,7 +141,7 @@ alloy:
         targets = [
           {
             "__address__"    = "pve-exporter.monitoring.svc.cluster.local:9221",
-            "__param_target" = "192.168.10.115",
+            "__param_target" = "192.168.0.115",
             "instance"       = "pve-x570",
             "job"            = "pve",
           },
@@ -158,7 +158,7 @@ alloy:
         targets = [
           {
             "__address__"    = "pve-exporter.monitoring.svc.cluster.local:9221",
-            "__param_target" = "192.168.10.119",
+            "__param_target" = "192.168.0.119",
             "instance"       = "pve-b550m",
             "job"            = "pve",
           },
@@ -262,8 +262,8 @@ alloy:
       prometheus.scrape "blackbox_icmp" {
         targets = [
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.254",   "__param_module" = "icmp", "instance" = "ix2215",             "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.115",  "__param_module" = "icmp", "instance" = "pve-x570",            "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.10.119",  "__param_module" = "icmp", "instance" = "pve-b550m",           "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.115",  "__param_module" = "icmp", "instance" = "pve-x570",            "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.0.119",  "__param_module" = "icmp", "instance" = "pve-b550m",           "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.101",  "__param_module" = "icmp", "instance" = "dev-app-server",      "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.126",  "__param_module" = "icmp", "instance" = "master-01-rke2",      "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.127",  "__param_module" = "icmp", "instance" = "master-02-rke2",      "job" = "blackbox_icmp" },
