@@ -155,7 +155,7 @@ module "rke2_unifi_worker" {
   vmid_start        = 13001
   tags              = ["ubuntu_2604", "rke2", "agent", "worker", "unifi"]
   cpu_cores         = 2
-  memory            = 4096
+  memory            = 8192
   clone_template    = local.ubuntu_template
   proxmox_nodes     = ["pve-x570"]
   cloudinit_storage = "local-zfs"

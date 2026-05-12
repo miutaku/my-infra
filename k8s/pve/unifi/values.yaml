@@ -23,7 +23,7 @@ resources:
     memory: 4Gi
   limits:
     cpu: "4"
-    memory: 8Gi
+    memory: 6Gi
 
 probes:
   liveness:
