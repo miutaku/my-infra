@@ -128,7 +128,7 @@ variable "rke2_worker_ips" {
 }
 
 variable "rke2_unifi_worker_macaddr" {
-  description = "The base MAC address of the unifi worker VM (VLAN 10)"
+  description = "The base MAC address of the unifi worker VM (native VLAN, used by RKE2)"
   type        = string
   default     = "BC:24:11:10:10:00"
 }
@@ -137,6 +137,12 @@ variable "rke2_unifi_worker_ip" {
   description = "IP address for the unifi worker VM (VLAN 10, DHCP 静的リースと一致させること)"
   type        = string
   default     = "192.168.10.131"
+}
+
+variable "rke2_unifi_worker_vlan10_macaddr" {
+  description = "MAC address for the secondary VLAN 10 NIC of the unifi worker VM (UniFi device management)"
+  type        = string
+  default     = "BC:24:11:10:11:01"
 }
 
 variable "rke2_lb_vip" {

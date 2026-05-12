@@ -33,6 +33,8 @@ spec:
         - /spec/template/spec/initContainers
         - /spec/template/spec/volumes
         - /spec/template/spec/containers/0/volumeMounts
+        - /spec/template/spec/hostNetwork
+        - /spec/template/spec/dnsPolicy
   syncPolicy:
     automated:
       prune: true

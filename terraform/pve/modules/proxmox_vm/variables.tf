@@ -134,3 +134,15 @@ variable "cloudinit_storage" {
   default     = null
 }
 
+variable "secondary_vlan_tag" {
+  description = "VLAN tag for the secondary network interface. null = no secondary NIC."
+  type        = number
+  default     = null
+}
+
+variable "secondary_macaddr" {
+  description = "MAC address for the secondary network interface. Required when secondary_vlan_tag is set."
+  type        = string
+  default     = null
+}
+
