@@ -18,12 +18,16 @@ spec:
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
       ref: values
+    - repoURL: https://github.com/miutaku/my-infra.git
+      targetRevision: main
+      path: k8s/pve/unifi/patcher
   destination:
     server: https://kubernetes.default.svc
     namespace: unifi
   # ArgoCD v3 does not include postRenderers in the CRD schema for multi-source apps.
-  # initContainers/volumes are patched manually via kubectl to fix UV_THREADPOOL_SIZE=256
-  # crash on kernel 7.0. ignoreDifferences prevents ArgoCD from treating the patch as drift.
+  # initContainers/volumes are patched by a PostSync hook to fix UniFi Core's
+  # default UV_THREADPOOL_SIZE=256 crash under the kubelet pod PID limit.
+  # ignoreDifferences prevents ArgoCD from treating the hook's patch as drift.
   ignoreDifferences:
     - group: apps
       kind: Deployment

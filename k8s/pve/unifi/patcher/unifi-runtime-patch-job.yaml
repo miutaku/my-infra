@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: unifi-runtime-patch
+  namespace: unifi
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      serviceAccountName: unifi-runtime-patcher
+      restartPolicy: OnFailure
+      containers:
+        - name: patcher
+          image: bitnami/kubectl:latest
+          command:
+            - kubectl
+            - patch
+            - deployment
+            - unifi-unifi-os-server
+            - -n
+            - unifi
+            - --type
+            - strategic
+            - -p
+            - |
+              spec:
+                template:
+                  spec:
+                    initContainers:
+                      - name: patch-unifi-core-runtime
+                        image: busybox:latest
+                        command:
+                          - sh
+                          - -c
+                          - |
+                            set -eu
+                            cat > /node-wrapper/node <<'EOF'
+                            #!/bin/sh
+                            export UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE:-4}
+                            exec /usr/bin/node24 "$@"
+                            EOF
+                            chmod +x /node-wrapper/node
+                            printf 'UV_THREADPOOL_SIZE=4\n' > /unifi-core-env/unifi-core_advanced
+                        volumeMounts:
+                          - name: node-wrapper
+                            mountPath: /node-wrapper
+                          - name: unifi-core-env
+                            mountPath: /unifi-core-env
+                    containers:
+                      - name: unifi-os-server
+                        volumeMounts:
+                          - name: node-wrapper
+                            mountPath: /usr/bin/node
+                            subPath: node
+                          - name: unifi-core-env
+                            mountPath: /etc/default/unifi-core_advanced
+                            subPath: unifi-core_advanced
+                    volumes:
+                      - name: node-wrapper
+                        emptyDir:
+                          medium: Memory
+                      - name: unifi-core-env
+                        emptyDir:
+                          medium: Memory

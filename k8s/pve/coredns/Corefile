@@ -49,6 +49,8 @@
       192.168.20.191  nas-01.miutaku.internal
       192.168.20.192  nas-02.miutaku.internal
       192.168.20.227  rke2-vip.miutaku.internal
+      192.168.20.202  unifi.miutaku.internal
+      192.168.20.202  unifi
 
       # VLAN 30: クライアントネットワーク
       192.168.30.120  gaming-pc.miutaku.internal
