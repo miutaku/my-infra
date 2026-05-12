@@ -27,6 +27,21 @@ spec:
                       k8s.v1.cni.cncf.io/networks: "[{\"name\":\"unifi-mainlan\",\"interface\":\"net1\"}]"
                   spec:
                     initContainers:
+                      - name: configure-unifi-mainlan-routes
+                        image: busybox:latest
+                        securityContext:
+                          privileged: true
+                          capabilities:
+                            add:
+                              - NET_ADMIN
+                        command:
+                          - sh
+                          - -c
+                          - |
+                            set -eu
+                            ip route replace 255.255.255.255/32 dev net1 src 192.168.0.202
+                            ip route replace 224.0.0.0/4 dev net1 || true
+                            ip route get 255.255.255.255
                       - name: patch-unifi-core-runtime
                         image: busybox:latest
                         command:
