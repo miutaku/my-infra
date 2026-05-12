@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - rbac.yaml
   - unifi-discovery-service.yaml
+  - unifi-mainlan-network.yaml
   - unifi-runtime-patch-job.yaml

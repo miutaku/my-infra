@@ -15,18 +15,16 @@ spec:
         - name: patcher
           image: bitnami/kubectl:latest
           command:
-            - kubectl
-            - patch
-            - deployment
-            - unifi-unifi-os-server
-            - -n
-            - unifi
-            - --type
-            - strategic
-            - -p
+            - sh
+            - -c
             - |
+              set -eu
+              kubectl patch deployment unifi-unifi-os-server -n unifi --type strategic -p '
               spec:
                 template:
+                  metadata:
+                    annotations:
+                      k8s.v1.cni.cncf.io/networks: "[{\"name\":\"unifi-mainlan\",\"interface\":\"net1\"}]"
                   spec:
                     initContainers:
                       - name: patch-unifi-core-runtime
@@ -36,13 +34,13 @@ spec:
                           - -c
                           - |
                             set -eu
-                            cat > /node-wrapper/node <<'EOF'
+                            cat > /node-wrapper/node <<'"'"'EOF'"'"'
                             #!/bin/sh
                             export UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE:-4}
                             exec /usr/bin/node24 "$@"
                             EOF
                             chmod +x /node-wrapper/node
-                            printf 'UV_THREADPOOL_SIZE=4\n' > /unifi-core-env/unifi-core_advanced
+                            printf '"'"'UV_THREADPOOL_SIZE=4\n'"'"' > /unifi-core-env/unifi-core_advanced
                         volumeMounts:
                           - name: node-wrapper
                             mountPath: /node-wrapper
@@ -64,3 +62,35 @@ spec:
                       - name: unifi-core-env
                         emptyDir:
                           medium: Memory
+              '
+              kubectl set env deployment/unifi-unifi-os-server -n unifi UOS_SYSTEM_IP=192.168.0.202
+              kubectl patch deployment unifi-unifi-os-server -n unifi --type json -p='[
+                {
+                  "op": "replace",
+                  "path": "/spec/template/spec/containers/0/readinessProbe",
+                  "value": {
+                    "exec": {
+                      "command": ["curl", "-k", "-L", "-m", "5", "-fsS", "http://127.0.0.1/api/ping"]
+                    },
+                    "initialDelaySeconds": 60,
+                    "periodSeconds": 15,
+                    "timeoutSeconds": 10,
+                    "failureThreshold": 10,
+                    "successThreshold": 1
+                  }
+                },
+                {
+                  "op": "replace",
+                  "path": "/spec/template/spec/containers/0/livenessProbe",
+                  "value": {
+                    "exec": {
+                      "command": ["curl", "-k", "-L", "-m", "5", "-fsS", "http://127.0.0.1/api/ping"]
+                    },
+                    "initialDelaySeconds": 180,
+                    "periodSeconds": 60,
+                    "timeoutSeconds": 10,
+                    "failureThreshold": 5,
+                    "successThreshold": 1
+                  }
+                }
+              ]'
