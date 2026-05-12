@@ -63,6 +63,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull
           git add ansible/rke2/hosts/prd ansible/rke2/group_vars/prd-all.yml
           git diff --staged --quiet || git commit -m "chore(ansible): auto-update RKE2 inventory from terraform output"
           git push
