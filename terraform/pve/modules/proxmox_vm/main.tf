@@ -19,6 +19,7 @@ resource "proxmox_vm_qemu" "vm" {
 
   # cloud-init: Proxmox injects PVE VM name as hostname via NoCloud datasource
   ipconfig0 = var.cloudinit_storage != null ? "ip=dhcp" : null
+  ipconfig1 = var.cloudinit_storage != null && var.secondary_vlan_tag != null ? "ip=dhcp" : null
   ciupgrade  = var.cloudinit_storage != null ? false : null
 
   # hardware
@@ -56,6 +57,18 @@ resource "proxmox_vm_qemu" "vm" {
     firewall = false
     tag      = var.vlan_tag
     macaddr  = each.value.macaddr
+  }
+
+  dynamic "network" {
+    for_each = var.secondary_vlan_tag != null ? [1] : []
+    content {
+      id       = 1
+      model    = "virtio"
+      bridge   = "vmbr0"
+      firewall = false
+      tag      = var.secondary_vlan_tag
+      macaddr  = var.secondary_macaddr
+    }
   }
 
   # EFI disk — only when bios=ovmf

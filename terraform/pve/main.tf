@@ -148,17 +148,19 @@ module "truenas" {
 module "rke2_unifi_worker" {
   source = "./modules/proxmox_vm"
 
-  vm_count          = 1
-  name_prefix       = "worker-nw"
-  name_suffix       = "rke2-agent-ubuntu-26-04-home-amd64"
-  base_macaddr      = var.rke2_unifi_worker_macaddr
-  vmid_start        = 13001
-  tags              = ["ubuntu_2604", "rke2", "agent", "worker", "unifi"]
-  cpu_cores         = 2
-  memory            = 4096
-  clone_template    = local.ubuntu_template
-  proxmox_nodes     = ["pve-x570"]
-  cloudinit_storage = "local-zfs"
+  vm_count           = 1
+  name_prefix        = "worker-nw"
+  name_suffix        = "rke2-agent-ubuntu-26-04-home-amd64"
+  base_macaddr       = var.rke2_unifi_worker_macaddr
+  vmid_start         = 13001
+  tags               = ["ubuntu_2604", "rke2", "agent", "worker", "unifi"]
+  cpu_cores          = 2
+  memory             = 4096
+  clone_template     = local.ubuntu_template
+  proxmox_nodes      = ["pve-x570"]
+  cloudinit_storage  = "local-zfs"
+  secondary_vlan_tag = 10
+  secondary_macaddr  = var.rke2_unifi_worker_vlan10_macaddr
 }
 
 module "magic_mirror_server" {
