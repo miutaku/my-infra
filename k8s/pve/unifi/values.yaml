@@ -2,7 +2,6 @@ systemIp: "192.168.20.202"
 
 service:
   type: LoadBalancer
-  loadBalancerIP: "192.168.20.202"
   annotations:
     metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
     metallb.universe.tf/allow-shared-ip: "unifi"
