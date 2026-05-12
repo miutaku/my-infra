@@ -1,85 +1,27 @@
-image:
-  repository: lscr.io/linuxserver/unifi-network-application
-  tag: "10.3.58"
+systemIp: "192.168.20.202"
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: "192.168.20.202"
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
+    metallb.universe.tf/allow-shared-ip: "unifi"
 
 persistence:
-  enabled: true
-  storageClass: local-path
-  size: 10Gi
-
-# linuxserver イメージは /config にデータを書く
-# chart が作る unifi-data PVC のルートを /config にも追加マウント
-extraVolumeMounts:
-  - name: unifi-data
-    mountPath: /config
-
-# linuxserver イメージ向け環境変数
-# MONGO_* は ExternalSecret (unifi-mongodb-secret) から注入
-extraEnvVars:
-  - name: PUID
-    value: "1000"
-  - name: PGID
-    value: "1000"
-  - name: MEM_LIMIT
-    value: "1024"
-  - name: MONGO_USER
-    valueFrom:
-      secretKeyRef:
-        name: unifi-mongodb-secret
-        key: username
-  - name: MONGO_PASS
-    valueFrom:
-      secretKeyRef:
-        name: unifi-mongodb-secret
-        key: password
-  - name: MONGO_HOST
-    valueFrom:
-      secretKeyRef:
-        name: unifi-mongodb-secret
-        key: host
-  - name: MONGO_PORT
-    value: "27017"
-  - name: MONGO_DBNAME
-    value: "ace"
-  - name: MONGO_AUTHSOURCE
-    value: "admin"
-  - name: MONGO_TLS
-    value: "true"
-
-# GUI (8443) は ClusterIP のまま、port-forward またはインテグレーションで利用
-guiService:
-  type: ClusterIP
-  port: 8443
-
-# デバイス通信用ポートを MetalLB LoadBalancer で固定 IP 公開
-# 複数 Service で IP を共有するため allow-shared-ip を設定
-controllerService:
-  type: LoadBalancer
-  port: 8080
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
-    metallb.universe.tf/allow-shared-ip: "unifi"
-
-stunService:
-  type: LoadBalancer
-  port: 3478
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
-    metallb.universe.tf/allow-shared-ip: "unifi"
-
-discoveryService:
-  type: LoadBalancer
-  port: 10001
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
-    metallb.universe.tf/allow-shared-ip: "unifi"
+  data:
+    storageClass: local-path
+    size: 20Gi
+  mongo:
+    storageClass: local-path
+    size: 10Gi
 
 nodeSelector:
   unifi: "true"
 
 resources:
   requests:
-    cpu: 25m
-    memory: 512Mi
+    cpu: 500m
+    memory: 2Gi
   limits:
-    memory: 1536Mi
+    cpu: "4"
+    memory: 6Gi

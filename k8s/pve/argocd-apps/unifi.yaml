@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   sources:
-    - repoURL: https://github.com/mkilchhofer/unifi-chart.git
+    - repoURL: https://github.com/chrissnell/unifi-os-kubernetes.git
       targetRevision: main
-      path: charts/unifi
+      path: chart
       helm:
         releaseName: unifi
         valueFiles:
@@ -18,21 +18,9 @@ spec:
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
       ref: values
-    - repoURL: https://github.com/miutaku/my-infra.git
-      targetRevision: main
-      path: k8s/pve/unifi
   destination:
     server: https://kubernetes.default.svc
     namespace: unifi
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      name: unifi
-      namespace: unifi
-      jsonPointers:
-        - /spec/template/spec/hostNetwork
-        - /spec/template/spec/dnsPolicy
-        - /spec/template/spec/initContainers
   syncPolicy:
     automated:
       prune: true
