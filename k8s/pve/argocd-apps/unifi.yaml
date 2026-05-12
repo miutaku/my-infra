@@ -15,6 +15,39 @@ spec:
         releaseName: unifi
         valueFiles:
           - $values/k8s/pve/unifi/values.yaml
+        postRenderers:
+          - kustomize:
+              patches:
+                - target:
+                    group: apps
+                    version: v1
+                    kind: Deployment
+                    name: unifi-unifi-os-server
+                  patch: |
+                    - op: add
+                      path: /spec/template/spec/initContainers
+                      value:
+                        - name: patch-uv-threadpool
+                          image: busybox:latest
+                          command:
+                            - sh
+                            - -c
+                            - |
+                              printf 'NODE_ENV="production"\nUV_THREADPOOL_SIZE=4\nNODE_CONFIG_DIR="/usr/share/unifi-core/app/config/:/data/unifi-core/config/overrides/"\n' > /override/unifi-core
+                          volumeMounts:
+                            - name: env-override
+                              mountPath: /override
+                    - op: add
+                      path: /spec/template/spec/volumes/-
+                      value:
+                        name: env-override
+                        emptyDir: {}
+                    - op: add
+                      path: /spec/template/spec/containers/0/volumeMounts/-
+                      value:
+                        name: env-override
+                        mountPath: /etc/default/unifi-core
+                        subPath: unifi-core
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
       ref: values
