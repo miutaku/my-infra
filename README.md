@@ -30,18 +30,23 @@
          │  - VictoriaMetrics    │    │  - Longhorn             │
          │  - Grafana Alloy      │    │  - cloudflared          │
          │  - Grafana PDC agent  │    │  - tfc-agent            │
+         │  - tfc-agent          │    │  - actions-runner       │
          │  - cloudflared        │    │  - grafana-alloy        │
-         │  - MetalLB / Tailscale│    │  - actions-runner       │
+         │  - Tailscale subnet   |    │                          │
+         │  - MetalLB            │    │                          │
          │  - blackbox-exporter  │    │                          │
-         │                       │    │                          │
+         │  - snmp-exporter      │    │                          │
+         │  - pve-exporter       │    │                          │
+         │  - speedtest-exporter │    │                          │
+         │  - Unifi OS Server    │    │                          │
+         │  - multus             │    │                          │
          │  - CoreDNS            │    │                          │
          │  - WoL (gptwol)       │    │                          │
-         │  - tfc-agent          │    │                          │
          │                       │    │                          │
          │  IX2215 (ルーター)     │    │                          │
          │  - VLAN 10/20/30/40   │    │                          │
          │  - DHCP 静的リース     │    │                          │
-         │  - map-e (IPv6)       │    │                          │
+         │  - v6プラス（固定IP）  │    │                          │
          │                       │    │                          │
          └───────────────────────┘    └──────────────────────────┘
 ```
@@ -112,7 +117,7 @@ my-infra/
 | コンテキスト名 | クラスタ | 接続先 |
 |---|---|---|
 | `rke2-pve` | 宅内 RKE2 (Proxmox) | LB VIP `192.168.20.227:6443` |
-| `oke-cloud` | OCI OKE | Public Endpoint `168.110.55.86:6443` |
+| `oke-cloud` | OCI OKE | 以下のセットアップ手順で設定すると構成される |
 
 ### セットアップ手順 (新規マシン)
 
@@ -141,8 +146,8 @@ bash scripts/setup-kubeconfig --oke-only
 ```
 
 > **RKE2 の注意点**
-> - `/etc/rancher/rke2/rke2.yaml` は root 所有のため `sudo cat` 経由で取得する (scp 不可)
-> - kubeconfig 内の `server` が `127.0.0.1:6443` になっているため LB VIP (`192.168.20.227`) に自動書き換え
+> - `/etc/rancher/rke2/rke2.yaml` は root 所有のため、スクリプトでは `sudo cat` 経由で取得される
+> - kubeconfig 内の `server` が `127.0.0.1:6443` になっているため、スクリプトで LB VIP (`192.168.20.227`) に自動書き換え
 > - SSH 接続先は `master-01` (IP: `192.168.20.126`)
 
 > **OKE の注意点**
