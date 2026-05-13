@@ -14,7 +14,7 @@ locals {
       no_tls_verify = false
     }
     unifi = {
-      backend       = "https://unifi-unifi-os-server-webui.unifi.svc.cluster.local:443"
+      backend       = "https://192.168.0.132:11443"
       no_tls_verify = true
     }
     "unifi-vm" = {
