@@ -10,8 +10,14 @@ VictoriaMetrics は宅内 RKE2 上のプライベートネットワーク (`192.
 Grafana Labs マネージド Grafana から直接アクセスできないため、PDC agent が
 Grafana Cloud にアウトバウンド接続してリバーストンネルを張る。
 
-```
-Grafana Cloud (マネージド) ←→ PDC agent (RKE2) ←→ VictoriaMetrics (monitoring ns)
+```mermaid
+flowchart LR
+  Grafana[Grafana Cloud<br/>managed Grafana]
+  PDC[PDC agent<br/>RKE2 / monitoring namespace]
+  VM[VictoriaMetrics<br/>monitoring namespace]
+
+  Grafana <-->|Private Data Connect| PDC
+  PDC <-->|cluster-local query| VM
 ```
 
 宅内にローカル Grafana は不要。Grafana Cloud のダッシュボードから VictoriaMetrics の
@@ -50,7 +56,7 @@ Bitwarden Secrets Manager のプロジェクト `my-infra` に以下を登録:
 | `GRAFANA_PDC_HOSTED_GRAFANA_ID` | 手順 1 で取得した Hosted Grafana ID |
 | `GRAFANA_PDC_CLUSTER` | 手順 1 で取得した PDC Cluster 文字列 |
 
-### 3. Flux が自動的にデプロイする
+### 3. ArgoCD が自動的にデプロイする
 
 main ブランチにマージされると ArgoCD が `k8s/pve/pdc-agent/` を同期し、
 `grafana-pdc-credentials` Secret が ExternalSecret 経由で作成され、

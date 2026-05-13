@@ -8,41 +8,84 @@
 flowchart TB
   Internet((Internet))
   Grafana[Grafana Cloud<br/>managed metrics / dashboards]
-  Cloudflare[Cloudflare<br/>DNS / Tunnel / Zero Trust Access]
+  Cloudflare[Cloudflare<br/>DNS / Tunnel / Zero Trust Access<br/>private access for owner only]
 
-  subgraph Home[宅内 / Proxmox VE]
-    IX[IX2215<br/>VLAN / DHCP / v6プラス固定IP]
-    PVE[Proxmox nodes<br/>pve-x570 / pve-b550m]
-    UOS[UniFi OS Server VM<br/>192.168.0.132:11443]
-
-    subgraph RKE2[RKE2 HA cluster]
-      LB[2x HAProxy + Keepalived<br/>VIP 192.168.20.227]
-      Servers[3x RKE2 server / etcd<br/>192.168.20.126-128]
-      Workers[2x RKE2 agent<br/>192.168.20.129-130]
-      Argo[ArgoCD App-of-Apps]
-      HomeApps[ESO + Bitwarden BSM<br/>VictoriaMetrics / Alloy / PDC agent<br/>cloudflared / tfc-agent / Tailscale<br/>MetalLB / CoreDNS / WoL<br/>blackbox / snmp / pve / speedtest exporters]
+  subgraph Home[宅内]
+    subgraph NW[NW]
+      IX[IX2215<br/>VLAN / DHCP / v6プラス固定IP]
+      US8[Ubiquiti US-8-60W<br/>L2 Switch / 192.168.0.252]
     end
 
-    PVE --> RKE2
-    PVE --> UOS
-    IX --> PVE
-    Argo --> HomeApps
+    subgraph Proxmox[Proxmox VE]
+      PVE1[pve-x570]
+      PVE2[pve-b550m]
+
+      subgraph VMs[VMs]
+        UOS[UniFi OS Server VM<br/>192.168.0.132:11443]
+        NAS[TrueNAS Scale VMs<br/>192.168.20.191-192]
+        AppVMs[Application / Recording / MagicMirror VMs]
+
+        subgraph RKE2VMs[RKE2 VMs]
+          LBVMs[2x LB VMs<br/>HAProxy + Keepalived<br/>VIP 192.168.20.227]
+          ServerVMs[3x Server VMs<br/>RKE2 server / etcd<br/>192.168.20.126-128]
+          WorkerVMs[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]
+
+          subgraph RKE2[RKE2 HA cluster]
+            API[RKE2 API / workloads]
+
+            subgraph Argo[ArgoCD App-of-Apps]
+              ESO[external-secrets<br/>Bitwarden BSM]
+              VMetrics[VictoriaMetrics]
+              Alloy[Grafana Alloy]
+              PDC[PDC agent]
+              CFPod[cloudflared]
+              TFCAgent[tfc-agent]
+              Tailscale[Tailscale]
+              MetalLB[MetalLB]
+              CoreDNS[CoreDNS]
+              WoL[WoL]
+              Exporters[blackbox / snmp / pve / speedtest exporters]
+            end
+          end
+        end
+      end
+    end
   end
 
   subgraph OCI[OCI OKE / Always Free]
     OKE[OKE Basic cluster<br/>2x A1.Flex ARM64]
-    Flux[Flux v2 GitOps]
-    OCIApps[ESO + Bitwarden BSM<br/>cert-manager / ingress-nginx<br/>Longhorn / cloudflared<br/>tfc-agent / actions-runner / Alloy]
-    OKE --> Flux --> OCIApps
+    subgraph Flux[Flux v2 GitOps]
+      OCIESO[ESO + Bitwarden BSM]
+      OCICert[cert-manager]
+      OCIIngress[ingress-nginx]
+      OCILonghorn[Longhorn]
+      OCICloudflared[cloudflared]
+      OCIAgents[tfc-agent / actions-runner / Alloy]
+    end
   end
 
   Internet --> Cloudflare
-  Cloudflare -->|rke2-home tunnel| RKE2
-  RKE2 -->|LAN backend / monitoring| UOS
-  Cloudflare --> OCI
-  RKE2 -->|remote_write| Grafana
-  OCI -->|remote_write| Grafana
-  Grafana -->|PDC tunnel| RKE2
+  CFPod -->|outbound tunnel| Cloudflare
+  OCICloudflared -->|outbound tunnel| Cloudflare
+
+  IX --- US8
+  IX --- Proxmox
+  PVE1 --- VMs
+  PVE2 --- VMs
+
+  LBVMs --> ServerVMs
+  ServerVMs --> WorkerVMs
+  RKE2VMs --> RKE2
+
+  CFPod -->|LAN backend| UOS
+  CFPod -->|cluster backend| API
+  Alloy -->|remote_write| Grafana
+  PDC -->|outbound PDC tunnel| Grafana
+  Grafana -->|query via PDC| VMetrics
+  PDC --> VMetrics
+
+  OKE --> Flux
+  OCIAgents -->|remote_write| Grafana
 ```
 
 ## ドメイン
@@ -73,7 +116,7 @@ my-infra/
 ├── terraform/
 │   ├── oci/            OCI OKE クラスタ (TFC workspace: my-infra)
 │   ├── pve/            Proxmox VM 全台 (TFC workspace: pve-home)
-│   └── cloudflare/     Cloudflare Tunnel / DNS / Zero Trust (TFC workspace: cloudflare)
+│   └── cloudflare/     Cloudflare DNS / Tunnel / Zero Trust Access (TFC workspace: cloudflare)
 ├── ansible/
 │   ├── rke2/           RKE2 クラスタ構成 (HAProxy + Keepalived + RKE2)
 │   ├── ix2215/         IX2215 VLAN・DHCP 静的リース管理
@@ -243,7 +286,7 @@ flowchart TB
 ### node_exporter について
 
 node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
-テンプレートから作成した VM は起動時点で `:9100` でメトリクスを公開する。
+テンプレートから作成した VM は起動時点で `:9100` で node_exporter が待ち受ける。
 
 既存 VM（テンプレート再ビルド前に作成済み）は、必要に応じて Ansible で一括導入する。
 
