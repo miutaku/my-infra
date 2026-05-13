@@ -16,11 +16,6 @@ output "rke2_worker_mac_addresses" {
   description = "Worker VM の MAC アドレス。ルーターの DHCP 静的リース設定に使用する。"
   value       = module.rke2_worker.mac_addresses
 }
-output "rke2_unifi_worker_mac_addresses" {
-  description = "UniFi worker VM の MAC アドレス。main LAN DHCP 静的リース設定に使用する。"
-  value       = module.rke2_unifi_worker.mac_addresses
-}
-
 output "unifi_os_server_mac_addresses" {
   description = "Dedicated UniFi OS Server VM の MAC アドレス。main LAN DHCP 静的リース設定に使用する。"
   value       = module.unifi_os_server.mac_addresses

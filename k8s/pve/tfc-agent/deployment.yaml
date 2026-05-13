@@ -28,7 +28,7 @@ spec:
             - weight: 90
               preference:
                 matchExpressions:
-                  - key: unifi
+                  - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
