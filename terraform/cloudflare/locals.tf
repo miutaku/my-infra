@@ -17,10 +17,6 @@ locals {
       backend       = "https://192.168.0.132:11443"
       no_tls_verify = true
     }
-    "unifi-vm" = {
-      backend       = "https://192.168.0.132:11443"
-      no_tls_verify = true
-    }
 
     # ── LAN appliances (reachable via routing through BVI20/IX2215) ───────────
     ix2215 = {
@@ -70,7 +66,7 @@ locals {
   # Every entry here must exist as a key in rke2_services or oke_services.
   access_protected_subdomains = toset([
     "argocd", "wol",
-    "unifi", "unifi-vm",
+    "unifi",
     "ix2215",
     "nas-01", "nas-02",
     "pve-x570", "pve-b550m",
