@@ -109,21 +109,29 @@ PVE 上で VM 名を変更しても、次回再起動時に自動で反映され
 
 ### 仕組み
 
-```
-Packer ビルド時
-  ├─ /usr/local/bin/sync-hostname-from-pve を配置 (起動時に実行されるスクリプト)
-  ├─ sync-hostname-from-pve.service を有効化 (Before=network-pre.target)
-  └─ /etc/cloud/cloud.cfg.d/99-pve.cfg に NoCloud datasource を設定
+```mermaid
+flowchart TB
+  subgraph Build[Packer ビルド時]
+    Script[/usr/local/bin/sync-hostname-from-pve を配置]
+    Service[sync-hostname-from-pve.service を有効化]
+    Datasource[/etc/cloud/cloud.cfg.d/99-pve.cfg<br/>NoCloud datasource を設定]
+  end
 
-Terraform でクローン時
-  └─ ide2 に cloud-init ドライブを追加 (cloudinit_storage = "local-zfs")
-     └─ Proxmox が VM 名をホスト名として cloud-init データを自動生成・更新
+  subgraph Clone[Terraform でクローン時]
+    CloudInit[ide2 に cloud-init ドライブを追加]
+    Metadata[Proxmox が VM 名を<br/>cloud-init meta-data に反映]
+  end
 
-VM 起動ごと (毎回)
-  └─ sync-hostname-from-pve.service が起動
-     └─ cidata ラベルのブロックデバイス (Proxmox cloud-init ドライブ) をマウント
-        └─ meta-data の local-hostname を読み込み
-           └─ 現在の hostname と異なれば hostnamectl で更新 → /etc/hosts も更新
+  subgraph Boot[VM 起動ごと]
+    RunService[sync-hostname-from-pve.service が起動]
+    Mount[cidata ラベルの cloud-init ドライブをマウント]
+    Read[meta-data の local-hostname を読み込み]
+    Update[必要なら hostnamectl と /etc/hosts を更新]
+  end
+
+  Script --> Service --> Datasource
+  Datasource --> CloudInit --> Metadata
+  Metadata --> RunService --> Mount --> Read --> Update
 ```
 
 ### Terraform での有効化

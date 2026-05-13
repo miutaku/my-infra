@@ -8,22 +8,22 @@ ArgoCD App-of-Apps (`k8s/pve/argocd-apps/metallb.yaml`) で管理される。
 | 項目 | 値 |
 |---|---|
 | モード | L2 (ARP アナウンス) |
-| IP プール | `192.168.0.200-192.168.0.220` |
-| インストール方法 | ArgoCD HelmRelease (grafana/helm-charts) |
+| IP プール | `192.168.20.200-192.168.20.226` |
+| インストール方法 | ArgoCD Application (MetalLB Helm chart + repo内manifest) |
 
-IP プールは宅内 LAN の DHCP 割り当て範囲外に設定すること。  
-DHCP サーバー (IX2215) の `ip dhcp profile main` の `default-gateway` 設定と重複しないこと。
+IP プールは VLAN 20 の DHCP 割り当て範囲外に設定すること。  
+DHCP サーバー (IX2215) の `ip dhcp profile vlan20` と重複しないこと。
 
 ## ArgoCD での管理
 
 このディレクトリのマニフェストは ArgoCD が自動で同期する。  
 **手動で `kubectl apply` や `helm install` は不要。**
 
-同期順序: sync-wave `1` (external-secrets, bitwarden-sdk-server より後)
+同期順序: sync-wave `1`
 
 ## IP プールの変更
 
-[values.yaml](./values.yaml) の `configInline.address-pools[0].addresses` を変更して  
+[metallb.yaml](./metallb.yaml) の `IPAddressPool.spec.addresses` を変更して  
 git push → main マージ → ArgoCD が自動反映。
 
 ## 確認コマンド

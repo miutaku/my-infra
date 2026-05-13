@@ -4,7 +4,7 @@ Proxmox テンプレートを Packer で自動構築します。TrueNAS Scale 25
 
 ## 制約事項
 
-- TrueNAS Scale はインストール直後に SSH を公開しないため `communicator = "none"` です。
+- TrueNAS Scale はインストール直後に SSH が有効でないため `communicator = "none"` です。
 - インストールの自動化は `boot_command` によるキーシーケンス送信のみです（cloud-init 非対応）。
 - ビルド中は Proxmox の VNC コンソールで進行状況を確認できます。
 

@@ -1,7 +1,8 @@
 # Ansible: NEC IX2215 DHCP 静的リース管理
 
-NEC IX2215 ルーターの `ip dhcp profile main` に対して  
-RKE2 クラスタノードの DHCP 静的リース (`fixed-assignment`) を自動設定する。
+NEC IX2215 ルーターの DHCP profile / VLAN / SNMP 設定を管理する。
+DHCP 静的リース (`fixed-assignment`) は `group_vars/all.yml` の `ix_dhcp_profiles` で
+profile ごとに定義する。
 
 ## なぜ Ansible network_cli / cisco.ios を使わないのか
 
@@ -18,7 +19,7 @@ privilege escalation でエラーとなる (ansible.netcommon#315, cisco.ios#372
 |---|---|
 | ルーター管理 IP | `192.168.0.254` (GigaEthernet2.0) |
 | 接続方式 | Netmiko SSH (`nec_ix` デバイスタイプ) |
-| DHCPプロファイル | `ip dhcp profile main` |
+| DHCPプロファイル | `ix_dhcp_profiles` で管理 (`main`, `vlan10`, `vlan20`, `vlan30`, `vlan40`) |
 | シークレット管理 | Bitwarden Secrets Manager (BSM) |
 
 ## セットアップ (初回)
@@ -52,12 +53,11 @@ cd terraform/pve
 terraform output -json rke2_lb_mac_addresses
 terraform output -json rke2_server_mac_addresses
 terraform output -json rke2_worker_mac_addresses
+terraform output -json unifi_os_server_mac_addresses
 ```
 
-出力された MAC アドレスを **NEC IX 形式 (`xxxx.xxxx.xxxx`)** に変換して  
-`group_vars/all.yml` の `dhcp_assignments` を更新する。
-
-**変換例**: `BC:24:11:AB:CD:EF` → `bc24.11ab.cdef`
+出力された MAC アドレスを `group_vars/all.yml` の
+`ix_dhcp_profiles[].fixed_assignments` に追加する。
 
 ### 4. 依存ライブラリをインストールする
 
@@ -84,16 +84,16 @@ pipenv run ansible-playbook site.yml
 
 ## 静的リースを追加・変更したいとき
 
-`group_vars/all.yml` の `dhcp_assignments` を編集する:
+`group_vars/all.yml` の `ix_dhcp_profiles[].fixed_assignments` を編集する:
 
 ```yaml
-dhcp_assignments:
-  - name: new-host
-    ip: "192.168.0.140"
-    mac: "aabb.ccdd.eeff"  # NEC IX 形式
+ix_dhcp_profiles:
+  - name: main
+    fixed_assignments:
+      - { ip: "192.168.0.140", mac: "aa:bb:cc:dd:ee:ff" }
 ```
 
-- MAC は `xxxx.xxxx.xxxx` 形式で記載 (スクリプトが自動変換もするので `aa:bb:cc:dd:ee:ff` でも可)
+- MAC は `aa:bb:cc:dd:ee:ff` 形式で記載する
 - 既存エントリは変更しない (IP が一致する場合は MAC が変わっていれば上書き)
 - 変更後は `ansible-playbook site.yml` を実行すれば IX2215 に反映される
 

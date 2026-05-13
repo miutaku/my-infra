@@ -10,7 +10,7 @@ OCI Always Free 上に OKE Basic クラスタを構築する Terraform workspace
 |---|---|---|
 | A1.Flex OCPU | 4 OCPU | 2 OCPU/node × 2 nodes = 4 OCPU |
 | A1.Flex メモリ | 24 GB | 12 GB/node × 2 nodes = 24 GB |
-| Block Volume | 200 GB / 2 vol | Phase 5 (Longhorn) で管理 |
+| Block Volume | 200 GB / 2 vol | Longhorn で管理 |
 | Flex LB | 10 Mbps 固定 | ingress-nginx の Service annotation で指定 |
 
 > **重要**: OKE クラスタタイプは `BASIC_CLUSTER` に固定。`ENHANCED_CLUSTER` は $0.10/h の課金が発生する。
@@ -45,14 +45,17 @@ OCI Always Free 上に OKE Basic クラスタを構築する Terraform workspace
 
 ## 全体の流れ
 
-```
-[1] TFC workspace に Variables を登録
-[2] terraform init (TFC backend に接続)
-[3] terraform fmt / validate
-[4] terraform plan (TFC 上で実行)
-[5] terraform apply (TFC 上で実行)
-[6] kubeconfig を取得してクラスタに接続確認
-[7] Budget Alert のメールが届いているか確認
+```mermaid
+flowchart LR
+  Vars[TFC workspace<br/>Variables登録]
+  Init[terraform init]
+  Check[terraform fmt / validate]
+  Plan[terraform plan<br/>TFC上で実行]
+  Apply[terraform apply<br/>TFC上で実行]
+  Kubeconfig[kubeconfig取得<br/>接続確認]
+  Budget[Budget Alert確認]
+
+  Vars --> Init --> Check --> Plan --> Apply --> Kubeconfig --> Budget
 ```
 
 ---
@@ -180,9 +183,9 @@ NAME        STATUS   ROLES    AGE   VERSION
 10.0.1.y    Ready    <none>   Xm    v1.31.1
 ```
 
-### Flex LB の帯域幅制限 (Phase 5 で設定)
+### Flex LB の帯域幅制限
 
-Always Free の Flex LB は 10 Mbps 固定。ingress-nginx の Service に以下の annotation を付与する (Phase 5 で実施):
+Always Free の Flex LB は 10 Mbps 固定。ingress-nginx の Service に以下の annotation を付与する:
 
 ```yaml
 service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"

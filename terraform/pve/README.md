@@ -11,24 +11,28 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 | `rke2_server` | 3 | RKE2 コントロールプレーン (etcd) | 両ノード分散 |
 | `rke2_worker` | 2 | RKE2 ワーカー | 両ノード分散 |
 | `prd_rec_server` | 1 | 録画サーバー (pve-x570, PCI passthrough) | pve-x570 固定 |
-| `dev_rec_server` | 1 | 開発用録画サーバー | 両ノード分散 |
-| `dev_application_server` | 1 | 開発用アプリサーバー | 両ノード分散 |
-| `mm_server` | 1 | Magic Mirror² サーバー | 両ノード分散 |
-| `truenas` | 1 | TrueNAS Scale NAS | (modules/truenas_vm) |
+| `dev_rec_server` | 1 | 開発用録画サーバー (USB passthrough) | pve-b550m 固定 |
+| `dev_application_server` | 1 | 開発用アプリサーバー | pve-b550m 固定 |
+| `truenas` | 2 | TrueNAS Scale NAS | 両ノード分散 |
+| `unifi_os_server` | 1 | UniFi OS Server 専用 VM | pve-x570 固定 |
+| `magic_mirror_server` | 1 | MagicMirror² サーバー (VLAN 40 / USB passthrough) | pve-b550m 固定 |
 
-全 VM はテンプレート (`template-ubuntu-26-04-home-amd64`) から clone して作成する。  
-テンプレートは事前に `packer/ubuntu-26-04/` でビルドしておく必要がある。
+Ubuntu VM は `template-ubuntu-26-04-home-amd64`、TrueNAS VM は `template-truenas-scale-home-amd64`
+から clone して作成する。テンプレートは事前に `packer/` 配下の手順でビルドしておく必要がある。
 
 ## DHCP と IP アドレスの関係
 
 VM は DHCP で IP を取得する (cloud-init による静的 IP 設定はしない)。  
 以下の流れで IP を固定する:
 
-```
-[1] terraform apply → VM が作成され MAC アドレスが確定する
-[2] terraform output rke2_lb_mac_addresses 等で MAC を確認
-[3] ansible/ix2215 で IX2215 ルーターに DHCP 静的リースを設定
-[4] VM 再起動 → 固定 IP が割り当てられる
+```mermaid
+flowchart LR
+  Apply[terraform apply<br/>VM作成 / MAC確定]
+  Output[terraform output<br/>MAC確認]
+  IX[ansible/ix2215<br/>DHCP静的リース反映]
+  Reboot[VM再起動<br/>固定IP取得]
+
+  Apply --> Output --> IX --> Reboot
 ```
 
 `variables.tf` の `rke2_lb_ips` / `rke2_server_ips` / `rke2_worker_ips` には  
@@ -75,15 +79,19 @@ TFC workspace `pve-home` に以下の Variables を登録する。
 
 ## 全体の流れ
 
-```
-[1] packer/ubuntu-26-04/ でテンプレートをビルド (初回のみ)
-[2] TFC workspace に Variables を登録
-[3] terraform init (TFC backend に接続)
-[4] terraform plan / apply
-[5] terraform output で MAC アドレスを確認
-[6] ansible/ix2215/ で IX2215 に DHCP 静的リースを設定
-[7] 各 VM を再起動して固定 IP を取得させる
-[8] ansible/rke2/ で RKE2 クラスタを構成
+```mermaid
+flowchart LR
+  Packer[packer<br/>テンプレート作成]
+  Vars[TFC workspace<br/>Variables登録]
+  Terraform[terraform init / plan / apply]
+  Outputs[terraform output<br/>MAC確認]
+  IX[ansible/ix2215<br/>DHCP静的リース]
+  RKE2[ansible/rke2<br/>RKE2構成]
+  UOS[ansible/uos<br/>UniFi OS Server構成]
+
+  Packer --> Vars --> Terraform --> Outputs --> IX
+  IX --> RKE2
+  IX --> UOS
 ```
 
 ## セットアップ
@@ -111,10 +119,11 @@ terraform apply
 terraform output -json rke2_lb_mac_addresses
 terraform output -json rke2_server_mac_addresses
 terraform output -json rke2_worker_mac_addresses
+terraform output -json unifi_os_server_mac_addresses
 ```
 
-出力された MAC アドレスを `ansible/ix2215/group_vars/all.yml` の `dhcp_assignments` に記載する。  
-形式は NEC IX 形式 (`xxxx.xxxx.xxxx`) に変換する。例: `BC:24:11:AD:44:00` → `bc24.11ad.4400`
+出力された MAC アドレスを `ansible/ix2215/group_vars/all.yml` の
+`ix_dhcp_profiles[].fixed_assignments` に記載する。
 
 ## VM を追加・変更したいとき
 
