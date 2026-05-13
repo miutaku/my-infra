@@ -76,6 +76,12 @@ pipenv run ansible-playbook site.yml \
 https://192.168.0.132:11443
 ```
 
+Terraform にて Cloudflare ZeroTrust の構成ができたら、以下でアクセスできるか確認します。
+
+```text
+https://unifi.miutaku.work
+```
+
 
 ## 変数
 
