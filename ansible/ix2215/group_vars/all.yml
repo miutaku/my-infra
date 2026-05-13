@@ -237,7 +237,7 @@ ix_dhcp_profiles:
     fixed_assignments:
       - { ip: "192.168.40.51",  mac: "52:54:00:99:00:01" } # mm-server-01
       - { ip: "192.168.40.79",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch
-      - { ip: "192.168.40.80",  mac: "88:c9:e8:db:30:81" } # TV
+      - { ip: "192.168.40.80",  mac: "40:1a:58:42:38:18" } # Sony BRAVIA TV
       - { ip: "192.168.40.141", mac: "00:1b:7a:c8:e4:88" } # Wii NIC
       - { ip: "192.168.40.228", mac: "1c:90:ff:88:39:33" } # smart remocon
       - { ip: "192.168.40.229", mac: "3c:61:05:ce:9c:15" } # ceiling light
