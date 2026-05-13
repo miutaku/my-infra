@@ -1,0 +1,88 @@
+---
+- name: Prepare dedicated UniFi OS Server VM
+  hosts: uos-server
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Set hostname from inventory
+      ansible.builtin.hostname:
+        name: "{{ hostname }}"
+      when: hostname is defined
+
+    - name: Install UniFi OS Server prerequisites
+      ansible.builtin.apt:
+        name: "{{ uos_packages }}"
+        state: present
+        update_cache: true
+
+    - name: Load macvlan kernel module now
+      community.general.modprobe:
+        name: macvlan
+        state: present
+
+    - name: Load macvlan kernel module on boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/uos-server.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          macvlan
+
+    - name: Apply UniFi OS Server sysctl settings
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: true
+      loop: "{{ uos_sysctl | dict2items }}"
+
+    - name: Create UniFi OS Server working directory
+      ansible.builtin.file:
+        path: "{{ uos_installer_dest | dirname }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy UniFi OS Server installer from control host
+      ansible.builtin.copy:
+        src: "{{ uos_installer_src }}"
+        dest: "{{ uos_installer_dest }}"
+        owner: root
+        group: root
+        mode: "0755"
+      when: uos_installer_src | length > 0
+
+    - name: Download UniFi OS Server installer
+      ansible.builtin.get_url:
+        url: "{{ uos_installer_url }}"
+        dest: "{{ uos_installer_dest }}"
+        owner: root
+        group: root
+        mode: "0755"
+      when: uos_installer_url | length > 0
+
+    - name: Assert installer is available when installation is requested
+      ansible.builtin.stat:
+        path: "{{ uos_installer_dest }}"
+      register: uos_installer_stat
+      when: uos_run_installer | bool
+
+    - name: Stop when installer is missing
+      ansible.builtin.fail:
+        msg: "Set uos_installer_src or uos_installer_url before uos_run_installer=true."
+      when:
+        - uos_run_installer | bool
+        - not uos_installer_stat.stat.exists
+
+    - name: Run UniFi OS Server installer
+      ansible.builtin.shell: |
+        set -euo pipefail
+        "{{ uos_installer_dest }}"
+        touch "{{ uos_install_marker }}"
+      args:
+        executable: /bin/bash
+        creates: "{{ uos_install_marker }}"
+      when: uos_run_installer | bool

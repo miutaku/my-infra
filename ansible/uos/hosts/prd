@@ -1,0 +1,5 @@
+[uos-server]
+192.168.0.132 hostname=unifi-os-01-server-ubuntu-26-04-home-amd64
+
+[prd-all:children]
+uos-server
