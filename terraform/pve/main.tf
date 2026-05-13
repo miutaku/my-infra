@@ -161,6 +161,23 @@ module "rke2_unifi_worker" {
   cloudinit_storage = "local-zfs"
 }
 
+module "unifi_os_server" {
+  source = "./modules/proxmox_vm"
+
+  vm_count          = 1
+  name_prefix       = "unifi-os"
+  name_suffix       = "server-ubuntu-26-04-home-amd64"
+  macaddrs_override = [var.unifi_os_server_macaddr]
+  vmid_start        = 13201
+  tags              = ["ubuntu_2604", "unifi", "uos-server"]
+  cpu_cores         = 2
+  memory            = 4096
+  clone_template    = local.ubuntu_template
+  proxmox_nodes     = ["pve-x570"]
+  disk_size         = 64
+  cloudinit_storage = "local-zfs"
+}
+
 module "magic_mirror_server" {
   source = "./modules/proxmox_vm"
 

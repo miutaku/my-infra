@@ -141,6 +141,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.0.115", mac: "70:85:c2:da:b6:e1" } # pve-x570
       - { ip: "192.168.0.119", mac: "a8:a1:59:57:ce:43" } # pve-b550m
       - { ip: "192.168.0.131", mac: "bc:24:11:10:10:01" } # worker-nw-01 RKE2 agent / UniFi OS Server
+      - { ip: "192.168.0.132", mac: "bc:24:11:10:20:01" } # dedicated UniFi OS Server VM
       - { ip: "192.168.0.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W
       - { ip: "192.168.0.253", mac: "e4:3e:c6:34:1c:00" } # FS AP （native vlanがVLAN1固定のため main プロファイルで管理）
 
