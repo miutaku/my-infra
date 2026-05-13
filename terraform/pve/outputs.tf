@@ -21,6 +21,19 @@ output "rke2_unifi_worker_mac_addresses" {
   value       = module.rke2_unifi_worker.mac_addresses
 }
 
+output "unifi_os_server_mac_addresses" {
+  description = "Dedicated UniFi OS Server VM の MAC アドレス。main LAN DHCP 静的リース設定に使用する。"
+  value       = module.unifi_os_server.mac_addresses
+}
+
+output "unifi_os_server_vm_names" {
+  value = [for vm in values(module.unifi_os_server.vms) : vm.name]
+}
+
+output "unifi_os_server_vm_ids" {
+  value = [for vm in values(module.unifi_os_server.vms) : vm.id]
+}
+
 output "prd_rec_server_vm_names" {
   value = [for vm in values(module.prd_rec_server.vms) : vm.name]
 }

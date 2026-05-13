@@ -139,6 +139,18 @@ variable "rke2_unifi_worker_ip" {
   default     = "192.168.0.131"
 }
 
+variable "unifi_os_server_macaddr" {
+  description = "The MAC address of the dedicated UniFi OS Server VM (untagged main LAN)"
+  type        = string
+  default     = "BC:24:11:10:20:01"
+}
+
+variable "unifi_os_server_ip" {
+  description = "IP address for the dedicated UniFi OS Server VM (untagged main LAN, DHCP 静的リースと一致させること)"
+  type        = string
+  default     = "192.168.0.132"
+}
+
 variable "rke2_lb_vip" {
   description = "Keepalived の Virtual IP (任意の未使用 IP)"
   type        = string
