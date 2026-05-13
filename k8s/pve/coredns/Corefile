@@ -20,6 +20,7 @@
       # native VLAN
       192.168.0.115  pve-x570.miutaku.internal
       192.168.0.119  pve-b550m.miutaku.internal
+      192.168.0.132  unifi-vm.miutaku.internal
       192.168.0.252  us-8-60w.miutaku.internal
 
       # VLAN 10: 管理ネットワーク

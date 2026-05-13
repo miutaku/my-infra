@@ -1,0 +1,20 @@
+---
+uos_installer_src: ""
+uos_installer_url: ""
+uos_installer_dest: "/opt/uosserver/uos-server-installer"
+uos_run_installer: false
+uos_install_marker: "/opt/uosserver/.installer-ran"
+
+uos_packages:
+  - ca-certificates
+  - curl
+  - fuse-overlayfs
+  - gnupg
+  - iptables
+  - podman
+  - slirp4netns
+  - uidmap
+
+uos_sysctl:
+  net.ipv4.ip_unprivileged_port_start: 0
+  net.ipv4.ping_group_range: "0 2147483647"
