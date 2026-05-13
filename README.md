@@ -4,51 +4,45 @@
 
 ## アーキテクチャ概要
 
-```
-                        ┌─────────────────────────────────────┐
-                        │        Grafana Labs (Managed)        │
-                        │  Grafana Cloud ← metrics (remote_write)│
-                        │  Grafana UI    ← PDC tunnel (VictoriaMetrics) │
-                        └──────────────┬──────────────────────┘
-                                       │
-                     ┌─────────────────┼──────────────────────┐
-                     │ Cloudflare      │                        │
-                     │ - Tunnel (rke2-home / oke-cloud)        │
-                     │ - Zero Trust Access                     │
-                     │ - DNS (miutaku.work)                    │
-                     └────┬──────────────────────┬────────────┘
-                          │                      │
-         ┌────────────────▼──────┐    ┌──────────▼──────────────┐
-         │   宅内 (Proxmox VE)   │    │   OCI OKE (Always Free) │
-         │                       │    │                          │
-         │  RKE2 HA クラスタ      │    │  OKE Basic クラスタ      │
-         │  - 2x LB (Keepalived) │    │  - 2x A1.Flex (ARM64)   │
-         │  - 3x Server (etcd)   │    │  Flux v2 (GitOps)       │
-         │  - 2x Worker          │    │  - ESO + Bitwarden BSM  │
-         │  ArgoCD (App-of-Apps) │    │  - cert-manager         │
-         │  - ESO + Bitwarden BSM│    │  - ingress-nginx (OCI LB)│
-         │  - VictoriaMetrics    │    │  - Longhorn             │
-         │  - Grafana Alloy      │    │  - cloudflared          │
-         │  - Grafana PDC agent  │    │  - tfc-agent            │
-         │  - tfc-agent          │    │  - actions-runner       │
-         │  - cloudflared        │    │  - grafana-alloy        │
-         │  - Tailscale subnet   |    │                          │
-         │  - MetalLB            │    │                          │
-         │  - blackbox-exporter  │    │                          │
-         │  - snmp-exporter      │    │                          │
-         │  - pve-exporter       │    │                          │
-         │  - speedtest-exporter │    │                          │
-         │  - Unifi OS Server    │    │                          │
-         │  - multus             │    │                          │
-         │  - CoreDNS            │    │                          │
-         │  - WoL (gptwol)       │    │                          │
-         │                       │    │                          │
-         │  IX2215 (ルーター)     │    │                          │
-         │  - VLAN 10/20/30/40   │    │                          │
-         │  - DHCP 静的リース     │    │                          │
-         │  - v6プラス（固定IP）  │    │                          │
-         │                       │    │                          │
-         └───────────────────────┘    └──────────────────────────┘
+```mermaid
+flowchart TB
+  Internet((Internet))
+  Grafana[Grafana Cloud<br/>managed metrics / dashboards]
+  Cloudflare[Cloudflare<br/>DNS / Tunnel / Zero Trust Access]
+
+  subgraph Home[宅内 / Proxmox VE]
+    IX[IX2215<br/>VLAN / DHCP / v6プラス固定IP]
+    PVE[Proxmox nodes<br/>pve-x570 / pve-b550m]
+    UOS[UniFi OS Server VM<br/>192.168.0.132:11443]
+
+    subgraph RKE2[RKE2 HA cluster]
+      LB[2x HAProxy + Keepalived<br/>VIP 192.168.20.227]
+      Servers[3x RKE2 server / etcd<br/>192.168.20.126-128]
+      Workers[2x RKE2 agent<br/>192.168.20.129-130]
+      Argo[ArgoCD App-of-Apps]
+      HomeApps[ESO + Bitwarden BSM<br/>VictoriaMetrics / Alloy / PDC agent<br/>cloudflared / tfc-agent / Tailscale<br/>MetalLB / CoreDNS / WoL<br/>blackbox / snmp / pve / speedtest exporters]
+    end
+
+    PVE --> RKE2
+    PVE --> UOS
+    IX --> PVE
+    Argo --> HomeApps
+  end
+
+  subgraph OCI[OCI OKE / Always Free]
+    OKE[OKE Basic cluster<br/>2x A1.Flex ARM64]
+    Flux[Flux v2 GitOps]
+    OCIApps[ESO + Bitwarden BSM<br/>cert-manager / ingress-nginx<br/>Longhorn / cloudflared<br/>tfc-agent / actions-runner / Alloy]
+    OKE --> Flux --> OCIApps
+  end
+
+  Internet --> Cloudflare
+  Cloudflare -->|rke2-home tunnel| RKE2
+  RKE2 -->|LAN backend / monitoring| UOS
+  Cloudflare --> OCI
+  RKE2 -->|remote_write| Grafana
+  OCI -->|remote_write| Grafana
+  Grafana -->|PDC tunnel| RKE2
 ```
 
 ## ドメイン
@@ -83,6 +77,8 @@ my-infra/
 ├── ansible/
 │   ├── rke2/           RKE2 クラスタ構成 (HAProxy + Keepalived + RKE2)
 │   ├── ix2215/         IX2215 VLAN・DHCP 静的リース管理
+│   ├── uos/            UniFi OS Server 専用 VM 構成
+│   ├── monitoring/     既存 VM 向け node_exporter 補助 playbook
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
 │   ├── pve/            宅内 RKE2 (ArgoCD App-of-Apps)
@@ -94,18 +90,32 @@ my-infra/
 
 ## 作業フロー: 宅内クラスタを新規構築する順序
 
-```
-[1] terraform/pve/        → Proxmox VM を作成
-[2] ansible/ix2215/       → IX2215 に DHCP 静的リースを設定 (MAC → IP 固定)
-[3] ansible/rke2/         → RKE2 クラスタを構成
-[4] k8s/pve/argocd/       → ArgoCD Bootstrap → App-of-Apps 起動
+```mermaid
+flowchart LR
+  Packer[packer/ubuntu-26-04<br/>VM template]
+  Terraform[terraform/pve<br/>Proxmox VM作成]
+  IX[ansible/ix2215<br/>DHCP静的リース反映]
+  RKE2[ansible/rke2<br/>RKE2 HA構成]
+  UOS[ansible/uos<br/>UniFi OS Server VM構成]
+  Argo[k8s/pve/argocd<br/>ArgoCD Bootstrap]
+  Apps[k8s/pve/argocd-apps<br/>App-of-Apps同期]
+
+  Packer --> Terraform --> IX
+  IX --> RKE2 --> Argo --> Apps
+  IX --> UOS
 ```
 
 ## 作業フロー: OKE クラスタを新規構築する順序
 
-```
-[1] terraform/oci/        → OKE クラスタを作成
-[2] k8s/oci/flux/         → Flux v2 Bootstrap → GitOps 開始
+```mermaid
+flowchart LR
+  Terraform[terraform/oci<br/>OKEクラスタ作成]
+  Flux[k8s/oci/flux<br/>Flux v2 Bootstrap]
+  Sources[k8s/oci/infrastructure/sources<br/>HelmRepository等]
+  Infra[k8s/oci/infrastructure<br/>ESO / cert-manager / ingress-nginx / Longhorn]
+  Apps[k8s/oci/apps<br/>cloudflared / tfc-agent / actions-runner / Alloy]
+
+  Terraform --> Flux --> Sources --> Infra --> Apps
 ```
 
 ## kubectl 操作環境
@@ -176,6 +186,7 @@ kubens               # namespace 一覧
 | Cloudflare Terraform | [terraform/cloudflare/README.md](./terraform/cloudflare/README.md) | Tunnel, DNS, Zero Trust |
 | RKE2 Ansible | [ansible/rke2/README.md](./ansible/rke2/README.md) | RKE2 HA クラスタ構成 |
 | IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | VLAN・DHCP 静的リース |
+| UniFi OS Server Ansible | [ansible/uos/README.md](./ansible/uos/README.md) | 専用 VM 上の UniFi OS Server 構成 |
 | PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
 | ArgoCD Bootstrap (RKE2) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSM シークレット一覧, App-of-Apps |
 | Flux Bootstrap (OKE) | [k8s/oci/flux/README.md](./k8s/oci/flux/README.md) | BSM シークレット一覧, TLS cert 手順, Kustomization 順序 |
@@ -186,20 +197,29 @@ kubens               # namespace 一覧
 
 ## 監視アーキテクチャ
 
-```
-各ホスト/機器
-  ├─ node_exporter :9100    (VM: ansible/monitoring で導入)
-  ├─ snmp-exporter :9116    (IX2215 SNMP v2c, community: monitor)
-  └─ pve-exporter  :9221    (Proxmox API)
-         │
-         ▼
-  Grafana Alloy (RKE2 DaemonSet)
-  ├─ scrape: node / pods / SNMP / PVE / static VMs / blackbox
-  ├─ remote_write → VictoriaMetrics (クラスタ内 :8428)
-  └─ remote_write → Grafana Cloud (remote_write endpoint)
-         │
-         ▼
-  Grafana Cloud ← PDC Tunnel (VictoriaMetrics経由)
+```mermaid
+flowchart TB
+  Hosts[VM / NAS / ネットワーク機器]
+  Node[node_exporter :9100<br/>Ubuntu VMはPackerテンプレートに同梱]
+  SNMP[snmp-exporter :9116<br/>IX2215 / TrueNAS]
+  PVE[pve-exporter :9221<br/>Proxmox API]
+  Blackbox[blackbox-exporter :9115<br/>HTTP / ICMP]
+  Alloy[Grafana Alloy<br/>RKE2 DaemonSet]
+  VM[VictoriaMetrics<br/>RKE2内]
+  Cloud[Grafana Cloud<br/>remote_write]
+  PDC[Grafana PDC agent<br/>VictoriaMetrics query tunnel]
+
+  Hosts --> Node
+  Hosts --> SNMP
+  Hosts --> PVE
+  Hosts --> Blackbox
+  Node --> Alloy
+  SNMP --> Alloy
+  PVE --> Alloy
+  Blackbox --> Alloy
+  Alloy --> VM
+  Alloy --> Cloud
+  Cloud --> PDC --> VM
 ```
 
 ### メトリクス収集対象
@@ -211,6 +231,7 @@ kubens               # namespace 一覧
 | pve-x570 | 192.168.0.115 | pve-exporter | BSM 要設定 |
 | pve-b550m | 192.168.0.119 | pve-exporter | BSM 要設定 |
 | RKE2 nodes ×5 | 192.168.20.126-130 | Alloy DaemonSet (node) | ✅ |
+| UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
 | dev-rec-server | 192.168.20.150 | node_exporter :9100 | ✅ |
@@ -224,7 +245,7 @@ kubens               # namespace 一覧
 node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
 テンプレートから作成した VM は起動時点で `:9100` でメトリクスを公開する。
 
-既存 VM（テンプレート再ビルド前に作成済み）は Ansible で一括導入:
+既存 VM（テンプレート再ビルド前に作成済み）は、必要に応じて Ansible で一括導入する。
 
 ```bash
 cd ansible/monitoring

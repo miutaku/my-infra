@@ -2,7 +2,7 @@
 
 Proxmox 上に専用 VM として UniFi OS Server を構築するための Ansible playbook です。
 
-UniFi OS Server を VM 上で構成します。
+UniFi OS Server は Kubernetes ではなく、native VLAN (`192.168.0.0/24`) 上の専用 VM で運用します。
 
 ## 構成
 
@@ -13,7 +13,7 @@ UniFi OS Server を VM 上で構成します。
 | ネットワーク | native VLAN / `192.168.0.0/24` |
 | MAC アドレス | `BC:24:11:10:20:01` |
 | Web UI | `https://192.168.0.132:11443` |
-| 内部 DNS | `unifi-vm.miutaku.internal` |
+| 内部 DNS | `unifi.miutaku.internal` |
 
 VM 自体は `terraform/pve` で作成します。  
 この playbook は、VM 作成後に UniFi OS Server の前提パッケージを入れ、必要に応じて公式 installer を配置・実行します。
@@ -80,6 +80,7 @@ Terraform にて Cloudflare ZeroTrust の構成ができたら、以下でアク
 ```text
 https://unifi.miutaku.work
 ```
+
 
 ## 変数
 
