@@ -149,10 +149,11 @@ ix_dhcp_profiles:
   # BVI31 に guest-acl (in) を適用し他 VLAN への横断を遮断
   # ------------------------------------------------------------------
   - name: "guest"
-    assignable_range: "192.168.31.1 192.168.31.100"
+    assignable_range: "192.168.31.1 192.168.31.254"
     default_gateway: "192.168.31.254"
-    dns_server: "192.168.31.254"
-
+    dns_server:
+      - "1.1.1.1"
+      - "8.8.8.8"
 
   # ------------------------------------------------------------------
   # VLAN 10: 管理ネットワーク (192.168.10.0/24)
@@ -217,11 +218,11 @@ ix_dhcp_profiles:
       - "192.168.20.201"  # CoreDNS (primary)
       - "192.168.30.254"  # BVI30 (secondary)
     fixed_assignments:
-      - { ip: "192.168.30.120", mac: "9c:6b:00:96:87:c6" } # gaming-pc
-      - { ip: "192.168.30.124", mac: "52:54:00:8c:83:18" } # windows-11-work VM
-      - { ip: "192.168.30.142", mac: "00:22:cf:ed:a9:7a" } # PLANEX NIC
-      - { ip: "192.168.30.143", mac: "cc:e1:d5:40:32:d2" } # BUFFALO NIC
-      - { ip: "192.168.30.144", mac: "00:e0:4d:ac:58:ec" } # 謎NIC
+      - { ip: "192.168.30.210", mac: "9c:6b:00:96:87:c6" } # gaming-pc
+      - { ip: "192.168.30.211", mac: "52:54:00:8c:83:18" } # windows-11-work VM
+      - { ip: "192.168.30.222", mac: "00:22:cf:ed:a9:7a" } # PLANEX NIC
+      - { ip: "192.168.30.223", mac: "cc:e1:d5:40:32:d2" } # BUFFALO NIC
+      - { ip: "192.168.30.224", mac: "00:e0:4d:ac:58:ec" } # 謎NIC
 
   # ------------------------------------------------------------------
   # VLAN 40: IoT ネットワーク (192.168.40.0/24)
@@ -235,14 +236,14 @@ ix_dhcp_profiles:
       - "192.168.20.201"  # CoreDNS (primary)
       - "192.168.40.254"  # BVI4 (secondary)
     fixed_assignments:
-      - { ip: "192.168.40.51",  mac: "52:54:00:99:00:01" } # mm-server-01
-      - { ip: "192.168.40.79",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch
-      - { ip: "192.168.40.80",  mac: "40:1a:58:42:38:18" } # Sony BRAVIA TV
+      - { ip: "192.168.40.111",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch
+      - { ip: "192.168.40.120",  mac: "40:1a:58:42:38:18" } # Sony BRAVIA TV
       - { ip: "192.168.40.141", mac: "00:1b:7a:c8:e4:88" } # Wii NIC
       - { ip: "192.168.40.228", mac: "1c:90:ff:88:39:33" } # smart remocon
       - { ip: "192.168.40.229", mac: "3c:61:05:ce:9c:15" } # ceiling light
       - { ip: "192.168.40.230", mac: "94:e0:d6:67:7f:fb" } # security camera
       - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
+      - { ip: "192.168.40.250",  mac: "52:54:00:99:00:01" } # mm-server-01
 
 # RKE2 クラスタノードの DHCP 静的リース (Terraform から更新)
 # vlan20 profile から削除するIP (旧エントリのクリーンアップ用)
