@@ -78,11 +78,19 @@
         - not uos_installer_stat.stat.exists
 
     - name: Run UniFi OS Server installer
-      ansible.builtin.shell: |
-        set -euo pipefail
-        "{{ uos_installer_dest }}"
-        touch "{{ uos_install_marker }}"
-      args:
-        executable: /bin/bash
+      ansible.builtin.command:
+        argv: "{{ [uos_installer_dest] + uos_installer_args }}"
         creates: "{{ uos_install_marker }}"
+      register: uos_installer_result
       when: uos_run_installer | bool
+
+    - name: Mark UniFi OS Server installer as completed
+      ansible.builtin.file:
+        path: "{{ uos_install_marker }}"
+        state: touch
+        owner: root
+        group: root
+        mode: "0644"
+      when:
+        - uos_run_installer | bool
+        - uos_installer_result is changed

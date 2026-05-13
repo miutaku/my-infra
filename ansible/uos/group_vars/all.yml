@@ -1,9 +1,15 @@
 ---
 uos_installer_src: ""
-uos_installer_url: ""
+uos_installer_url: "https://fw-download.ubnt.com/data/unifi-os-server/1856-linux-x64-5.0.6-33f4990f-6c68-4e72-9d9c-477496c22450.6-x64"
 uos_installer_dest: "/opt/uosserver/uos-server-installer"
 uos_run_installer: false
 uos_install_marker: "/opt/uosserver/.installer-ran"
+uos_web_port: 11443
+uos_installer_args:
+  - "--non-interactive"
+  - "--force-install"
+  - "--web-port"
+  - "{{ uos_web_port | string }}"
 
 uos_packages:
   - ca-certificates

@@ -24,7 +24,7 @@ VM 自体は `terraform/pve` で作成します。
 - `terraform/pve` で VM が作成済みであること
 - `ansible/ix2215` で DHCP 静的リースが反映済みであること
 - VM が `192.168.0.132` で SSH 可能であること
-- UniFi OS Server Linux x64 installer を用意していること
+- UniFi OS Server Linux x64 installer をダウンロードできること
 
 UniFi OS Server の Linux 版は Podman を利用します。  
 この playbook では以下を準備します。
@@ -49,24 +49,24 @@ ansible-galaxy collection install -r requirements.yml
 VM を準備し、installer を VM にコピーします。
 
 ```bash
-ansible-playbook site.yml \
-  -e uos_installer_src=/path/to/uos-server-installer
+pipenv run ansible-playbook site.yml
 ```
 
-installer を URL から取得したい場合は、代わりに `uos_installer_url` を指定できます。
+デフォルトでは以下の URL から installer を取得します。
 
-```bash
-ansible-playbook site.yml \
-  -e uos_installer_url=https://example.invalid/path/to/uos-server-installer
+```text
+https://fw-download.ubnt.com/data/unifi-os-server/1856-linux-x64-5.0.6-33f4990f-6c68-4e72-9d9c-477496c22450.6-x64
 ```
+
+手元に installer を置いて使う場合は、`uos_installer_src` を指定してください。
 
 ## installer の実行
 
 installer 実行は明示的に `uos_run_installer=true` を指定した場合だけ行います。
+実行時は `--non-interactive --force-install --web-port 11443` を付けて起動します。
 
 ```bash
-ansible-playbook site.yml \
-  -e uos_installer_src=/path/to/uos-server-installer \
+pipenv run ansible-playbook site.yml \
   -e uos_run_installer=true
 ```
 
@@ -82,7 +82,9 @@ https://192.168.0.132:11443
 | 変数 | デフォルト | 説明 |
 |---|---|---|
 | `uos_installer_src` | `""` | control host 上の installer パス |
-| `uos_installer_url` | `""` | installer のダウンロード URL |
+| `uos_installer_url` | UniFi OS Server 5.0.6 Linux x64 installer URL | installer のダウンロード URL |
 | `uos_installer_dest` | `/opt/uosserver/uos-server-installer` | VM 上の installer 配置先 |
 | `uos_run_installer` | `false` | `true` の場合だけ installer を実行 |
 | `uos_install_marker` | `/opt/uosserver/.installer-ran` | installer 再実行防止 marker |
+| `uos_web_port` | `11443` | UniFi OS Server の Web UI port |
+| `uos_installer_args` | 非対話 installer 引数 | installer に渡す引数 |
