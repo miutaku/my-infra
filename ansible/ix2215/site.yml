@@ -112,27 +112,6 @@
       ansible.builtin.debug:
         msg: "{{ main_cleanup_result.stdout }}"
 
-    - name: Remove stale worker-nw-01 entry from vlan10 DHCP profile
-      ansible.builtin.command:
-        cmd: python3 scripts/configure_dhcp_leases.py
-        chdir: "{{ playbook_dir }}"
-      environment:
-        IX2215_HOST: "{{ ix2215_host }}"
-        IX2215_USER: "{{ ix2215_user }}"
-        IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
-        DHCP_PROFILE: "vlan10"
-        DHCP_ASSIGNMENTS_JSON: "[]"
-        DHCP_REMOVE_IPS: "192.168.10.131"
-        DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
-      register: vlan10_cleanup_result
-      changed_when: "'changed=true' in vlan10_cleanup_result.stdout"
-      failed_when: "'failed=true' in vlan10_cleanup_result.stdout or vlan10_cleanup_result.rc != 0"
-      check_mode: false
-
-    - name: Show vlan10 profile cleanup result
-      ansible.builtin.debug:
-        msg: "{{ vlan10_cleanup_result.stdout }}"
-
   post_tasks:
     - name: Fetch running-config for verification
       ansible.builtin.command:
