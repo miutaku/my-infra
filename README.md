@@ -340,3 +340,14 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 | `ansible_check_rke2.yml` | `ansible/rke2/**` | lint + syntax-check |
 | `ansible_check_ix2215.yml` | `ansible/ix2215/**` | lint + syntax-check |
 | `packer.yml` | `packer/**` | packer validate (実ビルドは手動) |
+
+## 新しいノードを用意したりIPアドレスを変更する場合
+
+主に以下のファイルを修正し、反映すること。ほかにも必要に応じて修正すること。
+
+```text
+ansible/ix2215/group_vars/all.yml
+k8s/pve/coredns/Corefile
+k8s/pve/grafana-alloy/values.yaml
+k8s/pve/wol/appdata/db/computers.txt
+```
