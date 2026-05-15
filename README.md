@@ -6,92 +6,130 @@
 
 ```mermaid
 flowchart TB
-  Internet((Internet))
-  Grafana[Grafana Cloud<br/>managed metrics / dashboards]
-  Cloudflare[Cloudflare<br/>DNS / Tunnel / Zero Trust Access<br/>private access for owner only]
 
-  subgraph Home[宅内]
-    subgraph NW[NW]
-      IX[IX2215<br/>VLAN / DHCP / v6プラス固定IP]
-      US8[Ubiquiti US-8-60W<br/>L2 Switch / 192.168.0.252]
-    end
-
-    subgraph Proxmox[Proxmox VE]
-      PVE1[pve-x570]
-      PVE2[pve-b550m]
-
-      subgraph VMs[VMs]
-        UOS[UniFi OS Server VM<br/>192.168.0.132:11443]
-        NAS[TrueNAS Scale VMs<br/>192.168.20.191-192]
-        AppVMs[Application / Recording / MagicMirror VMs]
-
-        subgraph RKE2VMs[RKE2 VMs]
-          LBVMs[2x LB VMs<br/>HAProxy + Keepalived<br/>VIP 192.168.20.227]
-          ServerVMs[3x Server VMs<br/>RKE2 server / etcd<br/>192.168.20.126-128]
-          WorkerVMs[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]
-
-          subgraph RKE2[RKE2 HA cluster]
-            API[RKE2 API / workloads]
-
-            subgraph Argo[ArgoCD App-of-Apps]
-              ESO[external-secrets<br/>Bitwarden BSM]
-              VMetrics[VictoriaMetrics]
-              Alloy[Grafana Alloy]
-              PDC[PDC agent]
-              CFPod[cloudflared]
-              TFCAgent[tfc-agent]
-              Tailscale[Tailscale]
-              MetalLB[MetalLB]
-              CoreDNS[CoreDNS]
-              WoL[WoL]
-              Exporters[blackbox / snmp / pve / speedtest exporters]
-            end
-          end
-        end
-      end
-    end
-  end
-
-  subgraph OCI[OCI OKE / Always Free]
-    OKE[OKE Basic cluster<br/>2x A1.Flex ARM64]
-    subgraph Flux[Flux v2 GitOps]
+  subgraph OCI[OCI / Always Free]
+    Flux_API{Flux}
+    subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, Flux v2 GitOps]
+      OCICloudflared[cloudflared]
+      OCITFCAgent[tfc-agent]
       OCIESO[ESO + Bitwarden BSM]
       OCICert[cert-manager]
       OCIIngress[ingress-nginx]
       OCILonghorn[Longhorn]
-      OCICloudflared[cloudflared]
-      OCIAgents[tfc-agent / actions-runner / Alloy]
+      OCIActionsRunner[GitHub Actions Runner]
+      OCIAlloy[Grafana Alloy]
+      OCICloudflared ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress ~~~ OCILonghorn ~~~ OCIActionsRunner ~~~ OCITFCAgent ~~~ OCIAlloy
     end
   end
 
-  Internet --> Cloudflare
-  CFPod -->|outbound tunnel| Cloudflare
-  OCICloudflared -->|outbound tunnel| Cloudflare
 
+  subgraph ExtSvc[External Services]
+    subgraph Cloudflare[Cloudflare]
+      CF_DNS[DNS]
+      CF_Application[Application]
+      CF_Tunnel[Tunnel]
+      CF_DNS ~~~ CF_Application ~~~ CF_Tunnel
+    end
+    TFC[Terraform Cloud]
+    TailscaleNet[Tailscale]
+    subgraph Grafana[Grafana Cloud]
+      GC_Grafana[Managed Grafana]
+      GC_Prometheus[Managed Prometheus]
+      GC_Grafana ~~~ GC_Prometheus
+    end
+    GitHub[GitHub]
+    Cloudflare ~~~ TFC ~~~ GitHub ~~~ Grafana ~~~ TailscaleNet
+  end
+
+  subgraph Home[宅内]
+
+    subgraph NW[NW]
+      IX[IX2215<br/>VLAN / DHCP / v6プラス固定IP]
+      US8[Ubiquiti US-8-60W<br/>L2 Switch / 192.168.0.252]
+    end
+    subgraph PVE[Proxmox VE Cluster - 2 PVE nodes]
+      MM2[Magic Mirror²]
+      NAS[TrueNAS Scale VMs<br/>192.168.20.191-192]
+      TVRecSVPRD[TV Rec Server PRD]
+      TVRecSVDEV[TV Rec Server DEV]
+      BuildSV[Build Server]
+      WorkWin[Windows work station]
+      UOS[UniFi OS Server VM<br/>192.168.0.132:11443]
+
+      subgraph RKE2VM[RKE2 VM]
+        LBVMs[2x LB VMs<br/>HAProxy + Keepalived<br/>VIP 192.168.20.227]
+        ServerVMs[3x Server VMs<br/>RKE2 server / etcd<br/>192.168.20.126-128]
+        WorkerVMs[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]
+        LBVMs ~~~ ServerVMs ~~~ WorkerVMs
+      end
+      MM2  ~~~ NAS ~~~ TVRecSVDEV ~~~ TVRecSVPRD ~~~ WorkWin ~~~ BuildSV ~~~ UOS ~~~ RKE2VM
+    end
+    subgraph RKE2[RKE2 HA cluster]
+      ArgoCD{ArgoCD <br/>Sync}
+      subgraph Argo[ArgoCD App-of-Apps]
+        subgraph RKE2_agents[SaaS / OSS agents]
+          CFPod[cloudflared]
+          TFCAgent[tfc-agent]
+          Tailscale[Tailscale subnet router<br/> for Emergency Access]
+          Alloy[Grafana Alloy]
+          PDC[PDC agent]
+          CFPod ~~~ PDC ~~~ TFCAgent ~~~ Alloy ~~~ Tailscale 
+        end
+        subgraph RKE2_system[RKE2 system]
+          ESO[external-secrets<br/>Bitwarden BSM]
+          MetalLB[MetalLB]
+        end
+        subgraph Exporters[exporters]
+          blackboxEx[Blackbox exporter]
+          speedtestEx[Speedtest exporter]
+          pveEx[ProxmoxVE exporter]
+          snmpEx[SNMP exporter]
+          blackboxEx ~~~  speedtestEx ~~~ pveEx ~~~ snmpEx
+        end
+        subgraph Argo_Apps[Argo Apps]
+          VMetrics[VictoriaMetrics]
+          CoreDNS[CoreDNS]
+          WoL[WoL]
+          CoreDNS ~~~ WoL ~~~ VMetrics
+        end
+        RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
+      end
+      Argo ~~~ ArgoCD
+    end
+    US8 ~~~ PVE
+  end
+  OCI ~~~ ExtSvc ~~~ Home
+
+  Flux_API --> GitHub
+  ArgoCD -->|sync| GitHub  <-.->|tunnel| OCIActionsRunner
+  ArgoCD --> |apply|Argo
+
+  CF_Tunnel -.->|tunnel| CFPod
+  CF_Tunnel -.->|tunnel| OCICloudflared
+
+  RKE2 ==o RKE2VM
   IX --- US8
-  IX --- Proxmox
-  PVE1 --- VMs
-  PVE2 --- VMs
+  
 
-  LBVMs --> ServerVMs
-  ServerVMs --> WorkerVMs
-  RKE2VMs --> RKE2
+  UOS -->|management| US8
+  WorkWin --> BuildSV
 
-  CFPod -->|LAN backend| UOS
-  CFPod -->|cluster backend| API
-  Alloy -->|remote_write| Grafana
-  PDC -->|outbound PDC tunnel| Grafana
-  Grafana -->|query via PDC| VMetrics
-  PDC --> VMetrics
+  LBVMs --> ServerVMs --> WorkerVMs
 
-  OKE --> Flux
-  OCIAgents -->|remote_write| Grafana
+  Tailscale <-.-> |tunnel| TailscaleNet
+  OCITFCAgent <-.->|tunnel| TFC
+  OCIAlloy -->|remote_write| GC_Prometheus
+  TFC <-.->|tunnel| TFCAgent -->|API request| PVE
+  Alloy -->|remote_write| GC_Prometheus
+  pveEx -->|API Request| PVE
+  snmpEx -->|SNMP| IX
+  GC_Grafana <-.->|tunnel| PDC -->|query| VMetrics -->|polling| Exporters
 ```
 
 ## ドメイン
 
-`miutaku.work` — Cloudflare で管理。
-`miutaku.internal` — CoreDNS (RKE2 on MetalLB `192.168.20.201`) で内部名前解決。
+- `miutaku.work` — Cloudflare で管理。
+- `miutaku.internal` — CoreDNS (RKE2 on MetalLB `192.168.20.201`) で内部名前解決。
 
 ## ネットワーク構成
 
@@ -99,7 +137,7 @@ flowchart TB
 |------|-----------|------|
 | (native) | 192.168.0.0/24 | |
 | VLAN 10 | 192.168.10.0/24 | 管理 (PVE / RPi / nanokvm / スイッチ / AP) |
-| VLAN 20 | 192.168.20.0/24 | サーバ (RKE2 / NAS / MetalLB pool: .200-.226) |
+| VLAN 20 | 192.168.20.0/24 | サーバ (RKE2 / NAS / MetalLB pool: 192.168.20.200 - .192.168.20.226) |
 | VLAN 30 | 192.168.30.0/24 | クライアント (PC / ゲーム機) |
 | VLAN 40 | 192.168.40.0/24 | IoT / スマートホーム |
 
