@@ -10,8 +10,8 @@ flowchart TB
   subgraph Infrastructure[ ]
   direction LR
   subgraph OCI[OCI / Always Free]
-    Flux_API{{Flux}}
     subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, Flux v2 GitOps]
+      Flux_API{{Flux}}
       OCICloudflared([cloudflared])
       OCITFCAgent([tfc-agent])
       OCIESO([ESO + Bitwarden BSM])
