@@ -14,7 +14,7 @@ flowchart TB
       Flux_API{{Flux}}
       OCICloudflared([cloudflared])
       OCITFCAgent([tfc-agent])
-      OCIESO([ESO + Bitwarden BSM])
+      OCIESO([external-secrets<br/>Bitwarden BSM])
       OCICert([cert-manager])
       OCIIngress([ingress-nginx])
       OCILonghorn([Longhorn])
@@ -122,6 +122,7 @@ flowchart TB
   OCI ~~~ ExtSvc ~~~ Home
 
   Flux_API --> GitHub
+  GitHub --> OCI
   ArgoCD -->|sync| GitHub  <-.->|tunnel| OCIActionsRunner
   ArgoCD --> |apply|Argo
 
