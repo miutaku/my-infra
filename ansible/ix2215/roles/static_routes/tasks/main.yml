@@ -11,6 +11,7 @@
     IX_ROUTES_JSON: "{{ ix_static_routes_v4 | to_json }}"
     IX_UFS_MAX: "{{ ix_ufs_cache.max_entries }}"
     IX_IPV6_UFS_MAX: "{{ ix_ipv6_ufs_cache.max_entries }}"
+    IX_IP_PREFIX_LISTS_JSON: "{{ ix_ip_prefix_lists | default([]) | to_json }}"
   register: result
   changed_when: "'changed=true' in result.stdout"
   failed_when: "'failed=true' in result.stdout or result.rc != 0"

@@ -3,10 +3,11 @@ ix2215_host: "192.168.0.254"
 ix2215_user: "miutaku"
 
 # BSM シークレット ID (bws secret list で確認)
-bsm_ix2215_ssh_password_id: "ad6bded6-0308-443e-964e-b43b00fab5d5"
-bsm_ix2215_ipv6_iid_id:     "24501c2d-377c-4b1e-a440-b444009d4216" # GigaEthernet2.0 ipv6 interface-identifier
-bsm_ix2215_tunnel_dest_id:  "4885fba3-09a3-4e3c-b82e-b444009ed122" # Tunnel0.0 tunnel destination (IPv6)
-bsm_ix2215_tunnel_ip_id:    "50e7e234-91ee-41e9-a205-b444009f0d6f" # Tunnel0.0 ip address (固定IPv4)
+bsm_ix2215_ssh_password_id:           "ad6bded6-0308-443e-964e-b43b00fab5d5"
+bsm_ix2215_ipv6_iid_id:              "24501c2d-377c-4b1e-a440-b444009d4216" # GigaEthernet2.0 ipv6 interface-identifier
+bsm_ix2215_tunnel_dest_id:           "4885fba3-09a3-4e3c-b82e-b444009ed122" # Tunnel0.0 tunnel destination (IPv6)
+bsm_ix2215_tunnel_ip_id:             "50e7e234-91ee-41e9-a205-b444009f0d6f" # Tunnel0.0 ip address (固定IPv4)
+bsm_ix2215_nm_account_password_id:   "8f60d05d-b913-46c2-b591-b44c00885135"
 
 # ---------------------------------------------------------------------------
 # System
@@ -37,6 +38,20 @@ ix_system_services:
   http_server_ip: true
   http_server_username: "miutaku"
   nm_ip: true
+
+# グローバルレベルの ip dhcp binding (BVI に binding がない VLAN 向け)
+ix_dhcp_global_bindings:
+  - "vlan40"  # BVI4 は bridge-group 4 binding が不安定なためグローバルで管理
+  - "guest"   # BVI31 はグローバル binding で DHCP を提供
+
+# UTM グループ (NEC IX の utm group 設定)
+ix_utm_groups:
+  - id: 1
+    description: "myhome-miutaku"
+
+# NM アカウント (nm account コマンド。パスワードは BSM 管理)
+ix_nm_account:
+  name: "myhome-miutaku"
 
 # ---------------------------------------------------------------------------
 # DNS
@@ -78,6 +93,10 @@ ix_ipv6_ufs_cache:
 ix_static_routes_v4:
   - dest: "default"
     gw: "Tunnel0.0"
+
+ix_ip_prefix_lists:
+  - "as-path-in 10 permit any"
+  - "as-path-out 10 permit any"
 
 # ---------------------------------------------------------------------------
 # IP access lists
@@ -178,6 +197,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.10.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC
       - { ip: "192.168.10.240", mac: "48:da:35:6f:c6:70" } # nanokvm #1
       - { ip: "192.168.10.241", mac: "48:da:35:6f:b6:8b" } # nanokvm #2
+      - { ip: "192.168.10.252", mac: "18:e8:29:b3:48:f7" } # US-8-60W (VLAN10 mgmt)
 
   # ------------------------------------------------------------------
   # VLAN 20: サーバネットワーク (192.168.20.0/24)
@@ -431,4 +451,12 @@ ix_interfaces:
     ip_tcp_adjust_mss: "auto"
     ip_napt_enable: true
     ip_napt_eim_mode: true
+    shutdown: false
+
+  - name: "Tunnel1.0"
+    tunnel_mode: "4-over-6"
+    tunnel_destination: "fqdn wtd01-aftr01-ngnintf.i.open.ad.jp"
+    tunnel_source: "GigaEthernet2.0"
+    ip_unnumbered: "GigaEthernet2.0"
+    ip_tcp_adjust_mss: "auto"
     shutdown: false
