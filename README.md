@@ -83,7 +83,6 @@ flowchart TB
         LBVMs ~~~ ServerVMs ~~~ WorkerVMs
       end
       RecSV ~~~ WorkEnv ~~~ RKE2VM
-      UOS ~~~ PVE_API
     end
     subgraph RKE2[RKE2 HA cluster]
       ArgoCD{{ArgoCD <br/>Sync}}
