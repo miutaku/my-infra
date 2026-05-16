@@ -5,6 +5,7 @@
 ## アーキテクチャ概要
 
 ```mermaid
+%%{init: {'themeVariables': {'lineColor': '#000000'}}}%%
 flowchart TB
   subgraph Infrastructure[ ]
   direction LR
