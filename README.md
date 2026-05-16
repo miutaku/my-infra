@@ -6,18 +6,18 @@
 
 ```mermaid
 flowchart TB
-
+  direction LR
   subgraph OCI[OCI / Always Free]
-    Flux_API{Flux}
+    Flux_API{{Flux}}
     subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, Flux v2 GitOps]
-      OCICloudflared[cloudflared]
-      OCITFCAgent[tfc-agent]
-      OCIESO[ESO + Bitwarden BSM]
-      OCICert[cert-manager]
-      OCIIngress[ingress-nginx]
-      OCILonghorn[Longhorn]
-      OCIActionsRunner[GitHub Actions Runner]
-      OCIAlloy[Grafana Alloy]
+      OCICloudflared([cloudflared])
+      OCITFCAgent([tfc-agent])
+      OCIESO([ESO + Bitwarden BSM])
+      OCICert([cert-manager])
+      OCIIngress([ingress-nginx])
+      OCILonghorn([Longhorn])
+      OCIActionsRunner([GitHub Actions Runner])
+      OCIAlloy([Grafana Alloy])
       OCICloudflared ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress ~~~ OCILonghorn ~~~ OCIActionsRunner ~~~ OCITFCAgent ~~~ OCIAlloy
     end
   end
@@ -25,81 +25,96 @@ flowchart TB
 
   subgraph ExtSvc[External Services]
     subgraph Cloudflare[Cloudflare]
-      CF_DNS[DNS]
-      CF_Application[Application]
-      CF_Tunnel[Tunnel]
-      CF_DNS ~~~ CF_Application ~~~ CF_Tunnel
+      direction LR
+      CF_DNS[(DNS)]
+      CF_Application[/Application/]
+      CF_Tunnel([Tunnel])
     end
-    TFC[Terraform Cloud]
-    TailscaleNet[Tailscale]
+    TFC([Terraform Cloud])
+    TailscaleNet((Tailscale))
     subgraph Grafana[Grafana Cloud]
-      GC_Grafana[Managed Grafana]
-      GC_Prometheus[Managed Prometheus]
+      GC_Grafana([Managed Grafana])
+      GC_Prometheus[(Managed Prometheus)]
       GC_Grafana ~~~ GC_Prometheus
     end
-    GitHub[GitHub]
+    GitHub([GitHub])
     Cloudflare ~~~ TFC ~~~ GitHub ~~~ Grafana ~~~ TailscaleNet
   end
 
   subgraph Home[宅内]
-
+    direction LR
     subgraph NW[NW]
-      IX[IX2215<br/>v6プラス + 公開AFTR]
-      US8[Ubiquiti US-8-60W<br/>L2 Switch / 192.168.0.252]
-      AP[FS.com AP]
-      AP --- US8 --- IX
+      direction LR
+      IX((NEC IX2215 Router<br/>main: v6プラス<br/>guest: 公開AFTR))
+      US8[/Ubiquiti US-8-60W L2 SW<br/>192.168.0.252/]
+      AP([FS.com AP])
+      IX --- US8 --- AP
     end
-    subgraph PVE[Proxmox VE Cluster - 2 PVE nodes]
-      MM2[Magic Mirror²]
-      NAS[TrueNAS Scale VMs<br/>192.168.20.191-192]
-      TVRecSVPRD[TV Rec Server PRD]
-      TVRecSVDEV[TV Rec Server DEV]
-      BuildSV[Build Server]
-      WorkWin[Windows work station]
-      UOS[UniFi OS Server VM<br/>192.168.0.132:11443]
 
-      subgraph RKE2VM[RKE2 VM]
-        LBVMs[2x LB VMs<br/>HAProxy + Keepalived<br/>VIP 192.168.20.227]
-        ServerVMs[3x Server VMs<br/>RKE2 server / etcd<br/>192.168.20.126-128]
-        WorkerVMs[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]
+    subgraph PVE[Proxmox VE Cluster - 2 PVE nodes]
+      direction TB
+      PVE_API{{PVE API}}
+
+      MM2[[Magic Mirror²]]
+      NAS[[TrueNAS Scale VMs<br/>192.168.20.191-192]]
+      UOS[[UniFi OS Server VM<br/>192.168.0.132:11443]]
+
+      subgraph RecSV
+        direction TB
+        TVRecSVPRD[[TV Rec Server PRD]]
+        TVRecSVDEV[[TV Rec Server DEV]]
+      end
+
+      subgraph WorkEnv[Work station / Build]
+        direction LR
+        WorkWin[[Windows work station]]
+        BuildSV[[Build Server]]
+        WorkWin ~~~ BuildSV
+      end
+
+      subgraph RKE2VM[RKE2 HA Cluster VM]
+        direction LR
+        LBVMs[[2x LB VMs<br/>HAProxy + Keepalived<br/>VIP 192.168.20.227]]
+        ServerVMs[[3x Server VMs<br/>RKE2 server / etcd<br/>192.168.20.126-128]]
+        WorkerVMs[[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]]
         LBVMs ~~~ ServerVMs ~~~ WorkerVMs
       end
-      MM2  ~~~ NAS ~~~ TVRecSVDEV ~~~ TVRecSVPRD ~~~ WorkWin ~~~ BuildSV ~~~ UOS ~~~ RKE2VM
+      RecSV ~~~ WorkEnv ~~~ RKE2VM
+      UOS ~~~ PVE_API
     end
     subgraph RKE2[RKE2 HA cluster]
-      ArgoCD{ArgoCD <br/>Sync}
+      ArgoCD{{ArgoCD <br/>Sync}}
       subgraph Argo[ArgoCD App-of-Apps]
         subgraph RKE2_agents[SaaS / OSS agents]
-          CFPod[cloudflared]
-          TFCAgent[tfc-agent]
-          Tailscale[Tailscale subnet router<br/> for Emergency Access]
-          Alloy[Grafana Alloy]
-          PDC[PDC agent]
+          CFPod([cloudflared])
+          TFCAgent([tfc-agent])
+          Tailscale((Tailscale subnet router<br/> for Emergency Access))
+          Alloy([Grafana Alloy])
+          PDC([PDC agent])
           CFPod ~~~ PDC ~~~ TFCAgent ~~~ Alloy ~~~ Tailscale 
         end
         subgraph RKE2_system[RKE2 system]
-          ESO[external-secrets<br/>Bitwarden BSM]
-          MetalLB[MetalLB]
+          ESO([external-secrets<br/>Bitwarden BSM])
+          MetalLB([MetalLB])
         end
         subgraph Exporters[exporters]
-          blackboxEx[Blackbox exporter]
-          speedtestEx[Speedtest exporter]
-          pveEx[ProxmoxVE exporter]
-          snmpEx[SNMP exporter]
+          blackboxEx([Blackbox exporter])
+          speedtestEx([Speedtest exporter])
+          pveEx([ProxmoxVE exporter])
+          snmpEx([SNMP exporter])
           blackboxEx ~~~  speedtestEx ~~~ pveEx ~~~ snmpEx
         end
         subgraph Argo_Apps[Argo Apps]
-          VMetrics[VictoriaMetrics]
-          CoreDNS[CoreDNS]
-          WoL[WoL]
+          VMetrics([VictoriaMetrics])
+          CoreDNS([CoreDNS])
+          WoL([WoL])
           CoreDNS ~~~ WoL ~~~ VMetrics
         end
         RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
       end
       Argo ~~~ ArgoCD
     end
-    US8 ~~~ PVE
-    RKE2 ==o RKE2VM
+     RKE2VM === |Runs on …| RKE2
   end
 
   OCI ~~~ ExtSvc ~~~ Home
@@ -113,21 +128,49 @@ flowchart TB
 
   TailscaleNet <--> Internet
   IX --> Internet
-  
 
-  UOS -->|management| US8
-  WorkWin --> BuildSV
+  UOS --->|management| US8
 
   LBVMs --> ServerVMs --> WorkerVMs
 
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
   OCIAlloy -->|remote_write| GC_Prometheus
-  TFC <-.->|tunnel| TFCAgent -->|API request| PVE
+  TFC <-.->|tunnel| TFCAgent -->|API request| PVE_API
   Alloy -->|remote_write| GC_Prometheus
   pveEx -->|API Request| PVE
   snmpEx -->|SNMP| IX
   GC_Grafana <-.->|tunnel| PDC -->|query| VMetrics -->|polling| Exporters
+
+  classDef control fill:#ede9fe,stroke:#7c3aed,color:#2e1065,stroke-width:2px
+  classDef cloud fill:#e0f2fe,stroke:#0284c7,color:#082f49,stroke-width:2px
+  classDef nwDevice fill:#dcfce7,stroke:#16a34a,color:#052e16,stroke-width:2px
+  classDef vm fill:#fef3c7,stroke:#d97706,color:#451a03,stroke-width:2px
+  classDef storage fill:#fee2e2,stroke:#dc2626,color:#450a0a,stroke-width:2px
+  classDef observability fill:#fce7f3,stroke:#db2777,color:#500724,stroke-width:2px
+  classDef external fill:#f1f5f9,stroke:#475569,color:#0f172a,stroke-width:2px
+  classDef zoneCloud fill:#eff6ff,stroke:#2563eb,color:#172554,stroke-width:2px
+  classDef zoneExternal fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:2px
+  classDef zoneHome fill:#f0fdf4,stroke:#22c55e,color:#052e16,stroke-width:2px
+  classDef zoneNetwork fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:2px
+  classDef zoneVirtual fill:#fffbeb,stroke:#f59e0b,color:#451a03,stroke-width:2px
+  classDef zoneK8s fill:#f5f3ff,stroke:#8b5cf6,color:#2e1065,stroke-width:2px
+  classDef zoneApps fill:#fdf2f8,stroke:#ec4899,color:#500724,stroke-width:2px
+
+  class Flux_API,ArgoCD,OCICert,MetalLB control
+  class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
+  class IX,US8,AP,TailscaleNet nwDevice
+  class MM2,NAS,TVRecSVPRD,TVRecSVDEV,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
+  class OCIESO,OCILonghorn,ESO,VMetrics,CoreDNS,CF_DNS,GC_Prometheus storage
+  class OCIAlloy,Alloy,blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
+  class CF_Application,CF_Tunnel,TFC,GitHub external
+  class OCI,OKE zoneCloud
+  class ExtSvc,Cloudflare,Grafana zoneExternal
+  class Home zoneHome
+  class NW zoneNetwork
+  class PVE,WorkEnv zoneVirtual
+  class RKE2,RKE2VM,Argo zoneK8s
+  class RKE2_agents,RKE2_system,Exporters,Argo_Apps zoneApps
 ```
 
 ## ドメイン
