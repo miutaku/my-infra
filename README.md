@@ -44,8 +44,10 @@ flowchart TB
   subgraph Home[宅内]
 
     subgraph NW[NW]
-      IX[IX2215<br/>VLAN / DHCP / v6プラス固定IP]
+      IX[IX2215<br/>v6プラス + 公開AFTR]
       US8[Ubiquiti US-8-60W<br/>L2 Switch / 192.168.0.252]
+      AP[FS.com AP]
+      AP --- US8 --- IX
     end
     subgraph PVE[Proxmox VE Cluster - 2 PVE nodes]
       MM2[Magic Mirror²]
@@ -97,7 +99,9 @@ flowchart TB
       Argo ~~~ ArgoCD
     end
     US8 ~~~ PVE
+    RKE2 ==o RKE2VM
   end
+
   OCI ~~~ ExtSvc ~~~ Home
 
   Flux_API --> GitHub
@@ -107,8 +111,8 @@ flowchart TB
   CF_Tunnel -.->|tunnel| CFPod
   CF_Tunnel -.->|tunnel| OCICloudflared
 
-  RKE2 ==o RKE2VM
-  IX --- US8
+  TailscaleNet <--> Internet
+  IX --> Internet
   
 
   UOS -->|management| US8
