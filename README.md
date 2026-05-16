@@ -5,6 +5,7 @@
 ## アーキテクチャ概要
 
 ```mermaid
+%%{init: {'theme': 'default'}}%%
 flowchart TB
   direction LR
   subgraph OCI[OCI / Always Free]
