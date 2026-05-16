@@ -10,6 +10,7 @@ flowchart TB
   subgraph Infrastructure[ ]
   direction LR
   subgraph OCI[OCI / Always Free]
+  OCI_API{{OCI API}}
     subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, Flux v2 GitOps]
       Flux_API{{Flux}}
       OCICloudflared([cloudflared])
@@ -121,8 +122,8 @@ flowchart TB
 
   OCI ~~~ ExtSvc ~~~ Home
 
-  Flux_API --> GitHub
-  GitHub --> OCI
+  Flux_API -->|sync| GitHub
+  GitHub -->|API Request| OCI_API
   ArgoCD -->|sync| GitHub  <-.->|tunnel| OCIActionsRunner
   ArgoCD --> |apply|Argo
 
