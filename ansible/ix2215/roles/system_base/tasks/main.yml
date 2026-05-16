@@ -1,5 +1,5 @@
 ---
-- name: Configure system base (timezone/logging/NTP/SNMP/SSH/HTTP/VRRP/bridge-IRB/DHCP-enable)
+- name: Configure system base (timezone/logging/NTP/SNMP/SSH/HTTP/VRRP/bridge-IRB/DHCP/UTM/NM)
   ansible.builtin.command:
     cmd: python3 scripts/configure_system_base.py
     chdir: "{{ playbook_dir }}"
@@ -13,6 +13,10 @@
     IX_NTP_SERVERS_JSON: "{{ ix_ntp.servers | to_json }}"
     IX_SNMP_COMMUNITIES_JSON: "{{ ix_snmp.communities | to_json }}"
     IX_SYSTEM_SERVICES_JSON: "{{ ix_system_services | to_json }}"
+    IX_DHCP_GLOBAL_BINDINGS_JSON: "{{ ix_dhcp_global_bindings | default([]) | to_json }}"
+    IX_UTM_GROUPS_JSON: "{{ ix_utm_groups | default([]) | to_json }}"
+    IX_NM_ACCOUNT_JSON: "{{ ix_nm_account | default(none) | to_json }}"
+    IX_NM_ACCOUNT_PASSWORD: "{{ ix2215_nm_account_password.stdout | default('') | trim }}"
   register: result
   changed_when: "'changed=true' in result.stdout"
   failed_when: "'failed=true' in result.stdout or result.rc != 0"

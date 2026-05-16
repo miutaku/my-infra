@@ -80,6 +80,22 @@
       check_mode: false
       no_log: true
 
+    - name: Get NM account password from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_ix2215_nm_account_password_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+
+      register: ix2215_nm_account_password
+      changed_when: false
+      check_mode: false
+      no_log: true
+      when: bsm_ix2215_nm_account_password_id | length > 0
+
   roles:
     - system_base
     - dns_config

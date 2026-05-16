@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-ip static route / UFS cache 設定
+ip static route / UFS cache / ip prefix-list 設定
 環境変数: IX2215_HOST, IX2215_USER, IX2215_PASSWORD, DRY_RUN
-         IX_ROUTES_JSON, IX_UFS_MAX, IX_IPV6_UFS_MAX
+         IX_ROUTES_JSON, IX_UFS_MAX, IX_IPV6_UFS_MAX, IX_IP_PREFIX_LISTS_JSON
 """
 
 import json
@@ -27,6 +27,9 @@ def desired_lines() -> list[str]:
         if r.get("metric"):
             line += f" metric {r['metric']}"
         lines.append(line)
+
+    for pl in json.loads(os.environ.get("IX_IP_PREFIX_LISTS_JSON", "[]")):
+        lines.append(f"ip prefix-list {pl}")
 
     return lines
 

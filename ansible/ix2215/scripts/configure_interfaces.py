@@ -44,6 +44,8 @@ def iface_lines(iface: dict) -> list[str]:
         lines.append(f"  tunnel source {iface['tunnel_source']}")
     if iface.get("ip_address"):
         lines.append(f"  ip address {iface['ip_address']}")
+    if iface.get("ip_unnumbered"):
+        lines.append(f"  ip unnumbered {iface['ip_unnumbered']}")
     if iface.get("ip_dhcp_binding"):
         lines.append(f"  ip dhcp binding {iface['ip_dhcp_binding']}")
     if iface.get("ip_filter_in"):
