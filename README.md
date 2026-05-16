@@ -171,6 +171,8 @@ flowchart TB
   class PVE,WorkEnv zoneVirtual
   class RKE2,RKE2VM,Argo zoneK8s
   class RKE2_agents,RKE2_system,Exporters,Argo_Apps zoneApps
+
+  linkStyle 33 stroke:#7c3aed,stroke-width:4px
 ```
 
 ## ドメイン
