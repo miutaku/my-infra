@@ -26,6 +26,8 @@ go.work.sum
 
 # env file
 .env
+.secrets.env
+*.secrets.env
 
 # Editor/IDE
 # .idea/
