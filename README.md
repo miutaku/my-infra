@@ -5,8 +5,8 @@
 ## アーキテクチャ概要
 
 ```mermaid
-%%{init: {'theme': 'neutral'}}%%
 flowchart TB
+  subgraph Infrastructure[ ]
   direction LR
   subgraph OCI[OCI / Always Free]
     Flux_API{{Flux}}
@@ -142,6 +142,7 @@ flowchart TB
   pveEx -->|API Request| PVE
   snmpEx -->|SNMP| IX
   GC_Grafana <-.->|tunnel| PDC -->|query| VMetrics -->|polling| Exporters
+  end
 
   classDef control fill:#ede9fe,stroke:#7c3aed,color:#2e1065,stroke-width:2px
   classDef cloud fill:#e0f2fe,stroke:#0284c7,color:#082f49,stroke-width:2px
