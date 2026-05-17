@@ -189,7 +189,6 @@ ix_dhcp_profiles:
       - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 4GB wlan0
       - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 2GB eth0
       - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 2GB wlan0
-      - { ip: "192.168.10.111", mac: "b8:27:eb:10:65:f8" } # RPiB eth0
       - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0
       - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0
       - { ip: "192.168.10.117", mac: "e0:51:d8:10:35:e4" } # nucbox-3 NIC1
@@ -241,6 +240,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.30.222", mac: "00:22:cf:ed:a9:7a" } # PLANEX NIC
       - { ip: "192.168.30.223", mac: "cc:e1:d5:40:32:d2" } # BUFFALO NIC
       - { ip: "192.168.30.224", mac: "00:e0:4d:ac:58:ec" } # 謎NIC
+      - { ip: "192.168.30.250", mac: "b8:27:eb:10:65:f8" } # RPiB eth0 / hostname: wol-pi / working: wol-relay and tailscale client
 
   # ------------------------------------------------------------------
   # VLAN 40: IoT ネットワーク (192.168.40.0/24)
