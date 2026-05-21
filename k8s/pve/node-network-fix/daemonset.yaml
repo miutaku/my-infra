@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: flannel-checksum-fix
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: flannel-checksum-fix
+spec:
+  selector:
+    matchLabels:
+      app: flannel-checksum-fix
+  template:
+    metadata:
+      labels:
+        app: flannel-checksum-fix
+    spec:
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      containers:
+        - name: fix
+          image: busybox
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                if ip link show flannel.1 > /dev/null 2>&1; then
+                  /host/usr/sbin/ethtool -K flannel.1 tx-checksumming off 2>/dev/null || true
+                fi
+                sleep 30
+              done
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host-usr-sbin
+              mountPath: /host/usr/sbin
+              readOnly: true
+      volumes:
+        - name: host-usr-sbin
+          hostPath:
+            path: /usr/sbin
