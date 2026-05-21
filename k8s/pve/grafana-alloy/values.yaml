@@ -109,6 +109,9 @@ alloy:
 
       prometheus.scrape "pods" {
         targets    = discovery.relabel.pods.output
+        clustering {
+          enabled = true
+        }
         forward_to = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -129,6 +132,9 @@ alloy:
           },
         ]
         metrics_path    = "/snmp"
+        clustering {
+          enabled = true
+        }
         forward_to      = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -147,6 +153,9 @@ alloy:
           },
         ]
         metrics_path    = "/pve"
+        clustering {
+          enabled = true
+        }
         forward_to      = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -164,6 +173,9 @@ alloy:
           },
         ]
         metrics_path    = "/pve"
+        clustering {
+          enabled = true
+        }
         forward_to      = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -183,6 +195,9 @@ alloy:
           { "__address__" = "192.168.0.132:9100",  "instance" = "unifi-os-server",  "job" = "node" },
           { "__address__" = "192.168.40.250:9100",  "instance" = "mm-server-01",     "job" = "node" },
         ]
+        clustering {
+          enabled = true
+        }
         forward_to = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -212,6 +227,9 @@ alloy:
           },
         ]
         metrics_path    = "/snmp"
+        clustering {
+          enabled = true
+        }
         forward_to      = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -259,6 +277,9 @@ alloy:
           },
         ]
         metrics_path    = "/probe"
+        clustering {
+          enabled = true
+        }
         forward_to      = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
@@ -288,6 +309,9 @@ alloy:
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.227",  "__param_module" = "icmp", "instance" = "rke2-vip",            "job" = "blackbox_icmp" },
         ]
         metrics_path    = "/probe"
+        clustering {
+          enabled = true
+        }
         forward_to      = [
           prometheus.remote_write.victoria_metrics.receiver,
           prometheus.remote_write.grafana_cloud.receiver,
