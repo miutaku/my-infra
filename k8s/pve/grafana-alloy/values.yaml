@@ -23,23 +23,6 @@ alloy:
     privileged: true
     allowPrivilegeEscalation: true
 
-  extraEnv:
-    - name: GRAFANA_CLOUD_METRICS_URL
-      valueFrom:
-        secretKeyRef:
-          name: grafana-cloud-credentials
-          key: metrics-url
-    - name: GRAFANA_CLOUD_METRICS_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: grafana-cloud-credentials
-          key: metrics-username
-    - name: GRAFANA_CLOUD_METRICS_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: grafana-cloud-credentials
-          key: metrics-password
-
   mounts:
     extra:
       - name: rootfs
@@ -64,10 +47,7 @@ alloy:
 
       prometheus.scrape "node" {
         targets    = prometheus.exporter.unix.node.targets
-        forward_to = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to = [prometheus.remote_write.victoria_metrics.receiver]
         job_name        = "integrations/node_exporter"
         scrape_interval = "60s"
       }
@@ -112,10 +92,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "60s"
       }
 
@@ -135,10 +112,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to      = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "60s"
       }
 
@@ -156,10 +130,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to      = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "60s"
       }
 
@@ -176,10 +147,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to      = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "60s"
       }
 
@@ -198,10 +166,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         job_name        = "integrations/node_exporter"
         scrape_interval = "60s"
       }
@@ -230,10 +195,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to      = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "60s"
       }
 
@@ -250,10 +212,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "5m"
         scrape_timeout  = "60s"
       }
@@ -280,10 +239,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to      = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "60s"
       }
 
@@ -312,10 +268,7 @@ alloy:
         clustering {
           enabled = true
         }
-        forward_to      = [
-          prometheus.remote_write.victoria_metrics.receiver,
-          prometheus.remote_write.grafana_cloud.receiver,
-        ]
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "30s"
       }
 
@@ -323,17 +276,6 @@ alloy:
       prometheus.remote_write "victoria_metrics" {
         endpoint {
           url = "http://victoria-metrics-victoria-metrics-single-server.monitoring.svc.cluster.local:8428/api/v1/write"
-        }
-      }
-
-      // ── Remote write: Grafana Cloud ───────────────────────────────────────
-      prometheus.remote_write "grafana_cloud" {
-        endpoint {
-          url = env("GRAFANA_CLOUD_METRICS_URL")
-          basic_auth {
-            username = env("GRAFANA_CLOUD_METRICS_USERNAME")
-            password = env("GRAFANA_CLOUD_METRICS_PASSWORD")
-          }
         }
       }
 
