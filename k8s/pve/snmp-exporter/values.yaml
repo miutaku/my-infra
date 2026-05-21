@@ -5,9 +5,6 @@ service:
   port: 9116
   type: ClusterIP
 
-hostNetwork: true
-dnsPolicy: ClusterFirstWithHostNet
-
 nodeSelector:
   kubernetes.io/hostname: worker-01-rke2-agent-ubuntu-26-04-home-amd64
 
