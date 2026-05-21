@@ -123,7 +123,7 @@ alloy:
       prometheus.scrape "snmp_ix2215" {
         targets = [
           {
-            "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
+            "__address__"      = "192.168.20.129:9116",
             "__param_target"   = "192.168.0.254",
             "__param_module"   = "ix2215",
             "__param_auth"     = "ix2215_v2",
@@ -210,7 +210,7 @@ alloy:
       prometheus.scrape "snmp_truenas" {
         targets = [
           {
-            "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
+            "__address__"      = "192.168.20.129:9116",
             "__param_target"   = "192.168.20.191",
             "__param_module"   = "truenas",
             "__param_auth"     = "truenas_v2",
@@ -218,7 +218,7 @@ alloy:
             "job"              = "snmp_truenas",
           },
           {
-            "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
+            "__address__"      = "192.168.20.129:9116",
             "__param_target"   = "192.168.20.192",
             "__param_module"   = "truenas",
             "__param_auth"     = "truenas_v2",
