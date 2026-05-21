@@ -189,8 +189,8 @@ ix_dhcp_profiles:
       - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 4GB wlan0
       - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 2GB eth0
       - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 2GB wlan0
-      - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0
-      - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0
+      - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0 (#1)
+      - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0 (#2)
       - { ip: "192.168.10.117", mac: "e0:51:d8:10:35:e4" } # nucbox-3 NIC1
       - { ip: "192.168.10.118", mac: "80:b6:55:62:4e:59" } # nucbox-3 NIC2
       - { ip: "192.168.10.140", mac: "a0:ce:c8:d6:20:64" } # CE LINK NIC
