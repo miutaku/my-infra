@@ -15,6 +15,7 @@ spec:
         app: flannel-checksum-fix
     spec:
       hostNetwork: true
+      hostPID: true
       priorityClassName: system-node-critical
       tolerations:
         - effect: NoSchedule
@@ -30,17 +31,9 @@ spec:
             - |
               while true; do
                 if ip link show flannel.1 > /dev/null 2>&1; then
-                  /host/usr/sbin/ethtool -K flannel.1 tx-checksumming off 2>/dev/null || true
+                  nsenter -t 1 -m -- ethtool -K flannel.1 tx-checksumming off 2>/dev/null || true
                 fi
                 sleep 5
               done
           securityContext:
             privileged: true
-          volumeMounts:
-            - name: host-usr-sbin
-              mountPath: /host/usr/sbin
-              readOnly: true
-      volumes:
-        - name: host-usr-sbin
-          hostPath:
-            path: /usr/sbin
