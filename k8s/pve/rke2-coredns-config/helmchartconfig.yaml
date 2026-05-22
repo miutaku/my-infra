@@ -22,3 +22,7 @@ spec:
               - kube-dns
           topologyKey: kubernetes.io/hostname
     tolerations: []
+    resources:
+      requests:
+        cpu: 50m
+        memory: 70Mi
