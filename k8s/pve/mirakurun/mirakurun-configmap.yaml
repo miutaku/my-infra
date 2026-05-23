@@ -10,7 +10,6 @@ data:
     path: /var/run/mirakurun.sock
     address: 0.0.0.0
     port: 40772
-    startupCommand: /opt/bin/startup
 
   tuners.yml: |
     # PT3 実機確認済み (dmesg): adapter0=ISDB-S, adapter1=ISDB-T, adapter2=ISDB-S, adapter3=ISDB-T
