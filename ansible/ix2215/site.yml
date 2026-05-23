@@ -111,6 +111,49 @@
       no_log: true
       when: bsm_ix2215_vpn_psk_id | length > 0
 
+    - name: Get OCI VPN tunnel IP from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_oci_tunnel_ip_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      register: _oci_tunnel_ip
+      changed_when: false
+      check_mode: false
+      no_log: true
+      when: bsm_oci_tunnel_ip_id | length > 0
+
+    - name: Get CPE inside IP from BSM
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && bws secret get {{ bsm_cpe_inside_ip_id }} | jq -r '.value'"
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      register: _cpe_inside_ip
+      changed_when: false
+      check_mode: false
+      no_log: true
+      when: bsm_cpe_inside_ip_id | length > 0
+
+    - name: Merge VPN OCI dynamic values into ix_vpn_oci
+      ansible.builtin.set_fact:
+        ix_vpn_oci: >-
+          {{ ix_vpn_oci | combine({
+            'oci_tunnel_ip': _oci_tunnel_ip.stdout | trim,
+            'cpe_inside_ip': _cpe_inside_ip.stdout | trim
+          }) }}
+      when:
+        - bsm_oci_tunnel_ip_id | length > 0
+        - bsm_cpe_inside_ip_id | length > 0
+        - _oci_tunnel_ip.stdout is defined
+        - _cpe_inside_ip.stdout is defined
+
   roles:
     - system_base
     - dns_config
