@@ -337,15 +337,15 @@ ix_ddns_profiles:
 # ---------------------------------------------------------------------------
 # OCI Site-to-Site VPN (IKEv2 IPSec)
 # ---------------------------------------------------------------------------
+# oci_tunnel_ip と cpe_inside_ip は BSM から取得し、site.yml の pre_task で
+# ix_vpn_oci_dynamic として set_fact する。IP アドレスは公開リポジトリに書かない。
+bsm_oci_tunnel_ip_id:  ""  # BSM: OCI_VPN_TUNNEL1_IP (terraform output vpn_tunnel1_ip)
+bsm_cpe_inside_ip_id:  ""  # BSM: CPE_INSIDE_IP      (terraform output vpn_tunnel1_cpe_inside_ip)
+
 ix_vpn_oci:
-  # terraform apply 後に以下2値を埋める:
-  #   oci_tunnel_ip  → terraform output vpn_tunnel1_ip
-  #   cpe_inside_ip  → terraform output vpn_tunnel1_cpe_inside_ip  (例: 10.10.10.1/30)
-  oci_tunnel_ip: "__OCI_VPN_TUNNEL1_IP__"
-  cpe_inside_ip: "__CPE_INSIDE_IP__/30"
   outgoing_interface: "Tunnel0.0"   # IX2215 の WAN (v6plus MAP-E トンネル)
   oci_vcn_cidr: "10.0.0.0/16"
-  # psk は site.yml の pre_task で BSM (VPN_OCI_PSK) から取得する
+  # oci_tunnel_ip / cpe_inside_ip / psk は site.yml の pre_task で BSM から注入される
 
 # ---------------------------------------------------------------------------
 # Interfaces
