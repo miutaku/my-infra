@@ -35,13 +35,13 @@ spec:
             privileged: true
           volumeMounts:
             - name: config
-              mountPath: /usr/local/etc/mirakurun/server.yml
+              mountPath: /app-config/server.yml
               subPath: server.yml
             - name: config
-              mountPath: /usr/local/etc/mirakurun/tuners.yml
+              mountPath: /app-config/tuners.yml
               subPath: tuners.yml
             - name: config
-              mountPath: /usr/local/etc/mirakurun/channels.yml
+              mountPath: /app-config/channels.yml
               subPath: channels.yml
             - name: bcas-keys
               mountPath: /opt/bin/bcas_keys
