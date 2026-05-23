@@ -5,6 +5,7 @@ node-ip: "{{ ansible_host | default(inventory_hostname) }}"
 {% if 'rke2-dvb-worker' in group_names %}
 # DVB 専用ノード: Mirakurun 以外の Pod がスケジュールされないよう Taint を設定
 node-label:
+  - "kubernetes.io/role=agent"
   - "hardware.miutaku/dvb=true"
 node-taint:
   - "hardware.miutaku/dvb=true:NoSchedule"
