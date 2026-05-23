@@ -61,7 +61,7 @@ resource "oci_core_ipsec_connection_tunnel_management" "tunnel1" {
 
   phase_two_details {
     is_custom_phase_two_config      = true
-    custom_authentication_algorithm = "HMAC_SHA1_96"
+    custom_authentication_algorithm = "HMAC_SHA2_256_128"
     custom_encryption_algorithm     = "AES_256_CBC"
     dh_group                        = "GROUP5"
     is_pfs_enabled                  = true
