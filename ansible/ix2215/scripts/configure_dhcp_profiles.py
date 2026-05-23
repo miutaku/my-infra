@@ -92,47 +92,55 @@ def main() -> None:
         running = get_running_config(conn)
 
     missing_cmds: list[str] = []
+    diff: list[str] = []
 
     # IPv4 DHCP profiles
     for p in profiles:
         setting_lines = dhcp_profile_setting_lines(p)
-        missing = [l for l in setting_lines if l.strip() not in running]
+        missing_settings = [l for l in setting_lines if l.strip() not in running]
 
-        # fixed-assignments: normalize MAC format for comparison
         existing_fas = parse_existing_fixed_assignments(running, p["name"])
+        desired_ips = {fa["ip"] for fa in p.get("fixed_assignments", [])}
+
+        add_fas: list[str] = []
         for fa in p.get("fixed_assignments", []):
             ix_mac = to_ix_mac(fa["mac"])
             if existing_fas.get(fa["ip"]) != ix_mac:
-                missing.append(f"  fixed-assignment {fa['ip']} {ix_mac}")
+                add_fas.append(f"  fixed-assignment {fa['ip']} {ix_mac}")
 
-        if missing:
-            missing_cmds.append(f"ip dhcp profile {p['name']}")
-            missing_cmds.extend(missing)
-            missing_cmds.append("  exit")
+        # running-config にあるが desired にないエントリを削除
+        remove_fas: list[tuple[str, str]] = [
+            (ip, mac) for ip, mac in existing_fas.items() if ip not in desired_ips
+        ]
+
+        profile_changes = missing_settings + add_fas + [
+            f"  no fixed-assignment {ip} {mac}" for ip, mac in remove_fas
+        ]
+        if profile_changes:
+            missing_cmds += [f"ip dhcp profile {p['name']}"] + profile_changes + ["  exit"]
+            diff.append(f"ip dhcp profile {p['name']}:")
+            diff += [f"  + {l.strip()}" for l in missing_settings + add_fas]
+            diff += [f"  - fixed-assignment {ip} {mac}" for ip, mac in remove_fas]
 
     # DHCPv6 client profiles
     for p in v6_client_profiles:
         setting_lines = dhcpv6_client_lines(p)
         missing = [l for l in setting_lines if l.strip() not in running]
         if missing:
-            missing_cmds.append(f"ipv6 dhcp client-profile {p['name']}")
-            missing_cmds.extend(missing)
-            missing_cmds.append("  exit")
+            missing_cmds += [f"ipv6 dhcp client-profile {p['name']}"] + missing + ["  exit"]
+            diff += [f"+ {l.strip()}" for l in missing]
 
     # DHCPv6 server profiles
     for p in v6_server_profiles:
         setting_lines = dhcpv6_server_lines(p)
         missing = [l for l in setting_lines if l.strip() not in running]
         if missing:
-            missing_cmds.append(f"ipv6 dhcp server-profile {p['name']}")
-            missing_cmds.extend(missing)
-            missing_cmds.append("  exit")
+            missing_cmds += [f"ipv6 dhcp server-profile {p['name']}"] + missing + ["  exit"]
+            diff += [f"+ {l.strip()}" for l in missing]
 
     if not missing_cmds:
         emit(False, dry_run, "DHCP/DHCPv6 profiles already configured")
         return
-
-    diff = [f"+ {c}" for c in missing_cmds]
 
     if dry_run:
         emit(True, True, "Would apply DHCP/DHCPv6 profile settings", diff)
