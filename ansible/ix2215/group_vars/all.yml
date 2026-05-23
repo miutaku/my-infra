@@ -480,6 +480,14 @@ ix_interfaces:
     tunnel_mode: "ipsec-ikev2"
     ip_address: "{{ ix_vpn_oci.cpe_inside_ip }}"
     ip_tcp_adjust_mss: "auto"
+    ikev2_child_pfs: "1536-bit"
+    ikev2_child_proposals:
+      - "enc aes-cbc-256"
+      - "integrity sha1"
+    ikev2_sa_proposals:
+      - "enc aes-cbc-256"
+      - "integrity sha2-384"
+      - "dh 1536-bit"
     ikev2_connect_type: "auto"
     ikev2_ipsec_pre_fragment: true
     ikev2_outgoing_interface: "{{ ix_vpn_oci.outgoing_interface }}"

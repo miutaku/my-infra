@@ -49,6 +49,12 @@ def iface_lines(iface: dict) -> list[str]:
         lines.append("  ikev2 ipsec pre-fragment")
     if iface.get("ikev2_outgoing_interface"):
         lines.append(f"  ikev2 outgoing-interface {iface['ikev2_outgoing_interface']}")
+    if iface.get("ikev2_child_pfs"):
+        lines.append(f"  ikev2 child-pfs {iface['ikev2_child_pfs']}")
+    for p in iface.get("ikev2_child_proposals", []):
+        lines.append(f"  ikev2 child-proposal {p}")
+    for p in iface.get("ikev2_sa_proposals", []):
+        lines.append(f"  ikev2 sa-proposal {p}")
     if iface.get("ikev2_peer"):
         peer = iface["ikev2_peer"]
         lines.append(f"  ikev2 peer {peer} authentication psk id ipv4 {peer}")
