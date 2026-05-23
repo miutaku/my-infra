@@ -103,35 +103,32 @@ data:
 
   epgUpdaterLogConfig.yml: |
     appenders:
-      - type: stdout
-        layout:
-          type: pattern
-          pattern: '[%d] [%p] %m'
+      stdout:
+        type: stdout
     categories:
       default:
-        appenders: [stdout]
+        appenders:
+          - stdout
         level: info
 
   operatorLogConfig.yml: |
     appenders:
-      - type: stdout
-        layout:
-          type: pattern
-          pattern: '[%d] [%p] %m'
+      stdout:
+        type: stdout
     categories:
       default:
-        appenders: [stdout]
+        appenders:
+          - stdout
         level: info
 
   serviceLogConfig.yml: |
     appenders:
-      - type: stdout
-        layout:
-          type: pattern
-          pattern: '[%d] [%p] %m'
+      stdout:
+        type: stdout
     categories:
       default:
-        appenders: [stdout]
+        appenders:
+          - stdout
         level: info
 
   enc-remote.js: |
