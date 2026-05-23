@@ -29,19 +29,14 @@ output "unifi_os_server_vm_ids" {
   value = [for vm in values(module.unifi_os_server.vms) : vm.id]
 }
 
-output "prd_rec_server_vm_names" {
-  value = [for vm in values(module.prd_rec_server.vms) : vm.name]
-}
-output "prd_rec_server_vm_ids" {
-  value = [for vm in values(module.prd_rec_server.vms) : vm.id]
+output "rke2_dvb_worker_vm_name" {
+  description = "DVB worker VM 名 (PT3 パススルー付き)"
+  value       = keys(module.rke2_dvb_worker.mac_addresses)[0]
 }
 
-output "dev_rec_server_vm_names" {
-  value = [for vm in values(module.dev_rec_server.vms) : vm.name]
-}
-
-output "dev_rec_server_vm_ids" {
-  value = [for vm in values(module.dev_rec_server.vms) : vm.id]
+output "rke2_dvb_worker_mac_address" {
+  description = "DVB worker VM の MAC アドレス"
+  value       = values(module.rke2_dvb_worker.mac_addresses)[0]
 }
 
 output "rke2_worker_vm_names" {
