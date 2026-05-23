@@ -22,20 +22,14 @@ from ix_connect import connect, get_running_config, emit
 def ike_global_lines(cfg: dict) -> list[str]:
     """ikev2 default-profile ブロックを含むフラットなコマンドリストを返す。
     send_config_set でそのまま送信できる形式。
+    child-proposal / sa-proposal はインターフェース側 (configure_interfaces.py) に書く。
+    参考: https://jpn.nec.com/univerge/ix/Support/OCI/index.html
     """
     return [
-        # PSK: running-config ではマスクされる可能性があるため別途チェック
         f"ikev2 authentication psk id ipv4 {cfg['oci_tunnel_ip']} key char {cfg['psk']}",
-        # default-profile ブロック (sub-mode)
         "ikev2 default-profile",
         "  dpd interval 10",
         f"  source-address {cfg['outgoing_interface']}",
-        "  child-pfs 1536-bit",
-        "  child-proposal enc aes-cbc-256",
-        "  child-proposal integrity sha1",
-        "  sa-proposal enc aes-cbc-256",
-        "  sa-proposal integrity sha2-384",
-        "  sa-proposal dh 1536-bit",
         "  exit",
     ]
 
@@ -47,16 +41,9 @@ def main() -> None:
     with connect() as conn:
         running = get_running_config(conn)
 
-    # default-profile 内のアルゴリズム行でコンフィグ適用済みか判断
     profile_check_lines = [
         "dpd interval 10",
         f"source-address {cfg['outgoing_interface']}",
-        "child-pfs 1536-bit",
-        "child-proposal enc aes-cbc-256",
-        "child-proposal integrity sha1",
-        "sa-proposal enc aes-cbc-256",
-        "sa-proposal integrity sha2-384",
-        "sa-proposal dh 1536-bit",
     ]
     missing_profile = [l for l in profile_check_lines if l.strip() not in running]
 
