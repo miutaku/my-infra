@@ -4,5 +4,6 @@ resources:
   - namespace.yaml
   - mirakurun-secret.yaml
   - mirakurun-configmap.yaml
+  - mirakurun-pvc.yaml
   - mirakurun-deployment.yaml
   - mirakurun-service.yaml
