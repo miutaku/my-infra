@@ -6,14 +6,14 @@ EPGStation (録画/サムネイル) および OKE エンコードワーカーが
 
 | 項目 | 値 |
 |------|-----|
-| TrueNAS IP | 192.168.20.192 (nas-01) |
-| NFS Pool | `pool` |
+| TrueNAS IP | 192.168.20.192 (nas-02) |
+| NFS Pool | `pool > raid1_case` |
 | アクセス元 | 192.168.20.0/24 (RKE2), 10.0.0.0/16 (OCI VCN) |
 | NFS バージョン | NFSv4.1 |
 
 ## 1. Dataset 作成
 
-**Datasets > pool > Add Dataset** を2回実行:
+**Datasets > pool > raid1_case > Add Dataset** を2回実行:
 
 | 設定項目 | recorded | thumbnail |
 |---------|----------|-----------|
@@ -24,7 +24,7 @@ EPGStation (録画/サムネイル) および OKE エンコードワーカーが
 
 ## 2. パーミッション設定
 
-各 Dataset: **Datasets > pool > (dataset名) > Edit Permissions**
+各 Dataset: **Datasets > pool > raid1_case > (dataset名) > Edit Permissions**
 
 ```
 User:  root
@@ -52,7 +52,7 @@ Start Automatically: ON
 ### recorded
 
 ```
-Path:    /mnt/pool/recorded
+Path:    /mnt/raid1_case/recorded
 Enabled: ✓
 ```
 
@@ -68,7 +68,7 @@ Networks:
 ### thumbnail
 
 ```
-Path:    /mnt/pool/thumbnail
+Path:    /mnt/raid1_case/thumbnail
 Enabled: ✓
 ```
 
@@ -90,7 +90,7 @@ RKE2 worker または OKE ノードから:
 showmount -e 192.168.20.192
 
 # マウントテスト
-sudo mount -t nfs -o nfsvers=4.1 192.168.20.192:/mnt/pool/recorded /mnt/test
+sudo mount -t nfs -o nfsvers=4.1 192.168.20.192:/mnt/raid1_case/recorded /mnt/test
 df -h /mnt/test
 sudo umount /mnt/test
 ```
@@ -99,9 +99,9 @@ sudo umount /mnt/test
 
 [epgstation/pvc.yaml](../k8s/pve/epgstation/pvc.yaml) 参照。
 
-| PV | NFS Path | PVC |
-|----|----------|-----|
-| epgstation-recorded-pv | /mnt/pool/recorded | epgstation-recorded-pvc |
-| epgstation-thumbnail-pv | /mnt/pool/thumbnail | epgstation-thumbnail-pvc |
+| PV                      | NFS Path                  | PVC                      |
+|-------------------------|---------------------------|--------------------------|
+| epgstation-recorded-pv  | /mnt/raid1_case/recorded  | epgstation-recorded-pvc  |
+| epgstation-thumbnail-pv | /mnt/raid1_case/thumbnail | epgstation-thumbnail-pvc |
 
 mountOptions: `nfsvers=4.1, hard, timeo=600, retrans=3`
