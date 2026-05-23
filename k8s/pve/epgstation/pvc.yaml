@@ -9,7 +9,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    server: __NAS_LOCAL_IP__
+    server: 192.168.20.192
     path: /mnt/pool/recorded
   mountOptions:
     - nfsvers=4.1
@@ -42,7 +42,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    server: __NAS_LOCAL_IP__
+    server: 192.168.20.192
     path: /mnt/pool/thumbnail
   mountOptions:
     - nfsvers=4.1

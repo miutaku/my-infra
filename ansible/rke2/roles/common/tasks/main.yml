@@ -37,6 +37,7 @@
     update_cache: true
   with_items:
     - vim
+    - nfs-common
   retries: 100
   delay: 5
 
