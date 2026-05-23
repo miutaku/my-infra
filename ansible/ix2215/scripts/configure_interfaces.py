@@ -42,6 +42,16 @@ def iface_lines(iface: dict) -> list[str]:
         lines.append(f"  tunnel destination {iface['tunnel_destination']}")
     if iface.get("tunnel_source"):
         lines.append(f"  tunnel source {iface['tunnel_source']}")
+    # IKEv2 トンネル固有 (tunnel mode ipsec-ikev2 の場合)
+    if iface.get("ikev2_connect_type"):
+        lines.append(f"  ikev2 connect-type {iface['ikev2_connect_type']}")
+    if iface.get("ikev2_ipsec_pre_fragment"):
+        lines.append("  ikev2 ipsec pre-fragment")
+    if iface.get("ikev2_outgoing_interface"):
+        lines.append(f"  ikev2 outgoing-interface {iface['ikev2_outgoing_interface']}")
+    if iface.get("ikev2_peer"):
+        peer = iface["ikev2_peer"]
+        lines.append(f"  ikev2 peer {peer} authentication psk id ipv4 {peer}")
     if iface.get("ip_address"):
         lines.append(f"  ip address {iface['ip_address']}")
     if iface.get("ip_unnumbered"):

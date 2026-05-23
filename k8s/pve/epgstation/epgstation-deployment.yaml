@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epgstation
+  namespace: app-epgstation
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: epgstation
+  template:
+    metadata:
+      labels:
+        app: epgstation
+    spec:
+      initContainers:
+        # ConfigMap から /app/config へコピーし、envsubst でシークレットを展開する
+        - name: config-init
+          image: alpine:3.20
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache gettext
+              mkdir -p /app/config/enc
+              for f in /config-src/config.yml /config-src/notify.sh \
+                        /config-src/epgUpdaterLogConfig.yml \
+                        /config-src/operatorLogConfig.yml \
+                        /config-src/serviceLogConfig.yml; do
+                envsubst < "$f" > "/app/config/$(basename $f)"
+              done
+              cp /config-src/enc-remote.js /app/config/enc/enc-remote.js
+              chmod +x /app/config/notify.sh
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: epgstation-secrets
+                  key: MYSQL_PASSWORD
+            - name: NOTIFY_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: epgstation-secrets
+                  key: NOTIFY_WEBHOOK
+            - name: CRITICAL_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: epgstation-secrets
+                  key: CRITICAL_WEBHOOK
+          volumeMounts:
+            - name: config-src
+              mountPath: /config-src
+            - name: config
+              mountPath: /app/config
+
+      containers:
+        - name: epgstation
+          image: ghcr.io/miutaku/epgstation_debian:latest
+          ports:
+            - containerPort: 8888
+              name: http
+            - containerPort: 8889
+              name: stream
+          env:
+            - name: LANG
+              value: ja_JP.UTF-8
+            - name: TZ
+              value: Asia/Tokyo
+            - name: ENCODE_WORKER_URL
+              value: "https://encode-worker.__YOUR_DOMAIN__"
+            - name: ENCODE_WORKER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: epgstation-secrets
+                  key: ENCODE_WORKER_TOKEN
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: recorded
+              mountPath: /app/recorded
+            - name: thumbnail
+              mountPath: /app/thumbnail
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: 8888
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: 8888
+            initialDelaySeconds: 60
+            periodSeconds: 30
+
+      volumes:
+        - name: config-src
+          configMap:
+            name: epgstation-config
+        - name: config
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: recorded
+          persistentVolumeClaim:
+            claimName: epgstation-recorded-pvc
+        - name: thumbnail
+          persistentVolumeClaim:
+            claimName: epgstation-thumbnail-pvc

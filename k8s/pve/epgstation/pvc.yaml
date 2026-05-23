@@ -1,0 +1,66 @@
+# NFS PVC for recorded files — NAS local IP (prd-rec-server and K8s workers are on the same VLAN)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: epgstation-recorded-pv
+spec:
+  capacity:
+    storage: 8Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: __NAS_LOCAL_IP__
+    path: /mnt/pool/recorded
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: epgstation-recorded-pvc
+  namespace: app-epgstation
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 8Ti
+  volumeName: epgstation-recorded-pv
+  storageClassName: ""
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: epgstation-thumbnail-pv
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: __NAS_LOCAL_IP__
+    path: /mnt/pool/thumbnail
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: epgstation-thumbnail-pvc
+  namespace: app-epgstation
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  volumeName: epgstation-thumbnail-pv
+  storageClassName: ""

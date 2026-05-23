@@ -5,3 +5,4 @@ resources:
   - cloudflared
   - grafana-alloy
   - actions-runner
+  - encode-worker

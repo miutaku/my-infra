@@ -10,3 +10,4 @@ resources:
   - kustomization-ingress-nginx.yaml
   - kustomization-longhorn.yaml
   - kustomization-apps.yaml
+  - kustomization-encode-worker.yaml

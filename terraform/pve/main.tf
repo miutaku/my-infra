@@ -49,20 +49,23 @@ module "rke2_worker" {
   cloudinit_storage = "local-zfs"
 }
 
-module "prd_rec_server" {
+# DVB 専用 RKE2 worker — PT3 PCI パススルー付き。pve-x570 に固定。
+# Mirakurun Pod がこのノードで動く。
+# terraform apply でこのノードが生成された後、ansible/rke2 で RKE2 agent をインストールすること。
+module "rke2_dvb_worker" {
   source = "./modules/proxmox_vm"
 
-  vm_count          = var.prd_rec_server_vm_count
-  name_prefix       = "prd-rec-server"
-  name_suffix       = "docker-ubuntu-26-04-home-amd64"
-  base_macaddr      = var.prd_rec_server_macaddr
-  vmid_start        = 30000
-  tags              = ["prd", "ubuntu_2604", "rec-server", "docker"]
-  cpu_cores         = 6
+  vm_count          = 1
+  name_prefix       = "dvb-worker"
+  name_suffix       = "rke2-agent-ubuntu-26-04-home-amd64"
+  macaddrs_override = [var.rke2_dvb_worker_macaddr]
+  vmid_start        = 12900
+  tags              = ["ubuntu_2604", "rke2", "agent", "worker", "dvb"]
+  cpu_cores         = 4
   memory            = 8192
-  proxmox_nodes     = ["pve-x570"] # PCI device is on this node
   clone_template    = local.ubuntu_template
-  disk_size         = 64
+  disk_size         = 32
+  proxmox_nodes     = ["pve-x570"] # PT3 PCI device is on this node
   vlan_tag          = 20
   cloudinit_storage = "local-zfs"
   pcis = {
@@ -70,31 +73,6 @@ module "prd_rec_server" {
       mapping = {
         mapping_id = "earthsoft_pt3"
         pcie       = false
-      }
-    }
-  }
-}
-
-module "dev_rec_server" {
-  source = "./modules/proxmox_vm"
-
-  vm_count          = var.dev_rec_server_vm_count
-  name_prefix       = "dev-rec-server"
-  name_suffix       = "docker-ubuntu-26-04-home-amd64"
-  base_macaddr      = var.dev_rec_server_macaddr
-  vmid_start        = 31000
-  tags              = ["dev", "ubuntu_2604", "rec-server", "docker"]
-  cpu_cores         = 4
-  memory            = 4096
-  proxmox_nodes     = ["pve-b550m"] # USB device is on this node
-  clone_template    = local.ubuntu_template
-  disk_size         = 32
-  vlan_tag          = 20
-  cloudinit_storage = "local-zfs"
-  usbs = {
-    usb0 = {
-      mapping = {
-        mapping_id = "plex_s1ud"
       }
     }
   }

@@ -6,8 +6,9 @@ ix2215_user: "miutaku"
 bsm_ix2215_ssh_password_id:           "ad6bded6-0308-443e-964e-b43b00fab5d5"
 bsm_ix2215_ipv6_iid_id:              "24501c2d-377c-4b1e-a440-b444009d4216" # GigaEthernet2.0 ipv6 interface-identifier
 bsm_ix2215_tunnel_dest_id:           "4885fba3-09a3-4e3c-b82e-b444009ed122" # Tunnel0.0 tunnel destination (IPv6)
-bsm_ix2215_tunnel_ip_id:             "50e7e234-91ee-41e9-a205-b444009f0d6f" # Tunnel0.0 ip address (固定IPv4)
+bsm_ix2215_tunnel_ip_id:             "50e7e234-91ee-41e9-a205-b444009f0d6f" # Tunnel0.0 ip address (固定IPv4) / OCI CPE IP と同値
 bsm_ix2215_nm_account_password_id:   "8f60d05d-b913-46c2-b591-b44c00885135"
+bsm_ix2215_vpn_psk_id:               "cc057694-c97f-4433-ab95-b452016b6f9e"  # BSM: VPN_OCI_PSK
 
 # ---------------------------------------------------------------------------
 # System
@@ -93,6 +94,9 @@ ix_ipv6_ufs_cache:
 ix_static_routes_v4:
   - dest: "default"
     gw: "Tunnel0.0"
+  # OCI VCN → Tunnel2.0 (IPSec VPN) 経由でルーティング
+  - dest: "10.0.0.0/16"
+    gw: "Tunnel2.0"
 
 ix_ip_prefix_lists:
   - "as-path-in 10 permit any"
@@ -217,10 +221,9 @@ ix_dhcp_profiles:
       - { ip: "192.168.20.128", mac: "bc:24:11:97:96:03" } # master-03 (RKE2 server)
       - { ip: "192.168.20.129", mac: "bc:24:11:23:32:01" } # worker-01 (RKE2 agent)
       - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # worker-02 (RKE2 agent)
+      - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # dvb-worker (RKE2 agent, PT3 passthrough)
       - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01 (RKE2 LB)
       - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02 (RKE2 LB)
-      - { ip: "192.168.20.150", mac: "52:54:00:23:98:01" } # dev rec-server
-      - { ip: "192.168.20.151", mac: "52:54:00:23:99:01" } # prd rec-server
       - { ip: "192.168.20.191", mac: "52:54:00:24:99:02" } # nas-01 (TrueNAS Scale)
       - { ip: "192.168.20.192", mac: "52:54:00:24:99:01" } # nas-02 (TrueNAS Scale)
 
@@ -274,12 +277,9 @@ dhcp_assignments:
   - name: server-vm
     ip: "192.168.20.123"
     mac: "52:54:00:c1:3a:38"
-  - name: dev-rec-server
-    ip: "192.168.20.150"
-    mac: "52:54:00:23:98:01"
-  - name: prd-rec-server
-    ip: "192.168.20.151"
-    mac: "52:54:00:23:99:01"
+  - name: dvb-worker-rke2-agent
+    ip: "192.168.20.131"
+    mac: "BC:24:11:23:32:90"
   - name: nas-01-truenas-scale
     ip: "192.168.20.191"
     mac: "52:54:00:24:99:02"
@@ -333,6 +333,19 @@ ix_ddns_profiles:
     transport: "ipv6"
     source_interface: "GigaEthernet2.0"
     update_interval: 10
+
+# ---------------------------------------------------------------------------
+# OCI Site-to-Site VPN (IKEv2 IPSec)
+# ---------------------------------------------------------------------------
+ix_vpn_oci:
+  # terraform apply 後に以下2値を埋める:
+  #   oci_tunnel_ip  → terraform output vpn_tunnel1_ip
+  #   cpe_inside_ip  → terraform output vpn_tunnel1_cpe_inside_ip  (例: 10.10.10.1/30)
+  oci_tunnel_ip: "__OCI_VPN_TUNNEL1_IP__"
+  cpe_inside_ip: "__CPE_INSIDE_IP__/30"
+  outgoing_interface: "Tunnel0.0"   # IX2215 の WAN (v6plus MAP-E トンネル)
+  oci_vcn_cidr: "10.0.0.0/16"
+  # psk は site.yml の pre_task で BSM (VPN_OCI_PSK) から取得する
 
 # ---------------------------------------------------------------------------
 # Interfaces
@@ -459,4 +472,16 @@ ix_interfaces:
     tunnel_source: "GigaEthernet2.0"
     ip_unnumbered: "GigaEthernet2.0"
     ip_tcp_adjust_mss: "auto"
+    shutdown: false
+
+  # OCI Site-to-Site VPN (IKEv2 IPSec)
+  # terraform apply 後に ix_vpn_oci の oci_tunnel_ip と cpe_inside_ip を確定させてから実行すること
+  - name: "Tunnel2.0"
+    tunnel_mode: "ipsec-ikev2"
+    ip_address: "{{ ix_vpn_oci.cpe_inside_ip }}"
+    ip_tcp_adjust_mss: "auto"
+    ikev2_connect_type: "auto"
+    ikev2_ipsec_pre_fragment: true
+    ikev2_outgoing_interface: "{{ ix_vpn_oci.outgoing_interface }}"
+    ikev2_peer: "{{ ix_vpn_oci.oci_tunnel_ip }}"
     shutdown: false
