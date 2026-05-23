@@ -483,7 +483,7 @@ ix_interfaces:
     ikev2_child_pfs: "1536-bit"
     ikev2_child_proposals:
       - "enc aes-cbc-256"
-      - "integrity sha1"
+      - "integrity sha2-256"
     ikev2_sa_proposals:
       - "enc aes-cbc-256"
       - "integrity sha2-384"
