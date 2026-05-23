@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - mirakurun-secret.yaml
+  - mirakurun-ghcr-pull-secret.yaml
   - mirakurun-configmap.yaml
   - mirakurun-pvc.yaml
   - mirakurun-deployment.yaml
