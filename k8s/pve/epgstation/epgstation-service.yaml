@@ -4,7 +4,7 @@ metadata:
   name: epgstation
   namespace: app-epgstation
   annotations:
-    metallb.universe.tf/loadBalancerIPs: "__EPGSTATION_LB_IP__"
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.202"
 spec:
   type: LoadBalancer
   selector:
