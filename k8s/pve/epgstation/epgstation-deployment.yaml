@@ -88,7 +88,7 @@ spec:
               mountPath: /app/thumbnail
           resources:
             requests:
-              cpu: "200m"
+              cpu: "100m"
               memory: "256Mi"
             limits:
               cpu: "1000m"
