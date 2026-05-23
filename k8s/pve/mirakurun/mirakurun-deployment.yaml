@@ -47,6 +47,8 @@ spec:
               mountPath: /opt/bin/bcas_keys
               subPath: bcas_keys
               readOnly: true
+            - name: data
+              mountPath: /app-data
             - name: dev-dvb
               mountPath: /dev/dvb
             - name: dev-bus
@@ -77,6 +79,9 @@ spec:
         - name: bcas-keys
           secret:
             secretName: mirakurun-bcas-keys
+        - name: data
+          persistentVolumeClaim:
+            claimName: mirakurun-data
         - name: dev-dvb
           hostPath:
             path: /dev/dvb
