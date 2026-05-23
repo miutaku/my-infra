@@ -15,6 +15,8 @@ spec:
       labels:
         app: epgstation
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       initContainers:
         # ConfigMap から /app/config へコピーし、envsubst でシークレットを展開する
         - name: config-init
@@ -57,7 +59,7 @@ spec:
 
       containers:
         - name: epgstation
-          image: ghcr.io/miutaku/epgstation_debian:latest
+          image: ghcr.io/miutaku/epgstation-ffmpeg-included:latest
           ports:
             - containerPort: 8888
               name: http
