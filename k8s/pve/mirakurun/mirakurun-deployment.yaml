@@ -31,6 +31,8 @@ spec:
           env:
             - name: TZ
               value: Asia/Tokyo
+            - name: BCAS_KEYS_FILE
+              value: /opt/bin/bcas_keys
           securityContext:
             privileged: true
           volumeMounts:
