@@ -339,8 +339,8 @@ ix_ddns_profiles:
 # ---------------------------------------------------------------------------
 # oci_tunnel_ip と cpe_inside_ip は BSM から取得し、site.yml の pre_task で
 # ix_vpn_oci_dynamic として set_fact する。IP アドレスは公開リポジトリに書かない。
-bsm_oci_tunnel_ip_id:  ""  # BSM: OCI_VPN_TUNNEL1_IP (terraform output vpn_tunnel1_ip)
-bsm_cpe_inside_ip_id:  ""  # BSM: CPE_INSIDE_IP      (terraform output vpn_tunnel1_cpe_inside_ip)
+bsm_oci_tunnel_ip_id:  "45f64523-0ffa-4ae8-b8fe-b453006fb8a3"  # BSM: OCI_VPN_TUNNEL1_IP
+bsm_cpe_inside_ip_id:  "35157db9-7b9c-4296-9505-b453007385bb"  # BSM: CPE_INSIDE_IP
 
 ix_vpn_oci:
   outgoing_interface: "Tunnel0.0"   # IX2215 の WAN (v6plus MAP-E トンネル)
