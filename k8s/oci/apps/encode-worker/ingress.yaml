@@ -1,0 +1,28 @@
+# TLS は cert-manager (Cloudflare DNS-01) で自動発行
+# EPGStation (PVE K8s) がここに HTTPS で接続してエンコードジョブを投げる
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: encode-worker
+  namespace: app-encode-worker
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - encode-worker.__YOUR_DOMAIN__
+      secretName: encode-worker-tls
+  rules:
+    - host: encode-worker.__YOUR_DOMAIN__
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: encode-worker
+                port:
+                  number: 8080

@@ -1,0 +1,253 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: epgstation-config
+  namespace: app-epgstation
+data:
+  config.yml: |
+    port: 8888
+    mirakurunPath: http://mirakurun.app-mirakurun.svc.cluster.local:40772
+
+    dbtype: mysql
+    mysql:
+      database: epgstation
+      host: mariadb.app-epgstation.svc.cluster.local
+      port: 3306
+      user: epgstation
+      password: ${MYSQL_PASSWORD}
+      enable_ssl: false
+
+    needToReplaceEnclosingCharacters: true
+    epgUpdateIntervalTime: 10
+
+    conflictPriority: 1
+    recPriority: 2
+
+    isEnabledDropCheck: true
+
+    recordedFormat: '%TITLE%-%YEAR%年%MONTH%月%DAY%日%HOUR%時%MIN%分%SEC%秒'
+    recordedFileExtension: .m2ts
+    recorded:
+      - name: recorded
+        path: '%ROOT%/recorded'
+        limitThreshold: 10000
+        action: 'remove'
+
+    thumbnail: '%ROOT%/thumbnail'
+    thumbnailSize: 480x270
+    thumbnailPosition: 10
+
+    recordingStartCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK 録画開始"
+    encodingFinishCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK エンコード済"
+    recordingPrepRecFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画開始前にエラー発生"
+    recordingFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画中にエラー発生"
+
+    ffmpeg: /usr/local/bin/ffmpeg
+    ffprobe: /usr/local/bin/ffprobe
+    encodeProcessNum: 2
+    concurrentEncodeNum: 1
+    encode:
+      - name: H.264 (OCI Remote)
+        cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx264'
+        suffix: -avc.mp4
+        rete: 4.0
+      - name: H.265 (OCI Remote)
+        cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx265'
+        suffix: -hevc.mp4
+        rete: 4.0
+
+    urlscheme:
+      m2ts:
+        ios: vlc-x-callback://x-callback-url/stream?url=http://ADDRESS
+        android: intent://ADDRESS#Intent;package=org.videolan.vlc;type=video;scheme=http;end
+      video:
+        ios: infuse://x-callback-url/play?url=http://ADDRESS
+        android: intent://ADDRESS#Intent;package=com.mxtech.videoplayer.pro;type=video;scheme=http;end
+      download:
+        ios: vlc-x-callback://x-callback-url/stream?url=http://ADDRESS
+
+    stream:
+      live:
+        ts:
+          m2ts:
+            - name: 無変換
+            - name: 720p
+              cmd: >-
+                %FFMPEG% -re -dual_mono_mode main -i pipe:0 -sn -threads 0
+                -c:a aac -ar 48000 -b:a 192k -ac 2
+                -c:v libx264 -vf yadif,scale=-2:720 -b:v 3000k -preset veryfast
+                -y -f mpegts pipe:1
+            - name: 480p
+              cmd: >-
+                %FFMPEG% -re -dual_mono_mode main -i pipe:0 -sn -threads 0
+                -c:a aac -ar 48000 -b:a 128k -ac 2
+                -c:v libx264 -vf yadif,scale=-2:480 -b:v 1500k -preset veryfast
+                -y -f mpegts pipe:1
+
+  notify.sh: |
+    #!/bin/sh
+    WEBHOOK="$1"
+    LABEL="$2"
+    if [ -z "$WEBHOOK" ]; then exit 0; fi
+    # EPGStation が NAME / CHANNELNAME を環境変数で渡す場合は含める
+    if [ -n "$NAME" ] && [ -n "$CHANNELNAME" ]; then
+      CONTENT="${LABEL}: [${CHANNELNAME}] ${NAME}"
+    else
+      CONTENT="${LABEL}"
+    fi
+    # node で JSON シリアライズ (番組名に " や \ が含まれても壊れない)
+    PAYLOAD=$(node -e "process.stdout.write(JSON.stringify({content:process.env.C}))" C="$CONTENT")
+    curl -s -X POST "$WEBHOOK" \
+      -H 'Content-Type: application/json' \
+      -d "$PAYLOAD"
+
+  epgUpdaterLogConfig.yml: |
+    appenders:
+      - type: stdout
+        layout:
+          type: pattern
+          pattern: '[%d] [%p] %m'
+    categories:
+      default:
+        appenders: [stdout]
+        level: info
+
+  operatorLogConfig.yml: |
+    appenders:
+      - type: stdout
+        layout:
+          type: pattern
+          pattern: '[%d] [%p] %m'
+    categories:
+      default:
+        appenders: [stdout]
+        level: info
+
+  serviceLogConfig.yml: |
+    appenders:
+      - type: stdout
+        layout:
+          type: pattern
+          pattern: '[%d] [%p] %m'
+    categories:
+      default:
+        appenders: [stdout]
+        level: info
+
+  enc-remote.js: |
+    'use strict';
+    const http  = require('http');
+    const https = require('https');
+    const execFile = require('child_process').execFile;
+
+    const ffprobe = process.env.FFPROBE;
+    const input   = process.env.INPUT;
+    const output  = process.env.OUTPUT;
+    const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
+    const codec   = process.argv[2] || 'libx264';
+
+    const workerUrl   = process.env.ENCODE_WORKER_URL;   // e.g. https://encode-worker.example.com
+    const workerToken = process.env.ENCODE_WORKER_TOKEN; // Bearer token
+    const pollMs      = 10000; // 10 秒ごとにポーリング
+    const retryMs     = 60000; // 接続エラー時の再試行間隔
+    const maxRetries  = 30;    // 最大再試行回数 (30 × 60s = 30 分)
+
+    const getDuration = (filePath) =>
+      new Promise((resolve, reject) => {
+        execFile(ffprobe, ['-v', '0', '-show_format', '-of', 'json', filePath], (err, stdout) => {
+          if (err) return reject(err);
+          try { resolve(parseFloat(JSON.parse(stdout).format.duration)); }
+          catch (e) { reject(e); }
+        });
+      });
+
+    const request = (method, path, body) =>
+      new Promise((resolve, reject) => {
+        const url    = new URL(path, workerUrl);
+        const mod    = url.protocol === 'https:' ? https : http;
+        const data   = body ? JSON.stringify(body) : null;
+        const opts   = {
+          hostname: url.hostname,
+          port:     url.port || (url.protocol === 'https:' ? 443 : 80),
+          path:     url.pathname + url.search,
+          method,
+          headers:  {
+            'Authorization': `Bearer ${workerToken}`,
+            'Content-Type':  'application/json',
+          },
+        };
+        const req = mod.request(opts, (res) => {
+          let buf = '';
+          res.on('data', (d) => buf += d);
+          res.on('end', () => {
+            try { resolve({ status: res.statusCode, body: JSON.parse(buf) }); }
+            catch (e) { resolve({ status: res.statusCode, body: buf }); }
+          });
+        });
+        req.on('error', reject);
+        if (data) req.write(data);
+        req.end();
+      });
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    (async () => {
+      if (!workerUrl || !workerToken) {
+        console.error('ENCODE_WORKER_URL / ENCODE_WORKER_TOKEN が未設定');
+        process.exit(1);
+      }
+
+      const duration = await getDuration(input).catch(() => 0);
+
+      // ジョブ投入 (再試行あり)
+      let jobId;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const res = await request('POST', '/v1/jobs', {
+            input, output, codec, is_dual_mono: isDualMono,
+          });
+          if (res.status === 201 && res.body.job_id) {
+            jobId = res.body.job_id;
+            break;
+          }
+        } catch (_) {}
+        console.error(`encode-worker 接続失敗 (試行 ${i + 1}/${maxRetries}), ${retryMs / 1000}s 後に再試行`);
+        await sleep(retryMs);
+      }
+
+      if (!jobId) {
+        console.error('encode-worker へのジョブ投入に失敗しました');
+        process.exit(1);
+      }
+
+      // ポーリングループ
+      let retries = 0;
+      while (true) {
+        await sleep(pollMs);
+        try {
+          const res = await request('GET', `/v1/jobs/${jobId}`);
+          if (res.status === 404) {
+            console.error('ジョブが消失しました (OCI 再起動による可能性)。EPGStation 側で再キューできます。');
+            process.exit(1);
+          }
+          if (res.status !== 200) continue;
+          const { status, progress, log } = res.body;
+
+          if (duration > 0 && typeof progress === 'number') {
+            process.stdout.write(
+              JSON.stringify({ type: 'progress', percent: progress, log: log || '' }) + '\n'
+            );
+          }
+
+          if (status === 'completed') { process.exit(0); }
+          if (status === 'failed')    { console.error('エンコード失敗:', log); process.exit(1); }
+          retries = 0;
+        } catch (_) {
+          retries++;
+          if (retries >= maxRetries) {
+            console.error('encode-worker との通信が長時間途絶しました');
+            process.exit(1);
+          }
+        }
+      }
+    })();

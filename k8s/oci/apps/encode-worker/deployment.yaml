@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: encode-worker
+  namespace: app-encode-worker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: encode-worker
+  template:
+    metadata:
+      labels:
+        app: encode-worker
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      # NFS マウントには特権が必要なため hostPID/hostNetwork は不要だが、
+      # mount syscall は allowPrivilegeEscalation を外さず securityContext で対応
+      initContainers:
+        # OCI 再起動後の孤立エンコードジョブ (*.enc.tmp) をクリーンアップする
+        - name: cleanup-orphans
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              find /app/recorded -name "*.enc.tmp" -delete
+              echo "孤立エンコード一時ファイルをクリーンアップしました"
+          volumeMounts:
+            - name: recorded
+              mountPath: /app/recorded
+
+      containers:
+        - name: encode-worker
+          image: ghcr.io/miutaku/encode-worker:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ENCODE_WORKER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: encode-worker-secrets
+                  key: ENCODE_WORKER_TOKEN
+            - name: RECORDED_DIR
+              value: /app/recorded
+            # 同時エンコード数 — OCI A1.Flex (4 OCPU) に合わせて調整
+            - name: MAX_CONCURRENT_JOBS
+              value: "2"
+            - name: TZ
+              value: Asia/Tokyo
+          volumeMounts:
+            - name: recorded
+              mountPath: /app/recorded
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              # 4 OCPU 24GB まで (OCI Always Free 上限)
+              cpu: "3500m"
+              memory: "20Gi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+      terminationGracePeriodSeconds: 300
+
+      volumes:
+        - name: recorded
+          persistentVolumeClaim:
+            claimName: encode-worker-recorded-pvc

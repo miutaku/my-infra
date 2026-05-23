@@ -31,7 +31,7 @@
         name: "{{ item }}"
         groups: rke2-agent
         rke2_node_token: "{{ rke2_token_raw.content | b64decode }}"
-      loop: "{{ groups['rke2-agent'] }}"
+      loop: "{{ groups['rke2-agent'] + groups['rke2-dvb-worker'] }}"
       changed_when: false
       tags: rke2_agent_node
 
@@ -53,8 +53,28 @@
     - role: rke2_all_node
       tags: rke2_all_node
 
+- name: Configure DVB Worker Node (PT3 driver + RKE2 agent)
+  hosts: rke2-dvb-worker
+  strategy: debug
+  gather_facts: true
+  become: true
+  vars:
+    ansible_user: miutaku
+    rke2_node_token: "{{ hostvars[inventory_hostname].rke2_node_token }}"
+  roles:
+    - role: common
+      tags: common
+    - role: sysctl
+      tags: sysctl
+    - role: dvb_node
+      tags: dvb_node
+    - role: rke2_agent_node
+      tags: rke2_agent_node
+    - role: rke2_all_node
+      tags: rke2_all_node
+
 - name: Finalized
-  hosts: rke2-agent
+  hosts: rke2-agent:rke2-dvb-worker
   gather_facts: false
   become: true
   vars:

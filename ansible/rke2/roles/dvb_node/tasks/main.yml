@@ -1,0 +1,18 @@
+---
+# earth-pt3 は PCI デバイスが見えていれば udev が自動ロードする。
+# DKMS ビルドもブラックリストも不要。ここでは起動確認のみ行う。
+
+- name: Verify DVB devices are present
+  ansible.builtin.wait_for:
+    path: /dev/dvb/adapter0
+    timeout: 10
+  register: dvb_check
+  ignore_errors: true
+
+- name: Report DVB device status
+  ansible.builtin.debug:
+    msg: >-
+      {{ dvb_check.failed | ternary(
+        '/dev/dvb/adapter0 が見つかりません。PCI パススルーと PT3 の接続を確認してください。',
+        '/dev/dvb/adapter0 確認 OK'
+      ) }}

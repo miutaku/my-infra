@@ -28,17 +28,6 @@ variable "worker_vm_count" {
   default     = 2
 }
 
-variable "prd_rec_server_vm_count" {
-  description = "The number of prd recording server virtual machines"
-  type        = number
-  default     = 1
-}
-
-variable "dev_rec_server_vm_count" {
-  description = "The number of dev recording server virtual machines"
-  type        = number
-  default     = 1
-}
 
 variable "rke2_base_lb_macaddr" {
   description = "The base MAC address of the virtual machines"
@@ -58,16 +47,16 @@ variable "rke2_base_worker_macaddr" {
   default     = "BC:24:11:23:32:00"
 }
 
-variable "dev_rec_server_macaddr" {
-  description = "The MAC address of the dev recording server virtual machine"
+variable "rke2_dvb_worker_macaddr" {
+  description = "The MAC address of the DVB worker VM (Mirakurun / PT3)"
   type        = string
-  default     = "52:54:00:23:98:01"
+  default     = "BC:24:11:23:32:90"
 }
 
-variable "prd_rec_server_macaddr" {
-  description = "The MAC address of the prd recording server virtual machine"
+variable "rke2_dvb_worker_ip" {
+  description = "DVB worker VM の IP アドレス (DHCP 静的リースと一致させること)"
   type        = string
-  default     = "52:54:00:23:99:00"
+  default     = "192.168.20.131"
 }
 
 variable "truenas_macaddr" {

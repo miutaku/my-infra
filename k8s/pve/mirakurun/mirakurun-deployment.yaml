@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mirakurun
+  namespace: app-mirakurun
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mirakurun
+  template:
+    metadata:
+      labels:
+        app: mirakurun
+    spec:
+      nodeSelector:
+        hardware.miutaku/dvb: "true"
+      tolerations:
+        - key: hardware.miutaku/dvb
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: mirakurun
+          image: ghcr.io/miutaku/mirakurun:latest
+          ports:
+            - containerPort: 40772
+              name: http
+          env:
+            - name: TZ
+              value: Asia/Tokyo
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/etc/mirakurun/server.yml
+              subPath: server.yml
+            - name: config
+              mountPath: /usr/local/etc/mirakurun/tuners.yml
+              subPath: tuners.yml
+            - name: config
+              mountPath: /usr/local/etc/mirakurun/channels.yml
+              subPath: channels.yml
+            - name: bcas-keys
+              mountPath: /opt/bin/bcas_keys
+              subPath: bcas_keys
+              readOnly: true
+            - name: dev-dvb
+              mountPath: /dev/dvb
+            - name: dev-bus
+              mountPath: /dev/bus
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: 40772
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: 40772
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: mirakurun-config
+        - name: bcas-keys
+          secret:
+            secretName: mirakurun-bcas-keys
+        - name: dev-dvb
+          hostPath:
+            path: /dev/dvb
+            type: Directory
+        - name: dev-bus
+          hostPath:
+            path: /dev/bus
+            type: Directory

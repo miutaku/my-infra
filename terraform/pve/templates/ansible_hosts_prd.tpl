@@ -21,6 +21,10 @@ ${host.ip} hostname=${host.hostname}
 ${host.ip} hostname=${host.hostname}
 %{ endfor ~}
 
+# DVB 専用ワーカー (PT3 パススルー付き) — Mirakurun Pod 専用ノード
+[rke2-dvb-worker]
+${dvb_worker.ip} hostname=${dvb_worker.hostname}
+
 [rke2-server:children]
 rke2-server-primary
 rke2-server-secondary
@@ -28,8 +32,10 @@ rke2-server-secondary
 [rke2-node-all:children]
 rke2-server
 rke2-agent
+rke2-dvb-worker
 
 [prd-all:children]
 rke2-lb
 rke2-server
 rke2-agent
+rke2-dvb-worker

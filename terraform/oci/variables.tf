@@ -64,3 +64,22 @@ variable "node_pool_memory_gbs" {
   description = "Memory GBs per worker node. 2 nodes x 12 GB = 24 GB total (Always Free limit)."
   default     = 12
 }
+
+# ── Site-to-Site VPN (IX2215 <-> OCI) ────────────────────────────────────────
+
+variable "ix2215_wan_ip" {
+  description = "IX2215 の WAN IP (v6plus 固定 IPv4)。OCI CPE リソースに設定する。BSM MIRAKURUN の bsm_ix2215_tunnel_ip と同値。"
+  type        = string
+}
+
+variable "home_lan_cidr" {
+  description = "自宅 LAN の CIDR。OCI DRG がこの宛先を IX2215 へルーティングする。"
+  type        = string
+  default     = "192.168.0.0/16"
+}
+
+variable "vpn_psk" {
+  description = "IX2215 <-> OCI IPSec トンネルの Pre-Shared Key。TFC に sensitive variable として登録し、IX2215 Ansible 側は BSM VPN_OCI_PSK に同値を登録する。"
+  type        = string
+  sensitive   = true
+}

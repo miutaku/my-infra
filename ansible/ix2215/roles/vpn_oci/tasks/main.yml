@@ -1,0 +1,23 @@
+---
+# OCI Site-to-Site VPN (IKEv2 IPSec) 設定
+# インターフェース (Tunnel2.0) と静的ルートは interfaces / static_routes ロールが担当。
+# このロールは IKEv2 グローバル設定と ipsec policy のみを適用する。
+
+- name: Configure IKEv2 IPSec for OCI Site-to-Site VPN
+  ansible.builtin.command:
+    cmd: python3 scripts/configure_vpn_oci.py
+    chdir: "{{ playbook_dir }}"
+  environment:
+    IX2215_HOST: "{{ ix2215_host }}"
+    IX2215_USER: "{{ ix2215_user }}"
+    IX2215_PASSWORD: "{{ ix2215_ssh_password.stdout | trim }}"
+    DRY_RUN: "{{ 'true' if ansible_check_mode else 'false' }}"
+    VPN_OCI_JSON: "{{ ix_vpn_oci | combine({'psk': ix2215_vpn_psk.stdout | trim}) | to_json }}"
+  register: result
+  changed_when: "'changed=true' in result.stdout"
+  failed_when: "'failed=true' in result.stdout or result.rc != 0"
+  check_mode: false
+
+- name: Show VPN OCI result
+  ansible.builtin.debug:
+    msg: "{{ result.stdout }}"

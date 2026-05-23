@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mirakurun-config
+  namespace: app-mirakurun
+data:
+  server.yml: |
+    logLevel: 2
+    maxLogHistory: 1000
+    path: /var/run/mirakurun.sock
+    address: 0.0.0.0
+    port: 40772
+    startupCommand: /opt/bin/startup
+
+  tuners.yml: |
+    # PT3 実機確認済み (dmesg): adapter0=ISDB-S, adapter1=ISDB-T, adapter2=ISDB-S, adapter3=ISDB-T
+    - name: PT3-S0
+      types:
+        - BS
+        - CS
+      command: recpt1 --device /dev/dvb/adapter0 --b25 --strip <channel> - -
+      isDisabled: false
+
+    - name: PT3-T0
+      types:
+        - GR
+      command: recpt1 --device /dev/dvb/adapter1 --b25 --strip <channel> - -
+      isDisabled: false
+
+    - name: PT3-S1
+      types:
+        - BS
+        - CS
+      command: recpt1 --device /dev/dvb/adapter2 --b25 --strip <channel> - -
+      isDisabled: false
+
+    - name: PT3-T1
+      types:
+        - GR
+      command: recpt1 --device /dev/dvb/adapter3 --b25 --strip <channel> - -
+      isDisabled: false
+
+  channels.yml: |
+    # 東京都 地上波 (物理チャンネル番号)
+    - name: NHK総合
+      type: GR
+      channel: "27"
+      serviceId: 1024
+
+    - name: NHK Eテレ
+      type: GR
+      channel: "26"
+      serviceId: 2048
+
+    - name: 日本テレビ
+      type: GR
+      channel: "25"
+      serviceId: 1032
+
+    - name: テレビ朝日
+      type: GR
+      channel: "24"
+      serviceId: 1056
+
+    - name: TBS
+      type: GR
+      channel: "22"
+      serviceId: 1040
+
+    - name: テレビ東京
+      type: GR
+      channel: "23"
+      serviceId: 1048
+
+    - name: フジテレビ
+      type: GR
+      channel: "21"
+      serviceId: 1064
+
+    - name: TOKYO MX
+      type: GR
+      channel: "20"
+      serviceId: 23608
+
+    # BS衛星放送
+    - name: NHK BS1
+      type: BS
+      channel: BS15_0
+      serviceId: 101
+
+    - name: NHK BSプレミアム・4K
+      type: BS
+      channel: BS15_1
+      serviceId: 103
+
+    - name: BS日テレ
+      type: BS
+      channel: BS13_0
+      serviceId: 141
+
+    - name: BS朝日
+      type: BS
+      channel: BS01_0
+      serviceId: 151
+
+    - name: BS-TBS
+      type: BS
+      channel: BS03_0
+      serviceId: 161
+
+    - name: BSテレ東
+      type: BS
+      channel: BS13_1
+      serviceId: 171
+
+    - name: BSフジ
+      type: BS
+      channel: BS09_0
+      serviceId: 181
+
+    - name: WOWOWプライム
+      type: BS
+      channel: BS05_0
+      serviceId: 191
+
+    - name: WOWOWライブ
+      type: BS
+      channel: BS05_1
+      serviceId: 192
+
+    - name: WOWOWシネマ
+      type: BS
+      channel: BS05_2
+      serviceId: 193
+
+    - name: BS11プライム
+      type: BS
+      channel: BS11_0
+      serviceId: 211
+
+    - name: TwellV
+      type: BS
+      channel: BS11_2
+      serviceId: 222
