@@ -13,10 +13,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - encode-worker.__YOUR_DOMAIN__
+        - encode-worker.miutaku.work
       secretName: encode-worker-tls
   rules:
-    - host: encode-worker.__YOUR_DOMAIN__
+    - host: encode-worker.miutaku.work
       http:
         paths:
           - path: /

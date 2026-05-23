@@ -71,7 +71,7 @@ spec:
             - name: TZ
               value: Asia/Tokyo
             - name: ENCODE_WORKER_URL
-              value: "https://encode-worker.__YOUR_DOMAIN__"
+              value: "https://encode-worker.miutaku.work"
             - name: ENCODE_WORKER_TOKEN
               valueFrom:
                 secretKeyRef:
