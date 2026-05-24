@@ -285,27 +285,37 @@ data:
   rec-finish.sh: |
     #!/bin/sh
     # recordingFinishCommand 専用。
-    # DROP_CNT / ERROR_CNT / SCRAMBLING_CNT すべて 0 なら通知しない。
-    # いずれかが 0 超の場合、/分レートの最大値で重要度を判定する。
-    # しきい値: WARN >= 0.3/分 (30分で9超), CRITICAL >= 1.0/分 (30分で30超)
+    # LOGPATH が利用可能な場合は映像/音声 PID のみの drop/error/scrambling を集計する。
+    # LOGPATH がない場合は全 PID 集計 (DROP_CNT/ERROR_CNT/SCRAMBLING_CNT) にフォールバック。
+    # しきい値: WARN >= 0.3/分, CRITICAL >= 1.0/分
     # envsubst により $NOTIFY_WEBHOOK / $CRITICAL_WEBHOOK は実 URL に展開済み。
     NOTIFY_HOOK="$NOTIFY_WEBHOOK"
     CRITICAL_HOOK="$CRITICAL_WEBHOOK"
     PROGRAM="[${CHANNELNAME:-不明}] ${NAME:-不明番組}"
-    DROP_VAL="${DROP_CNT:-0}"
-    ERR_VAL="${ERROR_CNT:-0}"
-    SCR_VAL="${SCRAMBLING_CNT:-0}"
-    DUR_VAL="${DURATION:-1}"
-    # 3値すべて 0 なら通知不要
-    if [ "$DROP_VAL" = "0" ] && [ "$ERR_VAL" = "0" ] && [ "$SCR_VAL" = "0" ]; then
-      exit 0
-    fi
-    # 3値それぞれの /分レートを算出し最悪レベルと詳細メッセージを生成
     RESULT=$(node -e "
+      var fs  = require('fs');
+      var log = process.env.LOGPATH;
       var dur = Math.max(parseInt(process.env.DUR, 10) || 1, 1);
-      var d = parseInt(process.env.D, 10) || 0;
-      var e = parseInt(process.env.E, 10) || 0;
-      var s = parseInt(process.env.S, 10) || 0;
+      var d = 0, e = 0, s = 0, hasLog = false;
+      if (log) {
+        try {
+          fs.readFileSync(log, 'utf8').split('\n').forEach(function(line) {
+            var m = line.match(/^pid: 0x[\dA-Fa-f]+, error: (\d+), drop: (\d+), scrambling: (\d+), packet: \d+, name: (.+)$/);
+            if (!m) return;
+            if (!/MPEG2 VIDEO|MPEG4 VIDEO|HEVC VIDEO|MPEG2 AUDIO|MPEG2 AAC/.test(m[4])) return;
+            hasLog = true;
+            e += parseInt(m[1], 10);
+            d += parseInt(m[2], 10);
+            s += parseInt(m[3], 10);
+          });
+        } catch(_) {}
+      }
+      if (!hasLog) {
+        d = parseInt(process.env.D, 10) || 0;
+        e = parseInt(process.env.E, 10) || 0;
+        s = parseInt(process.env.S, 10) || 0;
+      }
+      if (d === 0 && e === 0 && s === 0) { process.stdout.write('ok\t'); process.exit(0); }
       var rate = function(n) { return Math.round(n * 60 / dur * 100) / 100; };
       var dr = rate(d), er = rate(e), sr = rate(s);
       var worst = Math.max(dr, er, sr);
@@ -315,9 +325,11 @@ data:
       if (e) parts.push('エラー: '   + e + ' (' + er + '/分)');
       if (s) parts.push('スクランブル: ' + s + ' (' + sr + '/分)');
       process.stdout.write(level + '\t' + parts.join(', '));
-    " D="$DROP_VAL" E="$ERR_VAL" S="$SCR_VAL" DUR="$DUR_VAL")
+    " D="${DROP_CNT:-0}" E="${ERROR_CNT:-0}" S="${SCRAMBLING_CNT:-0}" \
+      DUR="${DURATION:-1}" LOGPATH="${LOGPATH:-}")
     LEVEL=$(echo "$RESULT" | cut -f1)
     DETAIL=$(echo "$RESULT" | cut -f2-)
+    [ "$LEVEL" = "ok" ] && exit 0
     if [ "$LEVEL" = "critical" ]; then
       CONTENT="@here [品質異常] 録画完了: ${PROGRAM} (${DETAIL})"
       WEBHOOK="$CRITICAL_HOOK"
