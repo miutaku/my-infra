@@ -28,13 +28,14 @@ spec:
               apk add --no-cache gettext
               mkdir -p /app/config/enc
               for f in /config-src/config.yml /config-src/notify.sh \
+                        /config-src/rec-finish.sh \
                         /config-src/epgUpdaterLogConfig.yml \
                         /config-src/operatorLogConfig.yml \
                         /config-src/serviceLogConfig.yml; do
                 envsubst < "$f" > "/app/config/$(basename $f)"
               done
               cp /config-src/enc-remote.js /app/config/enc/enc-remote.js
-              chmod +x /app/config/notify.sh
+              chmod +x /app/config/notify.sh /app/config/rec-finish.sh
           env:
             - name: MYSQL_PASSWORD
               valueFrom:
