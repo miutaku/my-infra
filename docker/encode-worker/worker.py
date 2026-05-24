@@ -59,6 +59,7 @@ class JobRequest(BaseModel):
 jobs:      Dict[str, Job]            = {}
 _tasks:    Dict[str, asyncio.Task]   = {}
 semaphore: Optional[asyncio.Semaphore] = None
+draining:  bool = False   # preStop フックがセット → 新規ジョブ受付停止
 
 
 @asynccontextmanager
@@ -66,7 +67,7 @@ async def lifespan(app: FastAPI):
     global semaphore
     semaphore = asyncio.Semaphore(MAX_JOBS)
     yield
-    # グレースフルシャットダウン: 実行中の全エンコードジョブが終わるまで待つ
+    # フォールバック: preStop なしで SIGTERM が来た場合に備えて残タスクを待つ
     running = [t for t in _tasks.values() if not t.done()]
     if running:
         await asyncio.gather(*running, return_exceptions=True)
@@ -86,7 +87,22 @@ def verify_token(authorization: Optional[str]):
 
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "running": sum(1 for j in jobs.values() if j.status == JobStatus.running)}
+    return {
+        "status":   "ok",
+        "running":  sum(1 for j in jobs.values() if j.status == JobStatus.running),
+        "draining": draining,
+    }
+
+
+@app.post("/internal/drain", status_code=200, include_in_schema=False)
+async def internal_drain():
+    """preStop フックから呼ばれる。新規ジョブを拒否し、実行中ジョブの完了を待つ。"""
+    global draining
+    draining = True
+    running = [t for t in _tasks.values() if not t.done()]
+    if running:
+        await asyncio.gather(*running, return_exceptions=True)
+    return {"drained": True}
 
 
 @app.post("/v1/jobs", status_code=201)
@@ -95,6 +111,8 @@ async def create_job(
     authorization: Optional[str] = Header(default=None),
 ):
     verify_token(authorization)
+    if draining:
+        raise HTTPException(status_code=503, detail="Server is draining, retry later")
     job = Job(
         job_id       = str(uuid.uuid4()),
         input        = req.input,
