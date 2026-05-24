@@ -11,9 +11,24 @@ resource "oci_objectstorage_bucket" "db_backup" {
   freeform_tags  = local.common_tags
 }
 
+# ライフサイクルポリシーの実行主体は objectstorage サービスプリンシパルのため、
+# バケットへの操作権限を tenancy レベルで付与する必要がある
+resource "oci_identity_policy" "objectstorage_lifecycle" {
+  compartment_id = var.tenancy_ocid
+  name           = "objectstorage-lifecycle-policy"
+  description    = "Allow Object Storage service principal to manage objects for lifecycle policies"
+  freeform_tags  = local.common_tags
+
+  statements = [
+    "Allow service objectstorage-${var.region} to manage object-family in compartment id ${var.compartment_ocid}",
+  ]
+}
+
 resource "oci_objectstorage_object_lifecycle_policy" "db_backup" {
   namespace = data.oci_objectstorage_namespace.this.namespace
   bucket    = oci_objectstorage_bucket.db_backup.name
+
+  depends_on = [oci_identity_policy.objectstorage_lifecycle]
 
   rules {
     name        = "delete-old-backups"
