@@ -3,9 +3,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - pvc.yaml
-  - mariadb-secret.yaml
-  - mariadb-statefulset.yaml
-  - mariadb-service.yaml
   - epgstation-secret.yaml
   - ghcr-pull-secret.yaml
   - epgstation-configmap.yaml
