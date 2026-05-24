@@ -1,4 +1,4 @@
-# NFS PVC for recorded files — NAS local IP (prd-rec-server and K8s workers are on the same VLAN)
+# NFS PVC for recorded files
 apiVersion: v1
 kind: PersistentVolume
 metadata:

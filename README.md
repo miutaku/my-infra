@@ -6,7 +6,7 @@
 
 ```mermaid
 %%{init: {'themeVariables': {'lineColor': '#000000'}}}%%
-flowchart TB
+flowchart LR
   subgraph Infrastructure[ ]
   direction LR
   subgraph OCI[OCI / Always Free]
@@ -21,7 +21,9 @@ flowchart TB
       OCILonghorn([Longhorn])
       OCIActionsRunner([GitHub Actions Runner])
       OCIAlloy([Grafana Alloy])
-      OCICloudflared ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress ~~~ OCILonghorn ~~~ OCIActionsRunner ~~~ OCITFCAgent ~~~ OCIAlloy
+      OCIEnc([OCI Encord Server])
+      OCILonghorn ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress ~~~ OCIAlloy
+      OCICloudflared ~~~ OCIEnc ~~~ Flux_API ~~~ OCIActionsRunner ~~~ OCITFCAgent 
     end
   end
 
@@ -62,12 +64,6 @@ flowchart TB
       NAS[[TrueNAS Scale VMs<br/>192.168.20.191-192]]
       UOS[[UniFi OS Server VM<br/>192.168.0.132:11443]]
 
-      subgraph RecSV
-        direction TB
-        TVRecSVPRD[[TV Rec Server PRD]]
-        TVRecSVDEV[[TV Rec Server DEV]]
-      end
-
       subgraph WorkEnv[Work station / Build]
         direction LR
         WorkWin[[Windows work station]]
@@ -82,7 +78,7 @@ flowchart TB
         WorkerVMs[[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]]
         LBVMs ~~~ ServerVMs ~~~ WorkerVMs
       end
-      RecSV ~~~ WorkEnv ~~~ RKE2VM
+      NAS ~~~ WorkEnv ~~~ MM2 ~~~ RKE2VM ~~~ UOS
     end
     subgraph RKE2[RKE2 HA cluster]
       ArgoCD{{ArgoCD <br/>Sync}}
@@ -110,7 +106,9 @@ flowchart TB
           VMetrics([VictoriaMetrics])
           CoreDNS([CoreDNS])
           WoL([WoL])
-          CoreDNS ~~~ WoL ~~~ VMetrics
+          Mirakurun([Mirakurun])
+          EPGStation([EPGStation])
+          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation
         end
         RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
       end
@@ -136,6 +134,9 @@ flowchart TB
 
   LBVMs --> ServerVMs --> WorkerVMs
 
+  EPGStation --> Mirakurun
+  EPGStation --> NAS
+  EPGStation --> OCIEnc
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
   OCIAlloy -->|remote_write| GC_Prometheus
@@ -164,8 +165,8 @@ flowchart TB
   class Flux_API,ArgoCD,OCICert,MetalLB control
   class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
   class IX,US8,AP,TailscaleNet nwDevice
-  class MM2,NAS,TVRecSVPRD,TVRecSVDEV,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
-  class OCIESO,OCILonghorn,ESO,VMetrics,CoreDNS,CF_DNS,GC_Prometheus storage
+  class MM2,NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
+  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
   class OCIAlloy,Alloy,blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
   class CF_Application,CF_Tunnel,TFC,GitHub external
   class OCI,OKE zoneCloud
@@ -369,8 +370,6 @@ flowchart TB
 | UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
-| dev-rec-server | 192.168.20.150 | node_exporter :9100 | ✅ |
-| prd-rec-server | 192.168.20.151 | node_exporter :9100 | ✅ |
 | mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | ✅ (VLAN40) |
 | nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
 | OKE nodes ×2 | 10.0.1.x | Alloy DaemonSet (node) | ✅ |

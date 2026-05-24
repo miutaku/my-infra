@@ -47,9 +47,21 @@ alloy:
 
       prometheus.scrape "node" {
         targets    = prometheus.exporter.unix.node.targets
-        forward_to = [prometheus.remote_write.victoria_metrics.receiver]
+        forward_to = [prometheus.relabel.node.receiver]
         job_name        = "integrations/node_exporter"
         scrape_interval = "60s"
+      }
+
+      prometheus.relabel "node" {
+        forward_to = [prometheus.remote_write.victoria_metrics.receiver]
+        rule {
+          target_label = "instance"
+          replacement  = env("HOSTNAME")
+        }
+        rule {
+          target_label = "node"
+          replacement  = env("HOSTNAME")
+        }
       }
 
       // ── Kubernetes pod 自動検出 ───────────────────────────────────────────
@@ -71,11 +83,10 @@ alloy:
           regex         = "(.+)"
         }
         rule {
-          source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port"]
+          source_labels = ["__meta_kubernetes_pod_ip", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
           action        = "replace"
           target_label  = "__address__"
-          regex         = "(.+)"
-          replacement   = "$1"
+          separator     = ":"
         }
         rule {
           source_labels = ["__meta_kubernetes_namespace"]
@@ -156,8 +167,6 @@ alloy:
       prometheus.scrape "node_static" {
         targets = [
           { "__address__" = "192.168.20.101:9100", "instance" = "dev-app-server",   "job" = "node" },
-          { "__address__" = "192.168.20.150:9100", "instance" = "dev-rec-server",   "job" = "node" },
-          { "__address__" = "192.168.20.151:9100", "instance" = "prd-rec-server",   "job" = "node" },
           { "__address__" = "192.168.20.135:9100", "instance" = "lb-01",            "job" = "node" },
           { "__address__" = "192.168.20.136:9100", "instance" = "lb-02",            "job" = "node" },
           { "__address__" = "192.168.0.132:9100",  "instance" = "unifi-os-server",  "job" = "node" },
@@ -234,6 +243,20 @@ alloy:
             "instance"       = "unifi-os-server",
             "job"            = "blackbox_http",
           },
+          {
+            "__address__"    = "blackbox-exporter.monitoring.svc.cluster.local:9115",
+            "__param_target" = "http://epgstation.app-epgstation.svc.cluster.local:8888/api/version",
+            "__param_module" = "http_2xx",
+            "instance"       = "epgstation",
+            "job"            = "blackbox_http",
+          },
+          {
+            "__address__"    = "blackbox-exporter.monitoring.svc.cluster.local:9115",
+            "__param_target" = "http://mirakurun.app-mirakurun.svc.cluster.local:40772/api/version",
+            "__param_module" = "http_2xx",
+            "instance"       = "mirakurun",
+            "job"            = "blackbox_http",
+          },
         ]
         metrics_path    = "/probe"
         clustering {
@@ -256,10 +279,9 @@ alloy:
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.128",  "__param_module" = "icmp", "instance" = "master-03-rke2",      "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.129",  "__param_module" = "icmp", "instance" = "worker-01-rke2",      "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.130",  "__param_module" = "icmp", "instance" = "worker-02-rke2",      "job" = "blackbox_icmp" },
+          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.131",  "__param_module" = "icmp", "instance" = "dvb-worker-01-rke2",  "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.135",  "__param_module" = "icmp", "instance" = "lb-01",               "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.136",  "__param_module" = "icmp", "instance" = "lb-02",               "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.150",  "__param_module" = "icmp", "instance" = "dev-rec-server",      "job" = "blackbox_icmp" },
-          { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.151",  "__param_module" = "icmp", "instance" = "prd-rec-server",      "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.191",  "__param_module" = "icmp", "instance" = "nas-01",              "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.192",  "__param_module" = "icmp", "instance" = "nas-02",              "job" = "blackbox_icmp" },
           { "__address__" = "blackbox-exporter.monitoring.svc.cluster.local:9115", "__param_target" = "192.168.20.227",  "__param_module" = "icmp", "instance" = "rke2-vip",            "job" = "blackbox_icmp" },
