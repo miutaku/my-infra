@@ -18,6 +18,17 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull-secret
       initContainers:
+        # emptyDir で隠蔽される /app/config/config.yml.template をイメージから復元する
+        - name: copy-template
+          image: ghcr.io/miutaku/epgstation-ffmpeg-included:latest
+          command:
+            - sh
+            - -c
+            - cp /app/config/config.yml.template /dst/config.yml.template
+          volumeMounts:
+            - name: config
+              mountPath: /dst
+
         # ConfigMap から /app/config へコピーし、envsubst でシークレットを展開する
         - name: config-init
           image: alpine:3.20
