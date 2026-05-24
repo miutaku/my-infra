@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pve-tfc-agent
+  namespace: pve-tfc-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pve-tfc-agent
+  template:
+    metadata:
+      labels:
+        app: pve-tfc-agent
+    spec:
+      # OKE ノードは ARM (A1.Flex)
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: tfc-agent
+          image: hashicorp/tfc-agent:1.28.8
+          imagePullPolicy: Always
+          env:
+            - name: TFC_AGENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pve-tfc-agent-credentials
+                  key: token
+            - name: TFC_AGENT_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: pve-tfc-agent-credentials
+                  key: name
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
