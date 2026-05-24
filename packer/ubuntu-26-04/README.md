@@ -87,7 +87,7 @@ packer build -var-file=pve-b550m.pkrvars.hcl .
 | BIOS | デフォルト (UEFI なし) |
 | ユーザー | packer (ビルド用、テンプレートには残る) |
 | SSH | 公開鍵 + パスワード認証 |
-| インストール済みパッケージ | qemu-guest-agent, vim, cloud-init, cloud-initramfs-growroot |
+| インストール済みパッケージ | qemu-guest-agent, vim, cloud-init, cloud-initramfs-growroot, cloud-guest-utils, e2fsprogs, parted |
 | 削除済みパッケージ | nano |
 | QEMU Guest Agent | 有効 |
 
@@ -100,7 +100,18 @@ packer build -var-file=pve-b550m.pkrvars.hcl .
 3. `cloud-init clean --logs` — クローン VM が初回起動時に再実行できるよう初期化
 4. `/etc/machine-id` を空にトランケート — クローンごとに一意 ID を生成
 5. SSH ホストキー削除 — クローンごとに再生成
-6. APT キャッシュ削除
+6. `grow-rootfs-if-needed.service` を有効化 — VM ディスク拡張後の root filesystem 拡張
+7. APT キャッシュ削除
+
+## root ディスクの自動拡張
+
+このテンプレートをクローンした VM は、起動時に
+`grow-rootfs-if-needed.service` を実行します。  
+Proxmox 側で VM の root ディスクを拡張している場合、service が
+`growpart` と `resize2fs` を使って `/` を自動拡張します。
+
+既に作成済みの RKE2 VM へ同じ仕組みを入れる場合は、
+`ansible/rke2/README.md` の `grow_rootfs` tag を使用します。
 
 ## PVE ノード名のホスト名同期
 
