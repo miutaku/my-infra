@@ -38,9 +38,10 @@ data:
     thumbnailPosition: 10
 
     recordingStartCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK 録画開始"
-    encodingFinishCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK エンコード済"
-    recordingPrepRecFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画開始前にエラー発生"
-    recordingFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画中にエラー発生"
+    recordingFinishCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK 録画完了"
+    recordingPrepRecFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画準備失敗 @here"
+    recordingFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画失敗 @here"
+    encodingFinishCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK エンコード完了"
 
     ffmpeg: /usr/local/bin/ffmpeg
     ffprobe: /usr/local/bin/ffprobe
@@ -253,16 +254,29 @@ data:
 
   notify.sh: |
     #!/bin/sh
+    # 引数: WEBHOOK LABEL [MENTION]
+    # MENTION に "@here" を渡すとチャンネル全員にメンション
     WEBHOOK="$1"
     LABEL="$2"
+    MENTION="${3:-}"
     if [ -z "$WEBHOOK" ]; then exit 0; fi
-    # EPGStation が NAME / CHANNELNAME を環境変数で渡す場合は含める
     if [ -n "$NAME" ] && [ -n "$CHANNELNAME" ]; then
       CONTENT="${LABEL}: [${CHANNELNAME}] ${NAME}"
+    elif [ -n "$NAME" ]; then
+      CONTENT="${LABEL}: ${NAME}"
     else
       CONTENT="${LABEL}"
     fi
-    # node で JSON シリアライズ (番組名に " や \ が含まれても壊れない)
+    # ドロップ・スクランブルが発生していれば本文に付記
+    if [ -n "$DROP_CNT" ] && [ "$DROP_CNT" != "0" ]; then
+      CONTENT="${CONTENT} (ドロップ: ${DROP_CNT})"
+    fi
+    if [ -n "$SCRAMBLING_CNT" ] && [ "$SCRAMBLING_CNT" != "0" ]; then
+      CONTENT="${CONTENT} (スクランブル: ${SCRAMBLING_CNT})"
+    fi
+    if [ -n "$MENTION" ]; then
+      CONTENT="${MENTION} ${CONTENT}"
+    fi
     PAYLOAD=$(node -e "process.stdout.write(JSON.stringify({content:process.env.C}))" C="$CONTENT")
     curl -s -X POST "$WEBHOOK" \
       -H 'Content-Type: application/json' \
@@ -310,11 +324,37 @@ data:
     const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
     const codec   = process.argv[2] || 'libx264';
 
-    const workerUrl   = process.env.ENCODE_WORKER_URL;   // e.g. https://encode-worker.example.com
-    const workerToken = process.env.ENCODE_WORKER_TOKEN; // Bearer token
-    const pollMs      = 10000; // 10 秒ごとにポーリング
-    const retryMs     = 60000; // 接続エラー時の再試行間隔
-    const maxRetries  = 30;    // 最大再試行回数 (30 × 60s = 30 分)
+    const workerUrl      = process.env.ENCODE_WORKER_URL;
+    const workerToken    = process.env.ENCODE_WORKER_TOKEN;
+    const criticalHook   = process.env.CRITICAL_WEBHOOK;
+    const pollMs         = 10000; // 10 秒ごとにポーリング
+    const retryMs        = 60000; // 接続エラー時の再試行間隔
+    const maxRetries     = 30;    // 最大再試行回数 (30 × 60s = 30 分)
+
+    // ファイルパスから番組名を取り出す (日時サフィックス以降を除去)
+    const programName = (output || input || '')
+      .split('/').pop()
+      .replace(/[-_]\d{4}年\d{2}月\d{2}日.*$/, '')
+      .replace(/\.[^.]+$/, '') || '不明';
+
+    // Discord CRITICAL_WEBHOOK に通知 (失敗しても握り潰す)
+    const notifyDiscord = (content) =>
+      new Promise((resolve) => {
+        if (!criticalHook) return resolve();
+        const url  = new URL(criticalHook);
+        const data = JSON.stringify({ content });
+        const mod  = url.protocol === 'https:' ? https : http;
+        const req  = mod.request({
+          hostname: url.hostname,
+          port:     url.port || (url.protocol === 'https:' ? 443 : 80),
+          path:     url.pathname + url.search,
+          method:   'POST',
+          headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+        }, resolve);
+        req.on('error', resolve);
+        req.write(data);
+        req.end();
+      });
 
     const getDuration = (filePath) =>
       new Promise((resolve, reject) => {
@@ -380,6 +420,7 @@ data:
       }
 
       if (!jobId) {
+        await notifyDiscord(`@here エンコード失敗 (ジョブ投入不可): ${programName}`);
         console.error('encode-worker へのジョブ投入に失敗しました');
         process.exit(1);
       }
@@ -391,6 +432,7 @@ data:
         try {
           const res = await request('GET', `/v1/jobs/${jobId}`);
           if (res.status === 404) {
+            await notifyDiscord(`@here エンコード失敗 (ジョブ消失 - Pod 再起動の可能性): ${programName}`);
             console.error('ジョブが消失しました (OCI 再起動による可能性)。EPGStation 側で再キューできます。');
             process.exit(1);
           }
@@ -404,11 +446,16 @@ data:
           }
 
           if (status === 'completed') { process.exit(0); }
-          if (status === 'failed')    { console.error('エンコード失敗:', log); process.exit(1); }
+          if (status === 'failed') {
+            await notifyDiscord(`@here エンコード失敗: ${programName}\n${log || ''}`);
+            console.error('エンコード失敗:', log);
+            process.exit(1);
+          }
           retries = 0;
         } catch (_) {
           retries++;
           if (retries >= maxRetries) {
+            await notifyDiscord(`@here エンコード失敗 (通信途絶 ${maxRetries * pollMs / 60000}分): ${programName}`);
             console.error('encode-worker との通信が長時間途絶しました');
             process.exit(1);
           }

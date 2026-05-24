@@ -77,6 +77,11 @@ spec:
                 secretKeyRef:
                   name: epgstation-secrets
                   key: ENCODE_WORKER_TOKEN
+            - name: CRITICAL_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: epgstation-secrets
+                  key: CRITICAL_WEBHOOK
           volumeMounts:
             - name: config
               mountPath: /app/config
