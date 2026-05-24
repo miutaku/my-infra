@@ -38,7 +38,7 @@ data:
     thumbnailPosition: 10
 
     recordingStartCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK 録画開始"
-    recordingFinishCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK 録画完了"
+    recordingFinishCommand: "/bin/sh %ROOT%/config/rec-finish.sh"
     recordingPrepRecFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画準備失敗 @here"
     recordingFailedCommand: "/bin/sh %ROOT%/config/notify.sh $CRITICAL_WEBHOOK 録画失敗 @here"
     encodingFinishCommand: "/bin/sh %ROOT%/config/notify.sh $NOTIFY_WEBHOOK エンコード完了"
@@ -277,6 +277,48 @@ data:
     if [ -n "$MENTION" ]; then
       CONTENT="${MENTION} ${CONTENT}"
     fi
+    PAYLOAD=$(node -e "process.stdout.write(JSON.stringify({content:process.env.C}))" C="$CONTENT")
+    curl -s -X POST "$WEBHOOK" \
+      -H 'Content-Type: application/json' \
+      -d "$PAYLOAD"
+
+  rec-finish.sh: |
+    #!/bin/sh
+    # recordingFinishCommand 専用。DROP_CNT/DURATION で重要度を判定して通知する。
+    # envsubst により $NOTIFY_WEBHOOK / $CRITICAL_WEBHOOK は実 URL に展開済み。
+    NOTIFY_HOOK="$NOTIFY_WEBHOOK"
+    CRITICAL_HOOK="$CRITICAL_WEBHOOK"
+    PROGRAM="[${CHANNELNAME:-不明}] ${NAME:-不明番組}"
+    DROP_VAL="${DROP_CNT:-0}"
+    DUR_VAL="${DURATION:-1}"
+    # drops/分 と重要度レベルを node で一括算出 (node は EPGStation コンテナに確実に存在)
+    # しきい値: WARN=5 drops/分, CRITICAL=50 drops/分
+    RESULT=$(node -e "
+      var d = parseInt(process.env.D, 10) || 0;
+      var t = parseInt(process.env.T, 10) || 1;
+      var rate = Math.round(d * 60 / t * 10) / 10;
+      var level = rate >= 50 ? 'critical' : rate >= 5 ? 'warn' : 'ok';
+      process.stdout.write(rate + ' ' + level);
+    " D="$DROP_VAL" T="$DUR_VAL")
+    DROP_RATE=$(echo "$RESULT" | cut -d' ' -f1)
+    DROP_LEVEL=$(echo "$RESULT" | cut -d' ' -f2)
+    if [ "$DROP_LEVEL" = "critical" ]; then
+      CONTENT="@here [ドロップ多発] 録画完了: ${PROGRAM} (ドロップ: ${DROP_VAL}, ${DROP_RATE}/分)"
+      WEBHOOK="$CRITICAL_HOOK"
+    elif [ "$DROP_LEVEL" = "warn" ]; then
+      CONTENT="[ドロップ警告] 録画完了: ${PROGRAM} (ドロップ: ${DROP_VAL}, ${DROP_RATE}/分)"
+      WEBHOOK="$NOTIFY_HOOK"
+    elif [ "${SCRAMBLING_CNT:-0}" != "0" ]; then
+      CONTENT="[スクランブル] 録画完了: ${PROGRAM} (スクランブル: ${SCRAMBLING_CNT})"
+      WEBHOOK="$NOTIFY_HOOK"
+    elif [ "$DROP_VAL" != "0" ]; then
+      CONTENT="録画完了: ${PROGRAM} (ドロップ: ${DROP_VAL})"
+      WEBHOOK="$NOTIFY_HOOK"
+    else
+      CONTENT="録画完了: ${PROGRAM}"
+      WEBHOOK="$NOTIFY_HOOK"
+    fi
+    [ -z "$WEBHOOK" ] && exit 0
     PAYLOAD=$(node -e "process.stdout.write(JSON.stringify({content:process.env.C}))" C="$CONTENT")
     curl -s -X POST "$WEBHOOK" \
       -H 'Content-Type: application/json' \
