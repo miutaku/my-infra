@@ -11,7 +11,7 @@ data:
     dbtype: mysql
     mysql:
       database: epgstation
-      host: mariadb.app-epgstation.svc.cluster.local
+      host: mariadb.infra-db.svc.cluster.local
       port: 3306
       user: epgstation
       password: ${MYSQL_PASSWORD}
