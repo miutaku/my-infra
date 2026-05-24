@@ -27,6 +27,7 @@ module "rke2_server" {
   cpu_cores         = 2
   memory            = 8192
   clone_template    = local.ubuntu_template
+  disk_size         = 48
   proxmox_nodes     = ["pve-x570", "pve-b550m", "pve-b550m"]
   vlan_tag          = 20
   cloudinit_storage = "local-zfs"
@@ -44,6 +45,7 @@ module "rke2_worker" {
   cpu_cores         = 2
   memory            = 6144
   clone_template    = local.ubuntu_template
+  disk_size         = 96
   proxmox_nodes     = var.proxmox_nodes
   vlan_tag          = 20
   cloudinit_storage = "local-zfs"
