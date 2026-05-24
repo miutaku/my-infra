@@ -7,7 +7,7 @@ module "rke2_lb" {
   base_macaddr      = var.rke2_base_lb_macaddr
   vmid_start        = 10001
   tags              = ["ubuntu_2604", "rke2", "lb", "haproxy", "keepalived"]
-  cpu_cores         = 2
+  cpu_cores         = 1
   memory            = 1536
   clone_template    = local.ubuntu_template
   proxmox_nodes     = var.proxmox_nodes
@@ -41,7 +41,7 @@ module "rke2_worker" {
   base_macaddr      = var.rke2_base_worker_macaddr
   vmid_start        = 12001
   tags              = ["ubuntu_2604", "rke2", "agent", "worker"]
-  cpu_cores         = 1
+  cpu_cores         = 2
   memory            = 4096
   clone_template    = local.ubuntu_template
   proxmox_nodes     = var.proxmox_nodes
@@ -61,7 +61,7 @@ module "rke2_dvb_worker" {
   macaddrs_override = [var.rke2_dvb_worker_macaddr]
   vmid_start        = 12900
   tags              = ["ubuntu_2604", "rke2", "agent", "worker", "dvb"]
-  cpu_cores         = 4
+  cpu_cores         = 2
   memory            = 8192
   clone_template    = local.ubuntu_template
   disk_size         = 32
@@ -132,7 +132,7 @@ module "unifi_os_server" {
   macaddrs_override = [var.unifi_os_server_macaddr]
   vmid_start        = 13201
   tags              = ["ubuntu_2604", "unifi", "uos-server"]
-  cpu_cores         = 2
+  cpu_cores         = 1
   memory            = 4096
   clone_template    = local.ubuntu_template
   proxmox_nodes     = ["pve-x570"]
