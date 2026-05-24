@@ -32,4 +32,4 @@ ENV MAX_CONCURRENT_JOBS="2"
 
 EXPOSE 8080
 
-CMD ["uvicorn", "worker:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "worker:app", "--host", "0.0.0.0", "--port", "8080", "--timeout-graceful-shutdown", "7200"]
