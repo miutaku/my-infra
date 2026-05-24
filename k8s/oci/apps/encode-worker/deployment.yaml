@@ -68,18 +68,12 @@ spec:
             preStop:
               exec:
                 # preStop は SIGTERM より前に実行され、この間 uvicorn は生きている。
-                # 1. /internal/drain を叩いて draining フラグを立て、全ジョブ完了まで待つ
-                # 2. curl がタイムアウトした場合でも healthz でジョブ完了を確認してから終了
+                # /internal/drain は draining フラグを立てて全ジョブ完了まで HTTP 接続をブロックする。
+                # curl が返ったら (もしくは 7100s でタイムアウトしたら) preStop 終了 → SIGTERM。
                 command:
                   - sh
                   - -c
-                  - |
-                    curl -sf --max-time 7100 -X POST http://localhost:8080/internal/drain || true
-                    until python3 -c "
-import urllib.request, json, sys
-d = json.loads(urllib.request.urlopen('http://localhost:8080/healthz', timeout=5).read())
-sys.exit(0 if d.get('running', 1) == 0 else 1)
-" 2>/dev/null; do sleep 10; done
+                  - curl -sf --max-time 7100 -X POST http://localhost:8080/internal/drain || true
           readinessProbe:
             httpGet:
               path: /healthz
