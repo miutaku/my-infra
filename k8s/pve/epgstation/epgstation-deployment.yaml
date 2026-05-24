@@ -105,6 +105,8 @@ spec:
               mountPath: /app/recorded
             - name: thumbnail
               mountPath: /app/thumbnail
+            - name: drop
+              mountPath: /app/drop
           resources:
             requests:
               cpu: "100m"
@@ -141,3 +143,6 @@ spec:
         - name: thumbnail
           persistentVolumeClaim:
             claimName: epgstation-thumbnail-pvc
+        - name: drop
+          persistentVolumeClaim:
+            claimName: epgstation-drop-pvc
