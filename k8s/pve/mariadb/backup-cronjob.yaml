@@ -50,15 +50,22 @@ spec:
                 - /bin/bash
                 - -c
                 - |
+                  set -eu
                   DATE=$(cat /backup/timestamp)
                   FILENAME="epgstation-${DATE}.sql.gz"
                   ENDPOINT="https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com"
+                  CONTENT_LENGTH=$(wc -c < /backup/dump.sql.gz)
 
-                  aws s3 cp /backup/dump.sql.gz "s3://db-backup/${FILENAME}" \
+                  # OCI S3互換APIはchunked転送非対応のためContent-Lengthを明示する
+                  aws s3api put-object \
                     --endpoint-url "${ENDPOINT}" \
-                    --region ap-tokyo-1
+                    --bucket db-backup \
+                    --key "${FILENAME}" \
+                    --body /backup/dump.sql.gz \
+                    --content-length "${CONTENT_LENGTH}" \
+                    --content-type application/gzip
 
-                  echo "upload completed: ${FILENAME}"
+                  echo "upload completed: ${FILENAME} (${CONTENT_LENGTH} bytes)"
               env:
                 - name: OCI_NAMESPACE
                   valueFrom:
