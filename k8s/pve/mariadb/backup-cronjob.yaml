@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mariadb-backup
+  namespace: infra-db
+spec:
+  schedule: "0 18 * * *"  # 03:00 JST
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          initContainers:
+            - name: dump
+              image: mariadb:10.11
+              command:
+                - sh
+                - -c
+                - |
+                  DATE=$(date +%Y%m%d-%H%M%S)
+                  echo "${DATE}" > /backup/timestamp
+                  mysqldump \
+                    -h mariadb.infra-db.svc.cluster.local \
+                    -u root -p"${MYSQL_ROOT_PASSWORD}" \
+                    --single-transaction \
+                    --routines \
+                    --triggers \
+                    --databases epgstation \
+                    | gzip > /backup/dump.sql.gz
+                  echo "dump completed: $(du -sh /backup/dump.sql.gz)"
+              env:
+                - name: MYSQL_ROOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-backup-credentials
+                      key: MYSQL_ROOT_PASSWORD
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+
+          containers:
+            - name: upload
+              image: amazon/aws-cli
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  DATE=$(cat /backup/timestamp)
+                  FILENAME="epgstation-${DATE}.sql.gz"
+                  ENDPOINT="https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com"
+
+                  aws s3 cp /backup/dump.sql.gz "s3://db-backup/${FILENAME}" \
+                    --endpoint-url "${ENDPOINT}" \
+                    --region ap-tokyo-1
+
+                  echo "upload completed: ${FILENAME}"
+              env:
+                - name: OCI_NAMESPACE
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-backup-credentials
+                      key: OCI_NAMESPACE
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-backup-credentials
+                      key: OCI_S3_ACCESS_KEY
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-backup-credentials
+                      key: OCI_S3_SECRET_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: ap-tokyo-1
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+
+          volumes:
+            - name: backup
+              emptyDir: {}
