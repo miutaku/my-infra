@@ -377,9 +377,7 @@ data:
     'use strict';
     const http  = require('http');
     const https = require('https');
-    const execFile = require('child_process').execFile;
 
-    const ffprobe = process.env.FFPROBE;
     const input   = process.env.INPUT;
     const output  = process.env.OUTPUT;
     const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
@@ -415,15 +413,6 @@ data:
         req.on('error', resolve);
         req.write(data);
         req.end();
-      });
-
-    const getDuration = (filePath) =>
-      new Promise((resolve, reject) => {
-        execFile(ffprobe, ['-v', '0', '-show_format', '-of', 'json', filePath], (err, stdout) => {
-          if (err) return reject(err);
-          try { resolve(parseFloat(JSON.parse(stdout).format.duration)); }
-          catch (e) { reject(e); }
-        });
       });
 
     const request = (method, path, body) =>
@@ -462,8 +451,6 @@ data:
         process.exit(1);
       }
 
-      const duration = await getDuration(input).catch(() => 0);
-
       // ジョブ投入 (再試行あり)
       let jobId;
       for (let i = 0; i < maxRetries; i++) {
@@ -500,7 +487,7 @@ data:
           if (res.status !== 200) continue;
           const { status, progress, log } = res.body;
 
-          if (duration > 0 && typeof progress === 'number') {
+          if (typeof progress === 'number') {
             process.stdout.write(
               JSON.stringify({ type: 'progress', percent: progress, log: log || '' }) + '\n'
             );
