@@ -377,6 +377,7 @@ data:
     'use strict';
     const http  = require('http');
     const https = require('https');
+    const fs    = require('fs');
 
     const input   = process.env.INPUT;
     const output  = process.env.OUTPUT;
@@ -480,9 +481,22 @@ data:
         try {
           const res = await request('GET', `/v1/jobs/${jobId}`);
           if (res.status === 404) {
-            await notifyDiscord(`@here エンコード失敗 (ジョブ消失 - Pod 再起動の可能性): ${programName}`);
-            console.error('ジョブが消失しました (OCI 再起動による可能性)。EPGStation 側で再キューできます。');
-            process.exit(1);
+            // Recreate 更新後に新 Pod が起動した場合、旧 Pod の preStop drain が
+            // エンコードを完了させてから終了しているため出力ファイルが存在するはず。
+            if (fs.existsSync(output)) {
+              process.stdout.write(JSON.stringify({ type: 'progress', percent: 1.0, log: 'completed' }) + '\n');
+              console.error('ジョブ消失を検知しましたが出力ファイルが存在するためエンコード完了とみなします。');
+              process.exit(0);
+            }
+            retries++;
+            if (retries >= maxRetries) {
+              await notifyDiscord(`@here エンコード失敗 (ジョブ消失 - Pod 再起動の可能性): ${programName}`);
+              console.error('ジョブが消失しました。出力ファイルも存在しないためエンコード失敗とみなします。');
+              process.exit(1);
+            }
+            console.error(`ジョブ消失を検知 (試行 ${retries}/${maxRetries}), ${retryMs / 1000}s 後に再確認`);
+            await sleep(retryMs);
+            continue;
           }
           if (res.status !== 200) continue;
           const { status, progress, log } = res.body;
