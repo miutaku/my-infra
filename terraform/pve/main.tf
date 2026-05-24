@@ -42,7 +42,7 @@ module "rke2_worker" {
   vmid_start        = 12001
   tags              = ["ubuntu_2604", "rke2", "agent", "worker"]
   cpu_cores         = 2
-  memory            = 4096
+  memory            = 6144
   clone_template    = local.ubuntu_template
   proxmox_nodes     = var.proxmox_nodes
   vlan_tag          = 20
@@ -150,7 +150,7 @@ module "magic_mirror_server" {
   vmid_start        = 5000
   tags              = ["ubuntu_2604", "mm-server", "docker", "iot"]
   cpu_cores         = 1
-  memory            = 4096
+  memory            = 2048
   kvm_vga_type      = "none"
   kvm_vga_memory    = null
   proxmox_nodes     = ["pve-b550m"] # USB device is on this node
