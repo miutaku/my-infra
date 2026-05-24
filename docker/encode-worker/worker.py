@@ -211,21 +211,39 @@ async def run_job(job_id: str):
             stderr=asyncio.subprocess.PIPE,
         )
 
+        # ffmpeg outputs progress lines with \r (not \n), so asyncio's
+        # readline() never fires. Read raw chunks and split on \r or \n.
         last_lines: list[str] = []
-        async for line in proc.stderr:
-            text = line.decode(errors="replace")
-            last_lines.append(text.rstrip())
-            if len(last_lines) > 20:
-                last_lines.pop(0)
-            m = _FRAME_RE.search(text)
-            if m and job.duration > 0:
-                current = (
-                    int(m.group(1)) * 3600
-                    + int(m.group(2)) * 60
-                    + float(m.group(3))
-                )
-                job.progress = min(current / job.duration, 1.0)
-                job.log      = text.strip()
+        buf = b""
+        while True:
+            chunk = await proc.stderr.read(4096)
+            if not chunk:
+                break
+            buf += chunk
+            while True:
+                r = buf.find(b"\r")
+                n = buf.find(b"\n")
+                if r < 0 and n < 0:
+                    break
+                pos = (r if n < 0 or (r >= 0 and r < n) else n)
+                raw_line, buf = buf[:pos], buf[pos + 1:]
+                if buf[:1] == b"\n":  # consume \r\n pair
+                    buf = buf[1:]
+                if not raw_line.strip():
+                    continue
+                text = raw_line.decode(errors="replace")
+                last_lines.append(text.rstrip())
+                if len(last_lines) > 20:
+                    last_lines.pop(0)
+                m = _FRAME_RE.search(text)
+                if m and job.duration > 0:
+                    current = (
+                        int(m.group(1)) * 3600
+                        + int(m.group(2)) * 60
+                        + float(m.group(3))
+                    )
+                    job.progress = min(current / job.duration, 1.0)
+                    job.log      = text.strip()
 
         await proc.wait()
 
