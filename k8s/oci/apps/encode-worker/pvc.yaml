@@ -11,7 +11,7 @@ spec:
     - ReadWriteMany
   nfs:
     server: 192.168.20.192
-    path: /mnt/pool/recorded
+    path: /mnt/raid1_case/recorded
   mountOptions:
     - nfsvers=4.1
     - hard
