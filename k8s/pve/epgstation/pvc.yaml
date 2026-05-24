@@ -35,6 +35,39 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
+  name: epgstation-drop-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/drop
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: epgstation-drop-pvc
+  namespace: app-epgstation
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  volumeName: epgstation-drop-pv
+  storageClassName: ""
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
   name: epgstation-thumbnail-pv
 spec:
   capacity:
