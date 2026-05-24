@@ -4,8 +4,8 @@
   1. EPGStation の enc-remote.js が POST /v1/jobs でジョブを投入
   2. バックグラウンドで ffmpeg を実行 (asyncio.subprocess)
   3. enc-remote.js が GET /v1/jobs/{job_id} でポーリング → 進捗・完了を確認
-  4. OCI 再起動後は initContainer (cleanup-orphans) が *.enc.tmp を削除し、
-     EPGStation 側で "encode 失敗" として再試行キューに戻る。
+  4. Pod 終了時は lifespan shutdown が実行中ジョブの完了を待ってから終了する。
+     (terminationGracePeriodSeconds と --timeout-graceful-shutdown を 7200s に設定)
 """
 
 import asyncio
@@ -13,11 +13,11 @@ import os
 import re
 import shutil
 import uuid
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Dict, Optional
 
 from fastapi import FastAPI, Header, HTTPException, status
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 # ─── 設定 ────────────────────────────────────────────────────────────────────
@@ -56,16 +56,23 @@ class JobRequest(BaseModel):
 
 # ─── グローバル状態 ───────────────────────────────────────────────────────────
 
-jobs:     Dict[str, Job] = {}
+jobs:      Dict[str, Job]            = {}
+_tasks:    Dict[str, asyncio.Task]   = {}
 semaphore: Optional[asyncio.Semaphore] = None
 
-app = FastAPI(title="encode-worker")
 
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global semaphore
     semaphore = asyncio.Semaphore(MAX_JOBS)
+    yield
+    # グレースフルシャットダウン: 実行中の全エンコードジョブが終わるまで待つ
+    running = [t for t in _tasks.values() if not t.done()]
+    if running:
+        await asyncio.gather(*running, return_exceptions=True)
+
+
+app = FastAPI(title="encode-worker", lifespan=lifespan)
 
 
 # ─── 認証ヘルパー ─────────────────────────────────────────────────────────────
@@ -96,7 +103,8 @@ async def create_job(
         is_dual_mono = req.is_dual_mono,
     )
     jobs[job.job_id] = job
-    asyncio.create_task(run_job(job.job_id))
+    task = asyncio.create_task(run_job(job.job_id))
+    _tasks[job.job_id] = task
     return {"job_id": job.job_id}
 
 
@@ -157,7 +165,7 @@ def build_ffmpeg_args(job: Job, tmp_output: str) -> list[str]:
 
     args += ["-map", "0:s?", "-c:s", "copy"]
     args += ["-c:a", "aac"]
-    args += ["-preset", "veryfast", "-crf", "26"]
+    args += ["-preset", "fast", "-crf", "20"]
     # tmp_output has .enc.tmp suffix so ffmpeg can't detect the container format;
     # derive it explicitly from the intended output extension.
     ext = os.path.splitext(job.output)[1].lower()
@@ -212,3 +220,5 @@ async def run_job(job_id: str):
                 os.remove(tmp_output)
             job.status = JobStatus.failed
             job.log    = f"ffmpeg exited with code {proc.returncode}\n" + "\n".join(last_lines[-10:])
+
+    _tasks.pop(job_id, None)
