@@ -5,5 +5,6 @@ resources:
   - mariadb-secret.yaml
   - mariadb-statefulset.yaml
   - mariadb-service.yaml
+  - backup-scripts-configmap.yaml
   - backup-secret.yaml
   - backup-cronjob.yaml
