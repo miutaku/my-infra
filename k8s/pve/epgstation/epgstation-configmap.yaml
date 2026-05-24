@@ -292,12 +292,13 @@ data:
     DROP_VAL="${DROP_CNT:-0}"
     DUR_VAL="${DURATION:-1}"
     # drops/分 と重要度レベルを node で一括算出 (node は EPGStation コンテナに確実に存在)
-    # しきい値: WARN=5 drops/分, CRITICAL=50 drops/分
+    # チューナー正常時は 30 分アニメでも一桁台のドロップが正常値
+    # しきい値: WARN=0.3 drops/分 (30分で9超), CRITICAL=1.0 drops/分 (30分で30超)
     RESULT=$(node -e "
       var d = parseInt(process.env.D, 10) || 0;
       var t = parseInt(process.env.T, 10) || 1;
-      var rate = Math.round(d * 60 / t * 10) / 10;
-      var level = rate >= 50 ? 'critical' : rate >= 5 ? 'warn' : 'ok';
+      var rate = Math.round(d * 60 / t * 100) / 100;
+      var level = rate >= 1.0 ? 'critical' : rate >= 0.3 ? 'warn' : 'ok';
       process.stdout.write(rate + ' ' + level);
     " D="$DROP_VAL" T="$DUR_VAL")
     DROP_RATE=$(echo "$RESULT" | cut -d' ' -f1)
