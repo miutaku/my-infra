@@ -192,8 +192,9 @@ def build_ffmpeg_args(job: Job, tmp_output: str) -> list[str]:
     return args
 
 
-# frame= 1234 fps= 25 ... time=00:01:23.45 ...
+# frame= 1234 fps= 25 ... time=00:01:23.45 ... speed=0.35x
 _FRAME_RE = re.compile(r"time=(\d+):(\d+):(\d+(?:\.\d+)?)")
+_SPEED_RE = re.compile(r"speed=\s*(\S+)")
 
 
 async def run_job(job_id: str):
@@ -243,7 +244,9 @@ async def run_job(job_id: str):
                         + float(m.group(3))
                     )
                     job.progress = min(current / job.duration, 1.0)
-                    job.log      = text.strip()
+                    ms = _SPEED_RE.search(text)
+                    prefix = f"[{ms.group(1)}] " if ms else ""
+                    job.log = prefix + text.strip()
 
         await proc.wait()
 
