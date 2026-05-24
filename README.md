@@ -135,8 +135,8 @@ flowchart LR
   LBVMs --> ServerVMs --> WorkerVMs
 
   EPGStation --> Mirakurun
-  EPGStation --> NAS
-  EPGStation --> OCIEnc
+  EPGStation -->|read / ts save| NAS
+  EPGStation -->|encode request| OCIEnc -->|save| NAS
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
   OCIAlloy -->|remote_write| GC_Prometheus
