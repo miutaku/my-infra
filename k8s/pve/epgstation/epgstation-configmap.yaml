@@ -49,11 +49,11 @@ data:
     encode:
       - name: H.264 (OCI Remote)
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx264'
-        suffix: -avc.mp4
+        suffix: -avc.mkv
         rete: 4.0
       - name: H.265 (OCI Remote)
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx265'
-        suffix: -hevc.mp4
+        suffix: -hevc.mkv
         rete: 4.0
 
     urlscheme:

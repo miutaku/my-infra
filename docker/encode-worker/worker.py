@@ -155,8 +155,8 @@ def build_ffmpeg_args(job: Job, tmp_output: str) -> list[str]:
     else:
         args += ["-map", "0:a"]
 
+    args += ["-map", "0:s?", "-c:s", "copy"]
     args += ["-c:a", "aac"]
-    args += ["-map", "0:s?", "-c:s", "mov_text"]
     args += ["-preset", "veryfast", "-crf", "26"]
     args += [tmp_output]
     return args
