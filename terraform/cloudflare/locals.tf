@@ -57,7 +57,12 @@ locals {
   }
 
   # Services exposed through the OKE (cloud) tunnel.
-  oke_services = {}
+  oke_services = {
+    "encode-worker" = {
+      backend       = "http://encode-worker.app-encode-worker.svc.cluster.local:8080"
+      no_tls_verify = false
+    }
+  }
 
   # All known services merged for validation.
   _all_services = merge(local.rke2_services, local.oke_services)
