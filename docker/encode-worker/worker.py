@@ -158,7 +158,11 @@ def build_ffmpeg_args(job: Job, tmp_output: str) -> list[str]:
     args += ["-map", "0:s?", "-c:s", "copy"]
     args += ["-c:a", "aac"]
     args += ["-preset", "veryfast", "-crf", "26"]
-    args += [tmp_output]
+    # tmp_output has .enc.tmp suffix so ffmpeg can't detect the container format;
+    # derive it explicitly from the intended output extension.
+    ext = os.path.splitext(job.output)[1].lower()
+    fmt = {"mkv": "matroska", "mp4": "mp4", "ts": "mpegts"}.get(ext.lstrip("."), "matroska")
+    args += ["-f", fmt, tmp_output]
     return args
 
 
@@ -181,8 +185,12 @@ async def run_job(job_id: str):
             stderr=asyncio.subprocess.PIPE,
         )
 
+        last_lines: list[str] = []
         async for line in proc.stderr:
             text = line.decode(errors="replace")
+            last_lines.append(text.rstrip())
+            if len(last_lines) > 20:
+                last_lines.pop(0)
             m = _FRAME_RE.search(text)
             if m and job.duration > 0:
                 current = (
@@ -203,4 +211,4 @@ async def run_job(job_id: str):
             if os.path.exists(tmp_output):
                 os.remove(tmp_output)
             job.status = JobStatus.failed
-            job.log    = f"ffmpeg exited with code {proc.returncode}"
+            job.log    = f"ffmpeg exited with code {proc.returncode}\n" + "\n".join(last_lines[-10:])
