@@ -284,39 +284,45 @@ data:
 
   rec-finish.sh: |
     #!/bin/sh
-    # recordingFinishCommand 専用。DROP_CNT/DURATION で重要度を判定して通知する。
+    # recordingFinishCommand 専用。
+    # DROP_CNT / ERROR_CNT / SCRAMBLING_CNT すべて 0 なら通知しない。
+    # いずれかが 0 超の場合、/分レートの最大値で重要度を判定する。
+    # しきい値: WARN >= 0.3/分 (30分で9超), CRITICAL >= 1.0/分 (30分で30超)
     # envsubst により $NOTIFY_WEBHOOK / $CRITICAL_WEBHOOK は実 URL に展開済み。
     NOTIFY_HOOK="$NOTIFY_WEBHOOK"
     CRITICAL_HOOK="$CRITICAL_WEBHOOK"
     PROGRAM="[${CHANNELNAME:-不明}] ${NAME:-不明番組}"
     DROP_VAL="${DROP_CNT:-0}"
+    ERR_VAL="${ERROR_CNT:-0}"
+    SCR_VAL="${SCRAMBLING_CNT:-0}"
     DUR_VAL="${DURATION:-1}"
-    # drops/分 と重要度レベルを node で一括算出 (node は EPGStation コンテナに確実に存在)
-    # チューナー正常時は 30 分アニメでも一桁台のドロップが正常値
-    # しきい値: WARN=0.3 drops/分 (30分で9超), CRITICAL=1.0 drops/分 (30分で30超)
+    # 3値すべて 0 なら通知不要
+    if [ "$DROP_VAL" = "0" ] && [ "$ERR_VAL" = "0" ] && [ "$SCR_VAL" = "0" ]; then
+      exit 0
+    fi
+    # 3値それぞれの /分レートを算出し最悪レベルと詳細メッセージを生成
     RESULT=$(node -e "
+      var dur = Math.max(parseInt(process.env.DUR, 10) || 1, 1);
       var d = parseInt(process.env.D, 10) || 0;
-      var t = parseInt(process.env.T, 10) || 1;
-      var rate = Math.round(d * 60 / t * 100) / 100;
-      var level = rate >= 1.0 ? 'critical' : rate >= 0.3 ? 'warn' : 'ok';
-      process.stdout.write(rate + ' ' + level);
-    " D="$DROP_VAL" T="$DUR_VAL")
-    DROP_RATE=$(echo "$RESULT" | cut -d' ' -f1)
-    DROP_LEVEL=$(echo "$RESULT" | cut -d' ' -f2)
-    if [ "$DROP_LEVEL" = "critical" ]; then
-      CONTENT="@here [ドロップ多発] 録画完了: ${PROGRAM} (ドロップ: ${DROP_VAL}, ${DROP_RATE}/分)"
+      var e = parseInt(process.env.E, 10) || 0;
+      var s = parseInt(process.env.S, 10) || 0;
+      var rate = function(n) { return Math.round(n * 60 / dur * 100) / 100; };
+      var dr = rate(d), er = rate(e), sr = rate(s);
+      var worst = Math.max(dr, er, sr);
+      var level = worst >= 1.0 ? 'critical' : 'warn';
+      var parts = [];
+      if (d) parts.push('ドロップ: ' + d + ' (' + dr + '/分)');
+      if (e) parts.push('エラー: '   + e + ' (' + er + '/分)');
+      if (s) parts.push('スクランブル: ' + s + ' (' + sr + '/分)');
+      process.stdout.write(level + '\t' + parts.join(', '));
+    " D="$DROP_VAL" E="$ERR_VAL" S="$SCR_VAL" DUR="$DUR_VAL")
+    LEVEL=$(echo "$RESULT" | cut -f1)
+    DETAIL=$(echo "$RESULT" | cut -f2-)
+    if [ "$LEVEL" = "critical" ]; then
+      CONTENT="@here [品質異常] 録画完了: ${PROGRAM} (${DETAIL})"
       WEBHOOK="$CRITICAL_HOOK"
-    elif [ "$DROP_LEVEL" = "warn" ]; then
-      CONTENT="[ドロップ警告] 録画完了: ${PROGRAM} (ドロップ: ${DROP_VAL}, ${DROP_RATE}/分)"
-      WEBHOOK="$NOTIFY_HOOK"
-    elif [ "${SCRAMBLING_CNT:-0}" != "0" ]; then
-      CONTENT="[スクランブル] 録画完了: ${PROGRAM} (スクランブル: ${SCRAMBLING_CNT})"
-      WEBHOOK="$NOTIFY_HOOK"
-    elif [ "$DROP_VAL" != "0" ]; then
-      CONTENT="録画完了: ${PROGRAM} (ドロップ: ${DROP_VAL})"
-      WEBHOOK="$NOTIFY_HOOK"
     else
-      CONTENT="録画完了: ${PROGRAM}"
+      CONTENT="[品質警告] 録画完了: ${PROGRAM} (${DETAIL})"
       WEBHOOK="$NOTIFY_HOOK"
     fi
     [ -z "$WEBHOOK" ] && exit 0
