@@ -45,45 +45,43 @@ spec:
 
           containers:
             - name: upload
-              image: amazon/aws-cli
+              image: rclone/rclone:latest
               command:
-                - /bin/bash
+                - sh
                 - -c
                 - |
                   set -eu
                   DATE=$(cat /backup/timestamp)
                   FILENAME="epgstation-${DATE}.sql.gz"
-                  ENDPOINT="https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com"
-                  CONTENT_LENGTH=$(wc -c < /backup/dump.sql.gz)
 
-                  # OCI S3互換APIはchunked転送非対応のためContent-Lengthを明示する
-                  aws s3api put-object \
-                    --endpoint-url "${ENDPOINT}" \
-                    --bucket db-backup \
-                    --key "${FILENAME}" \
-                    --body /backup/dump.sql.gz \
-                    --content-length "${CONTENT_LENGTH}" \
-                    --content-type application/gzip
+                  mkdir -p /root/.config/rclone
+                  cat > /root/.config/rclone/rclone.conf << EOF
+                  [oci]
+                  type = s3
+                  provider = Other
+                  access_key_id = ${OCI_S3_ACCESS_KEY}
+                  secret_access_key = ${OCI_S3_SECRET_KEY}
+                  endpoint = https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com
+                  EOF
 
-                  echo "upload completed: ${FILENAME} (${CONTENT_LENGTH} bytes)"
+                  rclone copyto /backup/dump.sql.gz "oci:db-backup/${FILENAME}"
+                  echo "upload completed: ${FILENAME}"
               env:
                 - name: OCI_NAMESPACE
                   valueFrom:
                     secretKeyRef:
                       name: db-backup-credentials
                       key: OCI_NAMESPACE
-                - name: AWS_ACCESS_KEY_ID
+                - name: OCI_S3_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
                       name: db-backup-credentials
                       key: OCI_S3_ACCESS_KEY
-                - name: AWS_SECRET_ACCESS_KEY
+                - name: OCI_S3_SECRET_KEY
                   valueFrom:
                     secretKeyRef:
                       name: db-backup-credentials
                       key: OCI_S3_SECRET_KEY
-                - name: AWS_DEFAULT_REGION
-                  value: ap-tokyo-1
               volumeMounts:
                 - name: backup
                   mountPath: /backup
