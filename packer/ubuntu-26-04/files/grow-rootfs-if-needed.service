@@ -1,0 +1,11 @@
+[Unit]
+Description=Grow root partition and filesystem if the backing disk is larger
+After=local-fs.target
+Before=rke2-server.service rke2-agent.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/grow-rootfs-if-needed
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,61 @@
+#!/bin/sh
+set -eu
+
+log() {
+  echo "grow-rootfs-if-needed: $*"
+}
+
+root_src="$(findmnt -n -o SOURCE /)"
+root_src="$(readlink -f "$root_src")"
+root_disk="$(lsblk -n -o PKNAME "$root_src" | head -n 1)"
+root_part="$(lsblk -n -o PARTN "$root_src" | head -n 1)"
+root_fstype="$(findmnt -n -o FSTYPE /)"
+
+if [ -z "$root_disk" ] || [ -z "$root_part" ]; then
+  log "unsupported root device: $root_src"
+  exit 0
+fi
+
+disk="/dev/$root_disk"
+
+log "checking $root_src on $disk partition $root_part ($root_fstype)"
+
+set +e
+grow_output="$(growpart "$disk" "$root_part" 2>&1)"
+grow_status=$?
+set -e
+
+if [ -n "$grow_output" ]; then
+  log "$grow_output"
+fi
+
+if [ "$grow_status" -ne 0 ]; then
+  if echo "$grow_output" | grep -Eq "NOCHANGE|cannot be grown|could only be grown"; then
+    log "partition already uses available disk space"
+    exit 0
+  fi
+
+  log "growpart failed with status $grow_status"
+  exit "$grow_status"
+fi
+
+partprobe "$disk" >/dev/null 2>&1 || true
+udevadm settle >/dev/null 2>&1 || true
+
+case "$root_fstype" in
+  ext2|ext3|ext4)
+    resize2fs "$root_src"
+    ;;
+  xfs)
+    xfs_growfs /
+    ;;
+  btrfs)
+    btrfs filesystem resize max /
+    ;;
+  *)
+    log "unsupported root filesystem: $root_fstype"
+    exit 0
+    ;;
+esac
+
+log "done"

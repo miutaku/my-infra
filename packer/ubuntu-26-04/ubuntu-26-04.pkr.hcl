@@ -85,6 +85,16 @@ build {
     destination = "/tmp/node_exporter.service"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/files/grow-rootfs-if-needed"
+    destination = "/tmp/grow-rootfs-if-needed"
+  }
+
+  provisioner "file" {
+    source      = "${path.root}/files/grow-rootfs-if-needed.service"
+    destination = "/tmp/grow-rootfs-if-needed.service"
+  }
+
   provisioner "shell" {
     environment_vars = ["DEBIAN_FRONTEND=noninteractive", "NEEDRESTART_MODE=l"]
     inline = [
@@ -92,8 +102,12 @@ build {
       "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
       "sudo apt-get update -qq",
       "sudo apt-get upgrade -y",
-      "sudo apt-get install -y vim",
+      "sudo apt-get install -y vim cloud-guest-utils e2fsprogs parted",
       "sudo apt-get remove -y --purge nano || true",
+      # Install root filesystem auto-grow service
+      "sudo install -m 0755 /tmp/grow-rootfs-if-needed /usr/local/sbin/grow-rootfs-if-needed",
+      "sudo install -m 0644 /tmp/grow-rootfs-if-needed.service /etc/systemd/system/grow-rootfs-if-needed.service",
+      "sudo systemctl enable grow-rootfs-if-needed.service",
       # Install PVE hostname sync service
       "sudo install -m 0755 /tmp/sync-hostname-from-pve.sh /usr/local/bin/sync-hostname-from-pve",
       "sudo install -m 0644 /tmp/sync-hostname-from-pve.service /etc/systemd/system/sync-hostname-from-pve.service",
