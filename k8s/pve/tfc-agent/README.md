@@ -1,20 +1,13 @@
 # tfc-agent
 
-Terraform Cloud agent for the `pve-home` workspace.
+`pve-home` workspace 用 Terraform Cloud agent の旧配置。
 
-This agent executes Terraform against Proxmox, so it must not run on the
-regular RKE2 worker nodes that are likely to be resized or rebooted by that
-same workspace.
+現在、実際の agent は OKE 側の `k8s/oci/apps/pve-tfc-agent` で稼働させる。
+この PVE 側 Deployment は、同じ Proxmox/RKE2 基盤を変更する Terraform 実行中に
+agent 自身が巻き込まれないよう、`replicas: 0` で停止しておく。
 
-## Placement policy
+## 運用
 
-- Run a single agent replica, because the Terraform Cloud organization allows
-  only one registered agent.
-- Require scheduling on RKE2 control-plane nodes.
-- Tolerate the `CriticalAddonsOnly=true:NoExecute` taint used by the
-  control-plane nodes.
-- Keep a PodDisruptionBudget with `minAvailable: 1` to block voluntary
-  disruption while the agent is healthy.
-
-When applying Proxmox changes that may disrupt RKE2 control-plane nodes, apply
-one VM at a time and avoid changing the node currently running `tfc-agent`.
+- Terraform Cloud 側で `TFC_HOME_AGENT_TOKEN` を使う agent は 1 本だけ起動する。
+- PVE 側を再利用する場合は、先に OKE 側の `pve-tfc-agent` を止める。
+- 通常運用では、この Deployment は `replicas: 0` のままにする。
