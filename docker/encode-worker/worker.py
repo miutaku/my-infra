@@ -168,7 +168,7 @@ def build_ffmpeg_args(job: Job, tmp_output: str) -> list[str]:
     args = ["-y", "-fix_sub_duration", "-i", job.input]
 
     args += ["-map", "0:v", "-c:v", job.codec]
-    args += ["-vf", "yadif"]
+    args += ["-vf", "yadif,scale=1920:1080"]
 
     if job.is_dual_mono:
         args += [
