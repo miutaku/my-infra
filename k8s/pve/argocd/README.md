@@ -148,10 +148,12 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 | 1 | coredns, metallb, local-path-provisioner, tailscale, wol |
 | 2 | victoria-metrics, grafana-alloy, blackbox-exporter, cloudflared |
 
-## Trouleshooting: tfc-agent "Cannot register more than 1 agents"
+## Troubleshooting: tfc-agent "Cannot register more than 1 agents"
 
-Terraform Cloud の組織で Agent 登録上限 (1) に達している場合、既存の dedicated tfc-agent VM
-を停止してから k8s の tfc-agent pod を再起動する。
+Terraform Cloud の Agent 登録上限に達している場合、同じ token を使う agent が
+複数起動している。`pve-home` 用 agent は OKE 側の
+`k8s/oci/apps/pve-tfc-agent` で稼働させ、PVE 側の `k8s/pve/tfc-agent`
+Deployment は `replicas: 0` のままにする。
 
 ## Notes
 

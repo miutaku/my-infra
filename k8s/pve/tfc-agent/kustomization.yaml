@@ -4,4 +4,3 @@ resources:
   - namespace.yaml
   - tfc-agent-secret.yaml
   - deployment.yaml
-  - pdb.yaml
