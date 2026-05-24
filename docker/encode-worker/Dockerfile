@@ -2,11 +2,16 @@ FROM python:3.12-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ffmpeg (ARM64 Debian パッケージ) + libaribb24 (日本語字幕)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ffmpeg \
-        libaribb24-0 \
-        locales \
+# jellyfin-ffmpeg (libaribb24 込み ARM64 ビルド) + ロケール
+RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg locales \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
+       | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg \
+    && echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/jellyfin.gpg] https://repo.jellyfin.org/debian bookworm main" \
+       > /etc/apt/sources.list.d/jellyfin.list \
+    && apt-get update && apt-get install -y --no-install-recommends jellyfin-ffmpeg7 \
+    && ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg  /usr/local/bin/ffmpeg \
+    && ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/local/bin/ffprobe \
     && locale-gen ja_JP.UTF-8 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
