@@ -83,3 +83,11 @@ variable "vpn_psk" {
   type        = string
   sensitive   = true
 }
+
+# ── DB Backup ─────────────────────────────────────────────────────────────────
+
+variable "backup_retention_days" {
+  description = "バックアップの保持日数。OCI Object Storage ライフサイクルポリシーで自動削除される。"
+  type        = number
+  default     = 30
+}
