@@ -113,6 +113,11 @@ terraform apply
 
 > `terraform apply` は TFC 上で実行される。TFC UI で `Confirm & Apply` する。
 
+### magic_mirror_server を含む apply
+
+`magic_mirror_server` が対象に含まれる場合は `scripts/apply-pve.sh` を使う。  
+詳細は [packer/mm-server/README.md](../../packer/mm-server/README.md) を参照。
+
 ## apply 後: MAC アドレスの確認
 
 ```bash

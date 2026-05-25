@@ -146,7 +146,7 @@ module "magic_mirror_server" {
   source = "./modules/proxmox_vm"
 
   vm_count          = var.mm_server_vm_count
-  name_prefix       = "mm-server"
+  name_prefix       = "smart-display"
   name_suffix       = "ubuntu-26-04-home-amd64"
   base_macaddr      = var.mm_server_macaddr
   vmid_start        = 5000
@@ -155,11 +155,12 @@ module "magic_mirror_server" {
   memory            = 2048
   kvm_vga_type      = "none"
   kvm_vga_memory    = null
-  proxmox_nodes     = ["pve-b550m"] # USB device is on this node
+  proxmox_nodes     = ["pve-b550m"] # USB DisplayLink device is on this node
   clone_template    = local.ubuntu_template
   disk_size         = 32
   vlan_tag          = 40
   cloudinit_storage = "local-zfs"
+  cicustom          = "user=local:snippets/${local.mm_server_snippet_name}"
   usbs = {
     usb0 = {
       mapping = {

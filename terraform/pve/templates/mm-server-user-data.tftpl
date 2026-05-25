@@ -1,0 +1,231 @@
+#cloud-config
+# MagicMirror² VM セットアップ用 cloud-init user-data
+# Terraform の templatefile() で生成される。直接編集しないこと。
+# 初回起動時に全セットアップを実行し、最後にリブートする。
+
+hostname: smart-display-01
+timezone: Asia/Tokyo
+
+write_files:
+  # DisplayLink modesetting ドライバー設定 (X11)
+  - path: /etc/X11/xorg.conf.d/20-displaylink.conf
+    permissions: "0644"
+    content: |
+      Section "Device"
+          Identifier  "DisplayLink"
+          Driver      "modesetting"
+          Option      "PageFlip" "false"
+      EndSection
+
+  # 非rootユーザーからの Xorg 起動を許可
+  - path: /etc/X11/Xwrapper.config
+    permissions: "0644"
+    content: |
+      allowed_users=anybody
+      needs_root_rights=no
+
+  # tty1 で miutaku を自動ログイン
+  - path: /etc/systemd/system/getty@tty1.service.d/autologin.conf
+    permissions: "0644"
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-/sbin/agetty --autologin miutaku --noclear %I $TERM
+
+  # tty1 ログイン時に startx を起動
+  - path: /home/miutaku/.bash_profile
+    permissions: "0644"
+    owner: "miutaku:miutaku"
+    content: |
+      if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+        exec startx
+      fi
+
+  # X11 kiosk セッション: スクリーンブランク無効 → MM待機 → Firefox kiosk
+  - path: /home/miutaku/.xinitrc
+    permissions: "0755"
+    owner: "miutaku:miutaku"
+    content: |
+      #!/bin/bash
+      xset s off
+      xset -dpms
+      xset s noblank
+
+      openbox &
+      unclutter -idle 0.5 -root &
+
+      until curl -s http://localhost:8080 > /dev/null 2>&1; do
+        sleep 3
+      done
+
+      exec firefox --kiosk localhost:8080
+
+  - path: /etc/systemd/system/magic-mirror.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=MagicMirror² Docker Compose
+      After=docker.service network-online.target
+      Requires=docker.service
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      WorkingDirectory=/home/miutaku/magic-mirror
+      ExecStart=/usr/bin/docker compose up -d --build
+      ExecStop=/usr/bin/docker compose down
+      User=miutaku
+      Group=docker
+
+      [Install]
+      WantedBy=multi-user.target
+
+  # config.js はruncmd内でgit clone後に配置するため一時ファイルに書き出す
+  - path: /tmp/mm-config.js
+    permissions: "0644"
+    content: |
+      let config = {
+        address: "0.0.0.0",
+        port: 8080,
+        basePath: "/",
+        ipWhitelist: [],
+        useHttps: false,
+        httpsPrivateKey: "",
+        httpsCertificate: "",
+        language: "ja",
+        locale: "ja-JP",
+        logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+        timeFormat: 24,
+        units: "metric",
+        modules: [
+          { module: "alert" },
+          { module: "updatenotification", position: "top_bar" },
+          {
+            module: "clock",
+            position: "top_left",
+            config: { timeFormat: 24, dateFormat: "YYYY/MM/DD dddd" },
+          },
+          {
+            module: "weather",
+            position: "top_left",
+            config: {
+              weatherProvider: "openweathermap",
+              type: "current",
+              weatherEndpoint: "/weather",
+              showHumidity: true,
+              showFeelsLike: true,
+              units: "metric",
+              degreeLabel: true,
+              lang: "ja",
+              location: "Tokyo",
+              locationID: "1850144",
+              apiKey: "${ow_api_key}",
+            },
+          },
+          {
+            module: "calendar",
+            header: "Next event is...",
+            position: "top_left",
+            config: {
+              fetchInterval: 100000,
+              displaySymbol: false,
+              maxTitleLength: 10,
+              maximumEntries: 3,
+              timeClass: true,
+              fade: true,
+              fadePoint: 0.15,
+              tableClass: "small",
+              timeFormat: "absolute",
+              flipDateHeaderTitle: true,
+              limitDaysNeverSkip: true,
+              calendars: [{ url: "${calendar_url}" }],
+            },
+          },
+          {
+            module: "calendar",
+            header: "EVENT LIST",
+            position: "top_right",
+            config: {
+              fetchInterval: 100000,
+              displaySymbol: false,
+              maxTitleLength: 50,
+              maximumEntries: 19,
+              timeClass: true,
+              fade: false,
+              tableClass: "xsmall",
+              timeFormat: "absolute",
+              flipDateHeaderTitle: true,
+              limitDaysNeverSkip: true,
+              calendars: [{ url: "${calendar_url}" }],
+            },
+          },
+        ],
+      };
+      if (typeof module !== "undefined") { module.exports = config; }
+
+  # displaylink-debian.sh パッチャー:
+  # xvfb-run で $DISPLAY がセットされると makeself の .run が xterm 起動を試みる。
+  # xterm 未インストール時は $XTERM が空になり "exec -e ..." となってエラー。
+  # --nox11 フラグで xterm 起動コードパスをスキップする。
+  - path: /tmp/patch-displaylink.py
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env python3
+      path = '/tmp/displaylink-debian/displaylink-debian.sh'
+      with open(path, 'r') as f:
+          c = f.read()
+      old = './$driver_dir/displaylink-driver-${version}*.run --keep --noexec'
+      new = './$driver_dir/displaylink-driver-${version}*.run --nox11 --keep --noexec'
+      if old in c:
+          c = c.replace(old, new, 1)
+          with open(path, 'w') as f:
+              f.write(c)
+          print('[patch-displaylink] --nox11 flag added')
+      else:
+          print('[patch-displaylink] WARNING: pattern not found, script may have changed')
+
+runcmd:
+  - DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get update -qq
+  # xvfb: displaylink-debian.sh が xrandr --listproviders を呼ぶため仮想 X 環境が必要
+  # dkms/linux-headers-generic: 事前インストールで依存関係の個別プロンプトをスキップ
+  - DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get install -y git xvfb x11-xserver-utils dkms linux-headers-generic linux-source unzip lsb-release wget libdrm-dev libelf-dev pciutils build-essential pkg-config
+
+  # DisplayLinkドライバーインストール: ubuntu-desktop-minimal (zenity含む) が入る前に実行
+  # stdin: y=license / y=install-with-apt / y=apt-update / y=apt-confirm
+  # standalone evdi 1.14.11 はカーネル 7.x 非対応のため apt パス(Synaptics リポ)を選択
+  - git clone https://github.com/AdnanHodzic/displaylink-debian.git /tmp/displaylink-debian
+  - python3 /tmp/patch-displaylink.py
+  - bash -c "cd /tmp/displaylink-debian && printf 'y\ny\ny\ny\n' | DEBIAN_FRONTEND=noninteractive xvfb-run -a ./displaylink-debian.sh --install"
+  - rm -rf /tmp/displaylink-debian
+
+  # GUIパッケージ (Firefox snap を含む、ubuntu-desktop-minimal ~2GB)
+  - DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l apt-get install -y -o Dpkg::Options::="--force-confold" ubuntu-desktop-minimal
+  - DEBIAN_FRONTEND=noninteractive apt-get purge -y 'libreoffice*' 'thunderbird*' || true
+  - DEBIAN_FRONTEND=noninteractive apt-get autoremove -y
+
+  # X11 kiosk に必要なパッケージ (Xorg本体 + xinit + openbox + unclutter)
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y xserver-xorg-core xinit openbox unclutter
+
+  # GDM を無効化 (TTY autologin + startx を使用するため)
+  - systemctl disable gdm3
+
+  # Docker
+  - curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+  - sh /tmp/get-docker.sh
+  - rm -f /tmp/get-docker.sh
+  - gpasswd -a miutaku docker
+
+  # MagicMirror² リポジトリ clone & config.js 配置
+  - git clone https://github.com/miutaku/magic-mirror.git /home/miutaku/magic-mirror
+  - mkdir -p /home/miutaku/magic-mirror/server/config
+  - cp /tmp/mm-config.js /home/miutaku/magic-mirror/server/config/config.js
+  - chown -R miutaku:miutaku /home/miutaku/magic-mirror
+
+  # systemdサービス有効化
+  - systemctl enable magic-mirror.service
+
+# DisplayLinkカーネルモジュールをロードするためリブート
+power_state:
+  mode: reboot
+  message: "Rebooting to load DisplayLink kernel module"
+  condition: true
