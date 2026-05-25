@@ -146,3 +146,9 @@ variable "secondary_macaddr" {
   default     = null
 }
 
+variable "cicustom" {
+  description = "Custom cloud-init user-data reference. Format: 'user=<storage>:snippets/<filename>'. Requires the snippet file to exist on Proxmox before VM creation."
+  type        = string
+  default     = null
+}
+

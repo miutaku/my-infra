@@ -1,0 +1,109 @@
+/* MagicMirror² Config
+ *
+ * このファイルは packer/mm-server/files/mm-config.js.example のコピーです。
+ * 実際に使う場合は config.js にリネームして OPENWEATHERMAP_API_KEY と
+ * GOOGLE_CALENDAR_ICAL_URL を書き換えてください。
+ *
+ * Proxmox Cloud-Init の write_files で配置する場合の例:
+ *   cloud-init/mm-server-user-data.yaml を参照
+ */
+let config = {
+  address: "0.0.0.0",
+  port: 8080,
+  basePath: "/",
+  ipWhitelist: [],
+  useHttps: false,
+  httpsPrivateKey: "",
+  httpsCertificate: "",
+
+  language: "ja",
+  locale: "ja-JP",
+  logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+  timeFormat: 24,
+  units: "metric",
+
+  modules: [
+    {
+      module: "alert",
+    },
+    {
+      module: "updatenotification",
+      position: "top_bar",
+    },
+    {
+      module: "clock",
+      position: "top_left",
+      config: {
+        timeFormat: 24,
+        dateFormat: "YYYY/MM/DD dddd",
+      },
+    },
+    {
+      module: "weather",
+      position: "top_left",
+      config: {
+        weatherProvider: "openweathermap",
+        type: "current",
+        weatherEndpoint: "/weather",
+        showHumidity: true,
+        showFeelsLike: true,
+        units: "metric",
+        degreeLabel: true,
+        lang: "ja",
+        location: "Tokyo",
+        locationID: "1850144",
+        apiKey: "YOUR_OPENWEATHERMAP_API_KEY",
+      },
+    },
+    {
+      module: "calendar",
+      header: "Next event is...",
+      position: "top_left",
+      config: {
+        fetchInterval: 100000,
+        displaySymbol: false,
+        maxTitleLength: 10,
+        maximumEntries: 3,
+        timeClass: true,
+        fade: true,
+        fadePoint: 0.15,
+        tableClass: "small",
+        timeFormat: "absolute",
+        flipDateHeaderTitle: true,
+        limitDaysNeverSkip: true,
+        calendars: [
+          {
+            url: "https://calendar.google.com/calendar/ical/YOUR_CALENDAR_ICAL_URL/basic.ics",
+          },
+        ],
+      },
+    },
+    {
+      module: "calendar",
+      header: "EVENT LIST",
+      position: "top_right",
+      config: {
+        fetchInterval: 100000,
+        displaySymbol: false,
+        maxTitleLength: 50,
+        maximumEntries: 19,
+        timeClass: true,
+        fade: false,
+        tableClass: "xsmall",
+        timeFormat: "absolute",
+        flipDateHeaderTitle: true,
+        limitDaysNeverSkip: true,
+        calendars: [
+          {
+            url: "https://calendar.google.com/calendar/ical/YOUR_CALENDAR_ICAL_URL/basic.ics",
+          },
+        ],
+      },
+    },
+  ],
+};
+
+/*************** DO NOT EDIT THE LINE BELOW ***************/
+if (typeof module !== "undefined") {
+  module.exports = config;
+}

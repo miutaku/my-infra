@@ -3,7 +3,7 @@ set -euo pipefail
 
 TEMPLATE="${1:-}"
 if [[ -z "$TEMPLATE" ]]; then
-  echo "Usage: $0 <ubuntu-26-04|truenas-scale> [--node <proxmox_node>] [--vmid <vmid>]"
+  echo "Usage: $0 <ubuntu-26-04|truenas-scale|mm-server> [--node <proxmox_node>] [--vmid <vmid>]"
   exit 1
 fi
 shift
@@ -36,8 +36,6 @@ bws_get() {
 
 PROXMOX_TOKEN_ID=$(bws_get PACKER_PROXMOX_TOKEN_ID)
 PROXMOX_TOKEN_SECRET=$(bws_get PACKER_PROXMOX_TOKEN_SECRET)
-SSH_PASSWORD=$(bws_get PACKER_SSH_PASSWORD)
-SSH_PASSWORD_HASH=$(mkpasswd -m sha-512 "$SSH_PASSWORD")
 
 cd "$(dirname "$0")/$TEMPLATE"
 
@@ -45,6 +43,8 @@ packer init .
 
 case "$TEMPLATE" in
   ubuntu-26-04)
+    SSH_PASSWORD=$(bws_get PACKER_SSH_PASSWORD)
+    SSH_PASSWORD_HASH=$(mkpasswd -m sha-512 "$SSH_PASSWORD")
     packer build \
       -var "proxmox_token_id=${PROXMOX_TOKEN_ID}" \
       -var "proxmox_token_secret=${PROXMOX_TOKEN_SECRET}" \
@@ -62,6 +62,15 @@ case "$TEMPLATE" in
       -var "proxmox_token_secret=${PROXMOX_TOKEN_SECRET}" \
       -var "admin_password=${TRUENAS_ADMIN_PASSWORD}" \
       ${NODE_VAR} ${VMID_VAR} \
+      .
+    ;;
+  mm-server)
+    # proxmox-clone ベース: ISO不要、SSH鍵で接続
+    packer build \
+      -var "proxmox_token_id=${PROXMOX_TOKEN_ID}" \
+      -var "proxmox_token_secret=${PROXMOX_TOKEN_SECRET}" \
+      -var "ssh_private_key_file=${HOME}/.ssh/id_rsa" \
+      ${URL_VAR} ${NODE_VAR} ${VMID_VAR} \
       .
     ;;
 esac

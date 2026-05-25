@@ -4,10 +4,6 @@ terraform {
       source  = "telmate/proxmox"
       version = "3.0.2-rc05"
     }
-    local = {
-      source  = "hashicorp/local"
-      version = "~> 2.5"
-    }
   }
 }
 provider "proxmox" {

@@ -1,0 +1,101 @@
+#cloud-config
+# Proxmox Cloud-Init から VM に適用する設定。
+# Packerテンプレートに焼き込まなかった秘密情報（APIキー等）をここで配置する。
+#
+# 使い方:
+#   1. このファイルをコピーして実際の値を埋める
+#   2. Proxmox UI: VM → Cloud-Init → User data に貼り付け
+#      または: qm set <vmid> --cicustom "user=local:snippets/mm-server-user-data.yaml"
+
+timezone: Asia/Tokyo
+
+write_files:
+  - path: /home/miutaku/magic-mirror/server/config/config.js
+    owner: miutaku:miutaku
+    permissions: "0644"
+    content: |
+      let config = {
+        address: "0.0.0.0",
+        port: 8080,
+        basePath: "/",
+        ipWhitelist: [],
+        useHttps: false,
+        httpsPrivateKey: "",
+        httpsCertificate: "",
+        language: "ja",
+        locale: "ja-JP",
+        logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+        timeFormat: 24,
+        units: "metric",
+        modules: [
+          { module: "alert" },
+          { module: "updatenotification", position: "top_bar" },
+          {
+            module: "clock",
+            position: "top_left",
+            config: { timeFormat: 24, dateFormat: "YYYY/MM/DD dddd" },
+          },
+          {
+            module: "weather",
+            position: "top_left",
+            config: {
+              weatherProvider: "openweathermap",
+              type: "current",
+              weatherEndpoint: "/weather",
+              showHumidity: true,
+              showFeelsLike: true,
+              units: "metric",
+              degreeLabel: true,
+              lang: "ja",
+              location: "Tokyo",
+              locationID: "1850144",
+              apiKey: "REPLACE_WITH_OPENWEATHERMAP_API_KEY",
+            },
+          },
+          {
+            module: "calendar",
+            header: "Next event is...",
+            position: "top_left",
+            config: {
+              fetchInterval: 100000,
+              displaySymbol: false,
+              maxTitleLength: 10,
+              maximumEntries: 3,
+              timeClass: true,
+              fade: true,
+              fadePoint: 0.15,
+              tableClass: "small",
+              timeFormat: "absolute",
+              flipDateHeaderTitle: true,
+              limitDaysNeverSkip: true,
+              calendars: [
+                { url: "REPLACE_WITH_GOOGLE_CALENDAR_ICAL_URL" },
+              ],
+            },
+          },
+          {
+            module: "calendar",
+            header: "EVENT LIST",
+            position: "top_right",
+            config: {
+              fetchInterval: 100000,
+              displaySymbol: false,
+              maxTitleLength: 50,
+              maximumEntries: 19,
+              timeClass: true,
+              fade: false,
+              tableClass: "xsmall",
+              timeFormat: "absolute",
+              flipDateHeaderTitle: true,
+              limitDaysNeverSkip: true,
+              calendars: [
+                { url: "REPLACE_WITH_GOOGLE_CALENDAR_ICAL_URL" },
+              ],
+            },
+          },
+        ],
+      };
+      if (typeof module !== "undefined") { module.exports = config; }
+
+runcmd:
+  - systemctl restart magic-mirror.service
