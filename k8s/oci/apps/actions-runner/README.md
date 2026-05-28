@@ -95,8 +95,9 @@ spec:
 ```
 
 現在は `Waiting for a runner to pick up this job...` の待ち時間を減らすため、warm runner を 4 台にしている。
-OKE は 2 OCPU x 2 node のため、4 台がスケジュールされるよう runner / DinD の CPU request は各 `250m`
+OKE は 2 OCPU x 2 node のため、4 台がスケジュールされるよう runner / DinD の CPU request は各 `100m`
 にしている。CPU limit は各 `2000m` のままなので、空き CPU があるときは burst できる。
+更新時は CPU request の一時的な超過を避けるため、Deployment strategy は `Recreate` にしている。
 ただし OCI Always Free の CPU/メモリ上限に注意 (4 OCPU / 24GB まで)。
 
 ## egress IP の確認
@@ -118,6 +119,14 @@ runner は Kubernetes Pod として動くため、runner コンテナ内では s
 
 この runner では Docker CLI と DinD サイドカーをあらかじめ用意しているため、workflow 側では Docker の
 インストール処理を実行せず、必要なら `docker version` や `docker info` で利用可能か確認する。
+
+### runner Pod が CrashLoopBackOff する
+
+`myoung34/github-runner` は `EPHEMERAL=false` でも `EPHEMERAL` が設定されていると ephemeral runner として
+扱う。ephemeral runner は 1 job 完了後に終了するため、Deployment で常駐させると再起動を繰り返して
+`CrashLoopBackOff` になり、次の job を拾うまで BackOff 分の待ち時間が発生する。
+
+この Deployment では warm runner として常駐させるため、`EPHEMERAL` は設定しない。
 
 ```bash
 # runner ログ確認
