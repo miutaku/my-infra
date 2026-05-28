@@ -5,6 +5,8 @@ metadata:
   namespace: actions-runner
 spec:
   replicas: 4
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: actions-runner-reventer
@@ -44,8 +46,6 @@ spec:
               value: "oci-oke"
             - name: LABELS
               value: "oci,oke,linux,arm64,reventer"
-            - name: EPHEMERAL
-              value: "false"
             - name: DOCKER_HOST
               value: "tcp://localhost:2375"
             - name: DOCKER_TLS_CERTDIR
@@ -65,7 +65,7 @@ spec:
               readOnly: true
           resources:
             requests:
-              cpu: "250m"
+              cpu: "100m"
               memory: "512Mi"
             limits:
               cpu: "2000m"
@@ -93,7 +93,7 @@ spec:
             periodSeconds: 5
           resources:
             requests:
-              cpu: "250m"
+              cpu: "100m"
               memory: "1Gi"
             limits:
               cpu: "2000m"
