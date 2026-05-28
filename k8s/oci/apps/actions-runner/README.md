@@ -10,8 +10,13 @@ OCI OKE (A1.Flex / ARM64) 上で動作し、OKE ノードの public IP が egres
 | イメージ | `myoung34/github-runner:ubuntu-jammy` (multi-arch / ARM64 対応) |
 | 対象リポジトリ | `https://github.com/miutaku/reventer` |
 | runner ラベル | `oci,oke,linux,arm64,reventer` |
-| レプリカ数 | 1 |
+| レプリカ数 | 4 |
 | アーキテクチャ | ARM64 (OKE A1.Flex ノード) |
+| Docker | `docker:27.5.1-dind` サイドカー + `docker:27.5.1-cli` |
+
+Docker を使う CI のため、runner Pod 内に DinD サイドカーを同居させている。
+runner コンテナには initContainer で Docker CLI を配置し、`DOCKER_HOST=tcp://localhost:2375`
+経由でサイドカーの Docker daemon に接続する。
 
 ## runner を使うワークフロー側の設定
 
@@ -76,9 +81,12 @@ BSM のシークレット (`GITHUB_REVENTER_RUNNER_PAT`) も、新しいリポ�
 
 ```yaml
 spec:
-  replicas: 2  # 並列で 2 ジョブまで実行可能
+  replicas: 4  # 並列で 4 ジョブまで実行可能
 ```
 
+現在は `Waiting for a runner to pick up this job...` の待ち時間を減らすため、warm runner を 4 台にしている。
+OKE は 2 OCPU x 2 node のため、4 台がスケジュールされるよう runner / DinD の CPU request は各 `250m`
+にしている。CPU limit は各 `2000m` のままなので、空き CPU があるときは burst できる。
 ただし OCI Always Free の CPU/メモリ上限に注意 (4 OCPU / 24GB まで)。
 
 ## egress IP の確認
@@ -91,6 +99,15 @@ kubectl get nodes -o wide  # EXTERNAL-IP 列を確認
 ```
 
 ## トラブルシューティング
+
+### CI で Docker インストール処理が失敗する
+
+runner は Kubernetes Pod として動くため、runner コンテナ内では systemd が PID 1 ではない。
+そのため `get.docker.com` などで Docker daemon を systemd サービスとしてインストール・起動しようとすると
+`System has not been booted with systemd as init system` で失敗する。
+
+この runner では Docker CLI と DinD サイドカーをあらかじめ用意しているため、workflow 側では Docker の
+インストール処理を実行せず、必要なら `docker version` や `docker info` で利用可能か確認する。
 
 ```bash
 # runner ログ確認
