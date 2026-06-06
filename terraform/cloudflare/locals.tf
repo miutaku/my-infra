@@ -56,7 +56,7 @@ locals {
     }
   }
 
-  # Services exposed through the OKE (cloud) tunnel.
+  # Services exposed through the OKE (cloud) tunnel — miutaku.work zone.
   oke_services = {
     "encode-worker" = {
       backend       = "http://encode-worker.app-encode-worker.svc.cluster.local:8080"
