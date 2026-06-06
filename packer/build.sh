@@ -3,7 +3,7 @@ set -euo pipefail
 
 TEMPLATE="${1:-}"
 if [[ -z "$TEMPLATE" ]]; then
-  echo "Usage: $0 <ubuntu-26-04|truenas-scale|mm-server> [--node <proxmox_node>] [--vmid <vmid>]"
+  echo "Usage: $0 <ubuntu-26-04|debian-13|truenas-scale|mm-server> [--node <proxmox_node>] [--vmid <vmid>]"
   exit 1
 fi
 shift
@@ -34,6 +34,15 @@ bws_get() {
   bws secret list | jq -r --arg key "$1" '.[] | select(.key == $key) | .value'
 }
 
+# SHA-512 crypt ハッシュ生成。mkpasswd (whois) があれば使い、無ければ openssl にフォールバック。
+crypt_sha512() {
+  if command -v mkpasswd >/dev/null 2>&1; then
+    mkpasswd -m sha-512 "$1"
+  else
+    openssl passwd -6 "$1"
+  fi
+}
+
 PROXMOX_TOKEN_ID=$(bws_get PACKER_PROXMOX_TOKEN_ID)
 PROXMOX_TOKEN_SECRET=$(bws_get PACKER_PROXMOX_TOKEN_SECRET)
 
@@ -42,9 +51,9 @@ cd "$(dirname "$0")/$TEMPLATE"
 packer init .
 
 case "$TEMPLATE" in
-  ubuntu-26-04)
+  ubuntu-26-04 | debian-13)
     SSH_PASSWORD=$(bws_get PACKER_SSH_PASSWORD)
-    SSH_PASSWORD_HASH=$(mkpasswd -m sha-512 "$SSH_PASSWORD")
+    SSH_PASSWORD_HASH=$(crypt_sha512 "$SSH_PASSWORD")
     packer build \
       -var "proxmox_token_id=${PROXMOX_TOKEN_ID}" \
       -var "proxmox_token_secret=${PROXMOX_TOKEN_SECRET}" \

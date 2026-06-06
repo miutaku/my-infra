@@ -1,8 +1,8 @@
 locals {
-  lb_hostnames         = sort(keys(module.rke2_lb.mac_addresses))
-  server_hostnames     = sort(keys(module.rke2_server.mac_addresses))
-  agent_hostnames      = sort(keys(module.rke2_worker.mac_addresses))
-  dvb_worker_hostname  = keys(module.rke2_dvb_worker.mac_addresses)[0]
+  lb_hostnames        = sort(keys(module.rke2_lb.mac_addresses))
+  server_hostnames    = sort(keys(module.rke2_server.mac_addresses))
+  agent_hostnames     = sort(keys(module.rke2_worker.mac_addresses))
+  dvb_worker_hostname = keys(module.rke2_dvb_worker.mac_addresses)[0]
 }
 
 resource "local_file" "ansible_hosts_prd" {

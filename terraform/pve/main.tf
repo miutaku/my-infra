@@ -142,6 +142,37 @@ module "unifi_os_server" {
   cloudinit_storage = "local-zfs"
 }
 
+# Proxmox Backup Server — バックアップ実体は S3 互換オブジェクトストレージ (iDrive e2)
+# datastore に置くため VM はほぼステートレス。
+#   - scsi0 (OS, 20G): Debian + PBS + /etc/proxmox-backup の設定。レプリケーション対象。
+#   - scsi1 (cache, 64G): S3 datastore のローカル永続キャッシュ。S3 から再生成可能なため
+#     レプリケーション除外 (apply 後 `qm set 14001 --scsi1 <vol>,replicate=0`、README 参照)。
+#
+# HA 方針: 2 ノードクラスタはクォーラム不足で HA マネージャ (fencing) を使えないため、
+# hastate は設定しない。代わりに pvesr で OS ディスクを対向ノードへ定期レプリケーションし、
+# ノード障害時は手動マイグレーションで対向ノードから起動する (数十秒のダウンタイム)。
+# レプリケーションジョブは telmate provider で表現できないため pve/README.md の手順で設定する。
+#
+# apply 後: PBS 本体の導入と S3 datastore 設定は ansible/pbs で行う。
+module "pbs" {
+  source = "./modules/proxmox_vm"
+
+  vm_count          = 1
+  name_prefix       = "pbs"
+  name_suffix       = "debian-13-home-amd64"
+  macaddrs_override = [var.pbs_macaddr]
+  vmid_start        = 14001
+  tags              = ["debian_13", "pbs", "backup"]
+  cpu_cores         = 2
+  memory            = 8192 # S3 datastore の in-memory キャッシュ拡大 + proxy のメモリ逼迫(実測 3.3G/3.8G)解消のため増設
+  clone_template    = local.debian_template
+  proxmox_nodes     = ["pve-x570"] # 平常時の稼働ノード。障害時は手動で pve-b550m へ移行する
+  disk_size         = 20           # OS ディスク (lean)。datastore 実体は S3 なので小容量で足りる
+  data_disk_size    = 64           # scsi1: S3 datastore ローカルキャッシュ (レプリ除外運用)
+  vlan_tag          = 20           # VLAN 20 (192.168.20.0/24, infra)。PVE から PBS:8007 へ到達させる
+  cloudinit_storage = "local-zfs"
+}
+
 module "magic_mirror_server" {
   source = "./modules/proxmox_vm"
 

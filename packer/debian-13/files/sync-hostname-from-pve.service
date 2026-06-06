@@ -1,0 +1,14 @@
+[Unit]
+Description=Sync hostname from Proxmox VM name (cidata drive)
+# Run in multi-user.target (not network-pre) so the cidata CD-ROM device is
+# already enumerated; the script also polls for it. Avoids the early-boot
+# no-op seen on Debian where /dev/sr0 was not ready yet.
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sync-hostname-from-pve
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -16,9 +16,69 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 | `truenas` | 2 | TrueNAS Scale NAS | 両ノード分散 |
 | `unifi_os_server` | 1 | UniFi OS Server 専用 VM | pve-x570 固定 |
 | `magic_mirror_server` | 1 | MagicMirror² サーバー (VLAN 40 / USB passthrough) | pve-b550m 固定 |
+| `pbs` | 1 | Proxmox Backup Server (S3 datastore) | pve-x570 平常時 / 障害時 pve-b550m 手動移行 |
 
-Ubuntu VM は `template-ubuntu-26-04-home-amd64`、TrueNAS VM は `template-truenas-scale-home-amd64`
-から clone して作成する。テンプレートは事前に `packer/` 配下の手順でビルドしておく必要がある。
+Ubuntu VM は `template-ubuntu-26-04-home-amd64`、TrueNAS VM は `template-truenas-scale-home-amd64`、
+PBS VM は `template-debian-13-home-amd64` から clone して作成する。
+テンプレートは事前に `packer/` 配下の手順でビルドしておく必要がある。
+
+## PBS の HA (ZFS レプリケーション + 手動フェイルオーバ)
+
+PBS VM は「片ノード停止時に対向ノードへ数十秒で移せる」ことを目標にしているが、
+**HA マネージャ (自動フェイルオーバ) は使わない**。理由と設計は以下のとおり。
+
+- 2 ノードクラスタはクォーラム (3 票目) がなく、片ノード停止時に survivor が
+  quorum を失うため HA の fencing/自動再起動が成立しない (QDevice 未導入の方針)。
+- バックアップ実体は **S3 互換オブジェクトストレージ datastore** に置くため、PBS VM は
+  ほぼステートレス (OS + PBS 設定のみ)。OS ディスクは小容量 (32G) で `local-zfs` に置く。
+- そのため **pvesr による ZFS レプリケーション**で OS ディスクを対向ノードへ定期複製し、
+  ノード障害時は **手動で対向ノードから起動**する (数十秒のダウンタイム)。
+- アクティブ-アクティブ (両ノード同時稼働) は PBS が同一 datastore の同時マウントを
+  許さないため不可。単一 VM + レプリケーション + 手動マイグレーションが安定解。
+
+> レプリケーションジョブは telmate provider では表現できないため Terraform 管理外。
+> `terraform apply` で VM 作成後、以下を一度だけ設定する。
+
+### レプリケーションジョブの設定 (apply 後に一度)
+
+PVE Web UI: 対象 VM → `Replication` → `Add` でも可。CLI なら稼働ノード (pve-x570) で:
+
+```bash
+# 1. S3 キャッシュ (scsi1) はレプリ除外 (S3 から再生成可能・churn が大きいため)。
+#    現在の scsi1 ボリューム指定を確認してから replicate=0 を付与する。
+qm config 14001 | grep '^scsi1:'
+qm set 14001 --scsi1 <上で確認した volume>,replicate=0
+
+# 2. OS ディスク (scsi0) のみを pve-b550m へ 5 分間隔でレプリケーション
+pvesr create-local-job 14001-0 pve-b550m --schedule '*/5' --rate 50
+pvesr list
+pvesr status
+```
+
+### ノード障害時の手動フェイルオーバ手順
+
+平常時の稼働ノード (pve-x570) がダウンしたら、生存ノード (pve-b550m) で:
+
+```bash
+# 1. レプリカから VM を生存ノードへ移管 (停止中ノードからの移動を許可)
+qm migrate 14001 pve-b550m --online 0   # 平常時の計画移行はこちら
+
+# --- 稼働ノードが死んでいて上記が使えない場合 ---
+# 2. レプリケーション済みディスクを使って生存ノード側に構成を引き受けさせる
+#    (PVE のドキュメント "Recovery from replicated state" の手順に従う)
+ha-manager / pvesr の状態を確認のうえ、生存ノードで `qm start 14001` する
+```
+
+> 計画的なメンテナンス時は `qm migrate 14001 <node>` でライブ/オフライン移行できる。
+> 突発障害時はレプリカ (最後の複製時点) から起動するため、最大でレプリケーション間隔
+> (上記設定なら 5 分) 分の差分が失われうるが、バックアップ実体は S3 にあるため影響は軽微。
+
+### PBS 本体の構成
+
+PBS のインストールと S3 datastore の設定は `ansible/pbs` で行う (apply 後)。
+PVE クラスタからバックアップ先として使うには、PBS 構築後に PVE `Datacenter` の
+storage として `pbs-home` を追加する。手順と入力値は
+[ansible/pbs/README.md](../../ansible/pbs/README.md) の「PVE クラスタへの PBS storage 追加」を参照。
 
 ## DHCP と IP アドレスの関係
 

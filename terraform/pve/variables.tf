@@ -128,6 +128,18 @@ variable "unifi_os_server_ip" {
   default     = "192.168.0.132"
 }
 
+variable "pbs_macaddr" {
+  description = "Proxmox Backup Server VM の MAC アドレス (VLAN 20, DHCP 静的リースと一致させること)"
+  type        = string
+  default     = "BC:24:11:B5:00:01"
+}
+
+variable "pbs_ip" {
+  description = "PBS VM の IP アドレス (VLAN 20, DHCP 静的リースと一致させること)"
+  type        = string
+  default     = "192.168.20.250"
+}
+
 variable "rke2_lb_vip" {
   description = "Keepalived の Virtual IP (任意の未使用 IP)"
   type        = string

@@ -1,10 +1,4 @@
 ---
-- name: Installed python3-pexpect
-  ansible.builtin.apt:
-    name: python3-pexpect
-    state: present
-    update_cache: false
-
 - name: Pre-seeded Postfix mailer type
   ansible.builtin.debconf:
     name: postfix
@@ -19,11 +13,11 @@
     value: "{{ ansible_fqdn }}"
     vtype: string
 
-- name: Placed PBS GPG key
+- name: Placed PBS GPG key (Debian 13 trixie / PBS 4.x)
   ansible.builtin.get_url:
-    url: https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg
+    url: https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg
     dest: /usr/share/keyrings/proxmox-archive-keyring.gpg
-    checksum: "sha512:7da6fe34168adc6e479327ba517796d4702fa2f8b4f0a9833f5ea6e6b48f6507a6da403a274fe201595edc86a84463d50383d07f64bdde2e3658108db7d6dc87"
+    checksum: "sha512:8678f2327c49276615288d7ca11e7d296bc8a2b96946fe565a9c81e533f9b15a5dbbad210a0ad5cd46d361ff1d3c4bac55844bc296beefa4f88b86e44e69fa51"
     mode: '0644'
     owner: root
     group: root
@@ -33,13 +27,21 @@
     content: |
       Types: deb
       URIs: http://download.proxmox.com/debian/pbs
-      Suites: bookworm
+      Suites: trixie
       Components: pbs-no-subscription
       Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
     dest: /etc/apt/sources.list.d/pbs-no-subscription.sources
     mode: '0644'
     owner: root
     group: root
+
+- name: Disabled PBS enterprise repositories before apt update
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/pbs-enterprise.list
+    - /etc/apt/sources.list.d/pbs-enterprise.sources
 
 - name: Installed proxmox-backup-server
   ansible.builtin.apt:
@@ -49,14 +51,18 @@
   retries: 100
   delay: 5
 
-- name: Disabled PBS enterprise repository
-  ansible.builtin.copy:
-    content: ""
-    dest: /etc/apt/sources.list.d/pbs-enterprise.list
-    force: true
-    mode: '0644'
-    owner: root
-    group: root
+- name: Disabled PBS enterprise repositories after install
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/pbs-enterprise.list
+    - /etc/apt/sources.list.d/pbs-enterprise.sources
+
+- name: Refreshed apt cache after PBS repository changes
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
 
 - name: Started proxmox-backup service
   ansible.builtin.service:
@@ -64,9 +70,65 @@
     state: started
     enabled: true
 
+- name: Checked PBS datastore name is valid
+  ansible.builtin.assert:
+    that:
+      - pbs.datastore_name | length >= 3
+    fail_msg: "pbs.datastore_name must be at least 3 characters for proxmox-backup-manager datastore create."
+
+- name: Checked BWS access token is set on control host
+  ansible.builtin.assert:
+    that:
+      - lookup('env', 'BWS_ACCESS_TOKEN') | length > 0
+    fail_msg: "BWS_ACCESS_TOKEN is not set on the Ansible control host."
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Checked BSM CLI dependencies on control host
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/env
+      - which
+      - "{{ item }}"
+  loop:
+    - bws
+    - jq
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+
+- name: Checked BSM secret IDs are readable
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      bws secret get {{ item.id | quote }} |
+      jq -e '.value | strings | select(length > 0)' >/dev/null
+    executable: /bin/bash
+  environment:
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+  loop:
+    - name: PBS admin password
+      id: "{{ bsm_pbs_admin_password_id }}"
+    - name: S3 access key
+      id: "{{ bsm_s3_access_key_id }}"
+    - name: S3 secret key
+      id: "{{ bsm_s3_secret_key_id }}"
+  loop_control:
+    label: "{{ item.name }} ({{ item.id }})"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  check_mode: false
+  changed_when: false
+
 - name: Got PBS admin password from BSM
   ansible.builtin.shell:
-    cmd: "set -o pipefail && bws secret get {{ bsm_pbs_admin_password_id }} | jq -r '.value'"
+    cmd: >-
+      set -o pipefail &&
+      bws secret get {{ bsm_pbs_admin_password_id | quote }} |
+      jq -er '.value | strings | select(length > 0)'
     executable: /bin/bash
   environment:
     BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
@@ -85,24 +147,101 @@
   changed_when: false
   failed_when: false
 
+- name: Checked PBS password database
+  ansible.builtin.stat:
+    path: /etc/proxmox-backup/shadow.json
+  register: pbs_shadow
+
+- name: Removed admin@pbs user created without password database
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager user remove {{ pbs.admin_user }}"
+  when: >-
+    pbs_users.rc == 0
+    and not pbs_shadow.stat.exists
+    and (pbs_users.stdout | from_json | selectattr('userid', 'eq', pbs.admin_user) | list | length > 0)
+  changed_when: true
+
+- name: Rechecked existing PBS users
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager user list --output-format json"
+  register: pbs_users
+  changed_when: false
+  failed_when: false
+
 - name: Created admin@pbs user
-  ansible.builtin.expect:
-    command: "proxmox-backup-manager user create {{ pbs.admin_user }}"
-    responses:
-      'Password:': "{{ pbs_admin_password_result.stdout }}"
-      'Confirm password:': "{{ pbs_admin_password_result.stdout }}"
-    timeout: 30
+  ansible.builtin.command:
+    argv:
+      - proxmox-backup-manager
+      - user
+      - create
+      - "{{ pbs.admin_user }}"
+      - --password
+      - "{{ pbs_admin_password_result.stdout }}"
   when: >-
     pbs_users.rc != 0
     or (pbs_users.stdout | from_json | selectattr('userid', 'eq', pbs.admin_user) | list | length == 0)
-  register: create_user_result
-  failed_when:
-    - create_user_result.rc is defined
-    - create_user_result.rc != 0
-    - '"already exists" not in (create_user_result.stdout | default(""))'
-  changed_when:
-    - create_user_result.rc is defined
-    - create_user_result.rc == 0
+  changed_when: true
+  no_log: true
+
+- name: Got S3 access key from BSM
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      bws secret get {{ bsm_s3_access_key_id | quote }} |
+      jq -er '.value | strings | select(length > 0)'
+    executable: /bin/bash
+  environment:
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: s3_access_key_result
+  check_mode: false
+  changed_when: false
+  no_log: true
+
+- name: Got S3 secret key from BSM
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      bws secret get {{ bsm_s3_secret_key_id | quote }} |
+      jq -er '.value | strings | select(length > 0)'
+    executable: /bin/bash
+  environment:
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: s3_secret_key_result
+  check_mode: false
+  changed_when: false
+  no_log: true
+
+- name: Checked existing S3 endpoints
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager s3 endpoint list --output-format json"
+  register: pbs_s3_endpoints
+  changed_when: false
+  failed_when: false
+
+- name: Created S3 endpoint (iDrive e2)
+  ansible.builtin.command:
+    argv: "{{ s3_endpoint_argv }}"
+  vars:
+    s3_endpoint_argv: >-
+      {{
+        ['proxmox-backup-manager', 's3', 'endpoint', 'create', s3.endpoint_name,
+         '--access-key', s3_access_key_result.stdout,
+         '--secret-key', s3_secret_key_result.stdout,
+         '--endpoint', s3.endpoint_host,
+         '--region', s3.region]
+        + (['--path-style', 'true'] if s3.path_style else [])
+        + (['--port', s3.port | string] if (s3.port | string | length > 0) else [])
+        + (['--fingerprint', s3.fingerprint] if (s3.fingerprint | length > 0) else [])
+      }}
+  when: s3.endpoint_name not in (pbs_s3_endpoints.stdout | default(''))
+  changed_when: true
+  no_log: true
 
 - name: Checked existing PBS datastores
   ansible.builtin.command:
@@ -111,13 +250,43 @@
   changed_when: false
   failed_when: false
 
-- name: Created PBS datastore
+- name: Created S3-backed PBS datastore
   ansible.builtin.command:
-    cmd: "proxmox-backup-manager datastore create {{ pbs.datastore_name }} {{ zfs.mountpoint }}"
+    argv:
+      - proxmox-backup-manager
+      - datastore
+      - create
+      - "{{ pbs.datastore_name }}"
+      - "{{ cache.mountpoint }}"
+      - --backend
+      - "type=s3,client={{ s3.endpoint_name }},bucket={{ s3.bucket }}"
   when: >-
     pbs_datastores.rc != 0
     or (pbs_datastores.stdout | from_json | selectattr('name', 'eq', pbs.datastore_name) | list | length == 0)
   changed_when: true
+
+- name: Read PBS datastore config
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager datastore show {{ pbs.datastore_name }} --output-format json"
+  register: pbs_datastore_cfg
+  changed_when: false
+
+# S3-backed キャッシュは fsync が重く、default の sync-level だとローカル I/O が飽和して
+# proxmox-backup-proxy が詰まる (PSI io full が跳ねる)。データ本体は S3 にあり再生成可能。
+- name: Set PBS datastore tuning (sync-level)
+  ansible.builtin.command:
+    cmd: "proxmox-backup-manager datastore update {{ pbs.datastore_name }} --tuning sync-level={{ pbs.sync_level }}"
+  when: ('sync-level=' ~ pbs.sync_level) not in pbs_datastore_cfg.stdout
+  changed_when: true
+
+- name: Granted Admin role to admin@pbs
+  ansible.builtin.command:
+    cmd: >-
+      proxmox-backup-manager acl update
+      /
+      Admin
+      --auth-id {{ pbs.admin_user }}
+  changed_when: false
 
 - name: Granted DatastoreAdmin role to admin@pbs
   ansible.builtin.command:
