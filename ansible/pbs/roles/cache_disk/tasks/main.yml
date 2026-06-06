@@ -1,0 +1,46 @@
+---
+# S3 datastore のローカル永続キャッシュ用ディスク (Terraform module.pbs の scsi1 / 通常 /dev/sdb) を
+# ext4 でフォーマットしてマウントする。datastore 実体は S3 にあり、このキャッシュは S3 から
+# 再生成可能なため、PVE 側ではレプリケーション対象から除外する (terraform/pve/README.md 参照)。
+
+- name: Verified the cache device exists
+  ansible.builtin.stat:
+    path: "{{ cache.device }}"
+  register: cache_dev_stat
+
+- name: Failed early if the cache device is missing
+  ansible.builtin.fail:
+    msg: >-
+      Cache device {{ cache.device }} not found. Confirm the PBS VM has a second
+      virtio-scsi disk (Terraform module.pbs data_disk_size) attached as scsi1.
+  when: not cache_dev_stat.stat.exists
+
+- name: Read existing filesystem on the cache device
+  ansible.builtin.command:
+    cmd: "blkid -o value -s LABEL {{ cache.device }}"
+  register: cache_existing_label
+  changed_when: false
+  failed_when: false
+
+- name: Created ext4 filesystem on the cache device
+  community.general.filesystem:
+    fstype: "{{ cache.fstype }}"
+    dev: "{{ cache.device }}"
+    opts: "-L {{ cache.label }}"
+  when: cache_existing_label.stdout | trim != cache.label
+
+- name: Created the cache mountpoint
+  ansible.builtin.file:
+    path: "{{ cache.mountpoint }}"
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Mounted the cache device by label
+  ansible.posix.mount:
+    path: "{{ cache.mountpoint }}"
+    src: "LABEL={{ cache.label }}"
+    fstype: "{{ cache.fstype }}"
+    opts: "defaults,noatime,nofail"
+    state: mounted

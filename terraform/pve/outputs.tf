@@ -46,6 +46,17 @@ output "rke2_worker_vm_ids" {
   value = [for vm in values(module.rke2_worker.vms) : vm.id]
 }
 
+output "pbs_mac_address" {
+  description = "PBS VM の MAC アドレス。main LAN DHCP 静的リース設定に使用する。"
+  value       = values(module.pbs.mac_addresses)[0]
+}
+output "pbs_vm_name" {
+  value = keys(module.pbs.mac_addresses)[0]
+}
+output "pbs_vm_id" {
+  value = [for vm in values(module.pbs.vms) : vm.id][0]
+}
+
 # output "batocera_vm_name" {
 #   value = [for vm in values(module.batocera.vms) : vm.name]
 # }

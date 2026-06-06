@@ -9,7 +9,7 @@
   roles:
     - role: common
       tags: common
-    - role: zfs
-      tags: zfs
+    - role: cache_disk
+      tags: cache_disk
     - role: proxmox_backup_server
       tags: proxmox_backup_server

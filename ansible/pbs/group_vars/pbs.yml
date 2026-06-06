@@ -1,17 +1,33 @@
 ---
-zfs:
-  pool_name: pbs-data
-  devices:
-    - CHANGE_ME_TO_ACTUAL_DISK_ID
-  ashift: 12
-  compression: lz4
-  atime: "off"
-  xattr: sa
-  mountpoint: /mnt/datastore/pbs-data
+# S3 datastore のローカル永続キャッシュ用ディスク (Terraform module.pbs の scsi1)。
+# クローン VM 上では 2 本目の virtio-scsi ディスク = /dev/sdb として現れる。
+# datastore 実体は S3 にあり、このキャッシュは S3 から再生成可能 (PVE 側でレプリ除外)。
+cache:
+  device: /dev/sdb
+  fstype: ext4
+  mountpoint: /mnt/datastore/s3-cache
+  # ラベルで fstab マウントするので再起動でカーネル名がずれても安定する
+  label: pbs-s3-cache
+
+# S3 互換オブジェクトストレージ (iDrive e2) のエンドポイント設定。
+# endpoint_host / region は e2 ダッシュボードの「Access Key」画面に表示される値に置き換える。
+# iDrive e2 は path-style アドレッシング必須。
+s3:
+  endpoint_name: idrive-e2 # PBS 内部の endpoint 識別子 (任意)
+  endpoint_host: s3.ap-northeast-1.idrivee2.com # 例: x9q2.la.idrivee2-12.com (スキーム無し)
+  region: ap-northeast-1 # 例: us-la / e2 ダッシュボード記載のリージョン
+  bucket: pbs # PBS 用に用意したバケット名
+  path_style: true # iDrive e2 は path-style 必須
+  port: "" # 既定ポート (443) を使う場合は空のまま
+  fingerprint: "" # 公的証明書なら空。自己署名証明書のときのみ設定
 
 pbs:
-  datastore_name: main
+  datastore_name: pbs-s3
   admin_user: admin@pbs
+  # datastore tuning。S3-backed キャッシュは fsync が重くローカル I/O が飽和して
+  # proxmox-backup-proxy が詰まる (PSI io full が跳ねる) ため sync-level を下げる。
+  # データ本体は S3 にあり再生成可能なので none で問題ない。
+  sync_level: none
   gc_schedule: "sat 02:30"
   prune_schedule: "sun 03:00"
   keep_last: 3
@@ -20,4 +36,7 @@ pbs:
   keep_monthly: 6
 
 # BSM シークレット ID (bws secret list で確認)
-bsm_pbs_admin_password_id: "ee95c63d-5cb8-4797-bd9c-b43c01404312"
+bsm_pbs_admin_password_id: "970b08a7-62be-44de-a842-b46000bd0e9f"
+# iDrive e2 のアクセスキー / シークレットキーも BSM に登録し、その ID を設定する
+bsm_s3_access_key_id: "96511bae-1b4b-4e5b-9de9-b4600098587b" # PBS_S3_ACCESS_KEY_ID
+bsm_s3_secret_key_id: "e2765a3b-0d76-4a5b-93b9-b46000987b43" # PBS_S3_SECRET_KEY_ID

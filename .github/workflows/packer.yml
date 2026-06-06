@@ -23,6 +23,12 @@ jobs:
               -var "proxmox_token_secret=ci"
               -var "ssh_password=ci"
               -var "ssh_password_hash=$6$ci"
+          - template: debian-13
+            extra_vars: >-
+              -var "proxmox_token_id=ci"
+              -var "proxmox_token_secret=ci"
+              -var "ssh_password=ci"
+              -var "ssh_password_hash=$6$ci"
           - template: truenas-scale
             extra_vars: >-
               -var "proxmox_token_id=ci"
