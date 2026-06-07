@@ -21,6 +21,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
   ignoreDifferences:
     - group: apps
       kind: Deployment
@@ -37,3 +38,7 @@ spec:
       name: admin
       jqPathExpressions:
         - .spec.template.spec.containers[].image
+    - group: external-secrets.io
+      kind: ExternalSecret
+      jqPathExpressions:
+        - .metadata.annotations["kubectl.kubernetes.io/last-applied-configuration"]
