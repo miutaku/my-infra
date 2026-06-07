@@ -1,0 +1,31 @@
+name: 'K8s CI for PVE (RKE2)'
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'k8s/pve/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'k8s/pve/**'
+
+jobs:
+  kustomize-build:
+    name: 'kustomize build'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: imranismail/setup-kustomize@v2
+
+      - name: kustomize build all overlays
+        run: |
+          # k8s/pve/argocd/ は upstream URL を参照するため除外
+          find k8s/pve -name kustomization.yaml \
+            -not -path 'k8s/pve/argocd/*' \
+            -printf '%h\n' | sort -u | while read dir; do
+              echo "::group::$dir"
+              kustomize build "$dir"
+              echo "::endgroup::"
+            done

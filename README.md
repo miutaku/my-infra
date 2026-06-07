@@ -427,6 +427,8 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 | `terraform_pve.yml` | `terraform/pve/**` | plan (PR) / apply (main) + Ansible inventory 自動コミット |
 | `terraform_oci.yml` | `terraform/oci/**` | plan (PR) / apply (main) |
 | `terraform_cloudflare.yml` | `terraform/cloudflare/**` | plan (PR) / apply (main) |
+| `k8s_check_pve.yml` | `k8s/pve/**` | kustomize build |
+| `k8s_check_oci.yml` | `k8s/oci/**` | kustomize build |
 | `ansible_check_rke2.yml` | `ansible/rke2/**` | lint + syntax-check |
 | `ansible_check_ix2215.yml` | `ansible/ix2215/**` | lint + syntax-check |
 | `packer.yml` | `packer/**` | packer validate (実ビルドは手動) |
