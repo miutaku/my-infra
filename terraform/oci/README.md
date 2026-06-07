@@ -84,9 +84,9 @@ source ~/.bashrc
 # kubectl
 sudo snap install kubectl --classic
 
-# Flux CLI
-curl -sL https://github.com/fluxcd/flux2/releases/latest/download/flux_linux_amd64.tar.gz \
-  | tar xz -C ~/bin && flux version --client
+# ArgoCD CLI (オプション)
+curl -sSL -o ~/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+chmod +x ~/bin/argocd && argocd version --client
 
 # terraform (1.9+ 推奨)
 # https://developer.hashicorp.com/terraform/install

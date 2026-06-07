@@ -1,17 +1,21 @@
-# Flux v2 Bootstrap (OKE)
+# ArgoCD Bootstrap (OKE)
 
-OCI OKE クラスタへの Flux v2 インストールと GitOps 初期化手順。
+OCI OKE クラスタへの ArgoCD インストールと App-of-Apps の初期化手順。
 
 ## 前提条件
 
 - `kubectl` が OKE クラスタに向いていること
-- `flux` CLI がインストール済みであること (`brew install fluxcd/tap/flux` など)
 - `bws` CLI (Bitwarden Secrets Manager CLI) がインストール済みであること
 
-## Step 1: Flux インストール
+## Step 1: ArgoCD インストール
 
 ```bash
-flux install
+# argocd namespace 作成 + ArgoCD インストール
+kubectl create namespace argocd
+kubectl apply -k k8s/oci/argocd/
+
+# argocd-server が Ready になるまで待機
+kubectl wait -n argocd deploy/argocd-server --for=condition=Available --timeout=300s
 ```
 
 ## Step 2: Bitwarden bootstrap Secret の手動投入
@@ -60,28 +64,35 @@ kubectl create secret generic bitwarden-tls-certs \
 
 ## Step 4: ClusterSecretStore の Organization ID 設定
 
-[k8s/oci/infrastructure/external-secrets/cluster-secret-store.yaml](../infrastructure/external-secrets/cluster-secret-store.yaml) の
+[k8s/oci/infrastructure/external-secrets-config/cluster-secret-store.yaml](../infrastructure/external-secrets-config/cluster-secret-store.yaml) の
 `organizationID` と `projectID` が正しい値であることを確認してから git push → main へマージする。
 
-## Step 5: GitRepository と Kustomization の適用
+## Step 5: Root Application の適用
 
 main ブランチにマージ済みであることを確認してから実行する。
 
 ```bash
-kubectl apply -k k8s/oci/flux/
+kubectl apply -f k8s/oci/argocd/root-app.yaml
 ```
 
-これで Flux が以下の順序でリソースを同期し始める:
+これで ArgoCD が `k8s/oci/argocd-apps/` 以下の全 Application を自動で同期し始める。
 
-| 順序 | Kustomization | パス |
-|------|---------------|------|
-| 1 | oci-sources | k8s/oci/infrastructure/sources |
-| 2 | oci-external-secrets | k8s/oci/infrastructure/external-secrets (ESO operator) |
-| 3 | oci-external-secrets-config | k8s/oci/infrastructure/external-secrets-config (ClusterSecretStore) |
-| 4 | oci-cert-manager | k8s/oci/infrastructure/cert-manager |
-| 4 | oci-longhorn | k8s/oci/infrastructure/longhorn |
-| 5 | oci-ingress-nginx | k8s/oci/infrastructure/ingress-nginx |
-| 6 | oci-apps | k8s/oci/apps |
+## アプリの同期順序 (sync-wave)
+
+| wave | アプリ | 内容 |
+|------|--------|------|
+| -2 | oci-external-secrets | ESO operator + bitwarden-sdk-server サブチャート |
+| 0 | oci-external-secrets-config | ClusterSecretStore |
+| 1 | oci-cert-manager | cert-manager (CRD 含む) |
+| 1 | oci-longhorn | Longhorn |
+| 2 | oci-cert-manager-config | ClusterIssuer (Let's Encrypt) |
+| 3 | oci-ingress-nginx | ingress-nginx |
+| 4 | oci-cloudflared | Cloudflare Tunnel |
+| 4 | oci-grafana-alloy | Grafana Alloy DaemonSet |
+| 4 | oci-actions-runner | GitHub Actions self-hosted runner |
+| 4 | oci-pve-tfc-agent | Terraform Cloud agent (pve-home workspace) |
+| 4 | oci-reventer-tfc-agent | Terraform Cloud agent (reventer workspace) |
+| 4 | oci-encode-worker | OCI エンコードワーカー |
 
 ## BSM シークレット一覧
 
@@ -96,11 +107,33 @@ kubectl apply -k k8s/oci/flux/
 | `GRAFANA_CLOUD_METRICS_PASSWORD` | Grafana Cloud API key |
 | `GITHUB_REVENTER_RUNNER_PAT` | GitHub PAT (`repo` スコープ) — miutaku/reventer 用 self-hosted runner |
 
+## ArgoCD UI へのアクセス
+
+Cloudflare Tunnel 経由でアクセスする (cloudflared が同期された後)。
+
+### ログイン情報
+
+| 項目 | 値 |
+|------|----|
+| ユーザー名 | `admin` |
+| 初期パスワード | 下記コマンドで取得 |
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+初回ログイン後は UI の **User Info → Update Password** からパスワードを変更すること。
+変更後は `argocd-initial-admin-secret` を削除して構わない:
+
+```bash
+kubectl -n argocd delete secret argocd-initial-admin-secret
+```
+
 ## 同期状態の確認
 
 ```bash
-flux get kustomizations
-flux get helmreleases -A
+kubectl -n argocd get applications
+kubectl -n argocd get app root-app
 ```
 
 ## Notes
