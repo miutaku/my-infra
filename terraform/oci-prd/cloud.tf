@@ -1,6 +1,6 @@
 terraform {
   cloud {
-    organization = "miutaku"
+    organization = "reventer"
     workspaces {
       name = "oci-prd"
     }
