@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+data:
+  # TLS は Cloudflare Tunnel が終端するため、argocd-server は insecure モードで起動する
+  server.insecure: "true"
