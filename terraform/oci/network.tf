@@ -100,25 +100,31 @@ resource "oci_core_security_list" "lb_sl" {
     }
   }
 
-  # HTTPS — Flex LB (ingress-nginx) + API server fallback
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "0.0.0.0/0"
-    stateless = false
-    tcp_options {
-      min = 443
-      max = 443
+  # HTTPS — Cloudflare IPs only (ingress-nginx)
+  dynamic "ingress_security_rules" {
+    for_each = local.cloudflare_ipv4_ranges
+    content {
+      protocol  = "6"
+      source    = ingress_security_rules.value
+      stateless = false
+      tcp_options {
+        min = 443
+        max = 443
+      }
     }
   }
 
-  # HTTP — Flex LB (ingress-nginx, redirects to HTTPS)
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "0.0.0.0/0"
-    stateless = false
-    tcp_options {
-      min = 80
-      max = 80
+  # HTTP — Cloudflare IPs only (ingress-nginx, redirects to HTTPS)
+  dynamic "ingress_security_rules" {
+    for_each = local.cloudflare_ipv4_ranges
+    content {
+      protocol  = "6"
+      source    = ingress_security_rules.value
+      stateless = false
+      tcp_options {
+        min = 80
+        max = 80
+      }
     }
   }
 
