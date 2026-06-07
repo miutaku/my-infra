@@ -1,0 +1,31 @@
+name: 'K8s CI for OCI (OKE)'
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'k8s/oci/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'k8s/oci/**'
+
+jobs:
+  kustomize-build:
+    name: 'kustomize build'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: imranismail/setup-kustomize@v2
+
+      - name: kustomize build all overlays
+        run: |
+          # k8s/oci/argocd/ は upstream URL を参照するため除外
+          find k8s/oci -name kustomization.yaml \
+            -not -path 'k8s/oci/argocd/*' \
+            -printf '%h\n' | sort -u | while read dir; do
+              echo "::group::$dir"
+              kustomize build "$dir"
+              echo "::endgroup::"
+            done
