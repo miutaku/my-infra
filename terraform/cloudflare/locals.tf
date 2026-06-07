@@ -5,7 +5,7 @@ locals {
   # no_tls_verify = skip TLS verification for self-signed certs
   rke2_services = {
     # ── k8s services ──────────────────────────────────────────────────────────
-    argocd = {
+    "argocd-rke2" = {
       backend       = "http://argocd-server.argocd.svc.cluster.local:80"
       no_tls_verify = false
     }
@@ -62,6 +62,10 @@ locals {
       backend       = "http://encode-worker.app-encode-worker.svc.cluster.local:8080"
       no_tls_verify = false
     }
+    "argocd-oke" = {
+      backend       = "http://argocd-server.argocd.svc.cluster.local:80"
+      no_tls_verify = false
+    }
   }
 
   # All known services merged for validation.
@@ -70,7 +74,7 @@ locals {
   # Subdomains that require Cloudflare Access (SSO) protection.
   # Every entry here must exist as a key in rke2_services or oke_services.
   access_protected_subdomains = toset([
-    "argocd", "wol",
+    "argocd-rke2", "argocd-oke", "wol",
     "unifi",
     "ix2215",
     "nas-01", "nas-02",

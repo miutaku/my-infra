@@ -115,7 +115,7 @@ kubectl apply -f k8s/pve/argocd/root-app.yaml
 
 Cloudflare Tunnel 経由でアクセスする (cloudflared が同期された後):
 ```
-https://argocd.miutaku.work
+https://argocd-rke2.miutaku.work
 ```
 
 > **Note**: Cloudflare Access で保護されているため、ArgoCD ログイン画面の前に
