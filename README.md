@@ -11,8 +11,8 @@ flowchart LR
   direction LR
   subgraph OCI[OCI / Always Free]
   OCI_API{{OCI API}}
-    subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, Flux v2 GitOps]
-      Flux_API{{Flux}}
+    subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, ArgoCD GitOps]
+      ArgoCD_OCI{{ArgoCD}}
       OCICloudflared([cloudflared])
       OCITFCAgent([tfc-agent])
       OCIESO([external-secrets<br/>Bitwarden BSM])
@@ -23,7 +23,7 @@ flowchart LR
       OCIAlloy([Grafana Alloy])
       OCIEnc([OCI Encord Server])
       OCILonghorn ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress ~~~ OCIAlloy
-      OCICloudflared ~~~ OCIEnc ~~~ Flux_API ~~~ OCIActionsRunner ~~~ OCITFCAgent 
+      OCICloudflared ~~~ OCIEnc ~~~ ArgoCD_OCI ~~~ OCIActionsRunner ~~~ OCITFCAgent
     end
   end
 
@@ -119,7 +119,7 @@ flowchart LR
 
   OCI ~~~ ExtSvc ~~~ Home
 
-  Flux_API -->|sync| GitHub
+  ArgoCD_OCI -->|sync| GitHub
   GitHub -->|API Request| OCI_API
   ArgoCD -->|sync| GitHub  <-.->|tunnel| OCIActionsRunner
   ArgoCD --> |apply|Argo
@@ -162,7 +162,7 @@ flowchart LR
   classDef zoneK8s fill:#f5f3ff,stroke:#8b5cf6,color:#2e1065,stroke-width:2px
   classDef zoneApps fill:#fdf2f8,stroke:#ec4899,color:#500724,stroke-width:2px
 
-  class Flux_API,ArgoCD,OCICert,MetalLB control
+  class ArgoCD_OCI,ArgoCD,OCICert,MetalLB control
   class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
   class IX,US8,AP,TailscaleNet nwDevice
   class MM2,NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
@@ -218,7 +218,7 @@ my-infra/
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
 │   ├── pve/            宅内 RKE2 (ArgoCD App-of-Apps)
-│   └── oci/            OCI OKE (Flux v2 GitOps)
+│   └── oci/            OCI OKE (ArgoCD GitOps)
 └── packer/
     ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)
     └── truenas-scale/  Proxmox テンプレート (TrueNAS Scale)
@@ -246,12 +246,11 @@ flowchart LR
 ```mermaid
 flowchart LR
   Terraform[terraform/oci<br/>OKEクラスタ作成]
-  Flux[k8s/oci/flux<br/>Flux v2 Bootstrap]
-  Sources[k8s/oci/infrastructure/sources<br/>HelmRepository等]
+  ArgoCD[k8s/oci/argocd<br/>ArgoCD Bootstrap]
   Infra[k8s/oci/infrastructure<br/>ESO / cert-manager / ingress-nginx / Longhorn]
   Apps[k8s/oci/apps<br/>cloudflared / tfc-agent / actions-runner / Alloy]
 
-  Terraform --> Flux --> Sources --> Infra --> Apps
+  Terraform --> ArgoCD --> Infra --> Apps
 ```
 
 ## kubectl 操作環境
@@ -325,7 +324,7 @@ kubens               # namespace 一覧
 | UniFi OS Server Ansible | [ansible/uos/README.md](./ansible/uos/README.md) | 専用 VM 上の UniFi OS Server 構成 |
 | PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
 | ArgoCD Bootstrap (RKE2) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSM シークレット一覧, App-of-Apps |
-| Flux Bootstrap (OKE) | [k8s/oci/flux/README.md](./k8s/oci/flux/README.md) | BSM シークレット一覧, TLS cert 手順, Kustomization 順序 |
+| ArgoCD Bootstrap (OKE) | [k8s/oci/argocd/README.md](./k8s/oci/argocd/README.md) | BSM シークレット一覧, TLS cert 手順, sync-wave 順序 |
 | PDC Agent | [k8s/pve/pdc-agent/README.md](./k8s/pve/pdc-agent/README.md) | Grafana PDC トンネル |
 | Packer Ubuntu | [packer/ubuntu-26-04/README.md](./packer/ubuntu-26-04/README.md) | テンプレートビルド |
 | Packer TrueNAS | [packer/truenas-scale/README.md](./packer/truenas-scale/README.md) | テンプレートビルド |

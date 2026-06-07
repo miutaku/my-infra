@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oci-longhorn
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.longhorn.io
+    chart: longhorn
+    targetRevision: "1.7.2"
+    helm:
+      releaseName: longhorn
+      valuesObject:
+        defaultSettings:
+          defaultReplicaCount: 1
+        persistence:
+          defaultClassReplicaCount: 1
+        longhornManager:
+          nodeSelector:
+            kubernetes.io/arch: arm64
+        longhornDriver:
+          nodeSelector:
+            kubernetes.io/arch: arm64
+        longhornUI:
+          nodeSelector:
+            kubernetes.io/arch: arm64
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

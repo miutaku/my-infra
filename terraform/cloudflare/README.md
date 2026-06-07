@@ -147,7 +147,7 @@ access_protected_subdomains = toset(["argocd", "grafana"])
 ```
 
 cloudflared が deploy されるまでトンネルは `INACTIVE` 状態になる。  
-RKE2 は ArgoCD、OKE は Flux で `cloudflared` を deploy した後に `HEALTHY` に変わる。
+RKE2・OKE ともに ArgoCD で `cloudflared` を deploy した後に `HEALTHY` に変わる。
 
 ### cloudflared の tunnel 認証情報取得
 
@@ -159,7 +159,7 @@ terraform output  # または TFC UI から確認
 ```
 
 現在の k8s manifest は tunnel token を ExternalSecret 経由で注入する。RKE2 側は
-`k8s/pve/argocd/README.md`、OKE 側は `k8s/oci/flux/README.md` を参照。
+`k8s/pve/argocd/README.md`、OKE 側は `k8s/oci/argocd/README.md` を参照。
 
 ---
 

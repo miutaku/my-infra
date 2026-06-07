@@ -48,10 +48,10 @@ Bitwarden Secrets Manager (BSM) のプロジェクト `my-infra` に以下を登
 |---|---|---|
 | `GITHUB_REVENTER_RUNNER_PAT` | GitHub Personal Access Token | GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens または Classic tokens (`repo` スコープ) |
 
-### 2. Flux が自動的にデプロイする
+### 2. ArgoCD が自動的にデプロイする
 
-`k8s/oci/flux/` の `oci-apps` Kustomization が `k8s/oci/apps/` 以下を同期するため、
-main ブランチにマージされれば Flux が自動でデプロイする。
+`k8s/oci/argocd-apps/actions-runner.yaml` の Application が `k8s/oci/apps/actions-runner` を同期するため、
+main ブランチにマージされれば ArgoCD が自動でデプロイする。
 
 ### 3. runner の登録を確認する
 
