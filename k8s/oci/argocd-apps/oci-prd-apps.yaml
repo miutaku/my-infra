@@ -1,7 +1,10 @@
+# App-of-apps for the PRD OKE cluster (separate OCI account).
+# This runs on the oke-free-cluster ArgoCD and creates the oci-prd-* child
+# Applications, which each target the registered remote cluster "oke-prd".
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root-app
+  name: oci-prd-apps
   namespace: argocd
 spec:
   project: default
@@ -10,6 +13,8 @@ spec:
     targetRevision: main
     path: k8s/oci-prd/argocd-apps
   destination:
+    # Child Application CRs live in this (oke-free) ArgoCD's argocd namespace;
+    # their own destination is the remote "oke-prd" cluster.
     server: https://kubernetes.default.svc
     namespace: argocd
   syncPolicy:

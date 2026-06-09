@@ -26,7 +26,7 @@ spec:
             use-forwarded-headers: "true"
             compute-full-forwarded-for: "true"
   destination:
-    server: https://kubernetes.default.svc
+    name: oke-prd
     namespace: ingress-nginx
   syncPolicy:
     automated:
