@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: speedtest-exporter
-          image: ghcr.io/miutaku/speedtest-exporter:4a905da
+          image: ghcr.io/miutaku/speedtest-exporter:a13c0e0
           command:
             - /app/speedtest-exporter
           args:
