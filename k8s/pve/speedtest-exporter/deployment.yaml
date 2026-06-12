@@ -19,6 +19,8 @@ spec:
       containers:
         - name: speedtest-exporter
           image: ghcr.io/miutaku/speedtest-exporter:4a905da
+          command:
+            - /app/speedtest-exporter
           args:
             - --servers=24333,48463,8407
             - --aggregation=best
