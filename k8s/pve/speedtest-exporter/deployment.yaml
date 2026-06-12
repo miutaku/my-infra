@@ -19,6 +19,9 @@ spec:
       containers:
         - name: speedtest-exporter
           image: ghcr.io/miutaku/speedtest-exporter:latest
+          args:
+            - --servers=24333,48463,8407
+            - --aggregation=best
           ports:
             - containerPort: 8080
               name: metrics

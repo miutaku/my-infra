@@ -209,7 +209,7 @@ alloy:
       }
 
       // ── speedtest-exporter: 回線速度計測 ─────────────────────────────────
-      // speedtest 実行に約35秒かかるため scrape_interval=5m / scrape_timeout=60s
+      // speedtest は複数サーバを順次計測するため scrape_interval=5m / scrape_timeout=180s
       prometheus.scrape "speedtest" {
         targets = [
           {
@@ -223,7 +223,7 @@ alloy:
         }
         forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
         scrape_interval = "5m"
-        scrape_timeout  = "60s"
+        scrape_timeout  = "180s"
       }
 
       // ── blackbox-exporter: HTTP 外形監視 ─────────────────────────────────
