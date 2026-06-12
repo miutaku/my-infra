@@ -22,7 +22,7 @@ spec:
           command:
             - /app/speedtest-exporter
           args:
-            - --servers=24333,48463,8407
+            - --servers=24333,48463,56935
             - --aggregation=best
           ports:
             - containerPort: 8080
