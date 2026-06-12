@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-cloudflared
+  namespace: argocd
+  labels:
+    app: argocd-cloudflared
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: argocd-cloudflared
+  template:
+    metadata:
+      labels:
+        app: argocd-cloudflared
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: argocd-cloudflared
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:latest
+          args:
+            - tunnel
+            - --no-autoupdate
+            - run
+            - --token
+            - $(TUNNEL_TOKEN)
+          env:
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: argocd-tunnel-token
+                  key: token
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
