@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: git@github.com:miutaku/reventer.git
     targetRevision: main
-    path: k8s/prd
+    path: infrastructure/k8s/prd
   destination:
     name: oke-prd
     namespace: app-reventer-prd
