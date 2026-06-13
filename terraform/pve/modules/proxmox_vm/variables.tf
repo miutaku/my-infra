@@ -40,6 +40,12 @@ variable "cpu_cores" {
   type        = number
 }
 
+variable "cpu_cores_by_proxmox_node" {
+  description = "Optional CPU core overrides keyed by Proxmox node name."
+  type        = map(number)
+  default     = {}
+}
+
 variable "memory" {
   description = "Memory in MB"
   type        = number
@@ -151,4 +157,3 @@ variable "cicustom" {
   type        = string
   default     = null
 }
-

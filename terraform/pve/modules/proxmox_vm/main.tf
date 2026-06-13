@@ -5,7 +5,14 @@ locals {
 }
 
 resource "proxmox_vm_qemu" "vm" {
-  for_each = { for idx, name in local.vm_names : name => { macaddr = local.macaddrs[idx], vmid = local.vmids[idx], idx = idx } }
+  for_each = {
+    for idx, name in local.vm_names : name => {
+      macaddr     = local.macaddrs[idx]
+      vmid        = local.vmids[idx]
+      idx         = idx
+      target_node = var.proxmox_nodes[idx % length(var.proxmox_nodes)]
+    }
+  }
 
   # options
   vmid             = each.value.vmid
@@ -18,16 +25,16 @@ resource "proxmox_vm_qemu" "vm" {
   automatic_reboot = true
 
   # cloud-init: Proxmox injects PVE VM name as hostname via NoCloud datasource
-  ipconfig0  = var.cloudinit_storage != null ? "ip=dhcp" : null
-  ipconfig1  = var.cloudinit_storage != null && var.secondary_vlan_tag != null ? "ip=dhcp" : null
-  ciupgrade  = var.cloudinit_storage != null ? false : null
-  cicustom   = var.cicustom
+  ipconfig0 = var.cloudinit_storage != null ? "ip=dhcp" : null
+  ipconfig1 = var.cloudinit_storage != null && var.secondary_vlan_tag != null ? "ip=dhcp" : null
+  ciupgrade = var.cloudinit_storage != null ? false : null
+  cicustom  = var.cicustom
 
   # hardware
   bios        = var.bios
   boot        = "order=scsi0"
   machine     = var.machine
-  target_node = var.proxmox_nodes[each.value.idx % length(var.proxmox_nodes)]
+  target_node = each.value.target_node
   clone       = var.clone_template
   full_clone  = true
   scsihw      = "virtio-scsi-single"
@@ -35,7 +42,7 @@ resource "proxmox_vm_qemu" "vm" {
   # cpu
   cpu {
     vcores  = 0
-    cores   = var.cpu_cores
+    cores   = lookup(var.cpu_cores_by_proxmox_node, each.value.target_node, var.cpu_cores)
     sockets = 1
     type    = "host"
   }

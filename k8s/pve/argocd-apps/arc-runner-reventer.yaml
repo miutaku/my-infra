@@ -28,13 +28,27 @@ spec:
           type: "dind"
         template:
           spec:
+            nodeSelector:
+              kubernetes.io/arch: amd64
+              kubernetes.io/os: linux
+              kubernetes.io/role: agent
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: topology.miutaku/proxmox-node
+                          operator: In
+                          values:
+                            - pve-x570
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:latest
                 command: ["/home/runner/run.sh"]
                 resources:
                   requests:
-                    cpu: "500m"
+                    cpu: "1500m"
                     memory: "1Gi"
                   limits:
                     cpu: "4"
