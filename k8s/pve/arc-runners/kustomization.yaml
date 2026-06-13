@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - github-app-secret.yaml
+  - github-token-secret.yaml
