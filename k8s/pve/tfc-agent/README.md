@@ -1,13 +1,28 @@
 # tfc-agent
 
-`pve-home` workspace 用 Terraform Cloud agent の旧配置。
+`pve-home` workspace 用 Terraform Cloud agentの構成と運用手順。
 
-現在、実際の agent は OKE 側の `k8s/oci/apps/pve-tfc-agent` で稼働させる。
-この PVE 側 Deployment は、同じ Proxmox/RKE2 基盤を変更する Terraform 実行中に
-agent 自身が巻き込まれないよう、`replicas: 0` で停止しておく。
+概要:
+- 実稼働の agent は OKE 上の `k8s/oci/apps/pve-tfc-agent` で稼働させています。
+- PVE クラスタ内の `k8s/pve/tfc-agent` Deployment はデフォルトで `replicas: 0` にして停止しています。
 
-## 運用
+TFC_HOME_AGENT_TOKEN の扱い:
+- `TFC_HOME_AGENT_TOKEN` は **自宅の PVE（pve-home ワークスペース）向けの Terraform Cloud agent トークン** です。
+- このトークンを使う agent は Terraform Cloud 側で `pve-home` ワークスペースに紐づけられます。
+- 現在は OKE 上の `pve-tfc-agent` がこのトークンで登録・稼働しているため、PVE 側の agent は停止しておきます。
 
-- Terraform Cloud 側で `TFC_HOME_AGENT_TOKEN` を使う agent は 1 本だけ起動する。
-- PVE 側を再利用する場合は、先に OKE 側の `pve-tfc-agent` を止める。
-- 通常運用では、この Deployment は `replicas: 0` のままにする。
+切り替え手順（OKE -> PVE に戻す場合）:
+1. OKE 側の `pve-tfc-agent` を停止（ArgoCD の該当 Application を pause または replicas を 0 にする）。
+2. PVE 側の `k8s/pve/tfc-agent` Deployment を `replicas: 1` に戻す。
+3. BSM（Bitwarden SDK / ExternalSecrets）に格納されている `TFC_HOME_AGENT_TOKEN` / `TFC_HOME_AGENT_NAME` を確認する。
+4. Terraform Cloud の Agents 設定を確認し、重複登録がないことを確認する。
+
+注意点:
+- Terraform 実行中に PVE クラスタの VM（特に worker/control-plane）を再構築すると、同クラスタ上で動く agent 自身が再起動・停止され、Terraform 実行が失敗する可能性があります。
+- そのため、通常運用では agent を OKE に配置して PVE の変更から切り離すことを推奨します。
+
+確認項目:
+- `k8s/pve/tfc-agent/tfc-agent-secret.yaml` が `TFC_HOME_AGENT_TOKEN` を参照していること（PVE 側の ExternalSecret）。
+- OKE 側の `k8s/oci/apps/pve-tfc-agent/tfc-agent-secret.yaml` は `TFC_HOME_AGENT_TOKEN` を参照していること。
+
+問題がなければ、この README を基に BSM のシークレット名と ArgoCD の同期状態を合わせてください。
