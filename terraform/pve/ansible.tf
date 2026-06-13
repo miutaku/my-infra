@@ -29,13 +29,15 @@ resource "local_file" "ansible_hosts_prd" {
     ]
     agent_hosts = [
       for i, hostname in local.agent_hostnames : {
-        ip       = var.rke2_worker_ips[i]
-        hostname = hostname
+        ip           = var.rke2_worker_ips[i]
+        hostname     = hostname
+        proxmox_node = var.proxmox_nodes[i % length(var.proxmox_nodes)]
       }
     ]
     dvb_worker = {
-      ip       = var.rke2_dvb_worker_ip
-      hostname = local.dvb_worker_hostname
+      ip           = var.rke2_dvb_worker_ip
+      hostname     = local.dvb_worker_hostname
+      proxmox_node = "pve-x570"
     }
   })
 }

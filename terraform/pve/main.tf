@@ -36,13 +36,16 @@ module "rke2_server" {
 module "rke2_worker" {
   source = "./modules/proxmox_vm"
 
-  vm_count          = var.worker_vm_count
-  name_prefix       = "worker"
-  name_suffix       = "rke2-agent-ubuntu-26-04-home-amd64"
-  base_macaddr      = var.rke2_base_worker_macaddr
-  vmid_start        = 12001
-  tags              = ["ubuntu_2604", "rke2", "agent", "worker"]
-  cpu_cores         = 2
+  vm_count     = var.worker_vm_count
+  name_prefix  = "worker"
+  name_suffix  = "rke2-agent-ubuntu-26-04-home-amd64"
+  base_macaddr = var.rke2_base_worker_macaddr
+  vmid_start   = 12001
+  tags         = ["ubuntu_2604", "rke2", "agent", "worker"]
+  cpu_cores    = 2
+  cpu_cores_by_proxmox_node = {
+    pve-x570 = 8
+  }
   memory            = 6144
   clone_template    = local.ubuntu_template
   disk_size         = 96
