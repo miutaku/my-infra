@@ -16,7 +16,7 @@ spec:
       releaseName: arc-runner-reventer
       values: |
         githubConfigUrl: "https://github.com/miutaku/reventer"
-        githubConfigSecret: "github-app-secret"
+        githubConfigSecret: "github-token-secret"
         # Explicit controller SA — ArgoCD renders templates without cluster
         # lookup, so the chart's auto-discovery of the controller fails.
         controllerServiceAccount:
