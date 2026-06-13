@@ -98,8 +98,8 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 
 | BSM シークレット名 | 説明 |
 |---|---|
-| `TFC_OKE_AGENT_TOKEN` | Terraform Cloud → Settings → Agents → Token |
-| `TFC_OKE_AGENT_NAME` | エージェント表示名 (例: `oci-oke-agent-01`) |
+| `TFC_HOME_AGENT_TOKEN` | Terraform Cloud → Settings → Agents → Token (pve-home) |
+| `TFC_HOME_AGENT_NAME` | エージェント表示名 (例: `pve-home-agent-01`) |
 | `CLOUDFLARE_OKE_TUNNEL_TOKEN` | `terraform output -raw oke_tunnel_token` で取得 |
 | `CLOUDFLARE_DNS_API_TOKEN` | Cloudflare API token (DNS:Edit, miutaku.work のみ) |
 | `GRAFANA_CLOUD_METRICS_URL` | Grafana Cloud Prometheus push URL |
