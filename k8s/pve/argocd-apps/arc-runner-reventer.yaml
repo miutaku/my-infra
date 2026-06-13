@@ -17,6 +17,11 @@ spec:
       values: |
         githubConfigUrl: "https://github.com/miutaku/reventer"
         githubConfigSecret: "github-app-secret"
+        # Explicit controller SA — ArgoCD renders templates without cluster
+        # lookup, so the chart's auto-discovery of the controller fails.
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-systems-gha-rs-controller
         minRunners: 0
         maxRunners: 4
         containerMode:
