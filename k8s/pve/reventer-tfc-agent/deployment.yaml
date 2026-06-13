@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reventer-tfc-agent
+  namespace: reventer-tfc-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reventer-tfc-agent
+  template:
+    metadata:
+      labels:
+        app: reventer-tfc-agent
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: tfc-agent
+          image: hashicorp/tfc-agent:1.28.8
+          imagePullPolicy: Always
+          env:
+            - name: TFC_AGENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: reventer-tfc-agent-credentials
+                  key: token
+            - name: TFC_AGENT_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: reventer-tfc-agent-credentials
+                  key: name
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
