@@ -1,23 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tfc-agent
+  name: oci-pve-tfc-agent
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: default
   source:
     repoURL: https://github.com/miutaku/my-infra.git
     targetRevision: main
-    path: k8s/pve/tfc-agent
+    path: k8s/oci/apps/pve-tfc-agent
   destination:
     server: https://kubernetes.default.svc
     namespace: tfc-agent
-  paused: true
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

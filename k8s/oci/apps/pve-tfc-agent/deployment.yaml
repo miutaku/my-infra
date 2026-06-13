@@ -1,4 +1,6 @@
 ---
+# PVEがある自宅はOCIと拠点間接続しているため、tfc-agentはOCIで動かす。
+# PVEでtfc-agentを動かすと、terraform applyのたびにRKE2のワーカーノードが再起動してapplyが失敗するため。
 apiVersion: apps/v1
 kind: Deployment
 metadata:
