@@ -42,11 +42,11 @@ module "rke2_worker" {
   base_macaddr = var.rke2_base_worker_macaddr
   vmid_start   = 12001
   tags         = ["ubuntu_2604", "rke2", "agent", "worker"]
-  cpu_cores    = 2
+  cpu_cores    = 4
   cpu_cores_by_proxmox_node = {
-    pve-x570 = 8
+    pve-x570 = 12
   }
-  memory            = 6144
+  memory            = 8192
   clone_template    = local.ubuntu_template
   disk_size         = 96
   proxmox_nodes     = var.proxmox_nodes
@@ -92,7 +92,7 @@ module "dev_application_server" {
   base_macaddr      = var.dev_application_server_macaddr
   vmid_start        = 40000
   tags              = ["dev", "ubuntu_2604", "application-server", "docker"]
-  cpu_cores         = 8
+  cpu_cores         = 4
   memory            = 10 * 1024
   proxmox_nodes     = ["pve-b550m"]
   clone_template    = local.ubuntu_template
@@ -110,7 +110,7 @@ module "truenas" {
   base_macaddr     = var.truenas_macaddr
   vmid_start       = 69001
   tags             = ["truenas", "nas"]
-  cpu_cores        = 4
+  cpu_cores        = 2
   memory           = 8192
   proxmox_nodes    = local.all_nodes # one VM per node
   clone_template   = local.truenas_template

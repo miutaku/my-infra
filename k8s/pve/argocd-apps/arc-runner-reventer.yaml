@@ -41,6 +41,12 @@ spec:
                           operator: In
                           values:
                             - pve-x570
+                  - weight: 20
+                    preference:
+                      matchExpressions:
+                        - key: topology.miutaku/proxmox-node
+                          operator: In
+                          values:
                             - pve-b550m
             containers:
               - name: runner
@@ -48,11 +54,11 @@ spec:
                 command: ["/home/runner/run.sh"]
                 resources:
                   requests:
-                    cpu: "500m"
-                    memory: "512Mi"
+                    cpu: "1000m"
+                    memory: "1Gi"
                   limits:
-                    cpu: "6"
-                    memory: "8Gi"
+                    cpu: "2"
+                    memory: "4Gi"
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-runners
