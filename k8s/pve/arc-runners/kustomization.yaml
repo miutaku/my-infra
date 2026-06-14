@@ -4,3 +4,4 @@ resources:
   - namespace.yaml
   - github-app-secret.yaml
   - github-token-secret.yaml
+  - reventer-cache-pvc.yaml
