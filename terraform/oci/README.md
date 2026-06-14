@@ -8,8 +8,8 @@ OCI Always Free 上に OKE Basic クラスタを構築する Terraform workspace
 
 | リソース | 上限 | 本 workspace での使用量 |
 |---|---|---|
-| A1.Flex OCPU | 4 OCPU | 2 OCPU/node × 2 nodes = 4 OCPU |
-| A1.Flex メモリ | 24 GB | 12 GB/node × 2 nodes = 24 GB |
+| A1.Flex OCPU | 4 OCPU | 1 OCPU/node × 2 nodes = 2 OCPU |
+| A1.Flex メモリ | 24 GB | 6 GB/node × 2 nodes = 12 GB |
 | Block Volume | 200 GB / 2 vol | Longhorn で管理 |
 | Flex LB | 10 Mbps 固定 | ingress-nginx の Service annotation で指定 |
 
