@@ -89,10 +89,10 @@ resource "oci_core_security_list" "lb_sl" {
   display_name   = "oke-lb-sl"
   freeform_tags  = local.common_tags
 
-  # OKE API server (kubectl)
+  # OKE API server (kubectl) — 家の固定 IPv4 のみ許可
   ingress_security_rules {
     protocol  = "6" # TCP
-    source    = "0.0.0.0/0"
+    source    = var.ix_public_ipv4
     stateless = false
     tcp_options {
       min = 6443

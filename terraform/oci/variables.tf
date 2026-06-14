@@ -83,6 +83,11 @@ variable "home_lan_cidr" {
   default     = "192.168.0.0/16"
 }
 
+variable "ix_public_ipv4" {
+  description = "BSM の IX_PUBLIC_IPv4 から取得する、自宅の固定 IPv4 アドレス。OKE API のアクセス制限に使用します。"
+  type        = string
+}
+
 variable "vpn_psk" {
   description = "IX2215 <-> OCI IPSec トンネルの Pre-Shared Key。TFC に sensitive variable として登録し、IX2215 Ansible 側は BSM VPN_OCI_PSK に同値を登録する。"
   type        = string
