@@ -30,11 +30,12 @@ jobs:
         env:
           BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
         run: |
+          set -euo pipefail
           mkdir -p "$HOME/bin"
           curl -fsSL "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip" -o /tmp/bws.zip
           python3 -c "import zipfile; zipfile.ZipFile('/tmp/bws.zip').extract('bws', '$HOME/bin/')"
           chmod +x "$HOME/bin/bws"
-          echo "$HOME/bin" >> $GITHUB_PATH
+          export PATH="$HOME/bin:$PATH"
           IX_PUBLIC_IPv4=$(bws secret list | python3 -c 'import sys, json; data=json.load(sys.stdin); print(next((item.get("value") for item in data if item.get("key")=="IX_PUBLIC_IPv4"), ""))')
           if [ -z "$IX_PUBLIC_IPv4" ]; then
             echo 'BSM secret IX_PUBLIC_IPv4 was not found or is empty' >&2
@@ -65,11 +66,12 @@ jobs:
         env:
           BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
         run: |
+          set -euo pipefail
           mkdir -p "$HOME/bin"
           curl -fsSL "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip" -o /tmp/bws.zip
           python3 -c "import zipfile; zipfile.ZipFile('/tmp/bws.zip').extract('bws', '$HOME/bin/')"
           chmod +x "$HOME/bin/bws"
-          echo "$HOME/bin" >> $GITHUB_PATH
+          export PATH="$HOME/bin:$PATH"
           IX_PUBLIC_IPv4=$(bws secret list | python3 -c 'import sys, json; data=json.load(sys.stdin); print(next((item.get("value") for item in data if item.get("key")=="IX_PUBLIC_IPv4"), ""))')
           if [ -z "$IX_PUBLIC_IPv4" ]; then
             echo 'BSM secret IX_PUBLIC_IPv4 was not found or is empty' >&2
