@@ -38,9 +38,9 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
     autoscaler = "cluster"
   })
   defined_tags = {
-    "${oci_identity_tag_namespace.oke.name}" = {
+    "${oci_identity_tag_namespace.oke.name}" = jsonencode({
       "${oci_identity_tag.autoscaler.name}" = "cluster"
-    }
+    })
   }
 
   node_shape_config {
