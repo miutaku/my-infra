@@ -26,6 +26,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install BSM CLI and fetch IX_PUBLIC_IPv4
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          mkdir -p "$HOME/bin"
+          curl -fsSL "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip" -o /tmp/bws.zip
+          python3 -c "import zipfile; zipfile.ZipFile('/tmp/bws.zip').extract('bws', '$HOME/bin/')"
+          chmod +x "$HOME/bin/bws"
+          echo "$HOME/bin" >> $GITHUB_PATH
+          IX_PUBLIC_IPv4=$(bws secret list | python3 -c 'import sys, json; data=json.load(sys.stdin); print(next((item.get("value") for item in data if item.get("key")=="IX_PUBLIC_IPv4"), ""))')
+          if [ -z "$IX_PUBLIC_IPv4" ]; then
+            echo 'BSM secret IX_PUBLIC_IPv4 was not found or is empty' >&2
+            exit 1
+          fi
+          echo "TF_VAR_ix_public_ipv4=$IX_PUBLIC_IPv4" >> $GITHUB_ENV
+
       - uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
@@ -44,6 +60,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install BSM CLI and fetch IX_PUBLIC_IPv4
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          mkdir -p "$HOME/bin"
+          curl -fsSL "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip" -o /tmp/bws.zip
+          python3 -c "import zipfile; zipfile.ZipFile('/tmp/bws.zip').extract('bws', '$HOME/bin/')"
+          chmod +x "$HOME/bin/bws"
+          echo "$HOME/bin" >> $GITHUB_PATH
+          IX_PUBLIC_IPv4=$(bws secret list | python3 -c 'import sys, json; data=json.load(sys.stdin); print(next((item.get("value") for item in data if item.get("key")=="IX_PUBLIC_IPv4"), ""))')
+          if [ -z "$IX_PUBLIC_IPv4" ]; then
+            echo 'BSM secret IX_PUBLIC_IPv4 was not found or is empty' >&2
+            exit 1
+          fi
+          echo "TF_VAR_ix_public_ipv4=$IX_PUBLIC_IPv4" >> $GITHUB_ENV
 
       - uses: hashicorp/setup-terraform@v3
         with:
