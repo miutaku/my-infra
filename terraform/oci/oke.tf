@@ -37,6 +37,11 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   freeform_tags = merge(local.common_tags, {
     autoscaler = "cluster"
   })
+  defined_tags = {
+    "${oci_identity_tag_namespace.oke.name}" = {
+      "${oci_identity_tag.autoscaler.name}" = "cluster"
+    }
+  }
 
   node_shape_config {
     ocpus         = var.node_pool_ocpus
