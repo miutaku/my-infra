@@ -34,7 +34,9 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   kubernetes_version = oci_containerengine_cluster.oke_cluster.kubernetes_version
   name               = "oke-free-node-pool"
   node_shape         = var.node_pool_shape
-  freeform_tags      = local.common_tags
+  freeform_tags = merge(local.common_tags, {
+    autoscaler = "cluster"
+  })
 
   node_shape_config {
     ocpus         = var.node_pool_ocpus
@@ -47,7 +49,7 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   }
 
   node_config_details {
-    size = 2
+    size = var.node_pool_size
 
     # Spread across ADs when region has multiple; fall back to AD-1 for single-AD regions
     placement_configs {
@@ -61,6 +63,12 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   }
 
   ssh_public_key = var.ssh_public_key
+
+  lifecycle {
+    ignore_changes = [
+      node_config_details[0].size,
+    ]
+  }
 }
 
 data "oci_core_images" "node_image" {
@@ -84,6 +92,11 @@ output "kubeconfig" {
 output "cluster_id" {
   description = "OKE Cluster OCID"
   value       = oci_containerengine_cluster.oke_cluster.id
+}
+
+output "node_pool_id" {
+  description = "OKE worker node pool OCID"
+  value       = oci_containerengine_node_pool.oke_node_pool.id
 }
 
 output "nat_ip" {

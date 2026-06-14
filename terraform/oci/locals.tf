@@ -1,7 +1,7 @@
 locals {
   common_tags = {
     "managed-by" = "terraform"
-    "repository"  = "miutaku/my-infra"
+    "repository" = "miutaku/my-infra"
   }
 
   # https://www.cloudflare.com/ips-v4
