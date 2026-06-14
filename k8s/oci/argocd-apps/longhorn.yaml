@@ -16,6 +16,7 @@ spec:
       valuesObject:
         defaultSettings:
           defaultReplicaCount: 1
+          guaranteedInstanceManagerCPU: 6
         persistence:
           defaultClassReplicaCount: 1
         longhornManager:

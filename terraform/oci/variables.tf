@@ -56,18 +56,18 @@ variable "node_pool_shape" {
 }
 
 variable "node_pool_ocpus" {
-  description = "OCPUs per worker node. 2 nodes x 1 OCPU = 2 OCPU total for the STG free-tier budget."
-  default     = 1
+  description = "OCPUs per worker node. 1 node x 2 OCPU = 2 OCPU total for the STG free-tier budget."
+  default     = 2
 }
 
 variable "node_pool_memory_gbs" {
-  description = "Memory GBs per worker node. 2 nodes x 6 GB = 12 GB total for the STG free-tier budget."
-  default     = 6
+  description = "Memory GBs per worker node. 1 node x 12 GB = 12 GB total for the STG free-tier budget."
+  default     = 12
 }
 
 variable "node_pool_size" {
   description = "Initial worker node count. Cluster Autoscaler may change this after creation; min/max is configured in the Kubernetes manifest."
-  default     = 2
+  default     = 1
 }
 
 # ── Site-to-Site VPN (IX2215 <-> OCI) ────────────────────────────────────────

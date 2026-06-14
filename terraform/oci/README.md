@@ -2,14 +2,14 @@
 
 OCI Always Free 上に OKE Basic クラスタを構築する Terraform workspace。
 
-対象リソース: VCN、サブネット、IGW、NAT GW、Security List、OKE クラスタ (Basic)、ノードプール (A1.Flex × 2)、Budget Alert。
+対象リソース: VCN、サブネット、IGW、NAT GW、Security List、OKE クラスタ (Basic)、ノードプール (A1.Flex × 1)、Budget Alert。
 
 **Always Free 制限** — 絶対に超えない:
 
 | リソース | 上限 | 本 workspace での使用量 |
 |---|---|---|
-| A1.Flex OCPU | 4 OCPU | 1 OCPU/node × 2 nodes = 2 OCPU |
-| A1.Flex メモリ | 24 GB | 6 GB/node × 2 nodes = 12 GB |
+| A1.Flex OCPU | 4 OCPU | 2 OCPU/node × 1 node = 2 OCPU |
+| A1.Flex メモリ | 24 GB | 12 GB/node × 1 node = 12 GB |
 | Block Volume | 200 GB / 2 vol | Longhorn で管理 |
 | Flex LB | 10 Mbps 固定 | ingress-nginx の Service annotation で指定 |
 

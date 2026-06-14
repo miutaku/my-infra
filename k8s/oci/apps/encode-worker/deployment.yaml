@@ -58,10 +58,10 @@ spec:
               mountPath: /app/recorded
           resources:
             requests:
-              cpu: "500m"
+              cpu: "100m"
               memory: "512Mi"
             limits:
-              # OKE worker capacity is 1 OCPU / 6GB per node.
+              # OKE worker capacity is 2 OCPU / 12GB on a single node.
               cpu: "900m"
               memory: "5Gi"
           lifecycle:
