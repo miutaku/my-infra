@@ -28,6 +28,9 @@ spec:
           type: "dind"
         template:
           spec:
+            securityContext:
+              fsGroup: 1001
+              fsGroupChangePolicy: OnRootMismatch
             nodeSelector:
               kubernetes.io/arch: amd64
               kubernetes.io/os: linux
@@ -48,10 +51,52 @@ spec:
                           operator: In
                           values:
                             - pve-b550m
+            # Persist cache-only paths; keep _work and DinD state ephemeral for parallel runner safety.
+            initContainers:
+              - name: prepare-runner-cache
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/bin/sh", "-c"]
+                args:
+                  - |
+                    set -eu
+                    mkdir -p \
+                      /cache/home-cache \
+                      /cache/npm \
+                      /cache/pnpm \
+                      /cache/terraform-plugin-cache \
+                      /cache/toolcache
+                    chown 1001:1001 \
+                      /cache/home-cache \
+                      /cache/npm \
+                      /cache/pnpm \
+                      /cache/terraform-plugin-cache \
+                      /cache/toolcache
+                    chmod 0775 \
+                      /cache/home-cache \
+                      /cache/npm \
+                      /cache/pnpm \
+                      /cache/terraform-plugin-cache \
+                      /cache/toolcache
+                securityContext:
+                  runAsUser: 0
+                volumeMounts:
+                  - name: runner-cache
+                    mountPath: /cache
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:latest
                 command: ["/home/runner/run.sh"]
+                env:
+                  - name: RUNNER_TOOL_CACHE
+                    value: /opt/hostedtoolcache
+                  - name: TF_PLUGIN_CACHE_DIR
+                    value: /home/runner/.terraform.d/plugin-cache
+                  - name: NPM_CONFIG_CACHE
+                    value: /home/runner/.npm
+                  - name: YARN_CACHE_FOLDER
+                    value: /home/runner/.cache/yarn
+                  - name: PNPM_HOME
+                    value: /home/runner/.local/share/pnpm
                 resources:
                   requests:
                     cpu: "1000m"
@@ -59,6 +104,26 @@ spec:
                   limits:
                     cpu: "2"
                     memory: "4Gi"
+                volumeMounts:
+                  - name: runner-cache
+                    mountPath: /home/runner/.cache
+                    subPath: home-cache
+                  - name: runner-cache
+                    mountPath: /home/runner/.npm
+                    subPath: npm
+                  - name: runner-cache
+                    mountPath: /home/runner/.local/share/pnpm
+                    subPath: pnpm
+                  - name: runner-cache
+                    mountPath: /home/runner/.terraform.d/plugin-cache
+                    subPath: terraform-plugin-cache
+                  - name: runner-cache
+                    mountPath: /opt/hostedtoolcache
+                    subPath: toolcache
+            volumes:
+              - name: runner-cache
+                persistentVolumeClaim:
+                  claimName: arc-runner-reventer-cache
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-runners
