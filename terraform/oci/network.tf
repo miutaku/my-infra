@@ -92,7 +92,7 @@ resource "oci_core_security_list" "lb_sl" {
   # OKE API server (kubectl) — 家の固定 IPv4 のみ許可
   ingress_security_rules {
     protocol  = "6" # TCP
-    source    = var.ix_public_ipv4
+    source    = "${var.ix_public_ipv4}/32"
     stateless = false
     tcp_options {
       min = 6443
