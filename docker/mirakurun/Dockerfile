@@ -1,4 +1,4 @@
-FROM chinachu/mirakurun:4.0.0-beta.18
+FROM chinachu/mirakurun:4.1.0
 
 # ビルド時に recpt1 / decrypt ライブラリをインストールしておくことで
 # コンテナ起動時の長時間ビルドを回避する。
