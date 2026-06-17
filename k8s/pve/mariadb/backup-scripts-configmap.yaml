@@ -10,16 +10,21 @@ data:
 
     apk add --no-cache mariadb-client rclone curl > /dev/null
 
-    FILENAME=""
+    # バックアップ対象: "app:database" をスペース区切りで列挙
+    # 共用クラスタにアプリが増えたら、この行を1要素足すだけ
+    APPS="${APPS:-epgstation:epgstation}"
+
     STATUS=failure
+    CURRENT=""
+    RESULTS=""
 
     notify() {
       [ -z "${NOTIFY_WEBHOOK}" ] && return 0
       if [ "${STATUS}" = "success" ]; then
-        CONTENT="DBバックアップ完了: ${FILENAME}"
+        CONTENT="DBバックアップ完了: ${RESULTS}"
         WEBHOOK="${NOTIFY_WEBHOOK}"
       else
-        CONTENT="@here DBバックアップ失敗: ${FILENAME:-error before dump}"
+        CONTENT="@here DBバックアップ失敗 (${CURRENT:-error before dump}): ${RESULTS:-none}"
         WEBHOOK="${CRITICAL_WEBHOOK}"
       fi
       curl -s -X POST "${WEBHOOK}" \
@@ -27,19 +32,6 @@ data:
         -d "{\"content\":\"${CONTENT}\"}"
     }
     trap notify EXIT
-
-    DATE=$(date +%Y%m%d-%H%M%S)
-    FILENAME="epgstation-${DATE}.sql.gz"
-
-    mysqldump \
-      -h mariadb.infra-db.svc.cluster.local \
-      -u root -p"${MYSQL_ROOT_PASSWORD}" \
-      --single-transaction \
-      --routines \
-      --triggers \
-      --databases epgstation \
-      | gzip > /tmp/dump.sql.gz
-    echo "dump completed: $(du -sh /tmp/dump.sql.gz)"
 
     mkdir -p /root/.config/rclone
     cat > /root/.config/rclone/rclone.conf << EOF
@@ -51,7 +43,28 @@ data:
     endpoint = https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com
     EOF
 
-    rclone copyto /tmp/dump.sql.gz "oci:db-backup/${FILENAME}"
-    echo "upload completed: ${FILENAME}"
+    DATE=$(date +%Y%m%d-%H%M%S)
+
+    for ENTRY in ${APPS}; do
+      APP="${ENTRY%%:*}"
+      DB="${ENTRY#*:}"
+      CURRENT="${APP}"
+      FILENAME="${APP}-${DATE}.sql.gz"
+
+      mysqldump \
+        -h mariadb.infra-db.svc.cluster.local \
+        -u root -p"${MYSQL_ROOT_PASSWORD}" \
+        --single-transaction \
+        --routines \
+        --triggers \
+        --databases "${DB}" \
+        | gzip > /tmp/dump.sql.gz
+      echo "[${APP}] dump completed: $(du -sh /tmp/dump.sql.gz)"
+
+      rclone copyto /tmp/dump.sql.gz "oci:db-backup/${APP}/${FILENAME}"
+      echo "[${APP}] upload completed: ${APP}/${FILENAME}"
+
+      RESULTS="${RESULTS}${APP}/${FILENAME} "
+    done
 
     STATUS=success
