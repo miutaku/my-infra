@@ -8,3 +8,7 @@ resources:
   - mirakurun-pvc.yaml
   - mirakurun-deployment.yaml
   - mirakurun-service.yaml
+
+images:
+  - name: ghcr.io/miutaku/mirakurun
+    newTag: 8502d85
