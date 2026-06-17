@@ -20,6 +20,9 @@ spec:
               image: alpine:3.20
               command: ["sh", "/scripts/backup.sh"]
               env:
+                # バックアップ対象 "app:database" のスペース区切りリスト
+                - name: APPS
+                  value: "epgstation:epgstation"
                 - name: MYSQL_ROOT_PASSWORD
                   valueFrom:
                     secretKeyRef:
