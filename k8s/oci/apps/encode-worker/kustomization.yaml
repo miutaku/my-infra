@@ -7,3 +7,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+
+images:
+  - name: ghcr.io/miutaku/encode-worker
+    newTag: e4d538f
