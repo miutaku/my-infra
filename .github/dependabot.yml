@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "docker"
+    directory: "/docker/mirakurun"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/docker/encode-worker"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "docker"
