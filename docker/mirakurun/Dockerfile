@@ -1,4 +1,4 @@
-FROM chinachu/mirakurun:amd64-4.1.1
+FROM chinachu/mirakurun:amd64-4.1.2
 
 # ビルド時に recpt1 / decrypt ライブラリをインストールしておくことで
 # コンテナ起動時の長時間ビルドを回避する。
