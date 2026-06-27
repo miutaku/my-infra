@@ -1,0 +1,86 @@
+---
+- name: Install NUT client package
+  ansible.builtin.apt:
+    name:
+      - nut-client
+    state: present
+    update_cache: true
+  retries: 3
+  delay: 10
+
+- name: Deploy nut.conf (MODE=netclient)
+  ansible.builtin.template:
+    src: nut.conf.j2
+    dest: /etc/nut/nut.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart nut-monitor
+
+- name: Deploy upsmon.conf (secondary)
+  ansible.builtin.template:
+    src: upsmon.conf.j2
+    dest: /etc/nut/upsmon.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart nut-monitor
+
+- name: Install charge-guard script
+  ansible.builtin.copy:
+    src: nut-charge-guard
+    dest: /usr/local/sbin/nut-charge-guard
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install charge-guard systemd service
+  ansible.builtin.template:
+    src: nut-charge-guard.service.j2
+    dest: /etc/systemd/system/nut-charge-guard.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Install charge-guard systemd timer
+  ansible.builtin.template:
+    src: nut-charge-guard.timer.j2
+    dest: /etc/systemd/system/nut-charge-guard.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+# 以下のサービス起動・疎通確認は実行時アクション。--check では nut-client 未導入で
+# サービスが存在せず失敗するため、check モードでは飛ばす。
+- name: Enable + start nut-monitor
+  ansible.builtin.systemd:
+    name: nut-monitor.service
+    enabled: true
+    state: started
+  when: not ansible_check_mode
+
+- name: Enable + start charge-guard timer
+  ansible.builtin.systemd:
+    name: nut-charge-guard.timer
+    enabled: true
+    state: started
+  when: not ansible_check_mode
+
+- name: Verify the monitored UPS is reachable from this client
+  ansible.builtin.command: "upsc {{ nut_monitor.ups }} ups.status"
+  register: nut_client_status
+  changed_when: false
+  retries: 6
+  delay: 5
+  until: nut_client_status.rc == 0
+  when: not ansible_check_mode
+
+- name: Show monitored UPS status
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} monitors {{ nut_monitor.ups }} => {{ nut_client_status.stdout }}"
+  when: not ansible_check_mode

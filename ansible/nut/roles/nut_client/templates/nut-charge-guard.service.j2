@@ -1,0 +1,10 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+[Unit]
+Description=NUT battery-charge guard (early PVE shutdown threshold)
+After=network-online.target nut-monitor.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 引数: <UPS> <停電中に落とす残量しきい値(%)>
+ExecStart=/usr/local/sbin/nut-charge-guard {{ nut_monitor.ups }} {{ nut_pve_charge_threshold }}

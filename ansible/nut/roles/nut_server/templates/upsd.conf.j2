@@ -1,0 +1,4 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+# ローカル(Pi 自身の upsmon)と LAN(PVE の upsmon secondary)からの接続を受ける。
+LISTEN 127.0.0.1 3493
+LISTEN {{ nut_listen_ip }} 3493
