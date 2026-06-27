@@ -55,6 +55,10 @@ SEASON = _env("SEASON")
 # 放送開始時刻の突合許容誤差 (秒)
 MATCH_TOLERANCE_SEC = int(_env("MATCH_TOLERANCE_SEC", "300"))
 
+# EPGStation の EPG が持つ範囲 (約8日) に合わせ、現在から何日先までの放送を突合対象に
+# するか。遠い未来の放送はまだ EPG に存在せず突合不能なので、日次 cron で順次拾う。
+LOOKAHEAD_DAYS = float(_env("LOOKAHEAD_DAYS", "8"))
+
 # 末尾切れを許すか
 ALLOW_END_LACK = _env("ALLOW_END_LACK", "true").lower() == "true"
 
@@ -284,8 +288,9 @@ def main() -> int:
     log.info("channel-map: %d 局", len(channel_map))
 
     stats = {"works": 0, "excluded_streaming": 0, "programs": 0, "rebroadcast": 0,
-             "reserved": 0, "already": 0, "unmapped": 0, "no_match": 0}
+             "out_of_window": 0, "reserved": 0, "already": 0, "unmapped": 0, "no_match": 0}
     unmapped_channels: set[str] = set()
+    now = datetime.now(timezone.utc)
 
     with httpx.Client(timeout=HTTP_TIMEOUT) as client:
         works = fetch_season_works(client, season)
@@ -296,29 +301,40 @@ def main() -> int:
         log.info("既存予約 programId: %d 件", len(existing))
 
         for work in works:
+            stats["programs"] += len(work.programs)
+            # 今回の実行で予約しうる放送 (再放送除外・EPG 範囲内) を先に抽出する。
+            # 1 件も無ければ scraper を呼ばずスキップ = 今期全作品への配信照会を回避し、
+            # 直近に放送がある作品にだけ scraper を当てる。
+            candidates: list[Program] = []
+            for prog in work.programs:
+                if SKIP_REBROADCAST and prog.rebroadcast:
+                    stats["rebroadcast"] += 1
+                    continue
+                # EPG 範囲外 (過去 or 遠い未来) はまだ突合できない。
+                # 遠い未来分は放送が近づいた日の cron 実行で拾われる。
+                if prog.started_at < now or (prog.started_at - now).days >= LOOKAHEAD_DAYS:
+                    stats["out_of_window"] += 1
+                    continue
+                candidates.append(prog)
+            if not candidates:
+                continue
+
             streamable = is_streamable_on_subscription(client, work.annict_id)
             if streamable is True:
                 stats["excluded_streaming"] += 1
                 log.info("除外 (配信あり): %s (annictId=%s)", work.title, work.annict_id)
                 continue
             reason = "判定不能→録画" if streamable is None else "配信なし→録画"
-            log.info("対象 (%s): %s (annictId=%s, %d 放送)",
-                     reason, work.title, work.annict_id, len(work.programs))
+            log.info("対象 (%s): %s (annictId=%s, 直近 %d 放送)",
+                     reason, work.title, work.annict_id, len(candidates))
 
-            for prog in work.programs:
-                stats["programs"] += 1
-                if SKIP_REBROADCAST and prog.rebroadcast:
-                    stats["rebroadcast"] += 1
-                    log.info("  再放送スキップ: %s %s ch=%s %s",
-                             work.title, prog.slot_label, prog.channel_name,
-                             prog.started_at.isoformat())
-                    continue
+            for prog in candidates:
                 ch_id = channel_map.get(normalize(prog.channel_name))
                 if ch_id is None:
+                    # 受信できない局や Web 配信 (YouTube 等) は channel-map に無く未マップ
+                    # 扱いになる = 実質スキップ。逐一ログせず末尾の一覧に集約する。
                     stats["unmapped"] += 1
                     unmapped_channels.add(prog.channel_name)
-                    log.warning("  未マップ channel: %r (%s %s)",
-                                prog.channel_name, work.title, prog.slot_label)
                     continue
 
                 program_id = resolve_program_id(client, ch_id, prog.started_at)
