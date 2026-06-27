@@ -155,26 +155,10 @@ NEC 公式 MIB ファイルを使って generator を回せばすべてのメト
 
 ---
 
-## Grafana Alloy との連携
+## scrape endpoint
 
-`k8s/pve/grafana-alloy/values.yaml` の `snmp_ix2215` セクションが本サービスを経由して IX2215 を scrape する:
-
-```river
-prometheus.scrape "snmp_ix2215" {
-  targets = [
-    {
-      "__address__"      = "snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116",
-      "__param_target"   = "192.168.0.254",
-      "__param_module"   = "ix2215",
-      "__param_auth"     = "ix2215_v2",
-      "instance"         = "ix2215",
-      "job"              = "snmp",
-    },
-  ]
-  metrics_path = "/snmp"
-  ...
-}
-```
+IX2215 は `/snmp?target=192.168.0.254&module=ix2215&auth=ix2215_v2` で scrape する。
+scrape 設定自体はこのディレクトリでは管理しない。
 
 ## 動作確認
 
