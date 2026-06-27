@@ -18,6 +18,7 @@ import logging
 import math
 import os
 import sys
+import time
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -59,6 +60,15 @@ MATCH_TOLERANCE_SEC = int(_env("MATCH_TOLERANCE_SEC", "300"))
 # EPGStation の EPG が持つ範囲 (約8日) に合わせ、現在から何日先までの放送を突合対象に
 # するか。遠い未来の放送はまだ EPG に存在せず突合不能なので、日次 cron で順次拾う。
 LOOKAHEAD_DAYS = float(_env("LOOKAHEAD_DAYS", "8"))
+
+# scraper が 5xx 等で失敗したときのリトライ回数。尽きたらその作品は今回スキップ
+# (配信可否が判定不能なものは録画しない。日次 cron で次回拾う)。
+SCRAPER_RETRIES = int(_env("SCRAPER_RETRIES", "3"))
+
+# タイトル検証ガード: 時刻+局で見つけた EPG 番組名と作品名の最長共通部分文字列が
+# この文字数以上なら「同じ作品」とみなす。Annict の放送スケジュールが実 EPG と
+# ずれて別番組を掴むのを防ぐ。
+TITLE_MATCH_MIN_CHARS = int(_env("TITLE_MATCH_MIN_CHARS", "4"))
 
 # 末尾切れを許すか
 ALLOW_END_LACK = _env("ALLOW_END_LACK", "true").lower() == "true"
@@ -108,6 +118,52 @@ def current_season() -> str:
               7: "summer", 8: "summer", 9: "summer",
               10: "autumn", 11: "autumn", 12: "autumn"}[now.month]
     return f"{now.year}-{season}"
+
+
+def _longest_common_substring_len(a: str, b: str) -> int:
+    """2 文字列の最長共通部分文字列の長さ (DP)."""
+    if not a or not b:
+        return 0
+    prev = [0] * (len(b) + 1)
+    best = 0
+    for ca in a:
+        cur = [0] * (len(b) + 1)
+        for j, cb in enumerate(b, 1):
+            if ca == cb:
+                cur[j] = prev[j - 1] + 1
+                if cur[j] > best:
+                    best = cur[j]
+        prev = cur
+    return best
+
+
+def title_matches(work_title: str, program_name: str) -> bool:
+    """EPG 番組名が Annict 作品と同一作品か検証する (ファジー).
+
+    時刻+局で見つけた番組が本当にその作品かを、作品名と番組名の最長共通部分文字列で
+    判定する。話タイトルや末尾の付加表記の違いは吸収しつつ、全く別番組 (近接時刻の
+    別作品) を弾く。短い作品名は丸ごと含有を要求する。
+    """
+    w = normalize(work_title)
+    p = normalize(program_name)
+    if not w or not p:
+        return False
+    if len(w) <= TITLE_MATCH_MIN_CHARS:
+        return w in p
+    return _longest_common_substring_len(w, p) >= TITLE_MATCH_MIN_CHARS
+
+
+def channel_priority(ch_id: int) -> int:
+    """録画局の優先度 (小さいほど優先): 地上波 GR < BS < CS.
+
+    EPGStation の channelId の値域で判別する (GR は ~32 億台、BS は 40 万台、
+    CS は 60〜70 万台)。
+    """
+    if ch_id >= 1_000_000_000:
+        return 0  # GR (地上波)
+    if 400_000 <= ch_id < 500_000:
+        return 1  # BS
+    return 2  # CS
 
 
 # --------------------------------------------------------------------------- #
@@ -181,18 +237,27 @@ def fetch_season_works(client: httpx.Client, season: str) -> list[Work]:
 def is_streamable_on_subscription(client: httpx.Client, annict_id: int) -> bool | None:
     """契約済み配信サービスのいずれかで配信中なら True (= 録画不要)。
 
-    判定不能 (scraper エラー等) の場合は None を返し、呼び出し側で録画寄りに倒す。
+    scraper が 5xx 等で失敗した場合は SCRAPER_RETRIES 回までリトライし、それでも
+    判定できなければ None を返す。呼び出し側は None を「今回スキップ (録画しない)」
+    として扱う (配信中の作品を誤録画しないため)。
     """
-    try:
-        resp = client.get(f"{SCRAPER_BASE_URL}/", params={"id": annict_id})
-        resp.raise_for_status()
-        services = resp.json().get("services", [])
-    except Exception as e:  # noqa: BLE001 - scraper 障害時は判定不能扱い
-        log.warning("scraper 呼び出し失敗 (annictId=%s): %s", annict_id, e)
-        return None
+    services = None
+    for attempt in range(1, SCRAPER_RETRIES + 1):
+        try:
+            resp = client.get(f"{SCRAPER_BASE_URL}/", params={"id": annict_id})
+            resp.raise_for_status()
+            services = resp.json().get("services", [])
+            break
+        except Exception as e:  # noqa: BLE001 - 一過性の scraper 障害をリトライ
+            if attempt < SCRAPER_RETRIES:
+                time.sleep(0.5 * attempt)
+                continue
+            log.warning("scraper 判定不能 (annictId=%s, %d回失敗): %s",
+                        annict_id, SCRAPER_RETRIES, e)
+            return None
 
     subscribed_norm = [normalize(s) for s in SUBSCRIBED_SERVICES]
-    for svc in services:
+    for svc in services or []:
         if not svc.get("available"):
             continue
         name_norm = normalize(svc.get("name", ""))
@@ -237,34 +302,38 @@ def fetch_existing_reserve_program_ids(client: httpx.Client) -> set[int]:
 
 
 def fetch_channel_schedule(client: httpx.Client, channel_id: int,
-                           start_ms: int, days: int) -> list[tuple[int, int]]:
-    """指定 channel の EPGStation 番組表を取得し [(開始秒, programId)] を返す.
+                           start_ms: int, days: int) -> list[tuple[int, int, str]]:
+    """指定 channel の EPGStation 番組表を取得し [(開始秒, programId, 番組名)] を返す.
 
     EPGStation v2 の `GET /api/schedules/{channelId}` は startAt(ms) + days(日数) 必須で、
     startAt から days 日分の番組を返す (任意の時間窓指定や channelId クエリは不可)。
+    番組名はタイトル検証ガード (title_matches) に使う。
     """
     resp = client.get(
         f"{EPGSTATION_BASE_URL}/api/schedules/{channel_id}",
         params={"startAt": start_ms, "days": days, "isHalfWidth": "true"},
     )
     resp.raise_for_status()
-    programs: list[tuple[int, int]] = []
+    programs: list[tuple[int, int, str]] = []
     for sched in resp.json():
         for prog in sched.get("programs", []):
-            programs.append((int(prog["startAt"]) // 1000, int(prog["id"])))
+            programs.append(
+                (int(prog["startAt"]) // 1000, int(prog["id"]), prog.get("name") or "")
+            )
     return programs
 
 
-def match_program_id(programs: list[tuple[int, int]], target_sec: int) -> int | None:
-    """番組表 [(開始秒, programId)] から target_sec に最も近い (±許容誤差内) programId を返す."""
-    best_id: int | None = None
+def match_program(programs: list[tuple[int, int, str]],
+                  target_sec: int) -> tuple[int, str] | None:
+    """番組表から target_sec に最も近い (±許容誤差内) 番組 (programId, 番組名) を返す."""
+    best: tuple[int, str] | None = None
     best_delta = MATCH_TOLERANCE_SEC + 1
-    for prog_start, pid in programs:
+    for prog_start, pid, name in programs:
         delta = abs(prog_start - target_sec)
         if delta <= MATCH_TOLERANCE_SEC and delta < best_delta:
             best_delta = delta
-            best_id = pid
-    return best_id
+            best = (pid, name)
+    return best
 
 
 def add_reserve(client: httpx.Client, program_id: int) -> None:
@@ -288,16 +357,23 @@ def main() -> int:
     channel_map = load_channel_map()
     log.info("channel-map: %d 局", len(channel_map))
 
-    stats = {"works": 0, "excluded_streaming": 0, "programs": 0, "rebroadcast": 0,
-             "out_of_window": 0, "reserved": 0, "already": 0, "unmapped": 0, "no_match": 0}
+    stats = {"works": 0, "excluded_streaming": 0, "scraper_skip": 0, "programs": 0,
+             "rebroadcast": 0, "out_of_window": 0, "unmapped": 0, "no_match": 0,
+             "title_mismatch": 0, "reserved": 0, "already": 0}
     unmapped_channels: set[str] = set()
     now = datetime.now(timezone.utc)
     # EPGStation 番組表の取得範囲。channel ごとに 1 回だけ取得してキャッシュする。
     schedule_start_ms = int(now.timestamp() * 1000)
     schedule_days = math.ceil(LOOKAHEAD_DAYS) + 1
-    schedule_cache: dict[int, list[tuple[int, int]]] = {}
+    schedule_cache: dict[int, list[tuple[int, int, str]]] = {}
 
     with httpx.Client(timeout=HTTP_TIMEOUT) as client:
+        def get_schedule(ch_id: int) -> list[tuple[int, int, str]]:
+            if ch_id not in schedule_cache:
+                schedule_cache[ch_id] = fetch_channel_schedule(
+                    client, ch_id, schedule_start_ms, schedule_days)
+            return schedule_cache[ch_id]
+
         works = fetch_season_works(client, season)
         stats["works"] = len(works)
         log.info("今期作品 (%s): %d 作品", season, len(works))
@@ -307,69 +383,77 @@ def main() -> int:
 
         for work in works:
             stats["programs"] += len(work.programs)
-            # 今回の実行で予約しうる放送 (再放送除外・EPG 範囲内) を先に抽出する。
-            # 1 件も無ければ scraper を呼ばずスキップ = 今期全作品への配信照会を回避し、
-            # 直近に放送がある作品にだけ scraper を当てる。
-            candidates: list[Program] = []
+            # 予約しうる放送 (再放送除外・EPG 範囲内・受信可能局) を局ごとにまとめる。
+            # 1 件も無ければ scraper を呼ばずスキップ = 直近に放送がある作品にだけ当てる。
+            by_channel: dict[int, list[Program]] = {}
             for prog in work.programs:
                 if SKIP_REBROADCAST and prog.rebroadcast:
                     stats["rebroadcast"] += 1
                     continue
-                # EPG 範囲外 (過去 or 遠い未来) はまだ突合できない。
-                # 遠い未来分は放送が近づいた日の cron 実行で拾われる。
+                # EPG 範囲外 (過去 or 遠い未来) はまだ突合できない。日次 cron で順次拾う。
                 if prog.started_at < now or (prog.started_at - now).days >= LOOKAHEAD_DAYS:
                     stats["out_of_window"] += 1
                     continue
-                candidates.append(prog)
-            if not candidates:
+                ch_id = channel_map.get(normalize(prog.channel_name))
+                if ch_id is None:
+                    # 受信不可局や Web 配信 (YouTube 等) は未マップ = 実質スキップ。
+                    # 逐一ログせず末尾の一覧に集約する。
+                    stats["unmapped"] += 1
+                    unmapped_channels.add(prog.channel_name)
+                    continue
+                by_channel.setdefault(ch_id, []).append(prog)
+            if not by_channel:
                 continue
 
+            # 配信可否を判定 (録画候補がある作品にだけ scraper を当てる)
             streamable = is_streamable_on_subscription(client, work.annict_id)
             if streamable is True:
                 stats["excluded_streaming"] += 1
                 log.info("除外 (配信あり): %s (annictId=%s)", work.title, work.annict_id)
                 continue
-            reason = "判定不能→録画" if streamable is None else "配信なし→録画"
-            log.info("対象 (%s): %s (annictId=%s, 直近 %d 放送)",
-                     reason, work.title, work.annict_id, len(candidates))
+            if streamable is None:
+                # 配信可否が判定不能なものは録画しない (配信中作品の誤録画を防ぐ)
+                stats["scraper_skip"] += 1
+                log.info("スキップ (配信可否 判定不能): %s (annictId=%s)",
+                         work.title, work.annict_id)
+                continue
+            log.info("対象 (配信なし→録画): %s (annictId=%s)", work.title, work.annict_id)
 
-            for prog in candidates:
-                ch_id = channel_map.get(normalize(prog.channel_name))
-                if ch_id is None:
-                    # 受信できない局や Web 配信 (YouTube 等) は channel-map に無く未マップ
-                    # 扱いになる = 実質スキップ。逐一ログせず末尾の一覧に集約する。
-                    stats["unmapped"] += 1
-                    unmapped_channels.add(prog.channel_name)
-                    continue
+            # 同一作品は 1 局のみ予約。地上波 GR > BS > CS の優先順で、タイトル検証を
+            # 通る放送が 1 件でもある最優先局を採用し、その局の該当放送だけ予約する。
+            for ch_id in sorted(by_channel, key=lambda c: (channel_priority(c), c)):
+                schedule = get_schedule(ch_id)
+                matched: list[tuple[Program, int]] = []
+                for prog in by_channel[ch_id]:
+                    m = match_program(schedule, int(prog.started_at.timestamp()))
+                    if m is None:
+                        stats["no_match"] += 1
+                        continue
+                    program_id, program_name = m
+                    if not title_matches(work.title, program_name):
+                        # 時刻は近いが別番組 (Annict のスケジュールが実 EPG とずれている)
+                        stats["title_mismatch"] += 1
+                        log.info("  タイトル不一致で除外: %s %s ch=%s → EPG「%s」",
+                                 work.title, prog.slot_label, prog.channel_name, program_name)
+                        continue
+                    matched.append((prog, program_id))
+                if not matched:
+                    continue  # この局では確証マッチ無し → 次の優先局へ
 
-                if ch_id not in schedule_cache:
-                    schedule_cache[ch_id] = fetch_channel_schedule(
-                        client, ch_id, schedule_start_ms, schedule_days)
-                program_id = match_program_id(
-                    schedule_cache[ch_id], int(prog.started_at.timestamp()))
-                if program_id is None:
-                    stats["no_match"] += 1
-                    log.warning("  番組表に一致なし: %s %s ch=%s %s",
-                                work.title, prog.slot_label, prog.channel_name,
-                                prog.started_at.isoformat())
-                    continue
-
-                if program_id in existing:
-                    stats["already"] += 1
-                    log.info("  予約済み: %s %s (programId=%s)",
-                             work.title, prog.slot_label, program_id)
-                    continue
-
-                if DRY_RUN:
-                    log.info("  [DRY_RUN] 予約予定: %s %s ch=%s %s (programId=%s)",
-                             work.title, prog.slot_label, prog.channel_name,
-                             prog.started_at.isoformat(), program_id)
-                else:
-                    add_reserve(client, program_id)
+                for prog, program_id in matched:
+                    if program_id in existing:
+                        stats["already"] += 1
+                        continue
+                    if DRY_RUN:
+                        log.info("  [DRY_RUN] 予約予定: %s %s ch=%s (programId=%s)",
+                                 work.title, prog.slot_label, prog.channel_name, program_id)
+                    else:
+                        add_reserve(client, program_id)
+                        log.info("  予約作成: %s %s ch=%s (programId=%s)",
+                                 work.title, prog.slot_label, prog.channel_name, program_id)
                     existing.add(program_id)
-                    log.info("  予約作成: %s %s (programId=%s)",
-                             work.title, prog.slot_label, program_id)
-                stats["reserved"] += 1
+                    stats["reserved"] += 1
+                break  # 1 局のみ採用
 
     if unmapped_channels:
         log.warning("未マップ channel 一覧 (channel-map に追記してください): %s",
