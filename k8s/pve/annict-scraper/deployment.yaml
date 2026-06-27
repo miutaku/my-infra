@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: annict-scraper
+  namespace: app-annict-scraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: annict-scraper
+  template:
+    metadata:
+      labels:
+        app: annict-scraper
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: annict-scraper
+          image: ghcr.io/miutaku/annict-subscription-scraper:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: TZ
+              value: Asia/Tokyo
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

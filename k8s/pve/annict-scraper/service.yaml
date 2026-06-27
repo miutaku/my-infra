@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: annict-scraper
+  namespace: app-annict-scraper
+spec:
+  selector:
+    app: annict-scraper
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
