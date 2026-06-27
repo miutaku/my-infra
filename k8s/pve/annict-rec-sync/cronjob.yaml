@@ -38,9 +38,9 @@ spec:
                   value: "300"
                 - name: CHANNEL_MAP_FILE
                   value: /config/channel-map.json
-                # 初回は DRY_RUN=true で検証し、問題なければ false に変更する
+                # DRY_RUN=true でログのみ。実際に予約する場合は false。
                 - name: DRY_RUN
-                  value: "true"
+                  value: "false"
               volumeMounts:
                 - name: channel-map
                   mountPath: /config
