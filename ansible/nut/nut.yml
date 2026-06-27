@@ -1,0 +1,49 @@
+---
+# 監視サーバ (Raspberry Pi) 側: upsd + usbhid-ups + 自分自身の upsmon(primary)
+- name: Configure NUT servers on Raspberry Pi
+  hosts: nut_pi
+  # 前提: 各 Pi に python3 と python3-apt が導入済みであること
+  #   (DietPi 最小構成には無い。apt モジュールは python3-apt が必須)。
+  #   ansible nut_pi -m raw -a 'apt-get update && apt-get install -y python3 python3-apt' --become --ask-become-pass
+  gather_facts: true
+  become: true
+  vars:
+    ansible_user: miutaku
+    nut_mode: netserver
+  pre_tasks:
+    - name: Assert BWS access token is available on the control host
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'BWS_ACCESS_TOKEN') | length > 0
+        fail_msg: >-
+          BWS_ACCESS_TOKEN is not set on the Ansible control host.
+          `export BWS_ACCESS_TOKEN=...` してから実行してください。
+      run_once: true
+      delegate_to: localhost
+      become: false
+  roles:
+    - role: nut_server
+      tags: nut_server
+
+# 被監視 (シャットダウン対象) 側: Proxmox VE は upsmon(secondary) + 残量ガード
+- name: Configure NUT clients on Proxmox VE
+  hosts: nut_pve
+  gather_facts: true
+  become: false # root でログインするため不要
+  vars:
+    ansible_user: root
+    nut_mode: netclient
+  pre_tasks:
+    - name: Assert BWS access token is available on the control host
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'BWS_ACCESS_TOKEN') | length > 0
+        fail_msg: >-
+          BWS_ACCESS_TOKEN is not set on the Ansible control host.
+          `export BWS_ACCESS_TOKEN=...` してから実行してください。
+      run_once: true
+      delegate_to: localhost
+      become: false
+  roles:
+    - role: nut_client
+      tags: nut_client

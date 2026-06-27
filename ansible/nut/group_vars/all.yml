@@ -1,0 +1,39 @@
+---
+# ───────────────────────── しきい値・タイミング ─────────────────────────
+# PVE を落とすバッテリ残量(%)。OB(停電)中に battery.charge がこの値以下で
+# クリーンシャットダウン。VM 停止に時間がかかるため早めに倒す。
+nut_pve_charge_threshold: 80
+
+# UPS の LOWBATT 判定残量(%)。ここで Raspberry Pi (UPS のドライバホスト) が
+# 自分ごと安全停止し、killpower で UPS 出力を遮断する最終ライン。
+# Pi は省電力なのでギリギリ(=ここ)まで粘らせる。
+nut_lowbatt_charge: 10
+
+# killpower(出力遮断)コマンド送出から実際に UPS が出力を切るまでの猶予(秒)。
+# = usbhid-ups の offdelay。残量 LB の時点で残っているのは Pi 本体のみなので、
+# Pi の OS 停止(~30s)が完了するのに十分な余裕を取る。
+nut_offdelay: 150
+
+# AC 復電後、UPS が出力を再投入するまでの遅延(秒)。usbhid-ups の制約で
+# ondelay > offdelay が必須。瞬時再投入による突入・再起動ループも避ける。
+nut_ondelay: 180
+
+# 残量ガード(PVE)のポーリング間隔(秒)
+nut_charge_guard_interval: 20
+
+# ───────────────────────── NUT 認証ユーザー ─────────────────────────
+# upsd.users に作る監視用ユーザー名。
+nut_user_primary: monmaster   # Pi 自身の upsmon(primary) が localhost upsd へログイン
+nut_user_secondary: monslave  # PVE の upsmon(secondary) がネットワーク越しにログイン
+nut_user_admin: upsadmin      # 手動管理用(バッテリーテスト・手動 killpower 等の instcmd)
+
+# 監視ユーザーのパスワード(primary/secondary 共通)。
+# Bitwarden Secrets Manager (BSM) から取得する。
+#   作成例: bws secret create nut-monitor-password "$(openssl rand -base64 24)"
+#   そのシークレット ID を下にセットする (bws secret list で確認)。
+bsm_nut_monitor_password_id: "ad0baeb8-12f7-47bf-874e-b476010a96c8"
+
+# 制御ホストの BWS_ACCESS_TOKEN を使って遅延評価で取得する。
+# jq が制御ホストに必要。
+nut_monitor_password: >-
+  {{ lookup('pipe', 'bws secret get ' ~ bsm_nut_monitor_password_id ~ " | jq -r '.value'") }}

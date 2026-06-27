@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# nut-charge-guard — 給電元 UPS が「停電中(OB)」かつ「残量がしきい値以下」に
+# なったらクリーンシャットダウンを開始する。
+#
+# NUT 標準の upsmon は OB+LB(LOWBATT) でしか自動停止できず、UPS ごとに 1 つの
+# LB しきい値しか持てない。PVE を「Pi より早い残量(例: 80%)」で落とすために、
+# upsc で battery.charge をポーリングするこの軽量ガードを併用する。
+#
+# usage: nut-charge-guard <ups@host> <threshold_percent>
+#
+# 安全側設計:
+#   - UPS が読めない(ネットワーク断・upsd 停止)ときは「何もしない」= 落とさない。
+#     瞬断と本物の停電を区別できないため、誤シャットダウンを避ける。最終保険は
+#     upsmon の OB+LB 検知に任せる。
+#   - status に "OB" を含むときのみ判定。OL(商用電源)では何もしない。
+set -u
+
+UPS="${1:?usage: nut-charge-guard <ups@host> <threshold_percent>}"
+THRESHOLD="${2:?usage: nut-charge-guard <ups@host> <threshold_percent>}"
+
+status="$(upsc "$UPS" ups.status 2>/dev/null)" || exit 0
+charge="$(upsc "$UPS" battery.charge 2>/dev/null)" || exit 0
+
+# 停電(OB)でなければ何もしない。" OB " のように前後を空白で囲んで部分一致を避ける。
+case " ${status} " in
+  *" OB "*) : ;;        # on battery → 続行
+  *) exit 0 ;;           # OL / 不明 → 何もしない
+esac
+
+# charge が整数でなければ判定不能 → 何もしない
+[[ "$charge" =~ ^[0-9]+$ ]] || exit 0
+
+if (( charge <= THRESHOLD )); then
+  logger -t nut-charge-guard "UPS ${UPS} on battery and charge ${charge}% <= ${THRESHOLD}% -> initiating clean shutdown"
+  /sbin/shutdown -h now "UPS ${UPS} low battery (${charge}%) - clean shutdown by nut-charge-guard"
+fi

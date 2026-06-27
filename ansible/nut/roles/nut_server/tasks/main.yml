@@ -1,0 +1,86 @@
+---
+- name: Install NUT server + client packages
+  ansible.builtin.apt:
+    name:
+      - nut-server
+      - nut-client
+    state: present
+    update_cache: true
+  retries: 3
+  delay: 10
+
+- name: Set hostname (optional / only when nut_hostname is defined)
+  ansible.builtin.hostname:
+    name: "{{ nut_hostname }}"
+    use: systemd
+  when: nut_hostname is defined and (nut_hostname | length > 0)
+
+- name: Deploy nut.conf (MODE)
+  ansible.builtin.template:
+    src: nut.conf.j2
+    dest: /etc/nut/nut.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart NUT stack
+
+- name: Deploy ups.conf (driver + UPS definition)
+  ansible.builtin.template:
+    src: ups.conf.j2
+    dest: /etc/nut/ups.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart NUT stack
+
+- name: Deploy upsd.conf (LISTEN)
+  ansible.builtin.template:
+    src: upsd.conf.j2
+    dest: /etc/nut/upsd.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart NUT stack
+
+- name: Deploy upsd.users (monitor accounts)
+  ansible.builtin.template:
+    src: upsd.users.j2
+    dest: /etc/nut/upsd.users
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart NUT stack
+
+- name: Deploy upsmon.conf (primary - self shutdown at LOWBATT + killpower)
+  ansible.builtin.template:
+    src: upsmon.conf.j2
+    dest: /etc/nut/upsmon.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart NUT stack
+
+- name: Enable NUT services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+  loop:
+    - nut-server.service
+    - nut-monitor.service
+
+- name: Flush handlers so the stack is (re)started before validation
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for upsd to expose the UPS
+  ansible.builtin.command: "upsc {{ nut_ups.name }}@localhost ups.status"
+  register: nut_status
+  changed_when: false
+  retries: 12
+  delay: 5
+  until: nut_status.rc == 0
+  when: not ansible_check_mode
+
+- name: Show UPS status
+  ansible.builtin.debug:
+    msg: "{{ nut_ups.name }}@{{ inventory_hostname }} => {{ nut_status.stdout }}"
+  when: not ansible_check_mode

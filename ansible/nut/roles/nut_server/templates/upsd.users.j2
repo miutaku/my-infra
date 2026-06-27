@@ -1,0 +1,18 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+# primary: この Pi 自身の upsmon(localhost)。FSD 発行・killpower 権限あり。
+[{{ nut_user_primary }}]
+    password = {{ nut_monitor_password }}
+    upsmon primary
+
+# secondary: この UPS で給電される PVE ホストの upsmon(LAN 越し)。監視のみ。
+[{{ nut_user_secondary }}]
+    password = {{ nut_monitor_password }}
+    upsmon secondary
+
+# admin: 手動管理用。バッテリーテストや停電ドリルでの手動 killpower(load.off.delay)など、
+# インスタントコマンド全般を許可する。パスワードは監視用と同じ共有シークレットを流用。
+#   例: upscmd -u {{ nut_user_admin }} -p <pw> {{ nut_ups.name }}@localhost test.battery.start.deep
+[{{ nut_user_admin }}]
+    password = {{ nut_monitor_password }}
+    actions = SET
+    instcmds = ALL

@@ -1,0 +1,11 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart nut-monitor
+  ansible.builtin.systemd:
+    name: nut-monitor.service
+    state: restarted
+  # --check 時は nut-client 未導入でサービスが存在せず失敗するため飛ばす。
+  when: not ansible_check_mode
