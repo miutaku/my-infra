@@ -1,0 +1,55 @@
+---
+# NUT(Network UPS Tools)用 Prometheus exporter。
+# upsd は各 Raspberry Pi 上で動いており、変数の read は認証不要なので、
+# 1 インスタンスで両 Pi を scrape する(scrape 側で ?server=<Pi IP> を渡す)。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nut-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nut-exporter
+  template:
+    metadata:
+      labels:
+        app: nut-exporter
+    spec:
+      containers:
+        - name: nut-exporter
+          image: druggeri/nut_exporter:3.3.0
+          args:
+            - --web.listen-address=:9199
+          # 接続先 NUT サーバ・UPS 名は scrape 時に ?server=&ups= で指定するため、
+          # ここでは既定値(--nut.server=127.0.0.1)のままでよい。read は匿名で可。
+          ports:
+            - containerPort: 9199
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nut-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: nut-exporter
+  ports:
+    - port: 9199
+      targetPort: metrics
+      name: metrics
+  type: ClusterIP
