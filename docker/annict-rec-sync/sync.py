@@ -49,9 +49,6 @@ SUBSCRIBED_SERVICES = [
     s for s in (_env("SUBSCRIBED_SERVICES", "dアニメストア,Amazon プライム・ビデオ,Netflix")).split(",") if s.strip()
 ]
 
-# Annict ライブラリ状態フィルタ (空 = 全ステータス)。例: "WATCHING,WANNA_WATCH"
-LIBRARY_STATES = [s.strip() for s in _env("LIBRARY_STATES").split(",") if s.strip()]
-
 # シーズン文字列 (空 = 現在シーズンを自動算出)。例: "2026-spring"
 SEASON = _env("SEASON")
 
@@ -111,23 +108,19 @@ def current_season() -> str:
 # --------------------------------------------------------------------------- #
 # Annict GraphQL
 # --------------------------------------------------------------------------- #
-LIBRARY_QUERY = """
-query($seasons: [String!], $states: [StatusState!], $after: String) {
-  viewer {
-    libraryEntries(seasons: $seasons, states: $states, first: 50, after: $after) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        work {
-          annictId
-          title
-          programs(first: 100) {
-            nodes {
-              startedAt
-              rebroadcast
-              channel { name annictId }
-              episode { number numberText title }
-            }
-          }
+SEASON_WORKS_QUERY = """
+query($seasons: [String!], $after: String) {
+  searchWorks(seasons: $seasons, first: 50, after: $after) {
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      annictId
+      title
+      programs(first: 100) {
+        nodes {
+          startedAt
+          rebroadcast
+          channel { name annictId }
+          episode { number numberText title }
         }
       }
     }
@@ -136,26 +129,26 @@ query($seasons: [String!], $states: [StatusState!], $after: String) {
 """
 
 
-def fetch_library(client: httpx.Client, season: str) -> list[Work]:
-    """今期ライブラリの work とその放送予定を取得する."""
+def fetch_season_works(client: httpx.Client, season: str) -> list[Work]:
+    """今期 (指定シーズン) に放送される全作品とその放送予定を取得する.
+
+    annict.com/works/{season} の一覧と同じく、個人の視聴リストに依存しない公開データ。
+    """
     works: list[Work] = []
     after: str | None = None
     while True:
         variables: dict = {"seasons": [season], "after": after}
-        if LIBRARY_STATES:
-            variables["states"] = LIBRARY_STATES
         resp = client.post(
             ANNICT_GRAPHQL_URL,
             headers={"Authorization": f"Bearer {ANNICT_TOKEN}"},
-            json={"query": LIBRARY_QUERY, "variables": variables},
+            json={"query": SEASON_WORKS_QUERY, "variables": variables},
         )
         resp.raise_for_status()
         payload = resp.json()
         if payload.get("errors"):
             raise RuntimeError(f"Annict GraphQL errors: {payload['errors']}")
-        entries = payload["data"]["viewer"]["libraryEntries"]
-        for node in entries["nodes"]:
-            w = node["work"]
+        entries = payload["data"]["searchWorks"]
+        for w in entries["nodes"]:
             programs: list[Program] = []
             for p in w["programs"]["nodes"]:
                 ch = p.get("channel") or {}
@@ -295,9 +288,9 @@ def main() -> int:
     unmapped_channels: set[str] = set()
 
     with httpx.Client(timeout=HTTP_TIMEOUT) as client:
-        works = fetch_library(client, season)
+        works = fetch_season_works(client, season)
         stats["works"] = len(works)
-        log.info("今期ライブラリ: %d 作品", len(works))
+        log.info("今期作品 (%s): %d 作品", season, len(works))
 
         existing = fetch_existing_reserve_program_ids(client)
         log.info("既存予約 programId: %d 件", len(existing))
