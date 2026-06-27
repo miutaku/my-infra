@@ -22,7 +22,7 @@ config:
       icmp:
         preferred_ip_protocol: "ip4"
 
-# Alloy から /probe エンドポイントをスクレイプするため ServiceMonitor は不要
+# ServiceMonitor はこのリポジトリでは管理しない
 serviceMonitor:
   enabled: false
 
@@ -37,5 +37,4 @@ resources:
   limits:
     memory: 64Mi
 
-# ターゲット一覧は Grafana Alloy の River config (grafana-alloy/values.yaml) で管理する
-# VLAN 設定が固まった段階で追記する
+# ターゲット一覧は利用中の scrape 設定側で管理する

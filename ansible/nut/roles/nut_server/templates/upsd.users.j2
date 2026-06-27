@@ -1,10 +1,10 @@
 # Managed by Ansible (ansible/nut). Do not edit by hand.
-# primary: この Pi 自身の upsmon(localhost)。FSD 発行・killpower 権限あり。
+# primary: USB 接続 UPS のドライバホスト側 upsmon(localhost)。FSD 発行権限あり。
 [{{ nut_user_primary }}]
     password = {{ nut_monitor_password }}
     upsmon primary
 
-# secondary: この UPS で給電される PVE ホストの upsmon(LAN 越し)。監視のみ。
+# secondary: この UPS で給電されるホストの upsmon(LAN 越し)。監視のみ。
 [{{ nut_user_secondary }}]
     password = {{ nut_monitor_password }}
     upsmon secondary

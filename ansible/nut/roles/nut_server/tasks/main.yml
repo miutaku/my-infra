@@ -51,7 +51,7 @@
     mode: "0640"
   notify: Restart NUT stack
 
-- name: Deploy upsmon.conf (primary - self shutdown at LOWBATT + killpower)
+- name: Deploy upsmon.conf (USB UPS primary + own power monitor)
   ansible.builtin.template:
     src: upsmon.conf.j2
     dest: /etc/nut/upsmon.conf
