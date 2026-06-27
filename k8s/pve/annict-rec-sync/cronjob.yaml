@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: annict-rec-sync
+  namespace: app-annict-rec-sync
+spec:
+  schedule: "0 18 * * *"  # 03:00 JST 相当 (UTC)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/arch: amd64
+          containers:
+            - name: annict-rec-sync
+              image: ghcr.io/miutaku/annict-rec-sync:latest
+              imagePullPolicy: Always
+              env:
+                - name: TZ
+                  value: Asia/Tokyo
+                - name: ANNICT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: annict-rec-sync-secrets
+                      key: ANNICT_TOKEN
+                - name: SCRAPER_BASE_URL
+                  value: http://annict-scraper.app-annict-scraper.svc.cluster.local:8080
+                - name: EPGSTATION_BASE_URL
+                  value: http://epgstation.app-epgstation.svc.cluster.local:8888
+                - name: SUBSCRIBED_SERVICES
+                  value: "dアニメストア,Amazon プライム・ビデオ,Netflix"
+                - name: MATCH_TOLERANCE_SEC
+                  value: "300"
+                - name: CHANNEL_MAP_FILE
+                  value: /config/channel-map.json
+                # 初回は DRY_RUN=true で検証し、問題なければ false に変更する
+                - name: DRY_RUN
+                  value: "true"
+              volumeMounts:
+                - name: channel-map
+                  mountPath: /config
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: "20m"
+                  memory: "64Mi"
+                limits:
+                  cpu: "300m"
+                  memory: "256Mi"
+          volumes:
+            - name: channel-map
+              configMap:
+                name: annict-rec-sync-channel-map
