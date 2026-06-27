@@ -154,3 +154,10 @@ ssh root@192.168.0.115 '/usr/local/sbin/nut-charge-guard ups-a@192.168.10.113 0'
   (本構成の `upsd.conf` は `127.0.0.1` と LAN IP の両方を LISTEN する)。
 - **killpower が効かない**: `nut.conf` の `MODE=netserver`(Pi)、`POWERDOWNFLAG` の
   パス、`offdelay/ondelay` の値を確認。`upscmd -l <ups>` に `load.off.delay` があること。
+
+## 8. メトリクス監視 (VictoriaMetrics)
+
+UPS の負荷・推定消費電力・バッテリ残量等は `nut-exporter`(k8s)で収集する。
+構成は [`k8s/pve/nut-exporter/`](../k8s/pve/nut-exporter/)、scrape は Grafana Alloy
+(`k8s/pve/grafana-alloy/values.yaml` の `nut_ups_a`/`nut_ups_b`)→ VictoriaMetrics。
+推定消費電力(W) = `network_ups_tools_ups_load / 100 * network_ups_tools_ups_realpower_nominal`。
