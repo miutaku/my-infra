@@ -47,6 +47,7 @@ network_ups_tools_ups_load{instance="ups-a"} / 100
 ## メモ
 
 - exporter 自身のメトリクスは `/metrics`、UPS メトリクスは `/ups_metrics`。
-- 既定の公開変数に `ups.realpower.nominal` 等が含まれない場合は、scrape に
-  `"__param_variables" = "ups.load,ups.realpower.nominal,battery.charge,..."` を追加するか、
-  Deployment の args に `--nut.vars_enable` 相当を設定する。
+- 既定の `--nut.vars_enable` には `ups.realpower.nominal` / `battery.runtime` が
+  含まれず推定 W を計算できないため、Deployment の args で公開変数を明示している
+  (このフラグは既定リストを**置き換える**ので、必要な変数は全て列挙する)。
+  追加したい変数があれば `deployment.yaml` の `--nut.vars_enable` に足す。

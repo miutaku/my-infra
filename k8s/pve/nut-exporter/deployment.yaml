@@ -22,6 +22,9 @@ spec:
           image: druggeri/nut_exporter:3.3.0
           args:
             - --web.listen-address=:9199
+            # 公開する NUT 変数。既定セットには ups.realpower.nominal / battery.runtime が
+            # 無く推定 W が計算できないため明示する(このフラグは既定リストを置き換える)。
+            - --nut.vars_enable=battery.charge,battery.charge.low,battery.runtime,battery.runtime.low,battery.voltage,battery.voltage.nominal,input.voltage,input.voltage.nominal,ups.load,ups.realpower.nominal,ups.status
           # 接続先 NUT サーバ・UPS 名は scrape 時に ?server=&ups= で指定するため、
           # ここでは既定値(--nut.server=127.0.0.1)のままでよい。read は匿名で可。
           ports:
