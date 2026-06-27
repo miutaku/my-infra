@@ -1,13 +1,13 @@
 # annict-rec-sync
 
-Annict の今期視聴リストにある作品のうち、契約済みの配信サービス（dアニメストア /
-Amazon プライム・ビデオ / Netflix 等）で**配信されていない作品だけ**を TV から録画する
-よう、EPGStation に番組単位の予約を投入する同期ジョブ。
+Annict の**今期放送作品**（annict.com/works/{season} の一覧）のうち、契約済みの配信
+サービス（dアニメストア / Amazon プライム・ビデオ / Netflix 等）で**配信されていない
+作品だけ**を TV から録画するよう、EPGStation に番組単位の予約を投入する同期ジョブ。
 
 ## 仕組み
 
-1. Annict GraphQL `viewer.libraryEntries`（今期 / 全ステータス）から作品と各放送
-   （`startedAt` / `channel` / `episode`）を取得。
+1. Annict GraphQL `searchWorks(seasons: [<season>])` から今期放送の全作品と各放送
+   （`startedAt` / `channel` / `episode`）を取得（個人の視聴リストには依存しない）。
 2. 作品ごとに [annict-subscription-scraper](https://github.com/miutaku/annict-subscription-scraper)
    `GET /?id={annictId}` を呼び、契約済み配信で配信中の作品を除外。
 3. 残った作品の各放送について、Annict の **channel 名 → EPGStation channelId** を
@@ -27,7 +27,6 @@ Amazon プライム・ビデオ / Netflix 等）で**配信されていない作
 | `SCRAPER_BASE_URL` | `http://annict-scraper.app-annict-scraper.svc.cluster.local:8080` | scraper |
 | `EPGSTATION_BASE_URL` | `http://epgstation.app-epgstation.svc.cluster.local:8888` | EPGStation API |
 | `SUBSCRIBED_SERVICES` | `dアニメストア,Amazon プライム・ビデオ,Netflix` | 録画除外する契約配信（正規化部分一致） |
-| `LIBRARY_STATES` | 空（全ステータス） | 例: `WATCHING,WANNA_WATCH` |
 | `SEASON` | 空（現在シーズン自動算出） | 例: `2026-spring` |
 | `MATCH_TOLERANCE_SEC` | `300` | 放送開始時刻の突合許容誤差（秒） |
 | `ALLOW_END_LACK` | `true` | 予約時の末尾切れ許容 |
