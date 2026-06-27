@@ -1,0 +1,27 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+# この Pi は自分が接続している UPS のドライバホスト = primary。
+# 同居構成 (この UPS で Pi 自身が給電される) なので powervalue = 1。
+# OB かつ LB(残 {{ nut_lowbatt_charge }}%) で自分ごと安全停止し、
+# 停止シーケンス中に killpower で UPS 出力を遮断する(offdelay={{ nut_offdelay }}s)。
+RUN_AS_USER root
+
+MONITOR {{ nut_ups.name }}@localhost 1 {{ nut_user_primary }} {{ nut_monitor_password }} primary
+
+MINSUPPLIES 1
+SHUTDOWNCMD "/sbin/shutdown -h +0"
+POWERDOWNFLAG /run/nut/killpower
+
+POLLFREQ 5
+POLLFREQALERT 5
+HOSTSYNC 15
+DEADTIME 15
+
+NOTIFYFLAG ONLINE   SYSLOG+WALL
+NOTIFYFLAG ONBATT   SYSLOG+WALL
+NOTIFYFLAG LOWBATT  SYSLOG+WALL
+NOTIFYFLAG FSD      SYSLOG+WALL
+NOTIFYFLAG COMMOK   SYSLOG
+NOTIFYFLAG COMMBAD  SYSLOG+WALL
+NOTIFYFLAG SHUTDOWN SYSLOG+WALL
+NOTIFYFLAG REPLBATT SYSLOG+WALL
+NOTIFYFLAG NOCOMM   SYSLOG+WALL

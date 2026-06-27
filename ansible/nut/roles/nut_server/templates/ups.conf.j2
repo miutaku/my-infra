@@ -1,0 +1,10 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+[{{ nut_ups.name }}]
+    driver = {{ nut_ups.driver }}
+    port = {{ nut_ups.port }}
+    desc = "{{ nut_ups.desc }}"
+    # 出力遮断(killpower)タイミング。ondelay > offdelay が usbhid-ups の必須条件。
+    offdelay = {{ nut_offdelay }}
+    ondelay = {{ nut_ondelay }}
+    # LOWBATT 判定残量を明示(Pi が自分ごと停止し killpower する最終ライン)。
+    override.battery.charge.low = {{ nut_lowbatt_charge }}

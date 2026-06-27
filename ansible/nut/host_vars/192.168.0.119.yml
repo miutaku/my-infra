@@ -1,0 +1,5 @@
+---
+# pve-b550m — UPS B で給電。UPS B を監視している RPi#1(.112) の upsd を見る。
+nut_monitor:
+  ups: "ups-b@192.168.10.112" # = UPS B
+  powervalue: 1

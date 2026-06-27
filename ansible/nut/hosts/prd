@@ -1,0 +1,19 @@
+# UPS 安全シャットダウン用インベントリ
+#
+# 物理構成:
+#   UPS A (APC RS 550S / 2025) = ups-a@192.168.10.113
+#       給電先: pve-x570(192.168.0.115), RPi#2(192.168.10.113)
+#       監視/ドライバ: RPi#2(192.168.10.113)
+#   UPS B (APC RS 550S / 2020) = ups-b@192.168.10.112
+#       給電先: pve-b550m(192.168.0.119), RPi#1(192.168.10.112)
+#       監視/ドライバ: RPi#1(192.168.10.112)
+
+# NUT サーバ (upsd + usbhid-ups driver + 自分用 upsmon primary) を動かす Raspberry Pi
+[nut_pi]
+192.168.10.112  # RPi#1 -> UPS B (ups-b)
+192.168.10.113  # RPi#2 -> UPS A (ups-a)
+
+# NUT クライアント (upsmon secondary + 残量ガード) を動かす Proxmox VE ホスト
+[nut_pve]
+192.168.0.115  # pve-x570  -> 監視 ups-a@192.168.10.113 (UPS A)
+192.168.0.119  # pve-b550m -> 監視 ups-b@192.168.10.112 (UPS B)

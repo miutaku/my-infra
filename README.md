@@ -420,6 +420,13 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 
 ---
 
+## ドキュメント
+
+| ドキュメント | 内容 |
+|---|---|
+| [docs/ups-shutdown.md](docs/ups-shutdown.md) | UPS(APC×2 / NUT)連動の安全シャットダウン構成。実装は `ansible/nut/` |
+| [docs/truenas-nfs-setup.md](docs/truenas-nfs-setup.md) | TrueNAS NFS セットアップ |
+
 ## CI / GitHub Actions
 
 | ワークフロー | トリガーパス | 内容 |

@@ -1,0 +1,12 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+[Unit]
+Description=Run NUT battery-charge guard every {{ nut_charge_guard_interval }}s
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec={{ nut_charge_guard_interval }}
+AccuracySec=2s
+Unit=nut-charge-guard.service
+
+[Install]
+WantedBy=timers.target

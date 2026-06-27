@@ -1,0 +1,26 @@
+# Managed by Ansible (ansible/nut). Do not edit by hand.
+# このホスト(PVE)は給電元 UPS のドライバを持たない = secondary。
+# OB+LB(残 {{ nut_lowbatt_charge }}%) を検知したら自分を停止する「最終保険」。
+# 通常はこれより早く、残 {{ nut_pve_charge_threshold }}% で nut-charge-guard が
+# 先にクリーンシャットダウンを始める(VM 停止に時間がかかるため)。
+RUN_AS_USER root
+
+MONITOR {{ nut_monitor.ups }} {{ nut_monitor.powervalue }} {{ nut_user_secondary }} {{ nut_monitor_password }} secondary
+
+MINSUPPLIES 1
+SHUTDOWNCMD "/sbin/shutdown -h +0"
+
+POLLFREQ 5
+POLLFREQALERT 5
+HOSTSYNC 15
+DEADTIME 15
+
+NOTIFYFLAG ONLINE   SYSLOG+WALL
+NOTIFYFLAG ONBATT   SYSLOG+WALL
+NOTIFYFLAG LOWBATT  SYSLOG+WALL
+NOTIFYFLAG FSD      SYSLOG+WALL
+NOTIFYFLAG COMMOK   SYSLOG
+NOTIFYFLAG COMMBAD  SYSLOG+WALL
+NOTIFYFLAG SHUTDOWN SYSLOG+WALL
+NOTIFYFLAG REPLBATT SYSLOG+WALL
+NOTIFYFLAG NOCOMM   SYSLOG+WALL
