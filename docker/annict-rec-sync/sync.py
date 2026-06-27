@@ -1,8 +1,8 @@
-"""Annict 視聴リスト連動 EPGStation 自動録画同期ジョブ.
+"""Annict 今期放送作品連動 EPGStation 自動録画同期ジョブ.
 
-今期(現在シーズン)の Annict 視聴リストにある作品のうち、契約済みの配信サービス
-(dアニメストア / Amazon プライム・ビデオ / Netflix 等) で配信されていない作品だけを
-TV から録画するよう EPGStation に番組単位の予約を投入する。
+今期(現在シーズン)に放送される Annict 掲載の全作品 (annict.com/works/{season}) の
+うち、契約済みの配信サービス (dアニメストア / Amazon プライム・ビデオ / Netflix 等) で
+配信されていない作品だけを TV から録画するよう EPGStation に番組単位の予約を投入する。
 
 タイトル文字列の表記揺れを避けるため、Annict の各放送(Program)が持つ
 「放送局(channel) + 放送開始時刻(startedAt)」を EPGStation の番組表と突合し、
@@ -77,7 +77,7 @@ HTTP_TIMEOUT = httpx.Timeout(30.0)
 class Program:
     started_at: datetime
     channel_name: str
-    episode_label: str
+    slot_label: str
     rebroadcast: bool = False
 
 
@@ -120,7 +120,6 @@ query($seasons: [String!], $after: String) {
           startedAt
           rebroadcast
           channel { name annictId }
-          episode { number numberText title }
         }
       }
     }
@@ -152,13 +151,14 @@ def fetch_season_works(client: httpx.Client, season: str) -> list[Work]:
             programs: list[Program] = []
             for p in w["programs"]["nodes"]:
                 ch = p.get("channel") or {}
-                ep = p.get("episode") or {}
-                ep_label = ep.get("numberText") or (f"#{ep['number']}" if ep.get("number") else "") or (ep.get("title") or "")
+                started_at = datetime.fromisoformat(p["startedAt"])
                 programs.append(
                     Program(
-                        started_at=datetime.fromisoformat(p["startedAt"]),
+                        started_at=started_at,
                         channel_name=ch.get("name", ""),
-                        episode_label=ep_label,
+                        # episode は Annict 上 null のことがある (非nullableだが実データに欠落)
+                        # ため取得せず、ログ用ラベルは放送時刻から生成する
+                        slot_label=started_at.strftime("%m/%d %H:%M"),
                         rebroadcast=bool(p.get("rebroadcast", False)),
                     )
                 )
@@ -310,7 +310,7 @@ def main() -> int:
                 if SKIP_REBROADCAST and prog.rebroadcast:
                     stats["rebroadcast"] += 1
                     log.info("  再放送スキップ: %s %s ch=%s %s",
-                             work.title, prog.episode_label, prog.channel_name,
+                             work.title, prog.slot_label, prog.channel_name,
                              prog.started_at.isoformat())
                     continue
                 ch_id = channel_map.get(normalize(prog.channel_name))
@@ -318,32 +318,32 @@ def main() -> int:
                     stats["unmapped"] += 1
                     unmapped_channels.add(prog.channel_name)
                     log.warning("  未マップ channel: %r (%s %s)",
-                                prog.channel_name, work.title, prog.episode_label)
+                                prog.channel_name, work.title, prog.slot_label)
                     continue
 
                 program_id = resolve_program_id(client, ch_id, prog.started_at)
                 if program_id is None:
                     stats["no_match"] += 1
                     log.warning("  番組表に一致なし: %s %s ch=%s %s",
-                                work.title, prog.episode_label, prog.channel_name,
+                                work.title, prog.slot_label, prog.channel_name,
                                 prog.started_at.isoformat())
                     continue
 
                 if program_id in existing:
                     stats["already"] += 1
                     log.info("  予約済み: %s %s (programId=%s)",
-                             work.title, prog.episode_label, program_id)
+                             work.title, prog.slot_label, program_id)
                     continue
 
                 if DRY_RUN:
                     log.info("  [DRY_RUN] 予約予定: %s %s ch=%s %s (programId=%s)",
-                             work.title, prog.episode_label, prog.channel_name,
+                             work.title, prog.slot_label, prog.channel_name,
                              prog.started_at.isoformat(), program_id)
                 else:
                     add_reserve(client, program_id)
                     existing.add(program_id)
                     log.info("  予約作成: %s %s (programId=%s)",
-                             work.title, prog.episode_label, program_id)
+                             work.title, prog.slot_label, program_id)
                 stats["reserved"] += 1
 
     if unmapped_channels:
