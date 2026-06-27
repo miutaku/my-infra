@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import sys
 import unicodedata
@@ -235,34 +236,34 @@ def fetch_existing_reserve_program_ids(client: httpx.Client) -> set[int]:
     return program_ids
 
 
-def resolve_program_id(client: httpx.Client, channel_id: int, started_at: datetime) -> int | None:
-    """channelId + 放送開始時刻(±許容誤差) で EPGStation の番組を探し programId を返す."""
-    target = int(started_at.timestamp())
-    start_ms = (target - MATCH_TOLERANCE_SEC) * 1000
-    end_ms = (target + MATCH_TOLERANCE_SEC) * 1000
+def fetch_channel_schedule(client: httpx.Client, channel_id: int,
+                           start_ms: int, days: int) -> list[tuple[int, int]]:
+    """指定 channel の EPGStation 番組表を取得し [(開始秒, programId)] を返す.
+
+    EPGStation v2 の `GET /api/schedules/{channelId}` は startAt(ms) + days(日数) 必須で、
+    startAt から days 日分の番組を返す (任意の時間窓指定や channelId クエリは不可)。
+    """
     resp = client.get(
-        f"{EPGSTATION_BASE_URL}/api/schedule",
-        params={
-            "startAt": start_ms,
-            "endAt": end_ms,
-            "isHalfWidth": "true",
-            "channelId": channel_id,
-        },
+        f"{EPGSTATION_BASE_URL}/api/schedules/{channel_id}",
+        params={"startAt": start_ms, "days": days, "isHalfWidth": "true"},
     )
     resp.raise_for_status()
-    schedules = resp.json()
+    programs: list[tuple[int, int]] = []
+    for sched in resp.json():
+        for prog in sched.get("programs", []):
+            programs.append((int(prog["startAt"]) // 1000, int(prog["id"])))
+    return programs
 
+
+def match_program_id(programs: list[tuple[int, int]], target_sec: int) -> int | None:
+    """番組表 [(開始秒, programId)] から target_sec に最も近い (±許容誤差内) programId を返す."""
     best_id: int | None = None
     best_delta = MATCH_TOLERANCE_SEC + 1
-    for sched in schedules:
-        for prog in sched.get("programs", []):
-            if int(prog.get("channelId", -1)) != channel_id:
-                continue
-            prog_start = int(prog["startAt"]) // 1000
-            delta = abs(prog_start - target)
-            if delta <= MATCH_TOLERANCE_SEC and delta < best_delta:
-                best_delta = delta
-                best_id = int(prog["id"])
+    for prog_start, pid in programs:
+        delta = abs(prog_start - target_sec)
+        if delta <= MATCH_TOLERANCE_SEC and delta < best_delta:
+            best_delta = delta
+            best_id = pid
     return best_id
 
 
@@ -291,6 +292,10 @@ def main() -> int:
              "out_of_window": 0, "reserved": 0, "already": 0, "unmapped": 0, "no_match": 0}
     unmapped_channels: set[str] = set()
     now = datetime.now(timezone.utc)
+    # EPGStation 番組表の取得範囲。channel ごとに 1 回だけ取得してキャッシュする。
+    schedule_start_ms = int(now.timestamp() * 1000)
+    schedule_days = math.ceil(LOOKAHEAD_DAYS) + 1
+    schedule_cache: dict[int, list[tuple[int, int]]] = {}
 
     with httpx.Client(timeout=HTTP_TIMEOUT) as client:
         works = fetch_season_works(client, season)
@@ -337,7 +342,11 @@ def main() -> int:
                     unmapped_channels.add(prog.channel_name)
                     continue
 
-                program_id = resolve_program_id(client, ch_id, prog.started_at)
+                if ch_id not in schedule_cache:
+                    schedule_cache[ch_id] = fetch_channel_schedule(
+                        client, ch_id, schedule_start_ms, schedule_days)
+                program_id = match_program_id(
+                    schedule_cache[ch_id], int(prog.started_at.timestamp()))
                 if program_id is None:
                     stats["no_match"] += 1
                     log.warning("  番組表に一致なし: %s %s ch=%s %s",
