@@ -1,5 +1,5 @@
 ---
-# pve-x570 — UPS A で給電。UPS A を監視している RPi#2(.113) の upsd を見る。
+# pve-x570 — UPS A で給電。UPS A を監視している RPi#1(.112) の upsd を見る。
 nut_monitor:
-  ups: "ups-a@192.168.10.113" # = UPS A
+  ups: "ups-a@192.168.10.112" # = UPS A
   powervalue: 1

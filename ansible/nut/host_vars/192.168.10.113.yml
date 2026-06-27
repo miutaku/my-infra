@@ -1,14 +1,25 @@
 ---
-# RPi#2 — UPS A (APC RS 550S / 2025) のドライバ/監視ホスト。
-# UPS A で給電されるため、自身の upsmon は primary・powervalue 1。
+# RPi#2 — UPS B のドライバ/監視ホスト。
+# 自身は UPS A で給電されるため、ローカル UPS B は primary だが給電源には数えない。
+# 給電元 UPS A は RPi#1(.112) の upsd を secondary として監視する。
 nut_listen_ip: 192.168.10.113
 
 nut_ups:
-  name: ups-a
+  name: ups-b
   driver: usbhid-ups
   port: auto # serial 固定はしない(接続中の APC を自動検出)
   # desc に '#'(半角) を含めないこと(NUT の ups.conf パーサがクォート内でもコメント扱いして壊れる)。
-  desc: "UPS A (APC RS 550S) powers pve-x570 + RPi＃2(.113)"
+  desc: "UPS B (APC RS 550S) powers pve-b550m + RPi＃1(.112) + network devices"
+
+nut_driver_powervalue: 0
+nut_power_monitor:
+  ups: "ups-a@192.168.10.112" # RPi#2 の給電元 = UPS A
+  powervalue: 1
+nut_minsupplies: 1
+
+# cross-power 構成では、この Pi の shutdown 理由はリモート UPS A になり得る。
+# その時にローカル USB 接続の UPS B を誤って killpower しないよう POWERDOWNFLAG は出さない。
+nut_powerdownflag_enabled: false
 
 # ホスト名を担当 UPS に揃える場合は有効化(任意)。docs/ups-shutdown.md 参照。
-# nut_hostname: nut-pi-02-ups-a
+# nut_hostname: nut-pi-02-mon-ups-b-pwr-ups-a

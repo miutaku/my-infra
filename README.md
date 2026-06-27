@@ -20,9 +20,8 @@ flowchart LR
       OCIIngress([ingress-nginx])
       OCILonghorn([Longhorn])
       OCIActionsRunner([GitHub Actions Runner])
-      OCIAlloy([Grafana Alloy])
       OCIEnc([OCI Encord Server])
-      OCILonghorn ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress ~~~ OCIAlloy
+      OCILonghorn ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress
       OCICloudflared ~~~ OCIEnc ~~~ ArgoCD_OCI ~~~ OCIActionsRunner ~~~ OCITFCAgent
     end
   end
@@ -87,9 +86,8 @@ flowchart LR
           CFPod([cloudflared])
           TFCAgent([tfc-agent])
           Tailscale((Tailscale subnet router<br/> for Emergency Access))
-          Alloy([Grafana Alloy])
           PDC([PDC agent])
-          CFPod ~~~ PDC ~~~ TFCAgent ~~~ Alloy ~~~ Tailscale 
+          CFPod ~~~ PDC ~~~ TFCAgent ~~~ Tailscale
         end
         subgraph RKE2_system[RKE2 system]
           ESO([external-secrets<br/>Bitwarden BSM])
@@ -139,9 +137,7 @@ flowchart LR
   EPGStation -->|encode request| OCIEnc -->|save| NAS
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
-  OCIAlloy -->|remote_write| GC_Prometheus
   TFC <-.->|tunnel| TFCAgent -->|API request| PVE_API
-  Alloy -->|remote_write| GC_Prometheus
   pveEx -->|API Request| PVE
   snmpEx -->|SNMP| IX
   GC_Grafana <-.->|tunnel| PDC -->|query| VMetrics -->|polling| Exporters
@@ -167,7 +163,7 @@ flowchart LR
   class IX,US8,AP,TailscaleNet nwDevice
   class MM2,NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
   class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
-  class OCIAlloy,Alloy,blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
+  class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
   class CF_Application,CF_Tunnel,TFC,GitHub external
   class OCI,OKE zoneCloud
   class ExtSvc,Cloudflare,Grafana zoneExternal
@@ -248,7 +244,7 @@ flowchart LR
   Terraform[terraform/oci<br/>OKEクラスタ作成]
   ArgoCD[k8s/oci/argocd<br/>ArgoCD Bootstrap]
   Infra[k8s/oci/infrastructure<br/>ESO / cert-manager / ingress-nginx / Longhorn]
-  Apps[k8s/oci/apps<br/>cloudflared / tfc-agent / actions-runner / Alloy]
+  Apps[k8s/oci/apps<br/>cloudflared / tfc-agent / actions-runner]
 
   Terraform --> ArgoCD --> Infra --> Apps
 ```
@@ -339,22 +335,18 @@ flowchart TB
   SNMP[snmp-exporter :9116<br/>IX2215 / TrueNAS]
   PVE[pve-exporter :9221<br/>Proxmox API]
   Blackbox[blackbox-exporter :9115<br/>HTTP / ICMP]
-  Alloy[Grafana Alloy<br/>RKE2 DaemonSet]
   VM[VictoriaMetrics<br/>RKE2内]
-  Cloud[Grafana Cloud<br/>remote_write]
   PDC[Grafana PDC agent<br/>VictoriaMetrics query tunnel]
 
   Hosts --> Node
   Hosts --> SNMP
   Hosts --> PVE
   Hosts --> Blackbox
-  Node --> Alloy
-  SNMP --> Alloy
-  PVE --> Alloy
-  Blackbox --> Alloy
-  Alloy --> VM
-  Alloy --> Cloud
-  Cloud --> PDC --> VM
+  VM --> Node
+  VM --> SNMP
+  VM --> PVE
+  VM --> Blackbox
+  PDC --> VM
 ```
 
 ### メトリクス収集対象
@@ -365,13 +357,13 @@ flowchart TB
 | IX2215 | 192.168.0.254 | blackbox HTTP/ICMP | ✅ |
 | pve-x570 | 192.168.0.115 | pve-exporter | BSM 要設定 |
 | pve-b550m | 192.168.0.119 | pve-exporter | BSM 要設定 |
-| RKE2 nodes ×5 | 192.168.20.126-130 | Alloy DaemonSet (node) | ✅ |
+| RKE2 nodes ×5 | 192.168.20.126-130 | node metrics | scrape 設定要確認 |
 | UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
 | mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | ✅ (VLAN40) |
 | nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
-| OKE nodes ×2 | 10.0.1.x | Alloy DaemonSet (node) | ✅ |
+| OKE nodes ×2 | 10.0.1.x | node metrics | scrape 設定要確認 |
 
 ### node_exporter について
 
@@ -447,6 +439,5 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 ```text
 ansible/ix2215/group_vars/all.yml
 k8s/pve/coredns/Corefile
-k8s/pve/grafana-alloy/values.yaml
 k8s/pve/wol/appdata/db/computers.txt
 ```

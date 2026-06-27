@@ -88,7 +88,6 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | 2 | oci-cert-manager-config | ClusterIssuer (Let's Encrypt) |
 | 3 | oci-ingress-nginx | ingress-nginx |
 | 4 | oci-cloudflared | Cloudflare Tunnel |
-| 4 | oci-grafana-alloy | Grafana Alloy DaemonSet |
 | 4 | oci-actions-runner | GitHub Actions self-hosted runner |
 | 4 | oci-pve-tfc-agent | Terraform Cloud agent (pve-home workspace) |
 | 4 | oci-reventer-tfc-agent | Terraform Cloud agent (reventer workspace) |
@@ -102,9 +101,6 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | `TFC_HOME_AGENT_NAME` | エージェント表示名 (例: `pve-home-agent-01`) |
 | `CLOUDFLARE_OKE_TUNNEL_TOKEN` | `terraform output -raw oke_tunnel_token` で取得 |
 | `CLOUDFLARE_DNS_API_TOKEN` | Cloudflare API token (DNS:Edit, miutaku.work のみ) |
-| `GRAFANA_CLOUD_METRICS_URL` | Grafana Cloud Prometheus push URL |
-| `GRAFANA_CLOUD_METRICS_USERNAME` | Grafana Cloud instance ID |
-| `GRAFANA_CLOUD_METRICS_PASSWORD` | Grafana Cloud API key |
 | `GITHUB_REVENTER_RUNNER_PAT` | GitHub PAT (`repo` スコープ) — miutaku/reventer 用 self-hosted runner |
 
 ## ArgoCD UI へのアクセス
@@ -142,5 +138,3 @@ kubectl -n argocd get app root-app
   `external-secrets` の values に `bitwarden-sdk-server.enabled: true` を設定して有効化する。
 - `ClusterSecretStore` の provider フィールド名は `bitwardensecretsmanager`（`bitwarden` ではない）。
   `bitwardenServerSDKURL` は `https://` が必須 (bitwarden-sdk-server は TLS のみ)。
-- `grafana-alloy` の hostPath volume は `controller.volumes.extra` / `alloy.mounts.extra` で設定すること
-  (ルートの `extraVolumes` は alloy chart v0.12.x 以降では機能しない)。

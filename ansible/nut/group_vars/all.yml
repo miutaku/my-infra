@@ -4,14 +4,13 @@
 # クリーンシャットダウン。VM 停止に時間がかかるため早めに倒す。
 nut_pve_charge_threshold: 80
 
-# UPS の LOWBATT 判定残量(%)。ここで Raspberry Pi (UPS のドライバホスト) が
-# 自分ごと安全停止し、killpower で UPS 出力を遮断する最終ライン。
-# Pi は省電力なのでギリギリ(=ここ)まで粘らせる。
+# UPS の LOWBATT 判定残量(%)。ここで給電されるホストが最終停止する。
+# Pi は省電力なので、給電元 UPS がここに達するまでは粘らせる。
 nut_lowbatt_charge: 10
 
 # killpower(出力遮断)コマンド送出から実際に UPS が出力を切るまでの猶予(秒)。
-# = usbhid-ups の offdelay。残量 LB の時点で残っているのは Pi 本体のみなので、
-# Pi の OS 停止(~30s)が完了するのに十分な余裕を取る。
+# = usbhid-ups の offdelay。cross-power の Pi では host_vars 側で自動 killpower
+# (POWERDOWNFLAG) を無効化し、必要なら手動 upscmd で使う。
 nut_offdelay: 150
 
 # AC 復電後、UPS が出力を再投入するまでの遅延(秒)。usbhid-ups の制約で
@@ -23,8 +22,8 @@ nut_charge_guard_interval: 20
 
 # ───────────────────────── NUT 認証ユーザー ─────────────────────────
 # upsd.users に作る監視用ユーザー名。
-nut_user_primary: monmaster   # Pi 自身の upsmon(primary) が localhost upsd へログイン
-nut_user_secondary: monslave  # PVE の upsmon(secondary) がネットワーク越しにログイン
+nut_user_primary: monmaster   # USB 接続 UPS の primary upsmon が localhost upsd へログイン
+nut_user_secondary: monslave  # 給電されるホストの secondary upsmon がネットワーク越しにログイン
 nut_user_admin: upsadmin      # 手動管理用(バッテリーテスト・手動 killpower 等の instcmd)
 
 # 監視ユーザーのパスワード(primary/secondary 共通)。

@@ -6,14 +6,12 @@ UPS の構成自体は [`ansible/nut/`](../../../ansible/nut/) / [`docs/ups-shut
 
 ## 仕組み
 
-- upsd は各 Raspberry Pi で稼働(`ups-a@192.168.10.113` / `ups-b@192.168.10.112`)。
+- upsd は各 Raspberry Pi で稼働(`ups-a@192.168.10.112` / `ups-b@192.168.10.113`)。
 - NUT の変数 read は**匿名で可**なので、exporter は 1 インスタンスで両 Pi を担当。
   接続先は scrape 側のクエリパラメータ `?server=<Pi IP>&ups=<name>` で切り替える。
-- scrape は Grafana Alloy が実施し VictoriaMetrics へ remote_write
-  (`k8s/pve/grafana-alloy/values.yaml` の `prometheus.scrape "nut_ups_a"/"nut_ups_b"`)。
 
 ```
-Alloy --(/ups_metrics?server=192.168.10.113&ups=ups-a)--> nut-exporter --3493--> upsd@Pi --> VictoriaMetrics
+scraper --(/ups_metrics?server=192.168.10.112&ups=ups-a)--> nut-exporter --3493--> upsd@Pi
 ```
 
 ## 主なメトリクス(`network_ups_tools_*`、ラベル `ups`, `instance`, `job="nut"`)
@@ -42,7 +40,8 @@ network_ups_tools_ups_load{instance="ups-a"} / 100
 ```
 
 > 注意: `ups.load` はバッテリーバックアップ側出力のみの計測。サージのみ(非バックアップ)
-> 出力にぶら下がる機器は含まれない。詳細は `docs/ups-shutdown.md`。
+> 出力にぶら下がる機器は含まれない。UPS B の AC 入力は UPS A のサージのみ口にあるため、
+> UPS B 配下の負荷も UPS A の `ups.load` には含まれない。詳細は `docs/ups-shutdown.md`。
 
 ## メモ
 
