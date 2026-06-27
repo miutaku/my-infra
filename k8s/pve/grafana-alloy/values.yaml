@@ -162,6 +162,44 @@ alloy:
         scrape_interval = "60s"
       }
 
+      // ── NUT: UPS 監視 (nut-exporter 経由 / ?server= で各 Pi の upsd を指定) ──
+      // 消費電力(推定W) = network_ups_tools_ups_load /100 * network_ups_tools_ups_realpower_nominal
+      prometheus.scrape "nut_ups_a" {
+        targets = [
+          {
+            "__address__"    = "nut-exporter.monitoring.svc.cluster.local:9199",
+            "__param_server" = "192.168.10.113",
+            "__param_ups"    = "ups-a",
+            "instance"       = "ups-a",
+            "job"            = "nut",
+          },
+        ]
+        metrics_path    = "/ups_metrics"
+        clustering {
+          enabled = true
+        }
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
+        scrape_interval = "60s"
+      }
+
+      prometheus.scrape "nut_ups_b" {
+        targets = [
+          {
+            "__address__"    = "nut-exporter.monitoring.svc.cluster.local:9199",
+            "__param_server" = "192.168.10.112",
+            "__param_ups"    = "ups-b",
+            "instance"       = "ups-b",
+            "job"            = "nut",
+          },
+        ]
+        metrics_path    = "/ups_metrics"
+        clustering {
+          enabled = true
+        }
+        forward_to      = [prometheus.remote_write.victoria_metrics.receiver]
+        scrape_interval = "60s"
+      }
+
       // ── node_exporter: 非 k8s VM (static) ───────────────────────────────
       // node_exporter が各 VM にインストール済みであること (ansible/monitoring)
       prometheus.scrape "node_static" {
