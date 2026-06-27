@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: annict-rec-sync-channel-map
+  namespace: app-annict-rec-sync
+data:
+  # Annict の channel 名 -> EPGStation channelId のマッピング。
+  # channelId は環境固有 (networkId/serviceId から導出) のため、必ず実機から生成すること:
+  #   curl -s http://192.168.20.202:8888/api/channels | jq 'map({name, halfWidthName, id})'
+  # の出力と Annict の channel 名を突き合わせて埋める。
+  # キーは正規化 (NFKC + 空白除去 + 小文字化) して比較するので多少の表記揺れは吸収される。
+  # 未マップの channel は DRY_RUN 実行時にログ警告として列挙されるので、それを見て追記する。
+  channel-map.json: |
+    {
+    }
