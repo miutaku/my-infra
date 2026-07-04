@@ -1,11 +1,12 @@
-resource "cloudflare_zero_trust_device_profiles" "default_warp" {
-  account_id  = var.account_id
-  name        = "default-warp-managed-by-tf"
-  description = "Default WARP client profile for home private routes, managed by Terraform."
-  default     = true
+resource "cloudflare_zero_trust_device_default_profile" "default_warp" {
+  account_id = var.account_id
 
-  service_mode_v2_mode = "warp"
-  tunnel_protocol      = "wireguard"
+  service_mode_v2 = {
+    mode = "warp"
+  }
+  tunnel_protocol = "wireguard"
+
+  include = local.warp_split_tunnel_includes
 
   allow_mode_switch = false
   allow_updates     = true
@@ -14,48 +15,37 @@ resource "cloudflare_zero_trust_device_profiles" "default_warp" {
   switch_locked     = false
 }
 
-resource "cloudflare_zero_trust_split_tunnel" "default_warp_include" {
+resource "cloudflare_zero_trust_device_default_profile_local_domain_fallback" "default_warp" {
   account_id = var.account_id
-  policy_id  = cloudflare_zero_trust_device_profiles.default_warp.id
-  mode       = "include"
 
-  dynamic "tunnels" {
-    for_each = {
-      for idx, route in local.warp_split_tunnel_includes : idx => route
+  domains = [
+    for _, domain in local.warp_local_fallback_domains : {
+      suffix      = domain.suffix
+      dns_server  = domain.dns_servers
+      description = domain.description
     }
-    content {
-      address     = tunnels.value.address
-      host        = tunnels.value.host
-      description = tunnels.value.description
-    }
-  }
-}
-
-resource "cloudflare_zero_trust_local_fallback_domain" "default_warp" {
-  account_id = var.account_id
-  policy_id  = cloudflare_zero_trust_device_profiles.default_warp.id
-
-  dynamic "domains" {
-    for_each = local.warp_local_fallback_domains
-    content {
-      suffix      = domains.value.suffix
-      dns_server  = domains.value.dns_servers
-      description = domains.value.description
-    }
-  }
+  ]
 }
 
 resource "cloudflare_zero_trust_gateway_settings" "account" {
   account_id = var.account_id
 
-  protocol_detection_enabled = true
-  tls_decrypt_enabled        = false
-
-  proxy {
-    tcp              = true
-    udp              = true
-    root_ca          = false
-    virtual_ip       = false
-    disable_for_time = 0
+  settings = {
+    protocol_detection = {
+      enabled = true
+    }
+    tls_decrypt = {
+      enabled = false
+    }
   }
+}
+
+resource "cloudflare_zero_trust_device_settings" "account" {
+  account_id = var.account_id
+
+  gateway_proxy_enabled                 = true
+  gateway_udp_proxy_enabled             = true
+  root_certificate_installation_enabled = false
+  use_zt_virtual_ip                     = false
+  disable_for_time                      = 0
 }
