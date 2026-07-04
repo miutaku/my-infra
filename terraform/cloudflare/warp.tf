@@ -1,3 +1,25 @@
+# Device enrollment permissions: without an Access application of type
+# "warp", the WARP client login page fails with "Enrollment request is
+# invalid" because no policy exists to authorize device enrollment.
+resource "cloudflare_zero_trust_access_application" "warp_enrollment" {
+  account_id = var.account_id
+  name       = "Device enrollment permissions-managed-by-tf"
+  type       = "warp"
+
+  policies = [{
+    name       = "allow-warp-enrollment-managed-by-tf"
+    precedence = 1
+    decision   = "allow"
+    include = [
+      for email in var.access_allowed_emails : {
+        email = {
+          email = email
+        }
+      }
+    ]
+  }]
+}
+
 resource "cloudflare_zero_trust_device_default_profile" "default_warp" {
   account_id = var.account_id
 
