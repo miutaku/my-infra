@@ -3,6 +3,7 @@ FROM python:3.14-slim-bookworm
 ENV DEBIAN_FRONTEND=noninteractive
 
 # jellyfin-ffmpeg (libaribb24 込み ARM64 ビルド) + ロケール
+# jellyfin-ffmpeg is GPL-licensed. Corresponding Source: https://github.com/jellyfin/jellyfin-ffmpeg
 RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg locales \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
