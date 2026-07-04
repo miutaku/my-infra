@@ -21,7 +21,7 @@ spec:
         kubernetes.io/arch: arm64
       containers:
         - name: tfc-agent
-          image: hashicorp/tfc-agent:1.28.8
+          image: docker.io/hashicorp/tfc-agent:1.28.8
           imagePullPolicy: Always
           env:
             - name: TFC_AGENT_TOKEN
