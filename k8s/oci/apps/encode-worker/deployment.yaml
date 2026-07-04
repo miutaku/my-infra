@@ -22,7 +22,7 @@ spec:
       initContainers:
         # OCI 再起動後の孤立エンコードジョブ (*.enc.tmp) をクリーンアップする
         - name: cleanup-orphans
-          image: busybox:1.36
+          image: docker.io/library/busybox:1.36
           command:
             - sh
             - -c
