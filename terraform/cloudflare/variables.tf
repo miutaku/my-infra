@@ -22,7 +22,7 @@ variable "domain" {
 variable "zero_trust_team_name" {
   description = "Cloudflare Zero Trust team name used by WARP enrollment. The team domain is <team>.cloudflareaccess.com."
   type        = string
-  default     = "my-infra"
+  default     = "miutaku"
 }
 
 variable "warp_split_tunnel_include_hosts" {
