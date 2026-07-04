@@ -9,22 +9,22 @@ locals {
       backend       = "http://argocd-server.argocd.svc.cluster.local:80"
       no_tls_verify = false
     }
-    wol = {
+    "wol" = {
       backend       = "http://gptwol-service.app-gptwol.svc.cluster.local:5000"
       no_tls_verify = false
     }
-    unifi = {
+    "unifi" = {
       backend       = "https://192.168.0.132:11443"
       no_tls_verify = true
     }
-    wifi-ap = {
+    "wifi-ap" = {
       # Wi-Fi AP on the native VLAN (192.168.0.253)
       backend       = "https://192.168.0.253"
       no_tls_verify = true
     }
 
     # ── LAN appliances (reachable via routing through BVI20/IX2215) ───────────
-    ix2215 = {
+    "ix2215" = {
       # NEC IX2215 HTTP console: BVI10 (192.168.10.254) or GE2.0 (192.168.0.254)
       backend       = "http://192.168.10.254"
       no_tls_verify = false
