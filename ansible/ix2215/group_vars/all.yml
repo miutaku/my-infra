@@ -258,14 +258,15 @@ ix_dhcp_profiles:
       - "192.168.20.201"  # CoreDNS (primary)
       - "192.168.40.254"  # BVI4 (secondary)
     fixed_assignments:
-      - { ip: "192.168.40.111",  mac: "04:03:d6:db:e6:65" } # Nintendo Switch
-      - { ip: "192.168.40.120",  mac: "40:1a:58:42:38:18" } # Sony BRAVIA TV
+      - { ip: "192.168.40.111", mac: "04:03:d6:db:e6:65" } # Nintendo Switch
+      - { ip: "192.168.40.120", mac: "40:1a:58:42:38:18" } # Sony BRAVIA TV Wi-Fi
+      - { ip: "192.168.40.121", mac: "88:c9:e8:db:30:81" } # Sony BRAVIA TV wired
       - { ip: "192.168.40.141", mac: "00:1b:7a:c8:e4:88" } # Wii NIC
       - { ip: "192.168.40.228", mac: "1c:90:ff:88:39:33" } # smart remocon
       - { ip: "192.168.40.229", mac: "3c:61:05:ce:9c:15" } # ceiling light
       - { ip: "192.168.40.230", mac: "94:e0:d6:67:7f:fb" } # security camera
       - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
-      - { ip: "192.168.40.250",  mac: "52:54:00:99:00:01" } # mm-server-01
+      - { ip: "192.168.40.250", mac: "52:54:00:99:00:01" } # mm-server-01
 
 # RKE2 クラスタノードの DHCP 静的リース (Terraform から更新)
 # vlan20 profile から削除するIP (旧エントリのクリーンアップ用)
