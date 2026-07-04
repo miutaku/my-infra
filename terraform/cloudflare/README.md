@@ -17,7 +17,7 @@ Tailscale subnet router は全経路移行が終わるまで emergency access �
 |---|---|
 | `tunnels.tf` | `cloudflare_zero_trust_tunnel_cloudflared` × 2 + published app ingress + private CIDR routes |
 | `warp.tf` | default WARP client profile + Split Tunnel include + Local Domain Fallback + Gateway proxy |
-| `dns.tf` | published app 用 `cloudflare_record` (CNAME, proxied) |
+| `dns.tf` | published app 用 `cloudflare_dns_record` (CNAME, proxied) |
 | `access.tf` | published app 用 `cloudflare_zero_trust_access_application` + policy |
 | `locals.tf` | published app、private route、internal DNS suffix の定義マップ |
 
@@ -63,10 +63,10 @@ WARP 接続済み端末から `192.168.x.x` 宛の TCP / UDP 通信を Cloudflar
 
 | リソース | 内容 |
 |---|---|
-| `cloudflare_zero_trust_device_profiles.default_warp` | default WARP client profile を `warp` mode で管理 |
-| `cloudflare_zero_trust_split_tunnel.default_warp_include` | `rke2_private_routes` の CIDR と Zero Trust / Access hostnames を include mode で WARP へ入れる |
-| `cloudflare_zero_trust_local_fallback_domain.default_warp` | `miutaku.internal` を CoreDNS (`192.168.20.201`) へ向ける |
-| `cloudflare_zero_trust_gateway_settings.account` | Gateway proxy の TCP / UDP を有効化、TLS decrypt は無効 |
+| `cloudflare_zero_trust_device_default_profile.default_warp` | default WARP client profile を `warp` mode で管理し、Split Tunnel include も同じ profile 内で設定 |
+| `cloudflare_zero_trust_device_default_profile_local_domain_fallback.default_warp` | `miutaku.internal` を CoreDNS (`192.168.20.201`) へ向ける |
+| `cloudflare_zero_trust_gateway_settings.account` | Gateway protocol detection と TLS decrypt 設定 |
+| `cloudflare_zero_trust_device_settings.account` | Device settings の Gateway proxy / UDP proxy / root CA 配布設定 |
 
 ---
 
@@ -77,6 +77,7 @@ WARP 接続済み端末から `192.168.x.x` 宛の TCP / UDP 通信を Cloudflar
 - Cloudflare アカウントに対象ドメインが登録済み (Zone が存在すること)
 - API トークンを以下の権限で作成済み:
   - `Zone:DNS:Edit`
+  - `Zero Trust:Read`
   - `Zero Trust:Edit` (Access Application + Tunnel + Tunnel route + WARP / Gateway 設定に必要)
 
 **API トークン作成手順:**  
@@ -121,6 +122,15 @@ flowchart LR
 ---
 
 ## セットアップ
+
+### provider v5 migration
+
+Cloudflare provider は v5 系 (`~> 5.0`) を使う。
+v4 state から v5 へ移行するため、`migrations.tf` に `moved` / `removed` block を置く。
+
+`cloudflare_zero_trust_device_profiles.default_warp` だけは v5 の `cloudflare_zero_trust_device_default_profile.default_warp` へ単純な state move をすると provider が replacement を計画する。
+WARP はまだ本番反映前として扱うため、この replacement は許容する。
+HTTP/HTTPS published app、DNS、Tunnel、private routes は replacement されないことを plan で確認してから apply する。
 
 ### terraform init
 
@@ -250,8 +260,8 @@ WARP client profile、Split Tunnel、Gateway proxy、Local Domain Fallback は `
 
 管理内容:
 
-- WARP client profile は default profile として `service_mode_v2_mode = "warp"` を設定する
-- Split Tunnel は include mode にして、`rke2_private_routes` の CIDR と Zero Trust / Access hostnames を WARP 経由にする
+- WARP client profile は default profile として `service_mode_v2.mode = "warp"` を設定する
+- Split Tunnel は default profile の include に `rke2_private_routes` の CIDR と Zero Trust / Access hostnames を入れ、WARP 経由にする
 - Gateway proxy は TCP / UDP を有効化し、TLS decrypt と root CA 配布は無効化する
 - `miutaku.internal` は Local Domain Fallback で CoreDNS (`192.168.20.201`) に向ける
 - client の mode 切替は無効化しつつ、organization からの離脱と client switch はロックしない
@@ -260,7 +270,7 @@ WARP client profile、Split Tunnel、Gateway proxy、Local Domain Fallback は `
 Google / GitHub / Okta など外部 IdP で認証する場合は、必要な IdP hostname を `warp_split_tunnel_include_hosts` に追加する。
 
 WARP client の install / enroll / connect は端末側の作業として残る。
-Device enrollment permissions は provider v4 の Terraform resource に露出していないため、必要なら Cloudflare dashboard 側で許可する。
+Device enrollment permissions は provider v5 の Terraform resource に露出していないため、必要なら Cloudflare dashboard 側で許可する。
 
 ## トラブルシューティング
 
@@ -286,11 +296,11 @@ CNAME の `proxied = true` のため、実際の tunnel IP は隠蔽される。
 
 1. Cloudflare dashboard の `Networks → Routes` で対象 CIDR が `rke2-home-managed-by-tf` に紐づいているか確認する
 2. WARP client が対象 Zero Trust organization に enroll され、Traffic and DNS mode で接続しているか確認する
-3. `cloudflare_zero_trust_split_tunnel.default_warp_include` に対象 CIDR が含まれているか確認する
+3. `cloudflare_zero_trust_device_default_profile.default_warp` の Split Tunnel include に対象 CIDR が含まれているか確認する
 4. Gateway proxy で TCP / UDP が有効か確認する
 5. RKE2 上の `cloudflared` Pod から対象 IP に到達できるか確認する
 
 ### `*.miutaku.internal` が解決できない
 
 WARP 接続中の DNS は Gateway 側で解決される。
-`miutaku.internal` は `cloudflare_zero_trust_local_fallback_domain.default_warp` で CoreDNS (`192.168.20.201`) へ向ける。
+`miutaku.internal` は `cloudflare_zero_trust_device_default_profile_local_domain_fallback.default_warp` で CoreDNS (`192.168.20.201`) へ向ける。
