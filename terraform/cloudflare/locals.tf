@@ -80,7 +80,7 @@ locals {
   # Every entry here must exist as a key in rke2_services or oke_services.
   access_protected_subdomains = toset([
     "argocd-rke2", "argocd-oke", "wol",
-    "unifi", "wifi",
+    "unifi", "wifi-ap",
     "ix2215",
     "nas-01", "nas-02",
     "pve-x570", "pve-b550m",
