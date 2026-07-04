@@ -6,6 +6,10 @@ metadata:
 data:
   config.yml: |
     port: 8888
+    # Cloudflare Tunnel 経由では X-Forwarded-Proto: https が付き isSecureProtocol()=true と
+    # 判定されるが、https セクションを設定していないため getConfig() が httpsConfigError を投げて
+    # /api/config が 500 になる。clientSocketioPort を明示すれば isSecure 分岐を通らず解決する。
+    clientSocketioPort: 443
     mirakurunPath: http://mirakurun.app-mirakurun.svc.cluster.local:40772
 
     dbtype: mysql
