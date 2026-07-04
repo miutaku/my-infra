@@ -1,5 +1,5 @@
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token. Required permissions: Zone:DNS:Edit, Access:Apps:Edit, Argo Tunnel:Edit."
+  description = "Cloudflare API token. Required permissions: Zone:DNS:Edit and Zero Trust:Edit."
   type        = string
   sensitive   = true
 }
@@ -17,6 +17,21 @@ variable "zone_id" {
 variable "domain" {
   description = "Root domain managed in Cloudflare (e.g. example.com). Used to construct FQDNs for DNS records and Access Applications."
   type        = string
+}
+
+variable "zero_trust_team_name" {
+  description = "Cloudflare Zero Trust team name used by WARP enrollment. The team domain is <team>.cloudflareaccess.com."
+  type        = string
+  default     = "my-infra"
+}
+
+variable "warp_split_tunnel_include_hosts" {
+  description = "Additional domains to include in the default WARP Split Tunnel include profile, such as external IdP hostnames."
+  type = map(object({
+    host        = string
+    description = string
+  }))
+  default = {}
 }
 
 variable "tunnel_secret_rke2" {
