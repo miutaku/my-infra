@@ -26,6 +26,15 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "rke2" {
   }
 }
 
+resource "cloudflare_zero_trust_tunnel_route" "rke2_private" {
+  for_each = local.rke2_private_routes
+
+  account_id = var.account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.rke2.id
+  network    = each.value.network
+  comment    = each.value.comment
+}
+
 resource "cloudflare_zero_trust_tunnel_cloudflared" "oke" {
   account_id = var.account_id
   name       = "oke-cloud-managed-by-tf"
