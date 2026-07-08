@@ -1,5 +1,8 @@
 # packer/mm-server — MagicMirror² サーバー VM
 
+> Legacy: MagicMirror² の通常運用は `k8s/pve/magic-mirror` に移行済み。
+> ここは DisplayLink 接続の旧 `magic_mirror_server` VM を再作成する場合のロールバック用手順。
+
 Proxmox 上に MagicMirror² 専用 VM を作成・セットアップする。
 
 VM は `template-ubuntu-26-04-home-amd64` から clone し、cloud-init `runcmd` で  

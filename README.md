@@ -59,7 +59,6 @@ flowchart LR
       direction TB
       PVE_API{{PVE API}}
 
-      MM2[[Magic Mirror²]]
       NAS[[TrueNAS Scale VMs<br/>192.168.20.191-192]]
       UOS[[UniFi OS Server VM<br/>192.168.0.132:11443]]
 
@@ -77,7 +76,7 @@ flowchart LR
         WorkerVMs[[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]]
         LBVMs ~~~ ServerVMs ~~~ WorkerVMs
       end
-      NAS ~~~ WorkEnv ~~~ MM2 ~~~ RKE2VM ~~~ UOS
+      NAS ~~~ WorkEnv ~~~ RKE2VM ~~~ UOS
     end
     subgraph RKE2[RKE2 HA cluster]
       ArgoCD{{ArgoCD <br/>Sync}}
@@ -106,7 +105,8 @@ flowchart LR
           WoL([WoL])
           Mirakurun([Mirakurun])
           EPGStation([EPGStation])
-          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation
+          MagicMirror([MagicMirror²])
+          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror
         end
         RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
       end
@@ -161,8 +161,8 @@ flowchart LR
   class ArgoCD_OCI,ArgoCD,OCICert,MetalLB control
   class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
   class IX,US8,AP,TailscaleNet nwDevice
-  class MM2,NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
-  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
+  class NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
+  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
   class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
   class CF_Application,CF_Tunnel,TFC,GitHub external
   class OCI,OKE zoneCloud
@@ -361,7 +361,7 @@ flowchart TB
 | UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
-| mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | ✅ (VLAN40) |
+| MagicMirror² (k8s Service) | 192.168.20.204 | blackbox HTTP | k8s app |
 | nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
 | OKE nodes ×2 | 10.0.1.x | node metrics | scrape 設定要確認 |
 
