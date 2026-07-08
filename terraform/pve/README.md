@@ -176,7 +176,8 @@ terraform apply
 ### 旧 magic_mirror_server を再作成する場合
 
 MagicMirror² は `k8s/pve/magic-mirror` で動かすため、既定では `mm_server_vm_count = 0`。  
-検証などで旧 `magic_mirror_server` VM を一時的に再作成する場合は `scripts/apply-pve.sh` を使う。  
+検証などで旧 `magic_mirror_server` VM を一時的に再作成する場合は
+`scripts/apply-pve.sh -target=module.magic_mirror_server` を使う。  
 詳細は [packer/mm-server/README.md](../../packer/mm-server/README.md) を参照。
 
 ## apply 後: MAC アドレスの確認
