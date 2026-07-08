@@ -15,7 +15,7 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 | `dev_application_server` | 1 | 開発用アプリサーバー | pve-b550m 固定 |
 | `truenas` | 2 | TrueNAS Scale NAS | 両ノード分散 |
 | `unifi_os_server` | 1 | UniFi OS Server 専用 VM | pve-x570 固定 |
-| `magic_mirror_server` | 1 | MagicMirror² サーバー (VLAN 40 / USB passthrough) | pve-b550m 固定 |
+| `magic_mirror_server` | 0 | 旧 MagicMirror² 表示 VM (k8s へ移行済み) | 作成しない |
 | `pbs` | 1 | Proxmox Backup Server (S3 datastore) | pve-x570 平常時 / 障害時 pve-b550m 手動移行 |
 
 Ubuntu VM は `template-ubuntu-26-04-home-amd64`、TrueNAS VM は `template-truenas-scale-home-amd64`、
@@ -173,9 +173,10 @@ terraform apply
 
 > `terraform apply` は TFC 上で実行される。TFC UI で `Confirm & Apply` する。
 
-### magic_mirror_server を含む apply
+### 旧 magic_mirror_server を再作成する場合
 
-`magic_mirror_server` が対象に含まれる場合は `scripts/apply-pve.sh` を使う。  
+MagicMirror² は `k8s/pve/magic-mirror` で動かすため、既定では `mm_server_vm_count = 0`。  
+検証などで旧 `magic_mirror_server` VM を一時的に再作成する場合は `scripts/apply-pve.sh` を使う。  
 詳細は [packer/mm-server/README.md](../../packer/mm-server/README.md) を参照。
 
 ## apply 後: MAC アドレスの確認

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magic-mirror
+  namespace: app-magic-mirror
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: magic-mirror
+  template:
+    metadata:
+      labels:
+        app: magic-mirror
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: magic-mirror
+          image: docker.io/bastilimbach/docker-magicmirror:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: LANG
+              value: ja_JP.UTF-8
+            - name: TZ
+              value: Asia/Tokyo
+          volumeMounts:
+            - name: config
+              mountPath: /opt/magic_mirror/config/config.js
+              subPath: config.js
+              readOnly: true
+            - name: custom-css
+              mountPath: /opt/magic_mirror/css/custom.css
+              subPath: custom.css
+              readOnly: true
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: config
+          secret:
+            secretName: magic-mirror-config
+        - name: custom-css
+          configMap:
+            name: magic-mirror-custom-css
