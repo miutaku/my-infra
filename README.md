@@ -335,6 +335,7 @@ flowchart TB
   SNMP[snmp-exporter :9116<br/>IX2215 / TrueNAS]
   PVE[pve-exporter :9221<br/>Proxmox API]
   Blackbox[blackbox-exporter :9115<br/>HTTP / ICMP]
+  Agent[vmagent<br/>scrape config: k8s/pve/vmagent/values.yaml]
   VM[VictoriaMetrics<br/>RKE2内]
   PDC[Grafana PDC agent<br/>VictoriaMetrics query tunnel]
 
@@ -342,10 +343,11 @@ flowchart TB
   Hosts --> SNMP
   Hosts --> PVE
   Hosts --> Blackbox
-  VM --> Node
-  VM --> SNMP
-  VM --> PVE
-  VM --> Blackbox
+  Agent --> Node
+  Agent --> SNMP
+  Agent --> PVE
+  Agent --> Blackbox
+  Agent --> VM
   PDC --> VM
 ```
 
@@ -369,6 +371,9 @@ flowchart TB
 
 node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
 テンプレートから作成した VM は起動時点で `:9100` で node_exporter が待ち受ける。
+
+scrape は **vmagent**(Victoria Metrics Agent) が担当する。設定は [`k8s/pve/vmagent/values.yaml`](./k8s/pve/vmagent/values.yaml) で管理し、
+VictoriaMetrics へ remote_write する。
 
 既存 VM（テンプレート再ビルド前に作成済み）は、必要に応じて Ansible で一括導入する。
 
