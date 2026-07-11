@@ -554,12 +554,21 @@ data:
 
       const duration = await getDuration();
       const isMp4 = (output || '').toLowerCase().endsWith('.mp4') || (output || '').toLowerCase().endsWith('.m4v');
-      const args = ['-y', '-nostdin', '-analyzeduration', '10M', '-probesize', '32M'];
+      const args = [
+        '-y', '-nostdin',
+        '-analyzeduration', '10M', '-probesize', '32M',
+        // stderr に機械可読な進捗を出す。通常の stats 行だけでは
+        // 下の out_time_ms パーサーに一致しない。
+        '-progress', 'pipe:2', '-stats_period', '1', '-nostats',
+      ];
       if (isDualMono) {
         args.push('-dual_mono_mode', 'main');
       }
       args.push('-i', input);
-      args.push('-map', '0', '-ignore_unknown', '-max_muxing_queue_size', '1024', '-sn');
+      // MPEG-TS には映像・音声以外のデータストリームが含まれることがある。
+      // `-map 0` だとそれらも Matroska へ mux しようとして開始直後に失敗するため、
+      // enc.js.template と同様に映像・音声だけを明示的に選択する。
+      args.push('-map', '0:v:0', '-map', '0:a?', '-max_muxing_queue_size', '1024', '-sn');
       args.push('-vf', `yadif,scale=-2:${videoHeight}`);
       args.push('-c:v', codec, '-preset', preset, '-crf', String(crf));
       args.push('-c:a', 'aac', '-ar', '48000', '-b:a', audioBitrate, '-ac', '2');
