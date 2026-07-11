@@ -61,9 +61,13 @@ spec:
               cpu: "100m"
               memory: "512Mi"
             limits:
-              # OKE worker capacity is 2 OCPU / 12GB on a single node.
-              cpu: "900m"
-              memory: "5Gi"
+              # OKE worker は単一ノード (A1.Flex 2 OCPU / 12GB, allocatable 1830m / 9.4Gi)。
+              # 他 Pod の実使用 CPU は ~300m 程度なので、余剰分をエンコードに回す。
+              # CPU は compressible なので競合時も CFS が request 比で調整する。
+              cpu: "1600m"
+              # ノードの実メモリ空きは ~2Gi。5Gi まで許すと使い切る前に
+              # ノード側の memory pressure で他 Pod が evict されるため 2Gi に抑える。
+              memory: "2Gi"
           lifecycle:
             preStop:
               exec:
