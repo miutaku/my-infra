@@ -58,7 +58,7 @@ spec:
               mountPath: /app/recorded
           resources:
             requests:
-              cpu: "100m"
+              cpu: "50m"
               memory: "512Mi"
             limits:
               # OKE worker は単一ノード (A1.Flex 2 OCPU / 12GB, allocatable 1830m / 9.4Gi)。
