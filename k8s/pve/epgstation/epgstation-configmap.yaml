@@ -52,14 +52,21 @@ data:
     encodeProcessNum: 2
     concurrentEncodeNum: 1
     encode:
+      # rate はタイムアウト倍率 (動画実時間 * rate 経過で EPGStation が
+      # エンコードプロセスを kill)。OKE (A1.Flex ~1.6 core) のエンコードは
+      # 遅く変動も大きい (libx265 実測 0.02〜0.07x = 実時間の 14〜50 倍)。
+      # ワーカー側キュー待ち (MAX_CONCURRENT_JOBS=1) も経過時間に含まれる。
+      # 注意: duration(ms) * rate が Node の setTimeout 上限 (2^31-1 ms ≒ 24.8 日)
+      # を超えるとタイマーが即発火して開始直後に kill される。rate 100 なら
+      # 約 6 時間の録画まで安全。
       - name: H.264 (OCI Remote)
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx264'
         suffix: -avc.mkv
-        rete: 4.0
+        rate: 100.0
       - name: H.265 (OCI Remote)
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx265'
         suffix: -hevc.mkv
-        rete: 4.0
+        rate: 100.0
 
     urlscheme:
       m2ts:
