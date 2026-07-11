@@ -53,8 +53,8 @@ data:
     concurrentEncodeNum: 1
     encode:
       # rate はタイムアウト倍率 (動画実時間 * rate 経過で EPGStation が
-      # エンコードプロセスを kill)。OKE (A1.Flex ~1.6 core) のエンコードは
-      # 遅く変動も大きい (libx265 実測 0.02〜0.07x = 実時間の 14〜50 倍)。
+      # エンコードプロセスを kill)。RKE2 / ローカル環境ではエンコード速度が
+      # 変動しやすく、libx265 では実時間の 10〜50 倍近くかかることがある。
       # ワーカー側キュー待ち (MAX_CONCURRENT_JOBS=1) も経過時間に含まれる。
       # 注意: duration(ms) * rate が Node の setTimeout 上限 (2^31-1 ms ≒ 24.8 日)
       # を超えるとタイマーが即発火して開始直後に kill される。rate 100 なら
@@ -68,11 +68,11 @@ data:
         suffix: -hevc.mkv
         rate: 100.0
       - name: H.264 (Local)
-        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx264'
+        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx264 %FFMPEG% %FFPROBE%'
         suffix: -avc.mkv
         rate: 100.0
       - name: H.265 (Local)
-        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx265'
+        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx265 %FFMPEG% %FFPROBE%'
         suffix: -hevc.mkv
         rate: 100.0
 
@@ -477,13 +477,26 @@ data:
 
   enc-local.js: |
     'use strict';
+    const fs = require('fs');
+    const path = require('path');
     const { spawn } = require('child_process');
 
-    const ffmpeg = process.env.FFMPEG || process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg';
-    const ffprobe = process.env.FFPROBE || process.env.FFPROBE_PATH || '/usr/local/bin/ffprobe';
+    const codec = process.argv[2] === 'libx265' ? 'libx265' : 'libx264';
     const input = process.env.INPUT;
     const output = process.env.OUTPUT;
-    const codec = process.argv[2] === 'libx265' ? 'libx265' : 'libx264';
+    const resolveBinary = (candidate, fallback) => {
+      if (!candidate || candidate === '%FFMPEG%' || candidate === '%FFPROBE%') return fallback;
+      if (fs.existsSync(candidate)) return candidate;
+      const base = path.basename(candidate);
+      const pathEntries = (process.env.PATH || '').split(':');
+      for (const entry of pathEntries) {
+        const full = path.join(entry, base);
+        if (fs.existsSync(full)) return full;
+      }
+      return candidate;
+    };
+    const ffmpeg = resolveBinary(process.argv[3] || process.env.FFMPEG || process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg', 'ffmpeg');
+    const ffprobe = resolveBinary(process.argv[4] || process.env.FFPROBE || process.env.FFPROBE_PATH || '/usr/local/bin/ffprobe', 'ffprobe');
     const videoHeight = parseInt(process.env.VIDEORESOLUTION, 10) || 1080;
     const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
     const audioBitrate = videoHeight > 720 ? '192k' : '128k';
@@ -523,8 +536,17 @@ data:
         console.error('INPUT / OUTPUT が未設定です');
         process.exit(1);
       }
+      if (!ffmpeg || !ffprobe) {
+        console.error(`ffmpeg/ffprobe の解決に失敗しました: ffmpeg=${ffmpeg || 'null'} ffprobe=${ffprobe || 'null'}`);
+        process.exit(1);
+      }
+      const outputDir = path.dirname(output);
+      if (outputDir && outputDir !== '.' && !fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
 
       const duration = await getDuration();
+      const isMp4 = (output || '').toLowerCase().endsWith('.mp4') || (output || '').toLowerCase().endsWith('.m4v');
       const args = ['-y', '-nostdin', '-analyzeduration', '10M', '-probesize', '32M'];
       if (isDualMono) {
         args.push('-dual_mono_mode', 'main');
@@ -534,7 +556,10 @@ data:
       args.push('-vf', `yadif,scale=-2:${videoHeight}`);
       args.push('-c:v', codec, '-preset', preset, '-crf', String(crf));
       args.push('-c:a', 'aac', '-ar', '48000', '-b:a', audioBitrate, '-ac', '2');
-      args.push('-movflags', 'faststart', '-f', 'matroska', output);
+      if (isMp4) {
+        args.push('-movflags', 'faststart');
+      }
+      args.push('-f', isMp4 ? 'mp4' : 'matroska', output);
 
       const child = spawn(ffmpeg, args, { stdio: ['ignore', 'pipe', 'pipe'] });
       let lastPercent = 0;
