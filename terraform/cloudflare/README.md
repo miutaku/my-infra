@@ -35,6 +35,8 @@ Tailscale subnet router は全経路移行が終わるまで emergency access �
 | `argocd-rke2.miutaku.work` | rke2 | `http://argocd-server.argocd.svc.cluster.local:80` | 必須 |
 | `argocd-oke.miutaku.work` | oke | `http://argocd-server.argocd.svc.cluster.local:80` | 必須 |
 | `wol.miutaku.work` | rke2 | `http://gptwol-service.app-gptwol.svc.cluster.local:5000` | 必須 |
+| `epgstation.miutaku.work` | rke2 | `http://epgstation.app-epgstation.svc.cluster.local:8888` | 必須 |
+| `nextcloud.miutaku.work` | rke2 | `http://nextcloud.app-nextcloud.svc.cluster.local:80` | 必須 |
 | `unifi.miutaku.work` | rke2 | `https://192.168.0.132:11443` | 必須 |
 | `wifi-ap.miutaku.work` | rke2 | `https://192.168.0.253` | 必須 |
 | `ix2215.miutaku.work` | rke2 | `http://192.168.10.254` | 必須 |

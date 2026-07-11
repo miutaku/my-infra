@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: app-nextcloud
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+        - name: nextcloud
+          image: nextcloud:34-apache
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: TZ
+              value: Asia/Tokyo
+            # ── DB (infra-db の共有 MariaDB, docs/nextcloud-setup.md で事前作成) ──
+            - name: MYSQL_HOST
+              value: mariadb.infra-db.svc.cluster.local
+            - name: MYSQL_DATABASE
+              value: nextcloud
+            - name: MYSQL_USER
+              value: nextcloud
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secrets
+                  key: MYSQL_PASSWORD
+            # ── 初回自動インストール用 (インストール済みなら無視される) ──
+            - name: NEXTCLOUD_ADMIN_USER
+              value: admin
+            - name: NEXTCLOUD_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secrets
+                  key: ADMIN_PASSWORD
+            - name: NEXTCLOUD_DATA_DIR
+              value: /var/www/html/data
+            # ── Cloudflare Tunnel (cloudflared) 経由アクセス用 ──
+            - name: NEXTCLOUD_TRUSTED_DOMAINS
+              value: nextcloud.miutaku.work
+            - name: TRUSTED_PROXIES
+              # RKE2 default pod CIDR (cloudflared pod からの X-Forwarded-For を信頼する)
+              value: 10.42.0.0/16
+            - name: OVERWRITEPROTOCOL
+              value: https
+            - name: OVERWRITECLIURL
+              value: https://nextcloud.miutaku.work
+            - name: REDIS_HOST
+              value: nextcloud-redis
+            - name: PHP_MEMORY_LIMIT
+              value: 512M
+            - name: PHP_UPLOAD_LIMIT
+              value: 10G
+          volumeMounts:
+            - name: html
+              mountPath: /var/www/html
+            - name: data
+              mountPath: /var/www/html/data
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          # 初回起動はインストール処理 (DB スキーマ作成等) で数分かかる
+          startupProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: nextcloud.miutaku.work
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: nextcloud.miutaku.work
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: nextcloud.miutaku.work
+            periodSeconds: 30
+            failureThreshold: 5
+
+        # バックグラウンドジョブ (occ background:cron 相当) を回すサイドカー
+        - name: cron
+          image: nextcloud:34-apache
+          command: ["/cron.sh"]
+          env:
+            - name: TZ
+              value: Asia/Tokyo
+          volumeMounts:
+            - name: html
+              mountPath: /var/www/html
+            - name: data
+              mountPath: /var/www/html/data
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+      volumes:
+        - name: html
+          persistentVolumeClaim:
+            claimName: nextcloud-html-pvc
+        - name: data
+          persistentVolumeClaim:
+            claimName: nextcloud-data-pvc
