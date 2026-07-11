@@ -73,6 +73,13 @@ TITLE_MATCH_MIN_CHARS = int(_env("TITLE_MATCH_MIN_CHARS", "4"))
 # 末尾切れを許すか
 ALLOW_END_LACK = _env("ALLOW_END_LACK", "true").lower() == "true"
 
+# 予約時に付与するエンコードモード名 (EPGStation config の encode[].name と一致させる。
+# 例: "H.265 (OCI Remote)")。空 = エンコードなし (TS のまま保存)。
+ENCODE_MODE = _env("ENCODE_MODE")
+
+# エンコード完了後に元 TS を削除するか (ENCODE_MODE 指定時のみ有効)
+ENCODE_DELETE_ORIGINAL = _env("ENCODE_DELETE_ORIGINAL", "false").lower() == "true"
+
 # 再放送 (rebroadcast) を録画対象から除外するか
 SKIP_REBROADCAST = _env("SKIP_REBROADCAST", "true").lower() == "true"
 
@@ -337,7 +344,12 @@ def match_program(programs: list[tuple[int, int, str]],
 
 
 def add_reserve(client: httpx.Client, program_id: int) -> None:
-    body = {"programId": program_id, "allowEndLack": ALLOW_END_LACK}
+    body: dict = {"programId": program_id, "allowEndLack": ALLOW_END_LACK}
+    if ENCODE_MODE:
+        body["encodeOption"] = {
+            "mode1": ENCODE_MODE,
+            "isDeleteOriginalAfterEncode": ENCODE_DELETE_ORIGINAL,
+        }
     resp = client.post(f"{EPGSTATION_BASE_URL}/api/reserves", json=body)
     resp.raise_for_status()
 
@@ -353,6 +365,10 @@ def main() -> int:
     season = SEASON or current_season()
     log.info("=== annict-rec-sync 開始 (season=%s, DRY_RUN=%s) ===", season, DRY_RUN)
     log.info("契約済み配信サービス (録画除外): %s", ", ".join(SUBSCRIBED_SERVICES))
+    if ENCODE_MODE:
+        log.info("エンコード設定: mode=%s, 元TS削除=%s", ENCODE_MODE, ENCODE_DELETE_ORIGINAL)
+    else:
+        log.info("エンコード設定: なし (TS のまま保存)")
 
     channel_map = load_channel_map()
     log.info("channel-map: %d 局", len(channel_map))
