@@ -1,0 +1,48 @@
+# NextCloud のデータディレクトリ (ユーザーファイル置き場) は nas-01 の NFS に置く。
+# nas-01 側の Dataset / NFS Share 作成手順は docs/nextcloud-setup.md 参照。
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-data-pv
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.20.191
+    path: /mnt/raid1_case/nextcloud
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-data-pvc
+  namespace: app-nextcloud
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Ti
+  volumeName: nextcloud-data-pv
+  storageClassName: ""
+---
+# 本体 (/var/www/html: config.php, apps, テーマ等) はノードローカルに置く。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-html-pvc
+  namespace: app-nextcloud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
