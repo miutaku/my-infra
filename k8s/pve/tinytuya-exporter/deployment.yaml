@@ -36,9 +36,13 @@ spec:
                   name: tinytuya-device
                   key: local-key
             - name: TUYA_VERSION
-              value: "3.3"
+              value: "3.5"
             - name: POLL_INTERVAL_SECONDS
               value: "15"
+            # このTuya 16Aは通常のstatus()でDPS 18/19/20を返す。
+            # UPDATEDPSを先に送ると後続のstatus()が失敗する機種があるため無効化する。
+            - name: TUYA_REQUEST_UPDATEDPS
+              value: "false"
           readinessProbe:
             httpGet:
               path: /metrics
