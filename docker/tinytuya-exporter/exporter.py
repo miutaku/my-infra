@@ -19,7 +19,7 @@ CURRENT_DPS = os.getenv("TUYA_CURRENT_DPS", "18")
 POWER_DPS = os.getenv("TUYA_POWER_DPS", "19")
 VOLTAGE_DPS = os.getenv("TUYA_VOLTAGE_DPS", "20")
 SWITCH_DPS = os.getenv("TUYA_SWITCH_DPS", "1")
-REQUEST_UPDATEDPS = os.getenv("TUYA_REQUEST_UPDATEDPS", "true").lower() in {"1", "true", "yes"}
+REQUEST_UPDATEDPS = os.getenv("TUYA_REQUEST_UPDATEDPS", "false").lower() in {"1", "true", "yes"}
 
 labels = ["device"]
 current = Gauge("tuya_current_amperes", "Measured RMS current", labels)
