@@ -107,9 +107,31 @@ kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
   su -s /bin/sh www-data -c "php occ app:enable files_external"
 kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
   su -s /bin/sh www-data -c "php occ files_external:create recorded local null::null -c datadir=/mnt/nas/recorded"
+# 作成された Mount ID (上記の出力) に対してオプションを設定:
+#   enable_sharing:           共有リンク発行を許可
+#   readonly:                 読み取り専用
+#   filesystem_check_changes: アクセス時に変更検知 (EPGStation が外部から録画を追加するため必須。
+#                             既定の 0 だと NextCloud 外での追加/削除が反映されない)
+kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
+  su -s /bin/sh www-data -c "php occ files_external:option 1 enable_sharing true \
+    && php occ files_external:option 1 readonly true \
+    && php occ files_external:option 1 filesystem_check_changes 1 \
+    && php occ files_external:verify 1"
 ```
 
-Web UI のファイル一覧に `recorded` が現れ、EPGStation の録画を閲覧・ダウンロード・共有できる。
+Web UI のファイル一覧に `recorded` が現れ、EPGStation の録画を閲覧・ダウンロード・共有できる
+(pod 側の NFS マウントも readOnly なので録画実体を壊すことはない)。
+
+## 7. 監視 (初回のみ)
+
+vmagent ([k8s/pve/vmagent/values.yaml](../k8s/pve/vmagent/values.yaml)) の `blackbox_http` ジョブが
+`/status.php` を監視する。blackbox は Host ヘッダにターゲットの svc DNS 名を使うため、
+trusted_domains に追加しておく (再インストール時も必要):
+
+```bash
+kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
+  su -s /bin/sh www-data -c "php occ config:system:set trusted_domains 2 --value=nextcloud.app-nextcloud.svc.cluster.local"
+```
 
 ## 運用メモ
 
