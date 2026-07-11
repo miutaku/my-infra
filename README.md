@@ -106,7 +106,8 @@ flowchart LR
           Mirakurun([Mirakurun])
           EPGStation([EPGStation])
           MagicMirror([MagicMirror²])
-          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror
+          NextCloud([NextCloud])
+          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror ~~~ NextCloud
         end
         RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
       end
@@ -135,6 +136,7 @@ flowchart LR
   EPGStation --> Mirakurun
   EPGStation -->|read / ts save| NAS
   EPGStation -->|encode request| OCIEnc -->|save| NAS
+  NextCloud -->|External Storage / NFS RO| NAS
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
   TFC <-.->|tunnel| TFCAgent -->|API request| PVE_API
@@ -162,7 +164,7 @@ flowchart LR
   class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
   class IX,US8,AP,TailscaleNet nwDevice
   class NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
-  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
+  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,NextCloud,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
   class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
   class CF_Application,CF_Tunnel,TFC,GitHub external
   class OCI,OKE zoneCloud
@@ -364,6 +366,7 @@ flowchart TB
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
 | MagicMirror² (k8s Service) | 192.168.20.204 | blackbox HTTP | k8s app |
+| NextCloud (k8s Service) | ClusterIP (`nextcloud.app-nextcloud.svc`) | blackbox HTTP (`/status.php`) | k8s app |
 | nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
 | OKE nodes ×2 | 10.0.1.x | node metrics | scrape 設定要確認 |
 

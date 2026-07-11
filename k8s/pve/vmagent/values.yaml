@@ -165,6 +165,10 @@ config:
           labels:
             instance: magic-mirror
             module: http_2xx
+        - targets: ["http://nextcloud.app-nextcloud.svc.cluster.local:80/status.php"]
+          labels:
+            instance: nextcloud
+            module: http_2xx
         - targets: ["https://192.168.0.132:11443"]
           labels:
             instance: unifi-os-server
