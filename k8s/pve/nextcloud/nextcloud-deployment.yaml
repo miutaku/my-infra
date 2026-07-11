@@ -65,8 +65,10 @@ spec:
           volumeMounts:
             - name: html
               mountPath: /var/www/html
-            - name: data
-              mountPath: /var/www/html/data
+            # External Storage 用。誤って録画ファイルを消さないよう readOnly で見せる
+            - name: nas-recorded
+              mountPath: /mnt/nas/recorded
+              readOnly: true
           resources:
             requests:
               cpu: "200m"
@@ -112,8 +114,9 @@ spec:
           volumeMounts:
             - name: html
               mountPath: /var/www/html
-            - name: data
-              mountPath: /var/www/html/data
+            - name: nas-recorded
+              mountPath: /mnt/nas/recorded
+              readOnly: true
           resources:
             requests:
               cpu: "50m"
@@ -126,6 +129,6 @@ spec:
         - name: html
           persistentVolumeClaim:
             claimName: nextcloud-html-pvc
-        - name: data
+        - name: nas-recorded
           persistentVolumeClaim:
-            claimName: nextcloud-data-pvc
+            claimName: nextcloud-nas-recorded-pvc
