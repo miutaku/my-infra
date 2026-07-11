@@ -1,0 +1,24 @@
+# nas-02 (192.168.20.192) のデータセット / NFS share 定義 (書式は nas-01.yml 参照)
+#
+# recorded / thumbnail / drop は EPGStation 用 (k8s/pve/epgstation/pvc.yaml が参照)。
+# UI で作成済みのものを Ansible 管理に取り込んだ状態
+# (sharing_nfs はパスで既存 share を同定するため重複作成されない)。
+truenas_datasets:
+  - name: raid1_case/recorded
+    nfs:
+      comment: recorded
+      networks:
+        - 192.168.20.0/24
+        - 10.0.0.0/16 # OCI VCN (encode-worker が mount)
+  - name: raid1_case/thumbnail
+    nfs:
+      comment: thumbnail
+      networks:
+        - 192.168.20.0/24
+        - 10.0.0.0/16
+  - name: raid1_case/drop
+    nfs:
+      comment: drop
+      networks:
+        - 192.168.20.0/24
+        - 10.0.0.0/16

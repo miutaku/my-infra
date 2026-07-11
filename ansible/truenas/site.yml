@@ -1,0 +1,3 @@
+---
+- name: Import TrueNAS Playbook
+  import_playbook: truenas.yml

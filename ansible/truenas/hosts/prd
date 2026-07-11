@@ -1,0 +1,4 @@
+# TrueNAS Scale
+[truenas]
+nas-01 ansible_host=192.168.20.191
+nas-02 ansible_host=192.168.20.192
