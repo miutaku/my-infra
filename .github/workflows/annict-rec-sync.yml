@@ -1,5 +1,9 @@
 name: 'annict-rec-sync image'
 
+permissions:
+  contents: write
+  packages: write
+
 on:
   push:
     branches: [main]
@@ -63,18 +67,36 @@ jobs:
       - name: Bump image tag and commit (GitOps)
         if: github.event_name == 'push'
         run: |
-          set -euo pipefail
-          TAG="${GITHUB_SHA:0:7}"
-          cd k8s/pve/annict-rec-sync
-          kustomize edit set image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG
-          cd "$GITHUB_WORKSPACE"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add k8s/pve/annict-rec-sync/kustomization.yaml
-          if git diff --staged --quiet; then
-            echo "image tag unchanged; nothing to commit"
-            exit 0
-          fi
-          git commit -m "chore(annict-rec-sync): deploy image $TAG"
-          git pull --rebase --autostash
-          git push
+         set -euo pipefail
+         
+         TAG="${GITHUB_SHA:0:7}"
+         BRANCH="deploy/annict-rec-sync-${TAG}"
+         
+         git config user.name "github-actions[bot]"
+         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+         
+         git switch -c "$BRANCH"
+         
+         cd k8s/pve/annict-rec-sync
+         
+         kustomize edit set image \
+           ghcr.io/miutaku/annict-rec-sync=ghcr.io/miutaku/annict-rec-sync:"$TAG"
+
+         cd "$GITHUB_WORKSPACE"
+
+         git add k8s/pve/annict-rec-sync/kustomization.yaml
+         
+         if git diff --staged --quiet; then
+           echo "image tag unchanged; nothing to commit"
+           exit 0
+         fi
+         
+         git commit -m "chore(annict-rec-sync): deploy image ${TAG}"
+         
+         git push --set-upstream origin "$BRANCH"
+         
+         gh pr create \
+           --base main \
+           --head "$BRANCH" \
+           --title "chore(annict-rec-sync): deploy image ${TAG}" \
+           --body "Update annict-rec-sync image to \`${TAG}\`."
