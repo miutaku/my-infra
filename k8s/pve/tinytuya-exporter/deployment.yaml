@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinytuya-exporter
+  template:
+    metadata:
+      labels:
+        app: tinytuya-exporter
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/miutaku/tinytuya-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9123
+          env:
+            - name: TUYA_DEVICE_NAME
+              value: tuya-16a
+            - name: TUYA_DEVICE_IP
+              value: 192.168.40.232
+            - name: TUYA_DEVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: device-id
+            - name: TUYA_LOCAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: local-key
+            - name: TUYA_VERSION
+              value: "3.3"
+            - name: POLL_INTERVAL_SECONDS
+              value: "15"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinytuya-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: tinytuya-exporter
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
