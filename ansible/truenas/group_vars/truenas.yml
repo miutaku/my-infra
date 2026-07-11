@@ -1,0 +1,9 @@
+# TrueNAS Scale 24.x+ はインストーラが admin アカウントを作成する
+# (25.x 新規インストールでは truenas_admin の場合あり)。
+# 事前に UI で SSH サービス有効化 + admin の "Allow sudo" が必要。
+ansible_user: admin
+ansible_become: true
+
+# NFS share のデフォルト値 (host_vars 側で個別上書き可)
+truenas_nfs_default_networks:
+  - 192.168.20.0/24

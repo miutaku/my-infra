@@ -11,58 +11,33 @@ RKE2 上で動かす NextCloud の初期セットアップ手順。
 | URL | `https://nextcloud.miutaku.work` (Cloudflare Access 必須) |
 | Namespace | `app-nextcloud` |
 | DB | `infra-db` の共有 MariaDB (`mariadb.infra-db.svc.cluster.local`) / DB名・ユーザー名 `nextcloud` |
-| データディレクトリ | nas-01 (192.168.20.191) の NFS `/mnt/raid1_case/nextcloud` |
-| 本体 (`/var/www/html`) | `local-path` PVC (config.php / apps) |
+| 本体 (`/var/www/html`, データディレクトリ含む) | `local-path` PVC |
+| 共有ストレージ | 既存 NAS export を External Storage として提供 (下記) |
 | キャッシュ / file locking | 同 namespace の Redis (非永続) |
 
-## 1. nas-01 の Dataset / NFS Share 作成
+NextCloud 専用の NAS 領域は**作らない**。NextCloud が自前で必要とするのは
+設定・アプリ・メタデータ用の小さな領域だけで、これは local-path PVC で足りる。
+共有したいデータ (現状は EPGStation の録画) は、既存の NFS export を pod に
+マウントして NextCloud の **External Storage** 機能で見せる。
 
-nas-02 の手順 ([truenas-nfs-setup.md](truenas-nfs-setup.md)) と同様に nas-01 (192.168.20.191) で実施。
+| External Storage | NFS export | pod 内マウント先 |
+| --- | --- | --- |
+| recorded | nas-02 (192.168.20.192) `/mnt/raid1_case/recorded` | `/mnt/nas/recorded` (readOnly) |
 
-**Datasets > pool > raid1_case > Add Dataset**:
+録画の実体は EPGStation と同じ export なので、誤操作防止のため readOnly でマウントしている
+(NAS 側パーミッションも root:755 のため uid 33 の NextCloud からはもともと書き込み不可)。
 
-| 設定項目 | 値 |
-| ------- | --- |
-| Name | `nextcloud` |
-| Dataset Preset | Generic |
-| ACL Type | POSIX |
-| Compression | lz4 |
+## 1. 共有ストレージの追加方法 (今後増やすとき)
 
-> **Note**: nas-01 のプール名が `raid1_case` でない場合は、
-> [k8s/pve/nextcloud/pvc.yaml](../k8s/pve/nextcloud/pvc.yaml) の `nfs.path` を実際のパスに合わせること。
-
-**Edit Permissions** (NextCloud はデータディレクトリの所有者 `www-data` (uid/gid 33)・mode 770 を要求する):
-
-```text
-User:  33 (www-data)
-Group: 33 (www-data)
-Mode:  770
-Apply permissions recursively: ✓
-```
-
-**Shares > NFS > Add**:
-
-```text
-Path:    /mnt/raid1_case/nextcloud
-Enabled: ✓
-```
-
-Advanced Options:
-
-```text
-Maproot User:  root
-Maproot Group: root
-Networks:
-  192.168.20.0/24
-```
-
-NFS サービス設定 (NFSv4.1 有効化) は nas-02 と同じ。動作確認:
+1. [pvc.yaml](../k8s/pve/nextcloud/pvc.yaml) に PV/PVC を1組追加
+   (NAS 側に export がなければ先に [ansible/truenas/](../ansible/truenas/) で dataset + share を追加)
+2. [nextcloud-deployment.yaml](../k8s/pve/nextcloud/nextcloud-deployment.yaml) の
+   nextcloud / cron 両コンテナに volume + volumeMount (`/mnt/nas/<名前>`) を追加
+3. デプロイ後に External Storage として登録:
 
 ```bash
-showmount -e 192.168.20.191
-sudo mount -t nfs -o nfsvers=4.1 192.168.20.191:/mnt/raid1_case/nextcloud /mnt/test
-df -h /mnt/test
-sudo umount /mnt/test
+kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
+  su -s /bin/sh www-data -c "php occ files_external:create <名前> local null::null -c datadir=/mnt/nas/<名前>"
 ```
 
 ## 2. MariaDB に DB とユーザーを作成
@@ -89,8 +64,16 @@ FLUSH PRIVILEGES;
 
 | BSM シークレット名 | 値 |
 | --- | --- |
-| `NEXTCLOUD_MYSQL_PASSWORD` | 手順 2 で設定した DB パスワード |
-| `NEXTCLOUD_ADMIN_PASSWORD` | 初期 admin ユーザーのパスワード (`openssl rand -base64 24` 等で生成) |
+| `NEXTCLOUD_MYSQL_PASSWORD` | 手順 2 で設定する DB パスワード |
+| `NEXTCLOUD_ADMIN_PASSWORD` | 初期 admin ユーザーのパスワード |
+
+CLI で登録する場合 (machine account に my-infra プロジェクトへの write 権限が必要):
+
+```bash
+PROJECT=$(bws project list | jq -r '.[] | select(.name == "my-infra") | .id')
+bws secret create NEXTCLOUD_MYSQL_PASSWORD "$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)" "$PROJECT"
+bws secret create NEXTCLOUD_ADMIN_PASSWORD "$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)" "$PROJECT"
+```
 
 ExternalSecret は [nextcloud-secret.yaml](../k8s/pve/nextcloud/nextcloud-secret.yaml)。
 
@@ -114,6 +97,19 @@ main に push すれば自動 sync される。初回起動時はコンテナの
 DB スキーマ作成と admin ユーザー作成を自動で行う (数分かかる。startupProbe で最大 10 分待つ)。
 
 初回ログイン: `admin` / `NEXTCLOUD_ADMIN_PASSWORD`。
+
+## 6. External Storage の有効化 (初回のみ)
+
+デプロイ完了後に一度だけ実行:
+
+```bash
+kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
+  su -s /bin/sh www-data -c "php occ app:enable files_external"
+kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
+  su -s /bin/sh www-data -c "php occ files_external:create recorded local null::null -c datadir=/mnt/nas/recorded"
+```
+
+Web UI のファイル一覧に `recorded` が現れ、EPGStation の録画を閲覧・ダウンロード・共有できる。
 
 ## 運用メモ
 

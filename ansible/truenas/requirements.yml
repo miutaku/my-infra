@@ -1,0 +1,4 @@
+# from ansible-galaxy
+collections:
+  - name: arensb.truenas
+  - name: ansible.posix
