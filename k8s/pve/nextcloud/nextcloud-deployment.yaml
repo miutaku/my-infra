@@ -15,11 +15,8 @@ spec:
       labels:
         app: nextcloud
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: nextcloud
-          # ffmpeg 同梱イメージ (docker/nextcloud/Dockerfile, 動画サムネイル用)
           image: ghcr.io/miutaku/nextcloud-ffmpeg:latest
           ports:
             - containerPort: 80
