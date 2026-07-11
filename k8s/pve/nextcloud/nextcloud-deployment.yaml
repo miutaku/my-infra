@@ -15,9 +15,12 @@ spec:
       labels:
         app: nextcloud
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       containers:
         - name: nextcloud
-          image: nextcloud:34-apache
+          # ffmpeg 同梱イメージ (docker/nextcloud/Dockerfile, 動画サムネイル用)
+          image: ghcr.io/miutaku/nextcloud-ffmpeg:latest
           ports:
             - containerPort: 80
               name: http
@@ -65,6 +68,12 @@ spec:
           volumeMounts:
             - name: html
               mountPath: /var/www/html
+            - name: config-extra
+              mountPath: /var/www/html/config/previews.config.php
+              subPath: previews.config.php
+            - name: config-extra
+              mountPath: /var/www/html/config/mimetypemapping.json
+              subPath: mimetypemapping.json
             # External Storage 用。誤って録画ファイルを消さないよう readOnly で見せる
             - name: nas-recorded
               mountPath: /mnt/nas/recorded
@@ -106,7 +115,7 @@ spec:
 
         # バックグラウンドジョブ (occ background:cron 相当) を回すサイドカー
         - name: cron
-          image: nextcloud:34-apache
+          image: ghcr.io/miutaku/nextcloud-ffmpeg:latest
           command: ["/cron.sh"]
           env:
             - name: TZ
@@ -114,6 +123,12 @@ spec:
           volumeMounts:
             - name: html
               mountPath: /var/www/html
+            - name: config-extra
+              mountPath: /var/www/html/config/previews.config.php
+              subPath: previews.config.php
+            - name: config-extra
+              mountPath: /var/www/html/config/mimetypemapping.json
+              subPath: mimetypemapping.json
             - name: nas-recorded
               mountPath: /mnt/nas/recorded
               readOnly: true
@@ -129,6 +144,9 @@ spec:
         - name: html
           persistentVolumeClaim:
             claimName: nextcloud-html-pvc
+        - name: config-extra
+          configMap:
+            name: nextcloud-config
         - name: nas-recorded
           persistentVolumeClaim:
             claimName: nextcloud-nas-recorded-pvc

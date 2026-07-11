@@ -4,6 +4,8 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - nextcloud-secret.yaml
+  - ghcr-pull-secret.yaml
+  - nextcloud-configmap.yaml
   - redis.yaml
   - nextcloud-deployment.yaml
   - nextcloud-service.yaml

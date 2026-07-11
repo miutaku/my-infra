@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-config
+  namespace: app-nextcloud
+data:
+  # /var/www/html/config/ に subPath マウントされる (config/*.config.php は自動で読み込まれる)。
+  # enabledPreviewProviders はデフォルト群を上書きするため、画像系も含めて全列挙する。
+  previews.config.php: |
+    <?php
+    $CONFIG = [
+      'enabledPreviewProviders' => [
+        'OC\Preview\PNG',
+        'OC\Preview\JPEG',
+        'OC\Preview\GIF',
+        'OC\Preview\BMP',
+        'OC\Preview\WebP',
+        'OC\Preview\XBitmap',
+        'OC\Preview\MarkDown',
+        'OC\Preview\TXT',
+        'OC\Preview\OpenDocument',
+        'OC\Preview\Krita',
+        'OC\Preview\Movie',
+      ],
+    ];
+  # EPGStation の .m2ts を動画として認識させる (core 未登録の拡張子)。
+  # 変更後は occ maintenance:mimetype:update-db の実行が必要。
+  mimetypemapping.json: |
+    {
+      "m2ts": ["video/mp2t"],
+      "mts": ["video/mp2t"]
+    }

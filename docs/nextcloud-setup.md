@@ -122,7 +122,27 @@ kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
 Web UI のファイル一覧に `recorded` が現れ、EPGStation の録画を閲覧・ダウンロード・共有できる
 (pod 側の NFS マウントも readOnly なので録画実体を壊すことはない)。
 
-## 7. 監視 (初回のみ)
+## 7. 動画サムネイル
+
+- イメージは ffmpeg 同梱のカスタムビルド
+  ([docker/nextcloud/Dockerfile](../docker/nextcloud/Dockerfile) →
+  [.github/workflows/nextcloud.yml](../.github/workflows/nextcloud.yml) が
+  `ghcr.io/miutaku/nextcloud-ffmpeg` を build/push)
+- プレビュープロバイダ (`OC\Preview\Movie` 含む) と `.m2ts` の mimetype 登録は
+  [nextcloud-configmap.yaml](../k8s/pve/nextcloud/nextcloud-configmap.yaml) で宣言し、
+  `/var/www/html/config/` に subPath マウントしている
+- **mimetypemapping.json を変更したら一度だけ実行**:
+
+```bash
+kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
+  su -s /bin/sh www-data -c "php occ maintenance:mimetype:update-db --repair-filecache && php occ maintenance:mimetype:update-js"
+```
+
+- プレビュー画像は local-path PVC 側 (`appdata_*/preview/`) に生成され、NAS には書き込まない
+- サムネイルは初回表示時にオンデマンド生成される。録画が大量で重い場合は
+  Preview Generator アプリ + cron での事前生成を検討
+
+## 8. 監視 (初回のみ)
 
 vmagent ([k8s/pve/vmagent/values.yaml](../k8s/pve/vmagent/values.yaml)) の `blackbox_http` ジョブが
 `/status.php` を監視する。blackbox は Host ヘッダにターゲットの svc DNS 名を使うため、
@@ -140,8 +160,9 @@ kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
 - **occ コマンド**:
   `kubectl exec -it -n app-nextcloud deploy/nextcloud -c nextcloud -- su -s /bin/sh www-data -c "php occ <cmd>"`
 - **バージョンアップ**: NextCloud はメジャーバージョンのスキップ不可。
-  [nextcloud-deployment.yaml](../k8s/pve/nextcloud/nextcloud-deployment.yaml) の
-  イメージタグ (`nextcloud:34-apache`) を 1 つずつ上げる (cron サイドカーも同時に)。
+  [docker/nextcloud/Dockerfile](../docker/nextcloud/Dockerfile) の FROM タグ
+  (`nextcloud:34-apache`) を 1 つずつ上げて push → CI ビルド後に
+  `kubectl rollout restart deployment/nextcloud -n app-nextcloud`。
   各メジャーのサポートは約1年 ([endoflife.date/nextcloud](https://endoflife.date/nextcloud) 参照)。
 - **MariaDB リソース**: `infra-db` の MariaDB は limits 500m/512Mi と小さめ。
   NextCloud 利用が増えて詰まるようなら
