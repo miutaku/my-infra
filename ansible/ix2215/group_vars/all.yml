@@ -266,6 +266,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.40.229", mac: "3c:61:05:ce:9c:15" } # ceiling light
       - { ip: "192.168.40.230", mac: "94:e0:d6:67:7f:fb" } # security camera
       - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
+      - { ip: "192.168.40.232", mac: "24:94:94:be:73:8b" } # Tuya 16A smart plug
 
 # RKE2 クラスタノードの DHCP 静的リース (Terraform から更新)
 # vlan20 profile から削除するIP (旧エントリのクリーンアップ用)
