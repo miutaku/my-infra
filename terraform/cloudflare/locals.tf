@@ -17,6 +17,10 @@ locals {
       backend       = "http://epgstation.app-epgstation.svc.cluster.local:8888"
       no_tls_verify = false
     }
+    "nextcloud" = {
+      backend       = "http://nextcloud.app-nextcloud.svc.cluster.local:80"
+      no_tls_verify = false
+    }
     "unifi" = {
       backend       = "https://192.168.0.132:11443"
       no_tls_verify = true
@@ -153,7 +157,7 @@ locals {
   # Every entry here must exist as a key in rke2_services or oke_services.
   access_protected_subdomains = toset([
     "argocd-rke2", "argocd-oke", "wol",
-    "epgstation",
+    "epgstation", "nextcloud",
     "unifi", "wifi-ap",
     "ix2215",
     "nas-01", "nas-02",
