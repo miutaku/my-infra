@@ -132,6 +132,7 @@ wizardで確認したプロトコル版が3.3以外なら、`deployment.yaml`の
 `TUYA_CURRENT_DPS`、`TUYA_POWER_DPS`、`TUYA_VOLTAGE_DPS`を追加する。
 電力値の更新に `UPDATEDPS` が不要または問題になる機種では、
 `TUYA_REQUEST_UPDATEDPS=false` を指定する。
+Deploymentでは`TUYA_REQUEST_UPDATEDPS=false`を設定している。
 
 公開する主要メトリクスは次のとおり。
 
