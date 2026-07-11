@@ -67,6 +67,14 @@ data:
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx265'
         suffix: -hevc.mkv
         rate: 100.0
+      - name: H.264 (Local)
+        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx264'
+        suffix: -avc.mkv
+        rate: 100.0
+      - name: H.265 (Local)
+        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx265'
+        suffix: -hevc.mkv
+        rate: 100.0
 
     urlscheme:
       m2ts:
@@ -466,6 +474,109 @@ data:
         appenders:
           - stdout
         level: info
+
+  enc-local.js: |
+    'use strict';
+    const { spawn } = require('child_process');
+
+    const ffmpeg = process.env.FFMPEG || process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg';
+    const ffprobe = process.env.FFPROBE || process.env.FFPROBE_PATH || '/usr/local/bin/ffprobe';
+    const input = process.env.INPUT;
+    const output = process.env.OUTPUT;
+    const codec = process.argv[2] === 'libx265' ? 'libx265' : 'libx264';
+    const videoHeight = parseInt(process.env.VIDEORESOLUTION, 10) || 1080;
+    const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
+    const audioBitrate = videoHeight > 720 ? '192k' : '128k';
+    const preset = codec === 'libx265' ? 'medium' : 'veryfast';
+    const crf = codec === 'libx265' ? 28 : 23;
+
+    const run = (cmd, args) => new Promise((resolve, reject) => {
+      const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stdout = '';
+      let stderr = '';
+      child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+      child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+      child.on('error', reject);
+      child.on('close', (code) => {
+        if (code === 0) resolve({ stdout, stderr });
+        else reject(new Error(stderr || `command failed: ${cmd} ${args.join(' ')}`));
+      });
+    });
+
+    const getDuration = async () => {
+      if (!input) return 0;
+      try {
+        const { stdout } = await run(ffprobe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', input]);
+        const duration = parseFloat(stdout.trim());
+        return Number.isFinite(duration) ? duration : 0;
+      } catch (_) {
+        return 0;
+      }
+    };
+
+    const emitProgress = (percent, log = '') => {
+      process.stdout.write(JSON.stringify({ type: 'progress', percent, log }) + '\n');
+    };
+
+    (async () => {
+      if (!input || !output) {
+        console.error('INPUT / OUTPUT が未設定です');
+        process.exit(1);
+      }
+
+      const duration = await getDuration();
+      const args = ['-y', '-nostdin', '-analyzeduration', '10M', '-probesize', '32M'];
+      if (isDualMono) {
+        args.push('-dual_mono_mode', 'main');
+      }
+      args.push('-i', input);
+      args.push('-map', '0', '-ignore_unknown', '-max_muxing_queue_size', '1024', '-sn');
+      args.push('-vf', `yadif,scale=-2:${videoHeight}`);
+      args.push('-c:v', codec, '-preset', preset, '-crf', String(crf));
+      args.push('-c:a', 'aac', '-ar', '48000', '-b:a', audioBitrate, '-ac', '2');
+      args.push('-movflags', 'faststart', '-f', 'matroska', output);
+
+      const child = spawn(ffmpeg, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let lastPercent = 0;
+      let progressBuffer = '';
+      child.stderr.on('data', (chunk) => {
+        const text = String(chunk);
+        process.stderr.write(text);
+        progressBuffer += text;
+        const lines = progressBuffer.split(/\r?\n/);
+        progressBuffer = lines.pop() || '';
+        for (const line of lines) {
+          const match = line.match(/out_time_ms=(\d+)/);
+          if (!match) continue;
+          const outTimeMs = parseInt(match[1], 10);
+          let percent = 0;
+          if (duration > 0 && outTimeMs > 0) {
+            percent = Math.min(1, outTimeMs / (duration * 1000000));
+          }
+          if (percent > lastPercent) {
+            lastPercent = percent;
+            emitProgress(percent, line.trim());
+          }
+        }
+      });
+
+      child.on('error', (err) => {
+        console.error(err);
+        process.exit(1);
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          emitProgress(1.0, 'completed');
+          process.exit(0);
+        }
+        console.error(`ffmpeg exited with code ${code}`);
+        process.exit(code || 1);
+      });
+
+      process.on('SIGINT', () => child.kill('SIGINT'));
+      process.on('SIGTERM', () => child.kill('SIGTERM'));
+    })();
 
   enc-remote.js: |
     'use strict';
