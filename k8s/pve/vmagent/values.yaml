@@ -146,6 +146,14 @@ config:
           labels:
             instance: speedtest
 
+    - job_name: tinytuya
+      scrape_interval: 15s
+      static_configs:
+        - targets:
+            - tinytuya-exporter.monitoring.svc.cluster.local:9123
+          labels:
+            instance: tuya-16a
+
     - job_name: blackbox_http
       metrics_path: /probe
       static_configs:
