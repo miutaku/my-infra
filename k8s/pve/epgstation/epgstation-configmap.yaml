@@ -554,13 +554,7 @@ data:
 
       const duration = await getDuration();
       const isMp4 = (output || '').toLowerCase().endsWith('.mp4') || (output || '').toLowerCase().endsWith('.m4v');
-      const args = [
-        '-y', '-nostdin',
-        '-analyzeduration', '10M', '-probesize', '32M',
-        // stderr に機械可読な進捗を出す。通常の stats 行だけでは
-        // 下の out_time_ms パーサーに一致しない。
-        '-progress', 'pipe:2', '-stats_period', '1', '-nostats',
-      ];
+      const args = ['-y', '-nostdin', '-analyzeduration', '10M', '-probesize', '32M'];
       if (isDualMono) {
         args.push('-dual_mono_mode', 'main');
       }
@@ -584,19 +578,27 @@ data:
         const text = String(chunk);
         process.stderr.write(text);
         progressBuffer += text;
-        const lines = progressBuffer.split(/\r?\n/);
+        // ffmpeg の stats は改行ではなく \r で更新されるため、両方で分割する。
+        const lines = progressBuffer.split(/[\r\n]/);
         progressBuffer = lines.pop() || '';
         for (const line of lines) {
-          const match = line.match(/out_time_ms=(\d+)/);
+          // Remote worker と同じ通常の ffmpeg stats 行を進捗ログに使用する。
+          const match = line.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);
           if (!match) continue;
-          const outTimeMs = parseInt(match[1], 10);
+          const current = (
+            parseInt(match[1], 10) * 3600
+            + parseInt(match[2], 10) * 60
+            + parseFloat(match[3])
+          );
           let percent = 0;
-          if (duration > 0 && outTimeMs > 0) {
-            percent = Math.min(1, outTimeMs / (duration * 1000000));
+          if (duration > 0 && current > 0) {
+            percent = Math.min(1, current / duration);
           }
           if (percent > lastPercent) {
             lastPercent = percent;
-            emitProgress(percent, line.trim());
+            const speed = line.match(/speed=\s*(\S+)/);
+            const log = `${speed ? `[${speed[1]}] ` : ''}${line.trim()}`;
+            emitProgress(percent, log);
           }
         }
       });
