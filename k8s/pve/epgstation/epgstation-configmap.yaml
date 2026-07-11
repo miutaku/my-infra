@@ -479,13 +479,17 @@ data:
     'use strict';
     const fs = require('fs');
     const path = require('path');
-    const { spawn } = require('child_process');
+    const { spawn, spawnSync } = require('child_process');
 
     const codec = process.argv[2] === 'libx265' ? 'libx265' : 'libx264';
     const input = process.env.INPUT;
     const output = process.env.OUTPUT;
     const resolveBinary = (candidate, fallback) => {
-      if (!candidate || candidate === '%FFMPEG%' || candidate === '%FFPROBE%') return fallback;
+      if (!candidate || candidate === '%FFMPEG%' || candidate === '%FFPROBE%') {
+        const resolved = spawnSync('sh', ['-lc', `command -v ${fallback}`], { encoding: 'utf8' });
+        if (resolved.status === 0) return resolved.stdout.trim();
+        return fallback;
+      }
       if (fs.existsSync(candidate)) return candidate;
       const base = path.basename(candidate);
       const pathEntries = (process.env.PATH || '').split(':');
@@ -493,6 +497,8 @@ data:
         const full = path.join(entry, base);
         if (fs.existsSync(full)) return full;
       }
+      const resolved = spawnSync('sh', ['-lc', `command -v ${base}`], { encoding: 'utf8' });
+      if (resolved.status === 0) return resolved.stdout.trim();
       return candidate;
     };
     const ffmpeg = resolveBinary(process.argv[3] || process.env.FFMPEG || process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg', 'ffmpeg');
@@ -540,6 +546,7 @@ data:
         console.error(`ffmpeg/ffprobe の解決に失敗しました: ffmpeg=${ffmpeg || 'null'} ffprobe=${ffprobe || 'null'}`);
         process.exit(1);
       }
+      console.error(`using ffmpeg=${ffmpeg} ffprobe=${ffprobe}`);
       const outputDir = path.dirname(output);
       if (outputDir && outputDir !== '.' && !fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
