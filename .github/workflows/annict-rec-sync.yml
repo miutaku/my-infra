@@ -17,6 +17,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/annict-rec-sync
+  GH_TOKEN: ${{ github.token }}
 
 jobs:
   build-push:
