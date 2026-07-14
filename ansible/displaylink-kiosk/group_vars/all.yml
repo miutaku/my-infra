@@ -1,0 +1,27 @@
+---
+# BSM Secret IDs (values: Kiosk username and URL)
+bsm_kiosk_user_id: "628a2ff7-d36f-4e6b-9ecb-b48700a26343"
+bsm_kiosk_url_id: "c60c7771-1777-40b3-a96a-b48700bb3799"
+kiosk_timezone: Asia/Tokyo
+kiosk_display_connector: DVI-I-1
+kiosk_display_mode: 1920x1080@60.000
+kiosk_display_scale: 1.0
+
+displaylink_installer_repo: "https://github.com/AdnanHodzic/displaylink-debian.git"
+displaylink_installer_version: master
+displaylink_installer_dir: /usr/local/src/displaylink-debian
+displaylink_installer_script: /usr/local/sbin/displaylink-debian-kiosk
+
+kiosk_packages:
+  - ubuntu-desktop-minimal
+  - gnome-kiosk
+  - gnome-kiosk-script-session
+  - git
+  - xvfb
+  - x11-xserver-utils
+  - dkms
+  - linux-headers-generic
+  - build-essential
+  - libdrm-dev
+  - libelf-dev
+  - pkg-config

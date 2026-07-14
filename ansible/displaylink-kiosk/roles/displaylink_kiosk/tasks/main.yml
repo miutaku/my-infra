@@ -1,0 +1,256 @@
+---
+- name: Set kiosk timezone
+  community.general.timezone:
+    name: "{{ kiosk_timezone }}"
+
+- name: Install desktop, kiosk, and DisplayLink prerequisites
+  ansible.builtin.apt:
+    name: "{{ kiosk_packages }}"
+    state: present
+    update_cache: true
+    install_recommends: true
+
+- name: Remove unneeded desktop applications
+  ansible.builtin.apt:
+    name:
+      - "libreoffice*"
+      - "thunderbird*"
+      - gnome-initial-setup
+      - ubuntu-report
+    state: absent
+    autoremove: true
+    purge: true
+  notify: Restart gdm
+
+- name: Disable Apport crash reporting
+  ansible.builtin.lineinfile:
+    path: /etc/default/apport
+    regexp: '^enabled='
+    line: 'enabled=0'
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Stop and disable Apport
+  ansible.builtin.systemd_service:
+    name: apport.service
+    state: stopped
+    enabled: false
+
+- name: Find stale crash reports
+  ansible.builtin.find:
+    paths: /var/crash
+    patterns:
+      - '*.crash'
+      - '*.upload'
+      - '*.uploaded'
+    file_type: file
+  register: stale_crash_reports
+
+- name: Remove stale crash reports
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ stale_crash_reports.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Create kiosk group
+  ansible.builtin.group:
+    name: "{{ kiosk_user }}"
+    state: present
+
+- name: Create kiosk user
+  ansible.builtin.user:
+    name: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    groups:
+      - audio
+      - video
+      - render
+    append: true
+    create_home: true
+    home: "/home/{{ kiosk_user }}"
+    password: ""
+    update_password: on_create
+    shell: /bin/bash
+    state: present
+
+- name: Create kiosk user configuration directory
+  ansible.builtin.file:
+    path: "/home/{{ kiosk_user }}/.config"
+    state: directory
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0700"
+
+- name: Mark GNOME initial setup as complete
+  ansible.builtin.file:
+    path: "/home/{{ kiosk_user }}/.config/gnome-initial-setup-done"
+    state: touch
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0600"
+    modification_time: preserve
+    access_time: preserve
+
+- name: Clone DisplayLink installer
+  ansible.builtin.git:
+    repo: "{{ displaylink_installer_repo }}"
+    dest: "{{ displaylink_installer_dir }}"
+    version: "{{ displaylink_installer_version }}"
+    depth: 1
+    force: true
+
+- name: Read DisplayLink installer
+  ansible.builtin.slurp:
+    src: "{{ displaylink_installer_dir }}/displaylink-debian.sh"
+  register: displaylink_installer_source
+
+- name: Create Kiosk-specific DisplayLink installer
+  ansible.builtin.copy:
+    content: >-
+      {{ displaylink_installer_source.content | b64decode
+         | replace('./$driver_dir/displaylink-driver-${version}*.run --keep --noexec',
+                   './$driver_dir/displaylink-driver-${version}*.run --keep --nox11 --noexec')
+         | replace('read -p "Reboot now? [Y/n] " ack', 'ack=N') }}
+    dest: "{{ displaylink_installer_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check DisplayLink service installation
+  ansible.builtin.stat:
+    path: /lib/systemd/system/displaylink-driver.service
+  register: displaylink_service_before
+
+- name: Install DisplayLink driver non-interactively
+  ansible.builtin.shell: |
+    yes | xvfb-run -a {{ displaylink_installer_script | quote }} --install
+  args:
+    chdir: "{{ displaylink_installer_dir }}"
+    executable: /bin/bash
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  register: displaylink_installer
+  failed_when: false
+  when: not displaylink_service_before.stat.exists
+  notify: Reboot kiosk
+
+- name: Verify DisplayLink package installation
+  ansible.builtin.command:
+    argv:
+      - dpkg-query
+      - --show
+      - '--showformat=${db:Status-Status}'
+      - displaylink-driver
+  register: displaylink_package_status
+  changed_when: false
+  failed_when: >-
+    displaylink_package_status.rc != 0
+    or displaylink_package_status.stdout != 'installed'
+
+- name: Verify DisplayLink service installation
+  ansible.builtin.stat:
+    path: /lib/systemd/system/displaylink-driver.service
+  register: displaylink_service_after
+  failed_when: not displaylink_service_after.stat.exists
+
+- name: Check whether reboot is required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: kiosk_reboot_required
+
+- name: Schedule required reboot
+  ansible.builtin.command: /bin/true
+  when: kiosk_reboot_required.stat.exists
+  changed_when: true
+  notify: Reboot kiosk
+
+- name: Create Xorg configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/X11/xorg.conf.d
+    - /usr/share/X11/xorg.conf.d
+    - /etc/dconf/db/local.d/locks
+    - /var/lib/AccountsService/users
+
+- name: Configure DisplayLink modesetting driver
+  ansible.builtin.template:
+    src: 20-displaylink.conf.j2
+    dest: /etc/X11/xorg.conf.d/20-displaylink.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reboot kiosk
+
+- name: Disable X11 display power management
+  ansible.builtin.template:
+    src: 10-monitor.conf.j2
+    dest: /usr/share/X11/xorg.conf.d/10-monitor.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart gdm
+
+- name: Configure GNOME power and lock settings
+  ansible.builtin.template:
+    src: 00-kiosk.j2
+    dest: /etc/dconf/db/local.d/00-kiosk
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Update dconf database
+    - Restart gdm
+
+- name: Create kiosk user executable directory
+  ansible.builtin.file:
+    path: "/home/{{ kiosk_user }}/.local/bin"
+    state: directory
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0755"
+
+- name: Install kiosk startup script
+  ansible.builtin.template:
+    src: gnome-kiosk-script.j2
+    dest: "/home/{{ kiosk_user }}/.local/bin/gnome-kiosk-script"
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0755"
+  notify: Restart gdm
+
+- name: Configure kiosk user session
+  ansible.builtin.template:
+    src: accountsservice-user.j2
+    dest: "/var/lib/AccountsService/users/{{ kiosk_user }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart gdm
+
+- name: Configure GDM automatic X11 login
+  ansible.builtin.template:
+    src: gdm-custom.conf.j2
+    dest: /etc/gdm3/custom.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart gdm
+
+- name: Enable graphical boot
+  ansible.builtin.systemd_service:
+    name: gdm3
+    enabled: true
+
+- name: Set graphical target as default
+  ansible.builtin.command: systemctl set-default graphical.target
+  register: graphical_target
+  changed_when: "'Created symlink' in graphical_target.stderr"

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Mutter's display API becomes available shortly after the Kiosk session starts.
+attempt=0
+while [ "${attempt}" -lt 30 ]; do
+  if /usr/bin/gdctl set --persistent \
+    --logical-monitor \
+    --monitor {{ kiosk_display_connector | quote }} \
+    --mode {{ kiosk_display_mode | quote }} \
+    --primary \
+    --scale {{ kiosk_display_scale | quote }}; then
+    break
+  fi
+  attempt=$((attempt + 1))
+  sleep 1
+done
+
+export MOZ_ENABLE_WAYLAND=1
+exec /usr/bin/firefox --kiosk {{ kiosk_url | quote }}

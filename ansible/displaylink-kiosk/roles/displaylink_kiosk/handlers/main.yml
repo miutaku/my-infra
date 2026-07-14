@@ -1,0 +1,13 @@
+---
+- name: Update dconf database
+  ansible.builtin.command: dconf update
+  changed_when: true
+
+- name: Restart gdm
+  ansible.builtin.systemd_service:
+    name: gdm3
+    state: restarted
+
+- name: Reboot kiosk
+  ansible.builtin.reboot:
+    reboot_timeout: 900
