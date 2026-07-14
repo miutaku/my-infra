@@ -3,6 +3,20 @@ locals {
   server_hostnames    = sort(keys(module.rke2_server.mac_addresses))
   agent_hostnames     = sort(keys(module.rke2_worker.mac_addresses))
   dvb_worker_hostname = keys(module.rke2_dvb_worker.mac_addresses)[0]
+  kiosk_hostnames     = sort(keys(module.displaylink_kiosk.mac_addresses))
+}
+
+
+resource "local_file" "ansible_displaylink_kiosk_hosts" {
+  filename = "${path.root}/../../ansible/displaylink-kiosk/hosts/prd"
+  content = templatefile("${path.root}/templates/ansible_displaylink_kiosk_hosts.tpl", {
+    kiosk_hosts = [
+      for i, hostname in local.kiosk_hostnames : {
+        ip       = var.displaylink_kiosk_ips[i]
+        hostname = hostname
+      }
+    ]
+  })
 }
 
 resource "local_file" "ansible_hosts_prd" {
