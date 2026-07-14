@@ -176,15 +176,20 @@ module "pbs" {
   cloudinit_storage = "local-zfs"
 }
 
-module "magic_mirror_server" {
+moved {
+  from = module.magic_mirror_server
+  to   = module.displaylink_kiosk
+}
+
+module "displaylink_kiosk" {
   source = "./modules/proxmox_vm"
 
-  vm_count          = var.mm_server_vm_count
+  vm_count          = var.displaylink_kiosk_vm_count
   name_prefix       = "smart-display"
   name_suffix       = "ubuntu-26-04-home-amd64"
-  base_macaddr      = var.mm_server_macaddr
+  base_macaddr      = var.displaylink_kiosk_macaddr
   vmid_start        = 5000
-  tags              = ["ubuntu_2604", "mm-server", "docker", "iot"]
+  tags              = ["ubuntu_2604", "displaylink", "kiosk", "iot"]
   cpu_cores         = 1
   memory            = 2048
   kvm_vga_type      = "none"
@@ -194,7 +199,6 @@ module "magic_mirror_server" {
   disk_size         = 32
   vlan_tag          = 40
   cloudinit_storage = "local-zfs"
-  cicustom          = "user=local:snippets/${local.mm_server_snippet_name}"
   usbs = {
     usb0 = {
       mapping = {
