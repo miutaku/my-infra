@@ -25,3 +25,4 @@ kiosk_packages:
   - libdrm-dev
   - libelf-dev
   - pkg-config
+  - fonts-noto-cjk
