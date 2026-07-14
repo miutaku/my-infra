@@ -1,7 +1,18 @@
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token. Required permissions: Zone:DNS:Edit and Zero Trust:Edit."
+  description = "Cloudflare API token. Required permissions: Zone:DNS:Edit, Zero Trust:Edit, Zone Settings:Edit, Email Routing Rules:Edit, and Email Routing Addresses:Edit."
   type        = string
   sensitive   = true
+}
+
+variable "grafana_email_forward_to" {
+  description = "Verified destination mailbox that receives messages sent to my-infra-read@miutaku.work. Cloudflare sends a one-time verification message here."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.grafana_email_forward_to))
+    error_message = "grafana_email_forward_to must be a valid email address."
+  }
 }
 
 variable "account_id" {
