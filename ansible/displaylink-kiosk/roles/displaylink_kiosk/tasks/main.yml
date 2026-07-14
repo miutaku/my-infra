@@ -95,6 +95,41 @@
     modification_time: preserve
     access_time: preserve
 
+- name: Create Snap Firefox font directory
+  ansible.builtin.file:
+    path: "/home/{{ kiosk_user }}/snap/firefox/common/.fonts"
+    state: directory
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0755"
+
+- name: Install Japanese fonts for Snap Firefox
+  ansible.builtin.copy:
+    src: "/usr/share/fonts/opentype/noto/{{ item }}"
+    dest: "/home/{{ kiosk_user }}/snap/firefox/common/.fonts/{{ item }}"
+    remote_src: true
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0644"
+  loop:
+    - NotoSansCJK-Regular.ttc
+    - NotoSansCJK-Bold.ttc
+  register: snap_firefox_fonts
+  notify: Restart gdm
+
+- name: Refresh Snap Firefox font cache
+  ansible.builtin.command:
+    argv:
+      - snap
+      - run
+      - --shell
+      - firefox
+      - -c
+      - fc-cache -f
+  become_user: "{{ kiosk_user }}"
+  when: snap_firefox_fonts.changed
+  changed_when: false
+
 - name: Clone DisplayLink installer
   ansible.builtin.git:
     repo: "{{ displaylink_installer_repo }}"
