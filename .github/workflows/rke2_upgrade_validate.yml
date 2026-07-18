@@ -1,6 +1,7 @@
 name: RKE2 upgrade validation
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
@@ -13,6 +14,7 @@ permissions:
 
 jobs:
   validate-version:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,8 +76,9 @@ jobs:
 
   live-rke2-preflight:
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'automation/rke2-stable'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'automation/rke2-stable')
     runs-on: oke-rke2-admin
     environment: rke2-production-preflight
     timeout-minutes: 30
