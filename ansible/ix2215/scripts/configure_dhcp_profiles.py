@@ -88,11 +88,6 @@ def main() -> None:
     v6_client_profiles = json.loads(os.environ.get("IX_DHCPV6_CLIENT_PROFILES_JSON", "[]"))
     v6_server_profiles = json.loads(os.environ.get("IX_DHCPV6_SERVER_PROFILES_JSON", "[]"))
 
-    # dhcp_static_lease ロールが管理するエントリ — stale 判定から除外する
-    dhcp_assignments = json.loads(os.environ.get("DHCP_ASSIGNMENTS_JSON", "[]"))
-    dhcp_profile_name = os.environ.get("DHCP_PROFILE", "")
-    external_ips: set[str] = {a["ip"] for a in dhcp_assignments} if dhcp_profile_name else set()
-
     with connect() as conn:
         running = get_running_config(conn)
 
@@ -106,9 +101,6 @@ def main() -> None:
 
         existing_fas = parse_existing_fixed_assignments(running, p["name"])
         desired_ips = {fa["ip"] for fa in p.get("fixed_assignments", [])}
-        # dhcp_static_lease 管理分は stale 扱いしない
-        if p["name"] == dhcp_profile_name:
-            desired_ips |= external_ips
 
         add_fas: list[str] = []
         for fa in p.get("fixed_assignments", []):

@@ -11,8 +11,6 @@
     IX_DHCP_PROFILES_JSON: "{{ ix_dhcp_profiles | to_json }}"
     IX_DHCPV6_CLIENT_PROFILES_JSON: "{{ ix_dhcpv6_client_profiles | to_json }}"
     IX_DHCPV6_SERVER_PROFILES_JSON: "{{ ix_dhcpv6_server_profiles | to_json }}"
-    DHCP_ASSIGNMENTS_JSON: "{{ dhcp_assignments | to_json }}"
-    DHCP_PROFILE: "{{ dhcp_profile }}"
   register: result
   changed_when: "'changed=true' in result.stdout"
   failed_when: "'failed=true' in result.stdout or result.rc != 0"
