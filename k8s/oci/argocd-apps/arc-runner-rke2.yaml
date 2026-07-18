@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oci-arc-runner-rke2
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set
+    targetRevision: 0.14.2
+    helm:
+      releaseName: oke-rke2-admin
+      values: |
+        githubConfigUrl: "https://github.com/miutaku/my-infra"
+        githubConfigSecret: "github-token-secret"
+        runnerScaleSetName: "oke-rke2-admin"
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: oci-arc-systems-gha-rs-controller
+        minRunners: 0
+        maxRunners: 1
+        template:
+          spec:
+            nodeSelector:
+              kubernetes.io/arch: arm64
+              kubernetes.io/os: linux
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:2.334.0
+                command: ["/home/runner/run.sh"]
+                resources:
+                  requests:
+                    cpu: "250m"
+                    memory: "512Mi"
+                  limits:
+                    cpu: "1500m"
+                    memory: "2Gi"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
