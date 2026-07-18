@@ -15,7 +15,7 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 | `dev_application_server` | 1 | 開発用アプリサーバー | pve-b550m 固定 |
 | `truenas` | 2 | TrueNAS Scale NAS | 両ノード分散 |
 | `unifi_os_server` | 1 | UniFi OS Server 専用 VM | pve-x570 固定 |
-| `magic_mirror_server` | 1 | MagicMirror² サーバー (VLAN 40 / USB passthrough) | pve-b550m 固定 |
+| `displaylink_kiosk` | 1 | DisplayLink接続のFirefox Kiosk | pve-b550m固定 |
 | `pbs` | 1 | Proxmox Backup Server (S3 datastore) | pve-x570 平常時 / 障害時 pve-b550m 手動移行 |
 
 Ubuntu VM は `template-ubuntu-26-04-home-amd64`、TrueNAS VM は `template-truenas-scale-home-amd64`、
@@ -173,10 +173,12 @@ terraform apply
 
 > `terraform apply` は TFC 上で実行される。TFC UI で `Confirm & Apply` する。
 
-### magic_mirror_server を含む apply
+### DisplayLink Kiosk
 
-`magic_mirror_server` が対象に含まれる場合は `scripts/apply-pve.sh` を使う。  
-詳細は [packer/mm-server/README.md](../../packer/mm-server/README.md) を参照。
+`displaylink_kiosk` は `pve-b550m` に接続した Proxmox USB mapping `displaylink` を
+VMへパススルーする。OS内のGUI、DisplayLinkドライバー、自動ログイン、Firefox Kioskは
+Terraform適用後に [ansible/displaylink-kiosk/README.md](../../ansible/displaylink-kiosk/README.md)
+のplaybookで設定する。
 
 ## apply 後: MAC アドレスの確認
 

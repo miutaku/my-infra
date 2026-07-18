@@ -1,7 +1,7 @@
 ---
 - name: Check if RKE2 binary exists
   ansible.builtin.stat:
-    path: /local/bin/rke2
+    path: /usr/local/bin/rke2
   register: rke2_binary
 
 - name: Download RKE2 install script
@@ -13,7 +13,11 @@
 
 - name: Run RKE2 install script as server
   ansible.builtin.shell:
-    cmd: 'set -o pipefail && INSTALL_RKE2_TYPE="server" /tmp/install-rke2.sh'
+    cmd: >-
+      set -o pipefail &&
+      INSTALL_RKE2_TYPE="server"
+      INSTALL_RKE2_VERSION="{{ rke2_version }}"
+      /tmp/install-rke2.sh
     creates: /usr/local/bin/rke2
   when: not rke2_binary.stat.exists
   vars:

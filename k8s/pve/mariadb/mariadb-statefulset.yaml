@@ -16,23 +16,28 @@ spec:
     spec:
       containers:
         - name: mariadb
-          image: mariadb:10.11
+          image: mariadb:11.8
           args:
             - --character-set-server=utf8mb4
             - --collation-server=utf8mb4_unicode_ci
             - --performance-schema=false
             - --expire_logs_days=1
           env:
-            - name: MYSQL_ROOT_PASSWORD
+            # 既存 datadir をメジャーアップグレードした際に mariadb-upgrade を自動実行する。
+            # 実行前に system table のバックアップ (system_mysql_backup_*.sql.zst) が datadir に残る。
+            - name: MARIADB_AUTO_UPGRADE
+              value: "1"
+            # MARIADB_DATABASE / MARIADB_USER は初回 init 時のみ有効 (nextcloud DB は手動作成, docs/nextcloud-setup.md)
+            - name: MARIADB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mariadb-credentials
                   key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_DATABASE
+            - name: MARIADB_DATABASE
               value: epgstation
-            - name: MYSQL_USER
+            - name: MARIADB_USER
               value: epgstation
-            - name: MYSQL_PASSWORD
+            - name: MARIADB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mariadb-credentials

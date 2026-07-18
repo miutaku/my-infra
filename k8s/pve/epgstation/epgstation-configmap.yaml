@@ -6,6 +6,10 @@ metadata:
 data:
   config.yml: |
     port: 8888
+    # Cloudflare Tunnel 経由では X-Forwarded-Proto: https が付き isSecureProtocol()=true と
+    # 判定されるが、https セクションを設定していないため getConfig() が httpsConfigError を投げて
+    # /api/config が 500 になる。clientSocketioPort を明示すれば isSecure 分岐を通らず解決する。
+    clientSocketioPort: 443
     mirakurunPath: http://mirakurun.app-mirakurun.svc.cluster.local:40772
 
     dbtype: mysql
@@ -48,14 +52,29 @@ data:
     encodeProcessNum: 2
     concurrentEncodeNum: 1
     encode:
+      # rate はタイムアウト倍率 (動画実時間 * rate 経過で EPGStation が
+      # エンコードプロセスを kill)。RKE2 / ローカル環境ではエンコード速度が
+      # 変動しやすく、libx265 では実時間の 10〜50 倍近くかかることがある。
+      # ワーカー側キュー待ち (MAX_CONCURRENT_JOBS=1) も経過時間に含まれる。
+      # 注意: duration(ms) * rate が Node の setTimeout 上限 (2^31-1 ms ≒ 24.8 日)
+      # を超えるとタイマーが即発火して開始直後に kill される。rate 100 なら
+      # 約 6 時間の録画まで安全。
       - name: H.264 (OCI Remote)
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx264'
         suffix: -avc.mkv
-        rete: 4.0
+        rate: 100.0
       - name: H.265 (OCI Remote)
         cmd: '%NODE% %ROOT%/config/enc/enc-remote.js libx265'
         suffix: -hevc.mkv
-        rete: 4.0
+        rate: 100.0
+      - name: H.264 (Local)
+        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx264 %FFMPEG% %FFPROBE%'
+        suffix: -avc.mkv
+        rate: 100.0
+      - name: H.265 (Local)
+        cmd: '%NODE% %ROOT%/config/enc/enc-local.js libx265 %FFMPEG% %FFPROBE%'
+        suffix: -hevc.mkv
+        rate: 100.0
 
     urlscheme:
       m2ts:
@@ -455,6 +474,152 @@ data:
         appenders:
           - stdout
         level: info
+
+  enc-local.js: |
+    'use strict';
+    const fs = require('fs');
+    const path = require('path');
+    const { spawn, spawnSync } = require('child_process');
+
+    const codec = process.argv[2] === 'libx265' ? 'libx265' : 'libx264';
+    const input = process.env.INPUT;
+    const output = process.env.OUTPUT;
+    const resolveBinary = (candidate, fallback) => {
+      if (!candidate || candidate === '%FFMPEG%' || candidate === '%FFPROBE%') {
+        const resolved = spawnSync('sh', ['-lc', `command -v ${fallback}`], { encoding: 'utf8' });
+        if (resolved.status === 0) return resolved.stdout.trim();
+        return fallback;
+      }
+      if (fs.existsSync(candidate)) return candidate;
+      const base = path.basename(candidate);
+      const pathEntries = (process.env.PATH || '').split(':');
+      for (const entry of pathEntries) {
+        const full = path.join(entry, base);
+        if (fs.existsSync(full)) return full;
+      }
+      const resolved = spawnSync('sh', ['-lc', `command -v ${base}`], { encoding: 'utf8' });
+      if (resolved.status === 0) return resolved.stdout.trim();
+      return candidate;
+    };
+    const ffmpeg = resolveBinary(process.argv[3] || process.env.FFMPEG || process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg', 'ffmpeg');
+    const ffprobe = resolveBinary(process.argv[4] || process.env.FFPROBE || process.env.FFPROBE_PATH || '/usr/local/bin/ffprobe', 'ffprobe');
+    const videoHeight = parseInt(process.env.VIDEORESOLUTION, 10) || 1080;
+    const isDualMono = parseInt(process.env.AUDIOCOMPONENTTYPE, 10) === 2;
+    const audioBitrate = videoHeight > 720 ? '192k' : '128k';
+    const preset = codec === 'libx265' ? 'medium' : 'veryfast';
+    const crf = codec === 'libx265' ? 28 : 23;
+
+    const run = (cmd, args) => new Promise((resolve, reject) => {
+      const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stdout = '';
+      let stderr = '';
+      child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+      child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+      child.on('error', reject);
+      child.on('close', (code) => {
+        if (code === 0) resolve({ stdout, stderr });
+        else reject(new Error(stderr || `command failed: ${cmd} ${args.join(' ')}`));
+      });
+    });
+
+    const getDuration = async () => {
+      if (!input) return 0;
+      try {
+        const { stdout } = await run(ffprobe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', input]);
+        const duration = parseFloat(stdout.trim());
+        return Number.isFinite(duration) ? duration : 0;
+      } catch (_) {
+        return 0;
+      }
+    };
+
+    const emitProgress = (percent, log = '') => {
+      process.stdout.write(JSON.stringify({ type: 'progress', percent, log }) + '\n');
+    };
+
+    (async () => {
+      if (!input || !output) {
+        console.error('INPUT / OUTPUT が未設定です');
+        process.exit(1);
+      }
+      if (!ffmpeg || !ffprobe) {
+        console.error(`ffmpeg/ffprobe の解決に失敗しました: ffmpeg=${ffmpeg || 'null'} ffprobe=${ffprobe || 'null'}`);
+        process.exit(1);
+      }
+      console.error(`using ffmpeg=${ffmpeg} ffprobe=${ffprobe}`);
+      const outputDir = path.dirname(output);
+      if (outputDir && outputDir !== '.' && !fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      const duration = await getDuration();
+      const isMp4 = (output || '').toLowerCase().endsWith('.mp4') || (output || '').toLowerCase().endsWith('.m4v');
+      const args = ['-y', '-nostdin', '-analyzeduration', '10M', '-probesize', '32M'];
+      if (isDualMono) {
+        args.push('-dual_mono_mode', 'main');
+      }
+      args.push('-i', input);
+      // MPEG-TS には映像・音声以外のデータストリームが含まれることがある。
+      // `-map 0` だとそれらも Matroska へ mux しようとして開始直後に失敗するため、
+      // enc.js.template と同様に映像・音声だけを明示的に選択する。
+      args.push('-map', '0:v:0', '-map', '0:a?', '-max_muxing_queue_size', '1024', '-sn');
+      args.push('-vf', `yadif,scale=-2:${videoHeight}`);
+      args.push('-c:v', codec, '-preset', preset, '-crf', String(crf));
+      args.push('-c:a', 'aac', '-ar', '48000', '-b:a', audioBitrate, '-ac', '2');
+      if (isMp4) {
+        args.push('-movflags', 'faststart');
+      }
+      args.push('-f', isMp4 ? 'mp4' : 'matroska', output);
+
+      const child = spawn(ffmpeg, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let lastPercent = 0;
+      let progressBuffer = '';
+      child.stderr.on('data', (chunk) => {
+        const text = String(chunk);
+        process.stderr.write(text);
+        progressBuffer += text;
+        // ffmpeg の stats は改行ではなく \r で更新されるため、両方で分割する。
+        const lines = progressBuffer.split(/[\r\n]/);
+        progressBuffer = lines.pop() || '';
+        for (const line of lines) {
+          // Remote worker と同じ通常の ffmpeg stats 行を進捗ログに使用する。
+          const match = line.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);
+          if (!match) continue;
+          const current = (
+            parseInt(match[1], 10) * 3600
+            + parseInt(match[2], 10) * 60
+            + parseFloat(match[3])
+          );
+          let percent = 0;
+          if (duration > 0 && current > 0) {
+            percent = Math.min(1, current / duration);
+          }
+          if (percent > lastPercent) {
+            lastPercent = percent;
+            const speed = line.match(/speed=\s*(\S+)/);
+            const log = `${speed ? `[${speed[1]}] ` : ''}${line.trim()}`;
+            emitProgress(percent, log);
+          }
+        }
+      });
+
+      child.on('error', (err) => {
+        console.error(err);
+        process.exit(1);
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          emitProgress(1.0, 'completed');
+          process.exit(0);
+        }
+        console.error(`ffmpeg exited with code ${code}`);
+        process.exit(code || 1);
+      });
+
+      process.on('SIGINT', () => child.kill('SIGINT'));
+      process.on('SIGTERM', () => child.kill('SIGTERM'));
+    })();
 
   enc-remote.js: |
     'use strict';

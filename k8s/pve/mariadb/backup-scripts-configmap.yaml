@@ -51,7 +51,8 @@ data:
       CURRENT="${APP}"
       FILENAME="${APP}-${DATE}.sql.gz"
 
-      mysqldump \
+      # MariaDB 12 で mysql* 互換シンボリックリンクが削除されるため mariadb-dump を使う
+      mariadb-dump \
         -h mariadb.infra-db.svc.cluster.local \
         -u root -p"${MYSQL_ROOT_PASSWORD}" \
         --single-transaction \

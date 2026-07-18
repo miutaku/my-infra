@@ -88,7 +88,8 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | 2 | oci-cert-manager-config | ClusterIssuer (Let's Encrypt) |
 | 3 | oci-ingress-nginx | ingress-nginx |
 | 4 | oci-cloudflared | Cloudflare Tunnel |
-| 4 | oci-actions-runner | GitHub Actions self-hosted runner |
+| 1 | oci-arc-controller / oci-arc-runners-config | Actions Runner Controller + credentials |
+| 2 | oci-arc-runner-rke2 | `my-infra` RKE2 preflight用ephemeral runner scale set |
 | 4 | oci-pve-tfc-agent | Terraform Cloud agent (pve-home workspace) |
 | 4 | oci-reventer-tfc-agent | Terraform Cloud agent (reventer workspace) |
 | 4 | oci-encode-worker | OCI エンコードワーカー |
@@ -101,7 +102,7 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | `TFC_HOME_AGENT_NAME` | エージェント表示名 (例: `pve-home-agent-01`) |
 | `CLOUDFLARE_OKE_TUNNEL_TOKEN` | `terraform output -raw oke_tunnel_token` で取得 |
 | `CLOUDFLARE_DNS_API_TOKEN` | Cloudflare API token (DNS:Edit, miutaku.work のみ) |
-| `GITHUB_REVENTER_RUNNER_PAT` | GitHub PAT (`repo` スコープ) — miutaku/reventer 用 self-hosted runner |
+| `GITHUB_MY_INFRA_RUNNER_PAT` | Fine-grained PAT (`my-infra`限定、Administration: Read and write) |
 
 ## ArgoCD UI へのアクセス
 

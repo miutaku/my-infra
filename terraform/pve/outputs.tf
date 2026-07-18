@@ -57,6 +57,15 @@ output "pbs_vm_id" {
   value = [for vm in values(module.pbs.vms) : vm.id][0]
 }
 
+output "displaylink_kiosk_mac_addresses" {
+  description = "DisplayLink kiosk VM MAC addresses for DHCP static leases."
+  value       = module.displaylink_kiosk.mac_addresses
+}
+
+output "displaylink_kiosk_vm_names" {
+  value = [for vm in values(module.displaylink_kiosk.vms) : vm.name]
+}
+
 # output "batocera_vm_name" {
 #   value = [for vm in values(module.batocera.vms) : vm.name]
 # }

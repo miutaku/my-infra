@@ -1,0 +1,14 @@
+# 公開は Cloudflare Tunnel (cloudflared) 経由のみなので ClusterIP でよい。
+# terraform/cloudflare/locals.tf の rke2_services["nextcloud"] がこの Service を向く。
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  namespace: app-nextcloud
+spec:
+  selector:
+    app: nextcloud
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

@@ -9,17 +9,30 @@ locals {
       backend       = "http://argocd-server.argocd.svc.cluster.local:80"
       no_tls_verify = false
     }
-    wol = {
+    "wol" = {
       backend       = "http://gptwol-service.app-gptwol.svc.cluster.local:5000"
       no_tls_verify = false
     }
-    unifi = {
+    "epgstation" = {
+      backend       = "http://epgstation.app-epgstation.svc.cluster.local:8888"
+      no_tls_verify = false
+    }
+    "nextcloud" = {
+      backend       = "http://nextcloud.app-nextcloud.svc.cluster.local:80"
+      no_tls_verify = false
+    }
+    "unifi" = {
       backend       = "https://192.168.0.132:11443"
+      no_tls_verify = true
+    }
+    "wifi-ap" = {
+      # Wi-Fi AP on the native VLAN (192.168.0.253)
+      backend       = "https://192.168.0.253"
       no_tls_verify = true
     }
 
     # ── LAN appliances (reachable via routing through BVI20/IX2215) ───────────
-    ix2215 = {
+    "ix2215" = {
       # NEC IX2215 HTTP console: BVI10 (192.168.10.254) or GE2.0 (192.168.0.254)
       backend       = "http://192.168.10.254"
       no_tls_verify = false
@@ -56,6 +69,75 @@ locals {
     }
   }
 
+  # Private network routes exposed through the RKE2 (home) tunnel.
+  # These mirror the Tailscale subnet-router routes and are consumed by
+  # Cloudflare One Client (WARP), not by public DNS hostnames.
+  rke2_private_routes = {
+    native = {
+      network = "192.168.0.0/24"
+      comment = "home native VLAN via rke2 tunnel"
+    }
+    management = {
+      network = "192.168.10.0/24"
+      comment = "home management VLAN via rke2 tunnel"
+    }
+    servers = {
+      network = "192.168.20.0/24"
+      comment = "home server VLAN via rke2 tunnel"
+    }
+    clients = {
+      network = "192.168.30.0/24"
+      comment = "home client VLAN via rke2 tunnel"
+    }
+    iot = {
+      network = "192.168.40.0/24"
+      comment = "home IoT VLAN via rke2 tunnel"
+    }
+  }
+
+  # Internal DNS suffixes resolved by WARP clients through the home private route.
+  warp_local_fallback_domains = {
+    miutaku_internal = {
+      suffix      = "miutaku.internal"
+      dns_servers = ["192.168.20.201"]
+      description = "home CoreDNS via rke2 private route"
+    }
+  }
+
+  # Domains that should still traverse WARP when Split Tunnel runs in include mode.
+  warp_split_tunnel_include_hosts = merge(
+    {
+      zero_trust_team = {
+        host        = "${var.zero_trust_team_name}.cloudflareaccess.com"
+        description = "Cloudflare Zero Trust team domain"
+      }
+    },
+    {
+      for s in local.access_protected_subdomains : s => {
+        host        = "${s}.${var.domain}"
+        description = "Cloudflare Access application ${s}.${var.domain}"
+      }
+    },
+    var.warp_split_tunnel_include_hosts,
+  )
+
+  warp_split_tunnel_includes = concat(
+    [
+      for _, route in local.rke2_private_routes : {
+        address     = route.network
+        host        = null
+        description = route.comment
+      }
+    ],
+    [
+      for _, route in local.warp_split_tunnel_include_hosts : {
+        address     = null
+        host        = route.host
+        description = route.description
+      }
+    ],
+  )
+
   # Services exposed through the OKE (cloud) tunnel — miutaku.work zone.
   oke_services = {
     "encode-worker" = {
@@ -68,14 +150,15 @@ locals {
     }
   }
 
-  # All known services merged for validation.
+  # All known public-hostname services merged for validation.
   _all_services = merge(local.rke2_services, local.oke_services)
 
   # Subdomains that require Cloudflare Access (SSO) protection.
   # Every entry here must exist as a key in rke2_services or oke_services.
   access_protected_subdomains = toset([
     "argocd-rke2", "argocd-oke", "wol",
-    "unifi",
+    "epgstation", "nextcloud",
+    "unifi", "wifi-ap",
     "ix2215",
     "nas-01", "nas-02",
     "pve-x570", "pve-b550m",

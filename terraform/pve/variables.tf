@@ -83,16 +83,27 @@ variable "dev_application_server_macaddr" {
   default     = "52:54:00:25:01:01"
 }
 
-variable "mm_server_vm_count" {
-  description = "The number of Magic Mirror² server virtual machines"
+variable "displaylink_kiosk_vm_count" {
+  description = "The number of DisplayLink kiosk virtual machines"
   type        = number
   default     = 1
 }
 
-variable "mm_server_macaddr" {
-  description = "The MAC address of the Magic Mirror² server virtual machine"
+variable "displaylink_kiosk_macaddr" {
+  description = "The base MAC address of the DisplayLink kiosk virtual machine"
   type        = string
   default     = "52:54:00:99:00:01"
+}
+
+variable "displaylink_kiosk_ips" {
+  description = "DisplayLink kiosk VM IP addresses (must match the DHCP static leases)"
+  type        = list(string)
+  default     = ["192.168.40.110"]
+
+  validation {
+    condition     = length(var.displaylink_kiosk_ips) == var.displaylink_kiosk_vm_count
+    error_message = "displaylink_kiosk_ips must contain exactly displaylink_kiosk_vm_count addresses."
+  }
 }
 
 # RKE2 ネットワーク設定
@@ -122,22 +133,10 @@ variable "unifi_os_server_macaddr" {
   default     = "BC:24:11:10:20:01"
 }
 
-variable "unifi_os_server_ip" {
-  description = "IP address for the dedicated UniFi OS Server VM (untagged main LAN, DHCP 静的リースと一致させること)"
-  type        = string
-  default     = "192.168.0.132"
-}
-
 variable "pbs_macaddr" {
   description = "Proxmox Backup Server VM の MAC アドレス (VLAN 20, DHCP 静的リースと一致させること)"
   type        = string
   default     = "BC:24:11:B5:00:01"
-}
-
-variable "pbs_ip" {
-  description = "PBS VM の IP アドレス (VLAN 20, DHCP 静的リースと一致させること)"
-  type        = string
-  default     = "192.168.20.250"
 }
 
 variable "rke2_lb_vip" {

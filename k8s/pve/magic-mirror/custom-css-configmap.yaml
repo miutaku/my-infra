@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: magic-mirror-custom-css
+  namespace: app-magic-mirror
+data:
+  custom.css: |
+    body {
+      margin: 0px;
+      padding: 0px;
+      height: 100%;
+      width: 99%;
+    }
+
+    .region.fullscreen {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      right: 0px;
+      bottom: 0px;
+      pointer-events: none;
+    }
+
+    .region.fullscreen.below {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      right: 0px;
+      bottom: 0px;
+    }
+
+    .light {
+      font-family: "MigMix 1P", "Roboto Condensed", sans-serif;
+      font-weight: 300;
+    }
