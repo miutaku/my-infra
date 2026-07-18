@@ -105,6 +105,8 @@ jobs:
           printf '%s' "${RKE2_SSH_KNOWN_HOSTS_B64}" | base64 --decode > "${HOME}/.ssh/known_hosts"
           chmod 0600 "${RUNNER_TEMP}/rke2/kubeconfig" \
             "${RUNNER_TEMP}/rke2/id_ed25519" "${HOME}/.ssh/known_hosts"
+          ssh-keygen -y -f "${RUNNER_TEMP}/rke2/id_ed25519" > "${HOME}/.ssh/id_rsa.pub"
+          chmod 0644 "${HOME}/.ssh/id_rsa.pub"
 
       - name: Verify runner dependencies and VPN path
         shell: bash
