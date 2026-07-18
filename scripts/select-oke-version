@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# OKE がサポートする Kubernetes バージョン一覧から、次に上げるべきバージョンを選ぶ。
+#
+# OKE のコントロールプレーンはマイナーバージョンのスキップ不可のため、
+# 「現行と同一メジャー かつ 現行マイナー+1 以内」の中で最新を選択する。
+# より先のマイナーが出ていても、逐次アップグレード (merge -> 翌日の watch が
+# 次のマイナーを提案) で追いつく。
+#
+# usage: select-oke-version <current-version> < versions.json
+#   stdin:  oci ce cluster-options get の "kubernetes-versions" JSON 配列
+#   stdout: 選択したバージョン (現行より新しいものが無ければ現行をそのまま出力)
+set -euo pipefail
+
+usage() {
+  echo "usage: $0 <current-version> < versions.json" >&2
+  exit 2
+}
+
+[[ $# -eq 1 ]] || usage
+
+current="${1}"
+version_re='^v([0-9]+)\.([0-9]+)\.([0-9]+)$'
+
+if [[ ! "${current}" =~ ${version_re} ]]; then
+  echo "invalid OKE version: ${current}" >&2
+  exit 1
+fi
+current_major="${BASH_REMATCH[1]}"
+current_minor="${BASH_REMATCH[2]}"
+
+target="${current}"
+while IFS= read -r v; do
+  [[ "${v}" =~ ${version_re} ]] || continue
+  major="${BASH_REMATCH[1]}"
+  minor="${BASH_REMATCH[2]}"
+  (( major == current_major )) || continue
+  (( minor <= current_minor + 1 )) || continue
+  if [[ "$(printf '%s\n%s\n' "${target}" "${v}" | sort -V | tail -1)" == "${v}" ]]; then
+    target="${v}"
+  fi
+done < <(jq -r '.[]')
+
+echo "${target}"
