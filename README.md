@@ -105,9 +105,11 @@ flowchart LR
           WoL([WoL])
           Mirakurun([Mirakurun])
           EPGStation([EPGStation])
+          EDCBWine([EDCB-Wine])
+          KonomiTV([KonomiTV])
           MagicMirror([MagicMirror²])
           NextCloud([NextCloud])
-          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror ~~~ NextCloud
+          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ EDCBWine ~~~ KonomiTV ~~~ MagicMirror ~~~ NextCloud
         end
         RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
       end
@@ -136,6 +138,11 @@ flowchart LR
   EPGStation --> Mirakurun
   EPGStation -->|read / ts save| NAS
   EPGStation -->|encode request| OCIEnc -->|save| NAS
+  EDCBWine --> Mirakurun
+  EDCBWine -->|ts save| NAS
+  KonomiTV --> EDCBWine
+  KonomiTV --> Mirakurun
+  KonomiTV -->|read recorded| NAS
   NextCloud -->|External Storage / NFS RO| NAS
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC

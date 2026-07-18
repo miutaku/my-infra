@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konomitv
+  namespace: app-konomitv
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: konomitv
+  template:
+    metadata:
+      labels:
+        app: konomitv
+    spec:
+      # worker-01 has 12 vCPU; worker-02 has 4 vCPU and cannot reliably handle
+      # two concurrent FFmpeg transcodes.
+      nodeSelector:
+        topology.miutaku/proxmox-node: pve-x570
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: konomitv
+          image: ghcr.io/miutaku/konomitv:0.14.1
+          ports:
+            - name: https
+              containerPort: 7000
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /code/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: data
+              mountPath: /code/server/data
+            - name: logs
+              mountPath: /code/server/logs
+            - name: recorded
+              mountPath: /host-rootfs/mnt/recorded
+              readOnly: true
+          resources:
+            requests:
+              cpu: "2"
+              memory: 2Gi
+            limits:
+              cpu: "8"
+              memory: 4Gi
+          readinessProbe:
+            tcpSocket:
+              port: https
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              port: https
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 3
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: konomitv-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: konomitv-data
+        - name: logs
+          emptyDir: {}
+        - name: recorded
+          persistentVolumeClaim:
+            claimName: konomitv-recorded

@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edcb-wine
+  namespace: app-edcb-wine
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: edcb-wine
+  template:
+    metadata:
+      labels:
+        app: edcb-wine
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      initContainers:
+        - name: initialize-edcb-data
+          image: ghcr.io/miutaku/edcb-wine:bb0b400
+          command:
+            - /bin/bash
+            - -ceu
+            - |
+              if [[ ! -f /data/EpgTimerSrv.exe ]]; then
+                cp -a /EDCB/. /data/
+              fi
+              [[ -f /data/Common.ini ]] || cp /data/Common.example.ini /data/Common.ini
+              [[ -f /data/EpgDataCap_Bon.ini ]] || cp /data/EpgDataCap_Bon.example.ini /data/EpgDataCap_Bon.ini
+              [[ -f /data/EpgTimerSrv.ini ]] || cp /data/EpgTimerSrv.example.ini /data/EpgTimerSrv.ini
+              [[ -f /data/RecName/RecName_Macro.dll.ini ]] || \
+                cp /data/RecName/RecName_Macro.dll.example.ini /data/RecName/RecName_Macro.dll.ini
+              for config in /data/BonDriver/BonDriver_mirakc*.ini; do
+                sed -i 's/SERVER_HOST="localhost"/SERVER_HOST="mirakurun.app-mirakurun.svc.cluster.local"/' "$config"
+              done
+              chown -R 1000:1000 /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: edcb-wine
+          image: ghcr.io/miutaku/edcb-wine:bb0b400
+          securityContext:
+            privileged: true
+          ports:
+            - name: epgtimer
+              containerPort: 4510
+              protocol: TCP
+            - name: emwui
+              containerPort: 5510
+              protocol: TCP
+            - name: novnc
+              containerPort: 6510
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /EDCB
+            - name: recorded
+              mountPath: /mnt/hdd-record
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            tcpSocket:
+              port: epgtimer
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              port: epgtimer
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: [/bin/bash, -c, "sleep 10"]
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: edcb-wine-data
+        - name: recorded
+          persistentVolumeClaim:
+            claimName: edcb-wine-recorded
