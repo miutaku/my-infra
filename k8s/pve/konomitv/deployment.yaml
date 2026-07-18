@@ -76,6 +76,33 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 30
             failureThreshold: 3
+        - name: cloudflare-origin-proxy
+          image: nginx:1.27-alpine
+          ports:
+            - name: origin-http
+              containerPort: 7001
+              protocol: TCP
+          volumeMounts:
+            - name: proxy-config
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            tcpSocket:
+              port: origin-http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: origin-http
+            initialDelaySeconds: 10
+            periodSeconds: 30
       terminationGracePeriodSeconds: 30
       volumes:
         - name: config-src
@@ -89,3 +116,6 @@ spec:
         - name: recorded
           persistentVolumeClaim:
             claimName: konomitv-recorded
+        - name: proxy-config
+          configMap:
+            name: konomitv-proxy-config
