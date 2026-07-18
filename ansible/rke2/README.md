@@ -85,3 +85,12 @@ kubectl label nodes $(kubectl get nodes --no-headers | awk '$3 == "<none>" { pri
 ## 次のステップ
 
 RKE2 クラスタ起動後、`k8s/pve/argocd/README.md` の手順で ArgoCD を Bootstrap する。
+
+## アップグレード
+
+既存クラスタのローリングアップグレードは
+[`docs/rke2-upgrade.md`](../../docs/rke2-upgrade.md) を参照する。
+現在のroleは新規インストール用であり、既存RKE2のversion更新には使用しない。
+
+version検知、PR検証、production gateの設計は
+[`docs/rke2-devops-strategy.md`](../../docs/rke2-devops-strategy.md) を参照する。
