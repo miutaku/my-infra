@@ -9,8 +9,55 @@ permissions:
   contents: read
 
 jobs:
+  detect-rke2-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.changes.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v6
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+
+      - name: Detect RKE2-related changes
+        id: changes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" == 'workflow_dispatch' ]]; then
+            echo 'relevant=true' >> "${GITHUB_OUTPUT}"
+            echo 'Manual execution: RKE2 validation is required.'
+            exit 0
+          fi
+
+          relevant=false
+          while IFS= read -r path; do
+            case "${path}" in
+              ansible/rke2/*|scripts/rke2-upgrade-preflight|scripts/validate-rke2-version|\
+              .github/workflows/rke2_upgrade_validate.yml|\
+              k8s/oci/argocd-apps/arc-runner-rke2.yaml)
+                relevant=true
+                break
+                ;;
+            esac
+          done < <(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
+
+          echo "relevant=${relevant}" >> "${GITHUB_OUTPUT}"
+          if [[ "${relevant}" == true ]]; then
+            echo 'RKE2-related changes detected.'
+          else
+            echo 'No RKE2-related changes detected; live dry-run is not required.'
+          fi
+
   validate-version:
-    if: github.event_name == 'pull_request'
+    needs: detect-rke2-changes
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.detect-rke2-changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -46,6 +93,8 @@ jobs:
         run: bash -n scripts/validate-rke2-version scripts/rke2-upgrade-preflight
 
   ansible-static-validation:
+    needs: detect-rke2-changes
+    if: needs.detect-rke2-changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -71,9 +120,12 @@ jobs:
           pipenv run ansible-playbook -i hosts/prd site.yml --check --list-tasks
 
   live-rke2-preflight:
+    needs: detect-rke2-changes
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      needs.detect-rke2-changes.outputs.relevant == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'))
     runs-on: oke-rke2-admin
     environment: rke2-production-preflight
     timeout-minutes: 30
@@ -102,6 +154,24 @@ jobs:
             "${RUNNER_TEMP}/rke2/id_ed25519" "${HOME}/.ssh/known_hosts"
           ssh-keygen -y -f "${RUNNER_TEMP}/rke2/id_ed25519" > "${HOME}/.ssh/id_rsa.pub"
           chmod 0644 "${HOME}/.ssh/id_rsa.pub"
+
+          # Prevent production topology and key metadata from appearing in public logs.
+          echo "::add-mask::miutaku"
+          echo "::add-mask::$(cat "${HOME}/.ssh/id_rsa.pub")"
+          awk '
+            /^[[:space:]]*#/ || NF == 0 || /^\[/ { next }
+            {
+              print $1
+              for (i = 2; i <= NF; i++) {
+                if ($i ~ /^hostname=/) {
+                  sub(/^hostname=/, "", $i)
+                  print $i
+                }
+              }
+            }
+          ' ansible/rke2/hosts/prd | while IFS= read -r value; do
+            echo "::add-mask::${value}"
+          done
 
       - name: Verify runner dependencies and VPN path
         shell: bash
@@ -141,9 +211,59 @@ jobs:
           ANSIBLE_LOCAL_TEMP: ${{ runner.temp }}/ansible-local
           ANSIBLE_REMOTE_USER: miutaku
           ANSIBLE_PRIVATE_KEY_FILE: ${{ runner.temp }}/rke2/id_ed25519
+          ANSIBLE_STDOUT_CALLBACK: default
+          ANSIBLE_VERBOSITY: '0'
         run: |
           set -euo pipefail
           python -m pip install pipenv==2026.6.1
           pipenv sync --dev
           pipenv run ansible-playbook -i hosts/prd site.yml \
             --limit rke2-node-all --check
+
+  rke2-upgrade-gate:
+    if: always()
+    needs:
+      - detect-rke2-changes
+      - validate-version
+      - ansible-static-validation
+      - live-rke2-preflight
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate RKE2 validation results
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEVANT: ${{ needs.detect-rke2-changes.outputs.relevant }}
+          DETECT_RESULT: ${{ needs.detect-rke2-changes.result }}
+          VERSION_RESULT: ${{ needs.validate-version.result }}
+          STATIC_RESULT: ${{ needs.ansible-static-validation.result }}
+          LIVE_RESULT: ${{ needs.live-rke2-preflight.result }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${DETECT_RESULT}" != 'success' ]]; then
+            echo 'RKE2 change detection failed.' >&2
+            exit 1
+          fi
+
+          if [[ "${RELEVANT}" != 'true' ]]; then
+            echo 'RKE2 upgrade validation: not applicable to this pull request.'
+            exit 0
+          fi
+
+          if [[ "${STATIC_RESULT}" != 'success' ]]; then
+            echo "Ansible static validation did not pass: ${STATIC_RESULT}" >&2
+            exit 1
+          fi
+
+          if [[ "${EVENT_NAME}" == 'pull_request' && "${VERSION_RESULT}" != 'success' ]]; then
+            echo "RKE2 version validation did not pass: ${VERSION_RESULT}" >&2
+            exit 1
+          fi
+
+          if [[ "${LIVE_RESULT}" != 'success' ]]; then
+            echo "Live RKE2 dry-run did not pass: ${LIVE_RESULT}" >&2
+            exit 1
+          fi
+
+          echo 'RKE2 upgrade validation passed, including the live dry-run.'

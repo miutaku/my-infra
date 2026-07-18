@@ -46,6 +46,7 @@
     user: "{{ ansible_user }}"
     state: present
     key: "{{ lookup('file', ssh_public_key_path) }}"
+  no_log: true
 
 - name: Disabled ssh password authentication
   ansible.builtin.lineinfile:
@@ -62,3 +63,4 @@
     - "PermitRootLogin yes"
   notify:
     - Restarted ssh
+  no_log: true
