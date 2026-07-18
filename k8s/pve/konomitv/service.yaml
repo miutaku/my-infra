@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: konomitv
+  namespace: app-konomitv
+spec:
+  selector:
+    app: konomitv
+  ports:
+    - name: https
+      port: 7000
+      targetPort: https
