@@ -63,3 +63,4 @@
     - "PermitRootLogin yes"
   notify:
     - Restarted ssh
+  no_log: true
