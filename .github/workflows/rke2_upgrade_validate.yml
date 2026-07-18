@@ -4,10 +4,6 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
-    paths:
-      - 'ansible/rke2/**'
-      - 'scripts/rke2-*'
-      - '.github/workflows/rke2_*'
 
 permissions:
   contents: read
@@ -49,7 +45,7 @@ jobs:
       - name: Shell syntax
         run: bash -n scripts/validate-rke2-version scripts/rke2-upgrade-preflight
 
-  ansible-dry-run:
+  ansible-static-validation:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -77,8 +73,7 @@ jobs:
   live-rke2-preflight:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'automation/rke2-stable')
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: oke-rke2-admin
     environment: rke2-production-preflight
     timeout-minutes: 30
