@@ -3,7 +3,7 @@ set -euo pipefail
 
 TEMPLATE="${1:-}"
 if [[ -z "$TEMPLATE" ]]; then
-  echo "Usage: $0 <ubuntu-26-04|debian-13|truenas-scale|mm-server> [--node <proxmox_node>] [--vmid <vmid>]"
+  echo "Usage: $0 <ubuntu-26-04|debian-13|truenas-scale> [--node <proxmox_node>] [--vmid <vmid>]"
   exit 1
 fi
 shift
@@ -71,15 +71,6 @@ case "$TEMPLATE" in
       -var "proxmox_token_secret=${PROXMOX_TOKEN_SECRET}" \
       -var "admin_password=${TRUENAS_ADMIN_PASSWORD}" \
       ${NODE_VAR} ${VMID_VAR} \
-      .
-    ;;
-  mm-server)
-    # proxmox-clone ベース: ISO不要、SSH鍵で接続
-    packer build \
-      -var "proxmox_token_id=${PROXMOX_TOKEN_ID}" \
-      -var "proxmox_token_secret=${PROXMOX_TOKEN_SECRET}" \
-      -var "ssh_private_key_file=${HOME}/.ssh/id_rsa" \
-      ${URL_VAR} ${NODE_VAR} ${VMID_VAR} \
       .
     ;;
 esac
