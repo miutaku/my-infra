@@ -36,6 +36,16 @@ KonomiTV公式イメージには `/code/config.yaml` があらかじめ存在せ
 `/config-src/config.yaml` を `/code/config.yaml` へコピーしてからKonomiTVを起動する。
 設定変更を反映するにはDeploymentのPod再作成が必要となる。
 
+### Cloudflare Tunnelからのorigin接続
+
+KonomiTVの7000番はAkebi HTTPS Serverである。AkebiはKonomiTV用のホスト名を前提にTLSを処理するため、
+cloudflaredがKubernetes ServiceのDNS名をSNIとして接続すると`tls: internal error`になる。
+
+同じPodのnginx sidecarが`0.0.0.0:7001`で待ち受け、KonomiTV内部のUvicorn
+`127.0.0.77:7010`へHTTPプロキシする。Serviceの7000番はこのsidecarへ転送し、cloudflaredは
+`http://konomitv.app-konomitv.svc.cluster.local:7000`へ接続する。外部TLSと認証はCloudflareが担当する。
+ライブ配信とWebSocketのため、nginxではbufferingを無効にし、長いread timeoutを設定している。
+
 ## 初回デプロイ
 
 イメージは公式ソースから GitHub Actions で GHCR に作成する。先に次の workflow が成功していることを確認する。

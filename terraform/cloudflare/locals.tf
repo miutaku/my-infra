@@ -18,8 +18,8 @@ locals {
       no_tls_verify = false
     }
     "konomitv" = {
-      backend       = "https://konomitv.app-konomitv.svc.cluster.local:7000"
-      no_tls_verify = true
+      backend       = "http://konomitv.app-konomitv.svc.cluster.local:7000"
+      no_tls_verify = false
     }
     "nextcloud" = {
       backend       = "http://nextcloud.app-nextcloud.svc.cluster.local:80"
