@@ -19,6 +19,7 @@ PT3 -> Mirakurun ----> EPGStation（既存）
 - EDCB は番組情報、録画予約、録画を担当する
 - KonomiTV のライブ受信は `always_receive_tv_from_mirakurun: true` で Mirakurun を直接利用する
 - 録画領域は EDCB から読み書き、KonomiTV から読み取り専用でマウントする
+- RKE2/containerdではKonomiTVが通常Linuxとして動作するため、録画領域は`/mnt/recorded`へ直接マウントする
 - `https://konomitv.miutaku.work` は Cloudflare Tunnel と Access で保護する
 
 EPGStation と EDCB は互いの予約を認識しない。移行期間中のチューナー競合は許容し、最終的には
