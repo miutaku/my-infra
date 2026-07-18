@@ -1,0 +1,97 @@
+name: OKE stable version watch
+
+on:
+  schedule:
+    - cron: '30 17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: oke-version-watch
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install OCI CLI
+        run: pip install --quiet oci-cli
+
+      - name: Resolve supported versions
+        id: version
+        env:
+          OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
+          OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+          OCI_CLI_REGION: ap-tokyo-1
+          SUPPRESS_LABEL_WARNING: 'True'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # OCI_PRIVATE_KEY は PEM / base64 どちらでも受け付ける
+          key_file="$(mktemp)"
+          if grep -q 'BEGIN' <<< "${OCI_PRIVATE_KEY}"; then
+            printf '%s\n' "${OCI_PRIVATE_KEY}" > "${key_file}"
+          else
+            base64 -d <<< "${OCI_PRIVATE_KEY}" > "${key_file}"
+          fi
+          export OCI_CLI_KEY_FILE="${key_file}"
+
+          current="$(sed -n 's/^  kubernetes_version = "\([^"]*\)"/\1/p' \
+            terraform/oci/oke.tf)"
+          test -n "${current}"
+
+          target="$(oci ce cluster-options get --cluster-option-id all \
+            --query 'data."kubernetes-versions"' --output json \
+            | scripts/select-oke-version "${current}")"
+          rm -f "${key_file}"
+          test -n "${target}"
+
+          echo "current=${current}" >> "${GITHUB_OUTPUT}"
+          echo "target=${target}" >> "${GITHUB_OUTPUT}"
+
+      - name: Update version and open pull request
+        if: steps.version.outputs.current != steps.version.outputs.target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          TARGET: ${{ steps.version.outputs.target }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch='automation/oke-stable'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "${branch}"
+          sed -i "s|^  kubernetes_version = \"${CURRENT}\"|  kubernetes_version = \"${TARGET}\"|" \
+            terraform/oci/oke.tf
+          git add terraform/oci/oke.tf
+          git commit -m "chore(oke): update ${CURRENT} to ${TARGET}"
+          git push --force-with-lease origin "${branch}"
+          body="Automated OKE supported-version update (STG tenancy).
+
+          **Merging this PR auto-applies via Terraform Cloud and upgrades the control plane in place.**
+          Existing worker nodes keep ${CURRENT} until cycled. Cycle the node **destroy-first**
+          (create-first would exceed the 200GB free-tier block storage cap; see
+          \`node_pool_boot_volume_gbs\` in terraform/oci/variables.tf)."
+          if gh pr view "${branch}" >/dev/null 2>&1; then
+            gh pr edit "${branch}" \
+              --title "chore(oke): update ${CURRENT} to ${TARGET}" \
+              --body "${body}"
+          else
+            gh pr create --base main --head "${branch}" \
+              --title "chore(oke): update ${CURRENT} to ${TARGET}" \
+              --body "${body}"
+          fi
