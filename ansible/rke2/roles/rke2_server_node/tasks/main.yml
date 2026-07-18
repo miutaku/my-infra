@@ -70,12 +70,14 @@
   when:
     - inventory_hostname in groups['rke2-server-primary']
     - not ansible_check_mode
+  no_log: true
 
 - name: Set dummy token
   ansible.builtin.set_fact:
     rke2_token:
       content: "{{ 'dummy_token' | b64encode }}"
   when: ansible_check_mode
+  no_log: true
 
 - name: Set cluster facts on all nodes
   ansible.builtin.set_fact:
@@ -85,6 +87,7 @@
   when:
     - inventory_hostname in groups['rke2-server-primary']
     - not ansible_check_mode
+  no_log: true
 
 - name: Create config dir
   ansible.builtin.file:

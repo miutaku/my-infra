@@ -13,18 +13,21 @@
       register: rke2_token_raw
       tags: rke2_agent_node
       when: not ansible_check_mode
+      no_log: true
 
     - name: Set dummy token
       ansible.builtin.set_fact:
         rke2_token_raw:
           content: "{{ 'dummy_token' | b64encode }}"
       when: ansible_check_mode
+      no_log: true
 
     - name: Set token fact for all hosts
       ansible.builtin.set_fact:
         rke2_node_token: "{{ rke2_token_raw.content | b64decode }}"
       delegate_to: localhost
       tags: rke2_agent_node
+      no_log: true
 
     - name: Add token fact to all agent hosts
       ansible.builtin.add_host:
@@ -34,6 +37,7 @@
       loop: "{{ groups['rke2-agent'] + groups['rke2-dvb-worker'] }}"
       changed_when: false
       tags: rke2_agent_node
+      no_log: true
 
 - name: Configure RKE2 Agent Nodes
   hosts: rke2-agent
