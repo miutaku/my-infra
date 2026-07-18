@@ -57,7 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
@@ -115,7 +115,16 @@ jobs:
           command -v curl
           command -v jq
           command -v ssh
-          kubectl --context rke2-pve get --raw='/readyz'
+          for attempt in {1..12}; do
+            if kubectl --context rke2-pve get --raw='/readyz'; then
+              break
+            fi
+            if [[ "${attempt}" == 12 ]]; then
+              echo 'RKE2 API did not become ready within 60 seconds' >&2
+              exit 1
+            fi
+            sleep 5
+          done
           ssh -o BatchMode=yes -i "${RUNNER_TEMP}/rke2/id_ed25519" \
             miutaku@192.168.20.126 true
 
