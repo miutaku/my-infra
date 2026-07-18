@@ -18,6 +18,7 @@ PT3 -> Mirakurun ----> EPGStation（既存）
 - EDCB-Wine: upstream commit `bb0b4005a9d9c7a6b67411dbb9e9b6255af34b0c`を同梱したimage tag `bb0b400-r2`、1 replica
 - EDCB は番組情報、録画予約、録画を担当する
 - KonomiTV のライブ受信は `always_receive_tv_from_mirakurun: true` で Mirakurun を直接利用する
+- KonomiTV本体はinitContainerでEDCBのTCP 4510番を待ち、EDCB起動前のCrashLoopを防ぐ
 - 録画領域は EDCB から読み書き、KonomiTV から読み取り専用でマウントする
 - RKE2/containerdではKonomiTVが通常Linuxとして動作するため、録画領域は`/mnt/recorded`へ直接マウントする
 - `https://konomitv.miutaku.work` は Cloudflare Tunnel と Access で保護する
