@@ -24,22 +24,28 @@ spec:
       containers:
         - name: konomitv
           image: ghcr.io/miutaku/konomitv:0.14.1
+          command:
+            - /bin/bash
+            - -ceu
+          args:
+            - |
+              cp /config-src/config.yaml /code/config.yaml
+              exec /code/server/.venv/bin/python KonomiTV.py
           ports:
             - name: https
               containerPort: 7000
               protocol: TCP
           volumeMounts:
-            - name: config
-              mountPath: /code/config.yaml
-              subPath: config.yaml
+            - name: config-src
+              mountPath: /config-src
               readOnly: true
             - name: data
               mountPath: /code/server/data
             - name: logs
               mountPath: /code/server/logs
-        - name: recorded
-          mountPath: /mnt/recorded
-          readOnly: true
+            - name: recorded
+              mountPath: /mnt/recorded
+              readOnly: true
           resources:
             requests:
               cpu: "2"
@@ -61,7 +67,7 @@ spec:
             failureThreshold: 3
       terminationGracePeriodSeconds: 30
       volumes:
-        - name: config
+        - name: config-src
           configMap:
             name: konomitv-config
         - name: data
