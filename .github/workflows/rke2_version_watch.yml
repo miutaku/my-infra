@@ -1,0 +1,68 @@
+name: RKE2 stable version watch
+
+on:
+  schedule:
+    - cron: '17 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: rke2-version-watch
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve stable version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest="$(curl -fsSL https://update.rke2.io/v1-release/channels \
+            | jq -r '.data[] | select(.name == "stable") | .latest')"
+          current="$(sed -n 's/^rke2_version: *"\([^"]*\)"/\1/p' \
+            ansible/rke2/group_vars/rke2-node-all.yml)"
+          test -n "${latest}"
+          test -n "${current}"
+          echo "latest=${latest}" >> "${GITHUB_OUTPUT}"
+          echo "current=${current}" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate upgrade path
+        if: steps.version.outputs.current != steps.version.outputs.latest
+        run: scripts/validate-rke2-version '${{ steps.version.outputs.current }}' '${{ steps.version.outputs.latest }}'
+
+      - name: Update version and open pull request
+        if: steps.version.outputs.current != steps.version.outputs.latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          LATEST: ${{ steps.version.outputs.latest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch='automation/rke2-stable'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -C "${branch}"
+          sed -i "s|^rke2_version:.*|rke2_version: \"${LATEST}\"|" \
+            ansible/rke2/group_vars/rke2-node-all.yml
+          git add ansible/rke2/group_vars/rke2-node-all.yml
+          git commit -m "chore(rke2): update ${CURRENT} to ${LATEST}"
+          git push --force-with-lease origin "${branch}"
+          if gh pr view "${branch}" >/dev/null 2>&1; then
+            gh pr edit "${branch}" \
+              --title "chore(rke2): update ${CURRENT} to ${LATEST}" \
+              --body "Automated RKE2 stable-channel update. Merge does not deploy; review all required checks and run the protected production upgrade workflow separately."
+          else
+            gh pr create --base main --head "${branch}" \
+              --title "chore(rke2): update ${CURRENT} to ${LATEST}" \
+              --body "Automated RKE2 stable-channel update. Merge does not deploy; review all required checks and run the protected production upgrade workflow separately."
+          fi
