@@ -23,7 +23,8 @@ data:
       max_alive_time: 10
       debug_mode_ts_path: null
     video:
-      # KonomiTV adds /host-rootfs inside Docker automatically.
+      # RKE2/containerd does not provide /.dockerenv, so KonomiTV detects this
+      # container as Linux and uses this path without a /host-rootfs prefix.
       recorded_folders:
         - /mnt/recorded
       exclude_scan_paths: []

@@ -37,9 +37,9 @@ spec:
               mountPath: /code/server/data
             - name: logs
               mountPath: /code/server/logs
-            - name: recorded
-              mountPath: /host-rootfs/mnt/recorded
-              readOnly: true
+        - name: recorded
+          mountPath: /mnt/recorded
+          readOnly: true
           resources:
             requests:
               cpu: "2"
