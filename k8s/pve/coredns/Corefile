@@ -29,7 +29,6 @@
       192.168.10.108  rpi4-4g-01-wifi.miutaku.internal
       192.168.10.109  rpi4-2g-01.miutaku.internal
       192.168.10.110  rpi4-2g-01-wifi.miutaku.internal
-      192.168.10.111  rpib-512m-01.miutaku.internal
       192.168.10.112  rpib-plus-512m-01.miutaku.internal
       192.168.10.113  rpib-plus-512m-02.miutaku.internal
       192.168.10.117  nucbox-3-wired.miutaku.internal
@@ -48,7 +47,7 @@
       192.168.20.136  lb-02-rke2.miutaku.internal
       192.168.20.191  nas-01.miutaku.internal
       192.168.20.192  nas-02.miutaku.internal
-      192.168.20.204  mm-server.miutaku.internal magic-mirror.miutaku.internal
+      192.168.20.204  magic-mirror.miutaku.internal
       192.168.20.227  rke2-vip.miutaku.internal
 
       # VLAN 30: クライアントネットワーク
