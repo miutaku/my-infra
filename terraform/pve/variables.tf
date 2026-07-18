@@ -133,22 +133,10 @@ variable "unifi_os_server_macaddr" {
   default     = "BC:24:11:10:20:01"
 }
 
-variable "unifi_os_server_ip" {
-  description = "IP address for the dedicated UniFi OS Server VM (untagged main LAN, DHCP 静的リースと一致させること)"
-  type        = string
-  default     = "192.168.0.132"
-}
-
 variable "pbs_macaddr" {
   description = "Proxmox Backup Server VM の MAC アドレス (VLAN 20, DHCP 静的リースと一致させること)"
   type        = string
   default     = "BC:24:11:B5:00:01"
-}
-
-variable "pbs_ip" {
-  description = "PBS VM の IP アドレス (VLAN 20, DHCP 静的リースと一致させること)"
-  type        = string
-  default     = "192.168.20.250"
 }
 
 variable "rke2_lb_vip" {

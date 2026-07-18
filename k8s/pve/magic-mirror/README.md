@@ -5,7 +5,6 @@ MagicMirror² の表示サーバを宅内 RKE2 上で動かす。
 
 ## Endpoint
 
-- `http://mm-server.miutaku.internal:8080/`
 - `http://magic-mirror.miutaku.internal:8080/`
 - LoadBalancer IP: `192.168.20.204`
 
