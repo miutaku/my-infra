@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "usage: $0 <current-version> <target-version>" >&2
+  exit 2
+}
+
+[[ $# -eq 2 ]] || usage
+
+current="${1}"
+target="${2}"
+version_re='^v([0-9]+)\.([0-9]+)\.([0-9]+)\+rke2r([0-9]+)$'
+
+parse_version() {
+  local version="${1}"
+  if [[ ! "${version}" =~ ${version_re} ]]; then
+    echo "invalid RKE2 version: ${version}" >&2
+    return 1
+  fi
+  printf '%s %s %s %s\n' \
+    "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" \
+    "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+}
+
+read -r current_major current_minor current_patch current_rke2 < <(parse_version "${current}")
+read -r target_major target_minor target_patch target_rke2 < <(parse_version "${target}")
+
+if (( target_major != current_major )); then
+  echo "major version changes require a separate migration plan" >&2
+  exit 1
+fi
+
+if (( target_minor < current_minor || target_minor > current_minor + 1 )); then
+  echo "unsupported minor skew: ${current} -> ${target}" >&2
+  exit 1
+fi
+
+if (( target_minor == current_minor )); then
+  if (( target_patch < current_patch )); then
+    echo "Kubernetes downgrade is not allowed: ${current} -> ${target}" >&2
+    exit 1
+  fi
+  if (( target_patch == current_patch && target_rke2 <= current_rke2 )); then
+    echo "target must be newer than current: ${current} -> ${target}" >&2
+    exit 1
+  fi
+fi
+
+echo "valid RKE2 upgrade: ${current} -> ${target}"
