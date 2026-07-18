@@ -103,6 +103,24 @@ jobs:
           ssh-keygen -y -f "${RUNNER_TEMP}/rke2/id_ed25519" > "${HOME}/.ssh/id_rsa.pub"
           chmod 0644 "${HOME}/.ssh/id_rsa.pub"
 
+          # Prevent production topology and key metadata from appearing in public logs.
+          echo "::add-mask::miutaku"
+          echo "::add-mask::$(cat "${HOME}/.ssh/id_rsa.pub")"
+          awk '
+            /^[[:space:]]*#/ || NF == 0 || /^\[/ { next }
+            {
+              print $1
+              for (i = 2; i <= NF; i++) {
+                if ($i ~ /^hostname=/) {
+                  sub(/^hostname=/, "", $i)
+                  print $i
+                }
+              }
+            }
+          ' ansible/rke2/hosts/prd | while IFS= read -r value; do
+            echo "::add-mask::${value}"
+          done
+
       - name: Verify runner dependencies and VPN path
         shell: bash
         env:
@@ -141,6 +159,8 @@ jobs:
           ANSIBLE_LOCAL_TEMP: ${{ runner.temp }}/ansible-local
           ANSIBLE_REMOTE_USER: miutaku
           ANSIBLE_PRIVATE_KEY_FILE: ${{ runner.temp }}/rke2/id_ed25519
+          ANSIBLE_STDOUT_CALLBACK: default
+          ANSIBLE_VERBOSITY: '0'
         run: |
           set -euo pipefail
           python -m pip install pipenv==2026.6.1
