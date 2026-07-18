@@ -86,12 +86,21 @@ while read -r ip; do
 done < <(awk '$1 ~ /^192\.168\.20\.(12[6-9]|130|131)$/ {print $1}' "${inventory}")
 
 echo '[preflight] etcd cluster'
-kubectl --context "${context}" -n kube-system exec "etcd-${primary}" -- \
+etcd_health="$(kubectl --context "${context}" -n kube-system exec "etcd-${primary}" -- \
   etcdctl \
   --endpoints=https://127.0.0.1:2379 \
   --cacert=/var/lib/rancher/rke2/server/tls/etcd/server-ca.crt \
   --cert=/var/lib/rancher/rke2/server/tls/etcd/server-client.crt \
   --key=/var/lib/rancher/rke2/server/tls/etcd/server-client.key \
-  endpoint health --cluster
+  endpoint health --cluster 2>&1)" || {
+    echo 'etcd cluster health check failed' >&2
+    exit 1
+  }
+etcd_member_count="$(grep -c 'is healthy' <<< "${etcd_health}")"
+[[ "${etcd_member_count}" -ge 3 ]] || {
+  echo 'etcd cluster did not report all expected members as healthy' >&2
+  exit 1
+}
+echo "etcd cluster healthy: ${etcd_member_count} members"
 
 echo "preflight passed: ${current} -> ${target}"
