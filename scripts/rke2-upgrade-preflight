@@ -38,8 +38,18 @@ server_versions="$(kubectl --context "${context}" get nodes -l node-role.kuberne
 }
 
 echo '[preflight] Kubernetes API'
-kubectl --context "${context}" get --raw='/readyz?verbose' | tee "${readyz_file}"
-! grep -q '\[-\]' "${readyz_file}"
+api_ready=false
+for attempt in {1..12}; do
+  if kubectl --context "${context}" get --raw='/readyz?verbose' > "${readyz_file}" 2>&1 &&
+    ! grep -q '\[-\]' "${readyz_file}"; then
+    api_ready=true
+    break
+  fi
+  echo "API not fully ready (attempt ${attempt}/12); retrying in 5 seconds" >&2
+  sleep 5
+done
+cat "${readyz_file}"
+[[ "${api_ready}" == true ]] || { echo 'Kubernetes API readiness failed' >&2; exit 1; }
 
 echo '[preflight] unhealthy Pods'
 unhealthy_pods="$(kubectl --context "${context}" get pods -A -o json | jq -r '
