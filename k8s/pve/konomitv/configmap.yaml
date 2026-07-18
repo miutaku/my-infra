@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: konomitv-config
+  namespace: app-konomitv
+data:
+  config.yaml: |
+    general:
+      backend: EDCB
+      always_receive_tv_from_mirakurun: true
+      edcb_url: tcp://edcb-wine.app-edcb-wine.svc.cluster.local:4510/
+      mirakurun_url: http://mirakurun.app-mirakurun.svc.cluster.local:40772/
+      encoder: FFmpeg
+      program_update_interval: 5.0
+      debug: false
+      debug_encoder: false
+    server:
+      port: 7000
+      custom_https_certificate: null
+      custom_https_private_key: null
+    tv:
+      preferred_terrestrial_region: null
+      max_alive_time: 10
+      debug_mode_ts_path: null
+    video:
+      # KonomiTV adds /host-rootfs inside Docker automatically.
+      recorded_folders:
+        - /mnt/recorded
+      exclude_scan_paths: []
+    capture:
+      upload_folders: []

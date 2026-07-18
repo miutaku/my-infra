@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edcb-wine
+  namespace: app-edcb-wine
+spec:
+  selector:
+    app: edcb-wine
+  ports:
+    - name: epgtimer
+      port: 4510
+      targetPort: epgtimer
+    - name: emwui
+      port: 5510
+      targetPort: emwui
+    - name: novnc
+      port: 6510
+      targetPort: novnc
