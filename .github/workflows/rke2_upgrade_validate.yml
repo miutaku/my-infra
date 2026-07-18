@@ -75,8 +75,7 @@ jobs:
   live-rke2-preflight:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'automation/rke2-stable' &&
-      vars.RKE2_LIVE_PREFLIGHT_ENABLED == 'true'
+      github.head_ref == 'automation/rke2-stable'
     runs-on: oke-rke2-admin
     environment: rke2-production-preflight
     timeout-minutes: 30
