@@ -131,6 +131,7 @@ jobs:
           KUBECONFIG: ${{ runner.temp }}/rke2/kubeconfig
           KUBE_CONTEXT: rke2-pve
           RKE2_SSH_IDENTITY_FILE: ${{ runner.temp }}/rke2/id_ed25519
+          RKE2_REQUIRE_MAINTENANCE_WINDOW: 'false'
         run: scripts/rke2-upgrade-preflight
 
       - name: Run Ansible check mode over the VPN
