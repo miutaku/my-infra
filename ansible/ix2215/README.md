@@ -117,7 +117,9 @@ ssh miutaku@192.168.0.254 show version
 export IX2215_HOST=192.168.0.254
 export IX2215_USER=miutaku
 export IX2215_PASSWORD=<password>
-export DHCP_PROFILE=main
-export DHCP_ASSIGNMENTS_JSON='[{"name":"test","ip":"192.168.0.126","mac":"aabb.ccdd.eeff"}]'
-python3 scripts/configure_dhcp_leases.py
+export DRY_RUN=true
+export IX_DHCP_PROFILES_JSON='[{"name":"main","fixed_assignments":[{"ip":"192.168.0.126","mac":"aa:bb:cc:dd:ee:ff"}]}]'
+export IX_DHCPV6_CLIENT_PROFILES_JSON='[]'
+export IX_DHCPV6_SERVER_PROFILES_JSON='[]'
+python3 scripts/configure_dhcp_profiles.py
 ```
