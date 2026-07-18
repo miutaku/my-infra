@@ -19,7 +19,7 @@ spec:
         - name: ghcr-pull-secret
       initContainers:
         - name: initialize-edcb-data
-          image: ghcr.io/miutaku/edcb-wine:bb0b400
+          image: ghcr.io/miutaku/edcb-wine:bb0b400-r2
           command:
             - /bin/bash
             - -ceu
@@ -41,7 +41,7 @@ spec:
               mountPath: /data
       containers:
         - name: edcb-wine
-          image: ghcr.io/miutaku/edcb-wine:bb0b400
+          image: ghcr.io/miutaku/edcb-wine:bb0b400-r2
           securityContext:
             privileged: true
           ports:

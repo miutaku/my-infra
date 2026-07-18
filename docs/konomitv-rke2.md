@@ -15,7 +15,7 @@ PT3 -> Mirakurun ----> EPGStation（既存）
 
 - KonomiTV: 安定版 `0.14.1`、FFmpeg、1 replica
 - KonomiTV は最大2本のCPUエンコードに備えて、12 vCPUの `pve-x570` workerに固定する
-- EDCB-Wine: upstream commit `bb0b4005a9d9c7a6b67411dbb9e9b6255af34b0c`、1 replica
+- EDCB-Wine: upstream commit `bb0b4005a9d9c7a6b67411dbb9e9b6255af34b0c`を同梱したimage tag `bb0b400-r2`、1 replica
 - EDCB は番組情報、録画予約、録画を担当する
 - KonomiTV のライブ受信は `always_receive_tv_from_mirakurun: true` で Mirakurun を直接利用する
 - 録画領域は EDCB から読み書き、KonomiTV から読み取り専用でマウントする
@@ -24,6 +24,16 @@ PT3 -> Mirakurun ----> EPGStation（既存）
 
 EPGStation と EDCB は互いの予約を認識しない。移行期間中のチューナー競合は許容し、最終的には
 録画予約を EDCB に一本化する。
+
+### KonomiTV設定ファイルのマウント方式
+
+`config.yaml` は ConfigMap の `subPath` を使って `/code/config.yaml` へ直接マウントしない。
+KonomiTV公式イメージには `/code/config.yaml` があらかじめ存在せず、RKE2/containerdでは
+存在しないファイルをmount targetにした `subPath` bind mountがコンテナ初期化時に失敗するためである。
+
+代わりにConfigMap全体を読み取り専用で `/config-src` へマウントし、コンテナ起動コマンドで
+`/config-src/config.yaml` を `/code/config.yaml` へコピーしてからKonomiTVを起動する。
+設定変更を反映するにはDeploymentのPod再作成が必要となる。
 
 ## 初回デプロイ
 
