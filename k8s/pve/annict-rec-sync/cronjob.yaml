@@ -38,6 +38,12 @@ spec:
                   value: "300"
                 - name: CHANNEL_MAP_FILE
                   value: /config/channel-map.json
+                # EPGStation config の encode[].name と一致させる (空 = エンコードなし)
+                - name: ENCODE_MODE
+                  value: "H.265 (OCI Remote)"
+                # エンコード完了後に元 TS を削除するか
+                - name: ENCODE_DELETE_ORIGINAL
+                  value: "true"
                 # DRY_RUN=true でログのみ。実際に予約する場合は false。
                 - name: DRY_RUN
                   value: "false"

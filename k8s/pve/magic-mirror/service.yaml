@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: magic-mirror
+  namespace: app-magic-mirror
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.204"
+spec:
+  type: LoadBalancer
+  selector:
+    app: magic-mirror
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

@@ -1,11 +1,15 @@
 # TrueNAS Scale NFS セットアップ手順
 
+> **Note**: データセット / NFS share は現在 [ansible/truenas/](../ansible/truenas/) で
+> コード管理している。新規追加は `host_vars/<nas>.yml` に追記して playbook を流すこと。
+> 以下は UI で手動設定していた頃の手順 (パラメータの意味の参考として残す)。
+
 EPGStation (録画/サムネイル) および OKE エンコードワーカーが使用する NFS 共有の設定手順。
 
 ## 前提
 
 | 項目 | 値 |
-|------|-----|
+| ---- | --- |
 | TrueNAS IP | 192.168.20.192 (nas-02) |
 | NFS Pool | `pool > raid1_case` |
 | アクセス元 | 192.168.20.0/24 (RKE2), 10.0.0.0/16 (OCI VCN) |
@@ -16,7 +20,7 @@ EPGStation (録画/サムネイル) および OKE エンコードワーカーが
 **Datasets > pool > raid1_case > Add Dataset** を2回実行:
 
 | 設定項目 | recorded | thumbnail |
-|---------|----------|-----------|
+| ------- | -------- | --------- |
 | Name | `recorded` | `thumbnail` |
 | Dataset Preset | Generic | Generic |
 | ACL Type | POSIX | POSIX |
@@ -26,7 +30,7 @@ EPGStation (録画/サムネイル) および OKE エンコードワーカーが
 
 各 Dataset: **Datasets > pool > raid1_case > (dataset名) > Edit Permissions**
 
-```
+```text
 User:  root
 Group: root
 Mode:  755
@@ -37,7 +41,7 @@ Apply permissions recursively: ✓
 
 **Services > NFS > Configure**:
 
-```
+```text
 Enable NFSv4:        ON   ← nfsvers=4.1 のため必須
 NFSv3 ownership model for NFSv4: OFF
 Start Automatically: ON
@@ -51,13 +55,14 @@ Start Automatically: ON
 
 ### recorded
 
-```
+```text
 Path:    /mnt/raid1_case/recorded
 Enabled: ✓
 ```
 
 Advanced Options:
-```
+
+```text
 Maproot User:  root
 Maproot Group: root
 Networks:
@@ -67,13 +72,14 @@ Networks:
 
 ### thumbnail
 
-```
+```text
 Path:    /mnt/raid1_case/thumbnail
 Enabled: ✓
 ```
 
 Advanced Options:
-```
+
+```text
 Maproot User:  root
 Maproot Group: root
 Networks:

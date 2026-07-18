@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-html-pvc
+  namespace: app-nextcloud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+# EPGStation の録画ディレクトリ (nas-02)。epgstation-recorded-pv と同じ export を指す別 PV。
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-nas-recorded-pv
+spec:
+  # NFS 静的 PV の capacity は非強制の名目値 (実容量は NAS 側 ZFS に従う)。
+  # 実態 (raid1_case 約213GB) に合わせておく。
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/recorded
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-nas-recorded-pvc
+  namespace: app-nextcloud
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 200Gi
+  volumeName: nextcloud-nas-recorded-pv
+  storageClassName: ""

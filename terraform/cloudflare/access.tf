@@ -6,18 +6,17 @@ resource "cloudflare_zero_trust_access_application" "protected" {
   domain           = "${each.key}.${var.domain}"
   type             = "self_hosted"
   session_duration = "24h"
-}
 
-resource "cloudflare_zero_trust_access_policy" "allow_emails" {
-  for_each = local.access_protected_subdomains
-
-  account_id     = var.account_id
-  application_id = cloudflare_zero_trust_access_application.protected[each.key].id
-  name           = "allow-${each.key}-managed-by-tf"
-  precedence     = 1
-  decision       = "allow"
-
-  include {
-    email = var.access_allowed_emails
-  }
+  policies = [{
+    name       = "allow-${each.key}-managed-by-tf"
+    precedence = 1
+    decision   = "allow"
+    include = [
+      for email in var.access_allowed_emails : {
+        email = {
+          email = email
+        }
+      }
+    ]
+  }]
 }

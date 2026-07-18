@@ -4,7 +4,7 @@ data "oci_identity_availability_domains" "ads" {
 
 resource "oci_containerengine_cluster" "oke_cluster" {
   compartment_id     = var.compartment_ocid
-  kubernetes_version = "v1.35.2"
+  kubernetes_version = "v1.36.0"
   name               = var.cluster_name
   type               = "BASIC_CLUSTER"
   vcn_id             = oci_core_vcn.oke_vcn.id
@@ -47,7 +47,7 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   }
 
   node_source_details {
-    image_id    = data.oci_core_images.node_image.images[0].id
+    image_id    = local.oke_node_image_id
     source_type = "image"
   }
 
@@ -74,13 +74,25 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   }
 }
 
-data "oci_core_images" "node_image" {
-  compartment_id           = var.compartment_ocid
-  operating_system         = "Oracle Linux"
-  operating_system_version = "8"
-  shape                    = var.node_pool_shape
-  sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
+# OKE requires images built specifically for the target Kubernetes version
+# (they ship a matching kubelet build / cgroup config); generic Oracle Linux
+# OS images are not guaranteed to work (e.g. v1.36.0 kubelet refuses to start
+# on a generic OL8 image's default cgroup v1 setup).
+data "oci_containerengine_node_pool_option" "oke_node_pool_option" {
+  compartment_id      = var.compartment_ocid
+  node_pool_option_id = "all"
+}
+
+locals {
+  oke_node_image_sources = [
+    for s in data.oci_containerengine_node_pool_option.oke_node_pool_option.sources :
+    s if s.source_type == "IMAGE" &&
+    strcontains(s.source_name, "OKE-${trimprefix(oci_containerengine_cluster.oke_cluster.kubernetes_version, "v")}-") &&
+    strcontains(s.source_name, "aarch64") &&
+    !strcontains(s.source_name, "GPU")
+  ]
+
+  oke_node_image_id = local.oke_node_image_sources[0].image_id
 }
 
 data "oci_containerengine_cluster_kube_config" "kube_config" {

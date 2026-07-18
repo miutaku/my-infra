@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+context="${KUBE_CONTEXT:-rke2-pve}"
+inventory="${RKE2_INVENTORY:-ansible/rke2/hosts/prd}"
+version_file="${RKE2_VERSION_FILE:-ansible/rke2/group_vars/rke2-node-all.yml}"
+ssh_user="${RKE2_SSH_USER:-miutaku}"
+ssh_identity_file="${RKE2_SSH_IDENTITY_FILE:-}"
+require_maintenance_window="${RKE2_REQUIRE_MAINTENANCE_WINDOW:-true}"
+readyz_file="$(mktemp)"
+trap 'rm -f "${readyz_file}"' EXIT
+
+ssh_options=(-o BatchMode=yes)
+if [[ -n "${ssh_identity_file}" ]]; then
+  ssh_options+=(-i "${ssh_identity_file}")
+fi
+
+target="$(sed -n 's/^rke2_version: *"\([^"]*\)"/\1/p' "${version_file}")"
+[[ -n "${target}" ]] || { echo "target version is empty" >&2; exit 1; }
+
+primary='master-01-rke2-server-ubuntu-26-04-home-amd64'
+current="$(kubectl --context "${context}" get node "${primary}" -o jsonpath='{.status.nodeInfo.kubeletVersion}')"
+if [[ "${current}" == "${target}" ]]; then
+  echo "target is already installed; running health-only preflight"
+else
+  scripts/validate-rke2-version "${current}" "${target}"
+fi
+
+echo '[preflight] nodes'
+node_failures="$(kubectl --context "${context}" get nodes -o json \
+  | jq -r '.items[] | select((.status.conditions[] | select(.type == "Ready").status) != "True") | .metadata.name')"
+[[ -z "${node_failures}" ]] || { echo "NotReady nodes: ${node_failures}" >&2; exit 1; }
+
+server_versions="$(kubectl --context "${context}" get nodes -l node-role.kubernetes.io/control-plane \
+  -o jsonpath='{range .items[*]}{.status.nodeInfo.kubeletVersion}{"\n"}{end}' | sort -u)"
+[[ "$(wc -l <<< "${server_versions}")" -eq 1 ]] || {
+  echo "server versions are not uniform: ${server_versions}" >&2
+  exit 1
+}
+
+echo '[preflight] Kubernetes API'
+api_ready=false
+for attempt in {1..12}; do
+  if kubectl --context "${context}" get --raw='/readyz?verbose' > "${readyz_file}" 2>&1 &&
+    ! grep -q '\[-\]' "${readyz_file}"; then
+    api_ready=true
+    break
+  fi
+  echo "API not fully ready (attempt ${attempt}/12); retrying in 5 seconds" >&2
+  sleep 5
+done
+cat "${readyz_file}"
+[[ "${api_ready}" == true ]] || { echo 'Kubernetes API readiness failed' >&2; exit 1; }
+
+echo '[preflight] unhealthy Pods'
+unhealthy_pods="$(kubectl --context "${context}" get pods -A -o json | jq -r '
+  .items[]
+  | select(.status.phase != "Running" and .status.phase != "Succeeded")
+  | "\(.metadata.namespace)/\(.metadata.name):\(.status.phase)"')"
+[[ -z "${unhealthy_pods}" ]] || { echo "unhealthy Pods: ${unhealthy_pods}" >&2; exit 1; }
+
+echo '[preflight] workload readiness'
+unready_workloads="$(kubectl --context "${context}" get deploy,statefulset -A -o json | jq -r '
+  .items[]
+  | select((.spec.replicas // 0) != (.status.readyReplicas // 0))
+  | "\(.kind) \(.metadata.namespace)/\(.metadata.name): desired=\(.spec.replicas // 0) ready=\(.status.readyReplicas // 0)"')"
+[[ -z "${unready_workloads}" ]] || { echo "unready workloads: ${unready_workloads}" >&2; exit 1; }
+
+echo '[preflight] recording and reservations'
+recording="$(curl -fsS 'http://192.168.20.202:8888/api/recording?isHalfWidth=true' | jq -r '.total')"
+reserves="$(curl -fsS 'http://192.168.20.202:8888/api/reserves?isHalfWidth=true' | jq -r '.total')"
+if [[ "${require_maintenance_window}" == true ]]; then
+  [[ "${recording}" == 0 && "${reserves}" == 0 ]] || {
+    echo "recording=${recording}, reserves=${reserves}; maintenance window is not safe" >&2
+    exit 1
+  }
+else
+  echo "maintenance-window gate disabled for dry-run: recording=${recording}, reserves=${reserves}"
+fi
+
+echo '[preflight] reboot requirements'
+while read -r ip; do
+  [[ -n "${ip}" ]] || continue
+  ssh "${ssh_options[@]}" "${ssh_user}@${ip}" \
+    'test ! -e /var/run/reboot-required && { sudo systemctl is-active --quiet rke2-server 2>/dev/null || sudo systemctl is-active --quiet rke2-agent; }'
+done < <(awk '$1 ~ /^192\.168\.20\.(12[6-9]|130|131)$/ {print $1}' "${inventory}")
+
+echo '[preflight] etcd cluster'
+kubectl --context "${context}" -n kube-system exec "etcd-${primary}" -- \
+  etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/var/lib/rancher/rke2/server/tls/etcd/server-ca.crt \
+  --cert=/var/lib/rancher/rke2/server/tls/etcd/server-client.crt \
+  --key=/var/lib/rancher/rke2/server/tls/etcd/server-client.key \
+  endpoint health --cluster
+
+echo "preflight passed: ${current} -> ${target}"

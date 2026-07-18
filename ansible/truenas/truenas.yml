@@ -1,0 +1,6 @@
+---
+- name: Manage TrueNAS datasets and NFS shares
+  hosts: truenas
+  become: true
+  roles:
+    - truenas_storage
