@@ -47,7 +47,7 @@ Email Workerを使う場合は、Workerを配備したうえでaction typeを `w
 | `argocd-oke.miutaku.work` | oke | `http://argocd-server.argocd.svc.cluster.local:80` | 必須 |
 | `wol.miutaku.work` | rke2 | `http://gptwol-service.app-gptwol.svc.cluster.local:5000` | 必須 |
 | `epgstation.miutaku.work` | rke2 | `http://epgstation.app-epgstation.svc.cluster.local:8888` | 必須 |
-| `konomitv.miutaku.work` | rke2 | `https://konomitv.app-konomitv.svc.cluster.local:7000` | 必須 |
+| `konomitv.miutaku.work` | rke2 | `http://konomitv.app-konomitv.svc.cluster.local:7000` | 必須 |
 | `nextcloud.miutaku.work` | rke2 | `http://nextcloud.app-nextcloud.svc.cluster.local:80` | 必須 |
 | `unifi.miutaku.work` | rke2 | `https://192.168.0.132:11443` | 必須 |
 | `wifi-ap.miutaku.work` | rke2 | `https://192.168.0.253` | 必須 |
