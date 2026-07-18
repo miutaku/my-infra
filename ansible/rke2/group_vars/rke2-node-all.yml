@@ -1,4 +1,7 @@
 ---
+# Desired RKE2 production version. Updated by rke2_version_watch.yml.
+rke2_version: "v1.35.6+rke2r1"
+
 kernel_modules:
   - br_netfilter
 sysctl_settings:

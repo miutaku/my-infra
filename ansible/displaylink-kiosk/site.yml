@@ -1,0 +1,82 @@
+---
+- name: Configure DisplayLink kiosk VM
+  hosts: displaylink_kiosk
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Verify BWS access token on control host
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'BWS_ACCESS_TOKEN') | length > 0
+        fail_msg: "BWS_ACCESS_TOKEN is not set on the Ansible control host."
+      delegate_to: localhost
+      become: false
+
+    - name: Verify BSM CLI dependencies on control host
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/env
+          - which
+          - "{{ item }}"
+      loop:
+        - bws
+        - jq
+      delegate_to: localhost
+      become: false
+      changed_when: false
+
+    - name: Get Kiosk user from BSM
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          bws secret get {{ bsm_kiosk_user_id | quote }} |
+          jq -er '.value | strings | select(length > 0)'
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('ansible.builtin.env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('ansible.builtin.env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      register: kiosk_user_secret
+      check_mode: false
+      changed_when: false
+      no_log: true
+
+    - name: Get Kiosk URL from BSM
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          bws secret get {{ bsm_kiosk_url_id | quote }} |
+          jq -er '.value | strings | select(length > 0)'
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('ansible.builtin.env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('ansible.builtin.env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      delegate_to: localhost
+      become: false
+      register: kiosk_url_secret
+      check_mode: false
+      changed_when: false
+      no_log: true
+
+    - name: Set Kiosk settings from BSM
+      ansible.builtin.set_fact:
+        kiosk_user: "{{ kiosk_user_secret.stdout }}"
+        kiosk_url: "{{ kiosk_url_secret.stdout }}"
+      no_log: true
+
+    - name: Verify supported operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_version is version('24.04', '>=')
+        fail_msg: "This playbook supports Ubuntu 24.04 or newer."
+
+    - name: Set hostname from inventory
+      ansible.builtin.hostname:
+        name: "{{ hostname }}"
+      when: hostname is defined
+
+  roles:
+    - displaylink_kiosk

@@ -17,12 +17,12 @@ spec:
 
           containers:
             - name: backup
-              image: alpine:3.20
+              image: alpine:3.22
               command: ["sh", "/scripts/backup.sh"]
               env:
                 # バックアップ対象 "app:database" のスペース区切りリスト
                 - name: APPS
-                  value: "epgstation:epgstation"
+                  value: "epgstation:epgstation nextcloud:nextcloud"
                 - name: MYSQL_ROOT_PASSWORD
                   valueFrom:
                     secretKeyRef:

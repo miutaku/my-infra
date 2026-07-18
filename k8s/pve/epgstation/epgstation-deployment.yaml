@@ -45,6 +45,7 @@ spec:
                         /config-src/serviceLogConfig.yml; do
                 envsubst '${MYSQL_PASSWORD} ${NOTIFY_WEBHOOK} ${CRITICAL_WEBHOOK}' < "$f" > "/app/config/$(basename $f)"
               done
+              cp /config-src/enc-local.js /app/config/enc/enc-local.js
               cp /config-src/enc-remote.js /app/config/enc/enc-remote.js
               chmod +x /app/config/notify.sh /app/config/rec-finish.sh
           env:

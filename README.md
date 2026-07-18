@@ -59,7 +59,6 @@ flowchart LR
       direction TB
       PVE_API{{PVE API}}
 
-      MM2[[Magic Mirror²]]
       NAS[[TrueNAS Scale VMs<br/>192.168.20.191-192]]
       UOS[[UniFi OS Server VM<br/>192.168.0.132:11443]]
 
@@ -77,7 +76,7 @@ flowchart LR
         WorkerVMs[[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]]
         LBVMs ~~~ ServerVMs ~~~ WorkerVMs
       end
-      NAS ~~~ WorkEnv ~~~ MM2 ~~~ RKE2VM ~~~ UOS
+      NAS ~~~ WorkEnv ~~~ RKE2VM ~~~ UOS
     end
     subgraph RKE2[RKE2 HA cluster]
       ArgoCD{{ArgoCD <br/>Sync}}
@@ -106,7 +105,9 @@ flowchart LR
           WoL([WoL])
           Mirakurun([Mirakurun])
           EPGStation([EPGStation])
-          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation
+          MagicMirror([MagicMirror²])
+          NextCloud([NextCloud])
+          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror ~~~ NextCloud
         end
         RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
       end
@@ -135,6 +136,7 @@ flowchart LR
   EPGStation --> Mirakurun
   EPGStation -->|read / ts save| NAS
   EPGStation -->|encode request| OCIEnc -->|save| NAS
+  NextCloud -->|External Storage / NFS RO| NAS
   Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
   TFC <-.->|tunnel| TFCAgent -->|API request| PVE_API
@@ -161,8 +163,8 @@ flowchart LR
   class ArgoCD_OCI,ArgoCD,OCICert,MetalLB control
   class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
   class IX,US8,AP,TailscaleNet nwDevice
-  class MM2,NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
-  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
+  class NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
+  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,NextCloud,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
   class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
   class CF_Application,CF_Tunnel,TFC,GitHub external
   class OCI,OKE zoneCloud
@@ -335,6 +337,7 @@ flowchart TB
   SNMP[snmp-exporter :9116<br/>IX2215 / TrueNAS]
   PVE[pve-exporter :9221<br/>Proxmox API]
   Blackbox[blackbox-exporter :9115<br/>HTTP / ICMP]
+  Agent[vmagent<br/>scrape config: k8s/pve/vmagent/values.yaml]
   VM[VictoriaMetrics<br/>RKE2内]
   PDC[Grafana PDC agent<br/>VictoriaMetrics query tunnel]
 
@@ -342,10 +345,11 @@ flowchart TB
   Hosts --> SNMP
   Hosts --> PVE
   Hosts --> Blackbox
-  VM --> Node
-  VM --> SNMP
-  VM --> PVE
-  VM --> Blackbox
+  Agent --> Node
+  Agent --> SNMP
+  Agent --> PVE
+  Agent --> Blackbox
+  Agent --> VM
   PDC --> VM
 ```
 
@@ -361,7 +365,8 @@ flowchart TB
 | UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
-| mm-server-01 (MagicMirror²) | 192.168.40.1 | node_exporter :9100 | ✅ (VLAN40) |
+| MagicMirror² (k8s Service) | 192.168.20.204 | blackbox HTTP | k8s app |
+| NextCloud (k8s Service) | ClusterIP (`nextcloud.app-nextcloud.svc`) | blackbox HTTP (`/status.php`) | k8s app |
 | nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
 | OKE nodes ×2 | 10.0.1.x | node metrics | scrape 設定要確認 |
 
@@ -369,6 +374,9 @@ flowchart TB
 
 node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
 テンプレートから作成した VM は起動時点で `:9100` で node_exporter が待ち受ける。
+
+scrape は **vmagent**(Victoria Metrics Agent) が担当する。設定は [`k8s/pve/vmagent/values.yaml`](./k8s/pve/vmagent/values.yaml) で管理し、
+VictoriaMetrics へ remote_write する。
 
 既存 VM（テンプレート再ビルド前に作成済み）は、必要に応じて Ansible で一括導入する。
 

@@ -1,0 +1,13 @@
+# nas-01 (192.168.20.191) のデータセット / NFS share 定義
+#
+# 要素の書式:
+#   name:  プール名からのデータセットパス (マウント先は /mnt/<name>)
+#   owner/group/mode: 指定時のみマウントポイント直下に適用 (省略時は触らない)
+#   nfs:   定義すると NFS export される。省略すると dataset のみ作成。
+#     comment:  share のコメント (省略時 dataset 名)
+#     networks: 許可ネットワーク (省略時 group_vars の truenas_nfs_default_networks)
+truenas_datasets:
+  # GitHub Actions ランナーのキャッシュ (k8s/pve/arc-runners/reventer-cache-pvc.yaml が参照)
+  - name: raid1_case/arc-runner-cache
+    nfs:
+      comment: arc-runner-cache

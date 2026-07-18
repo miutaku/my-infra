@@ -1,0 +1,149 @@
+name: RKE2 upgrade validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-version:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate version and skew
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          current="$(git show "origin/${{ github.base_ref }}:ansible/rke2/group_vars/rke2-node-all.yml" \
+            | sed -n 's/^rke2_version: *"\([^"]*\)"/\1/p')"
+          target="$(sed -n 's/^rke2_version: *"\([^"]*\)"/\1/p' \
+            ansible/rke2/group_vars/rke2-node-all.yml)"
+          if [[ "${current}" == "${target}" ]]; then
+            echo 'RKE2 version is unchanged in this pull request.'
+            exit 0
+          fi
+          scripts/validate-rke2-version "${current}" "${target}"
+
+      - name: Verify official release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$(sed -n 's/^rke2_version: *"\([^"]*\)"/\1/p' \
+            ansible/rke2/group_vars/rke2-node-all.yml)"
+          encoded="${target/+/%2B}"
+          curl -fsSL "https://github.com/rancher/rke2/releases/download/${encoded}/sha256sum-amd64.txt" \
+            | grep -F 'rke2.linux-amd64.tar.gz'
+
+      - name: Shell syntax
+        run: bash -n scripts/validate-rke2-version scripts/rke2-upgrade-preflight
+
+  ansible-static-validation:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ansible/rke2
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip3 install pipenv
+          pipenv install --dev
+          pipenv run ansible-galaxy install -r requirements.yml
+          pipenv run ansible-galaxy collection install -r requirements.yml
+
+      - name: Lint and syntax check
+        run: |
+          pipenv run ansible-lint site.yml
+          pipenv run ansible-playbook -i hosts/prd site.yml --syntax-check
+          pipenv run ansible-playbook -i hosts/prd site.yml --check --list-tasks
+
+  live-rke2-preflight:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: oke-rke2-admin
+    environment: rke2-production-preflight
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - uses: azure/setup-kubectl@v4
+
+      - name: Prepare read-only production credentials
+        shell: bash
+        env:
+          RKE2_KUBECONFIG_B64: ${{ secrets.RKE2_KUBECONFIG_B64 }}
+          RKE2_SSH_PRIVATE_KEY_B64: ${{ secrets.RKE2_SSH_PRIVATE_KEY_B64 }}
+          RKE2_SSH_KNOWN_HOSTS_B64: ${{ secrets.RKE2_SSH_KNOWN_HOSTS_B64 }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "${RUNNER_TEMP}/rke2" "${HOME}/.ssh"
+          printf '%s' "${RKE2_KUBECONFIG_B64}" | base64 --decode > "${RUNNER_TEMP}/rke2/kubeconfig"
+          printf '%s' "${RKE2_SSH_PRIVATE_KEY_B64}" | base64 --decode > "${RUNNER_TEMP}/rke2/id_ed25519"
+          printf '%s' "${RKE2_SSH_KNOWN_HOSTS_B64}" | base64 --decode > "${HOME}/.ssh/known_hosts"
+          chmod 0600 "${RUNNER_TEMP}/rke2/kubeconfig" \
+            "${RUNNER_TEMP}/rke2/id_ed25519" "${HOME}/.ssh/known_hosts"
+          ssh-keygen -y -f "${RUNNER_TEMP}/rke2/id_ed25519" > "${HOME}/.ssh/id_rsa.pub"
+          chmod 0644 "${HOME}/.ssh/id_rsa.pub"
+
+      - name: Verify runner dependencies and VPN path
+        shell: bash
+        env:
+          KUBECONFIG: ${{ runner.temp }}/rke2/kubeconfig
+        run: |
+          set -euo pipefail
+          command -v curl
+          command -v jq
+          command -v ssh
+          for attempt in {1..12}; do
+            if kubectl --context rke2-pve get --raw='/readyz'; then
+              break
+            fi
+            if [[ "${attempt}" == 12 ]]; then
+              echo 'RKE2 API did not become ready within 60 seconds' >&2
+              exit 1
+            fi
+            sleep 5
+          done
+          ssh -o BatchMode=yes -i "${RUNNER_TEMP}/rke2/id_ed25519" \
+            miutaku@192.168.20.126 true
+
+      - name: Run strict live preflight
+        shell: bash
+        env:
+          KUBECONFIG: ${{ runner.temp }}/rke2/kubeconfig
+          KUBE_CONTEXT: rke2-pve
+          RKE2_SSH_IDENTITY_FILE: ${{ runner.temp }}/rke2/id_ed25519
+          RKE2_REQUIRE_MAINTENANCE_WINDOW: 'false'
+        run: scripts/rke2-upgrade-preflight
+
+      - name: Run Ansible check mode over the VPN
+        shell: bash
+        working-directory: ansible/rke2
+        env:
+          ANSIBLE_LOCAL_TEMP: ${{ runner.temp }}/ansible-local
+          ANSIBLE_REMOTE_USER: miutaku
+          ANSIBLE_PRIVATE_KEY_FILE: ${{ runner.temp }}/rke2/id_ed25519
+        run: |
+          set -euo pipefail
+          python -m pip install pipenv==2026.6.1
+          pipenv sync --dev
+          pipenv run ansible-playbook -i hosts/prd site.yml \
+            --limit rke2-node-all --check

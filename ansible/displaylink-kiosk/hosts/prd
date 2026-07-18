@@ -1,0 +1,5 @@
+[displaylink_kiosk]
+192.168.40.110 hostname=smart-display-01-ubuntu-26-04-home-amd64
+
+[prd_all:children]
+displaylink_kiosk

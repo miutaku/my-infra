@@ -1,0 +1,254 @@
+replicaCount: 1
+
+remoteWrite:
+  - url: http://victoria-metrics-victoria-metrics-single-server.monitoring.svc.cluster.local:8428/api/v1/write
+
+service:
+  enabled: true
+  servicePort: 8429
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+config:
+  global:
+    scrape_interval: 60s
+    scrape_timeout: 30s
+
+  scrape_configs:
+    - job_name: vmagent
+      static_configs:
+        - targets:
+            - localhost:8429
+
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+        - role: pod
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: "true"
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          target_label: __address__
+          regex: (.+);(.+)
+          replacement: $1:$2
+        - source_labels: [__meta_kubernetes_namespace]
+          target_label: namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          target_label: pod
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: node
+
+    # node_exporter は host 側の systemd service なので、Kubernetes からは
+    # 「:9100 が起動しているか」を事前判定できない。ここは非 k8s VM と、
+    # node_exporter 導入済みの RKE2 ノードだけを明示する。
+    - job_name: node
+      static_configs:
+        - targets: ["192.168.20.101:9100"]
+          labels:
+            instance: dev-app-server
+        - targets: ["192.168.20.131:9100"]
+          labels:
+            instance: dvb-worker-01-rke2
+        - targets: ["192.168.20.135:9100"]
+          labels:
+            instance: lb-01
+        - targets: ["192.168.20.136:9100"]
+          labels:
+            instance: lb-02
+        - targets: ["192.168.0.132:9100"]
+          labels:
+            instance: unifi-os-server
+
+    - job_name: snmp
+      metrics_path: /snmp
+      params:
+        module: [ix2215]
+        auth: [ix2215_v2]
+      static_configs:
+        - targets: ["192.168.0.254"]
+          labels:
+            instance: ix2215
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116
+
+    - job_name: snmp_truenas
+      metrics_path: /snmp
+      params:
+        module: [truenas]
+        auth: [truenas_v2]
+      static_configs:
+        - targets: ["192.168.20.191"]
+          labels:
+            instance: nas-01
+        - targets: ["192.168.20.192"]
+          labels:
+            instance: nas-02
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116
+
+    - job_name: pve
+      metrics_path: /pve
+      static_configs:
+        - targets: ["192.168.0.115"]
+          labels:
+            instance: pve-x570
+        - targets: ["192.168.0.119"]
+          labels:
+            instance: pve-b550m
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: pve-exporter.monitoring.svc.cluster.local:9221
+
+    - job_name: nut
+      metrics_path: /ups_metrics
+      static_configs:
+        - targets: ["nut-exporter.monitoring.svc.cluster.local:9199"]
+          labels:
+            instance: ups-a
+            server: 192.168.10.112
+            ups: ups-a
+        - targets: ["nut-exporter.monitoring.svc.cluster.local:9199"]
+          labels:
+            instance: ups-b
+            server: 192.168.10.113
+            ups: ups-b
+      relabel_configs:
+        - source_labels: [server]
+          target_label: __param_server
+        - source_labels: [ups]
+          target_label: __param_ups
+
+    - job_name: speedtest
+      scrape_interval: 5m
+      scrape_timeout: 180s
+      static_configs:
+        - targets:
+            - speedtest-exporter.monitoring.svc.cluster.local:8080
+          labels:
+            instance: speedtest
+
+    - job_name: tinytuya
+      scrape_interval: 15s
+      static_configs:
+        - targets:
+            - tinytuya-exporter.monitoring.svc.cluster.local:9123
+          labels:
+            instance: tuya-16a
+
+    - job_name: blackbox_http
+      metrics_path: /probe
+      static_configs:
+        - targets: ["http://192.168.20.254"]
+          labels:
+            instance: ix2215
+            module: http_2xx
+        - targets: ["http://epgstation.app-epgstation.svc.cluster.local:8888/api/version"]
+          labels:
+            instance: epgstation
+            module: http_2xx
+        - targets: ["http://mirakurun.app-mirakurun.svc.cluster.local:40772/api/version"]
+          labels:
+            instance: mirakurun
+            module: http_2xx
+        - targets: ["http://magic-mirror.app-magic-mirror.svc.cluster.local:8080"]
+          labels:
+            instance: magic-mirror
+            module: http_2xx
+        - targets: ["http://nextcloud.app-nextcloud.svc.cluster.local:80/status.php"]
+          labels:
+            instance: nextcloud
+            module: http_2xx
+        - targets: ["https://192.168.0.132:11443"]
+          labels:
+            instance: unifi-os-server
+            module: http_2xx_insecure
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [module]
+          target_label: __param_module
+        - action: labeldrop
+          regex: module
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    - job_name: blackbox_icmp
+      metrics_path: /probe
+      scrape_interval: 30s
+      params:
+        module: [icmp]
+      static_configs:
+        - targets: ["192.168.0.254"]
+          labels:
+            instance: ix2215
+        - targets: ["192.168.0.115"]
+          labels:
+            instance: pve-x570
+        - targets: ["192.168.0.119"]
+          labels:
+            instance: pve-b550m
+        - targets: ["192.168.0.132"]
+          labels:
+            instance: unifi-os-server
+        - targets: ["192.168.20.101"]
+          labels:
+            instance: dev-app-server
+        - targets: ["192.168.20.135"]
+          labels:
+            instance: lb-01
+        - targets: ["192.168.20.136"]
+          labels:
+            instance: lb-02
+        - targets: ["192.168.20.191"]
+          labels:
+            instance: nas-01
+        - targets: ["192.168.20.192"]
+          labels:
+            instance: nas-02
+        - targets: ["192.168.20.227"]
+          labels:
+            instance: rke2-vip
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    # RKE2 ノードの死活は Kubernetes Node discovery で自動検出する。
+    - job_name: blackbox_icmp_kubernetes_nodes
+      metrics_path: /probe
+      scrape_interval: 30s
+      params:
+        module: [icmp]
+      kubernetes_sd_configs:
+        - role: node
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_node_address_InternalIP]
+          target_label: __param_target
+        - source_labels: [__meta_kubernetes_node_name]
+          target_label: instance
+          regex: (.+?-rke2)-(?:server|agent)-.*
+          replacement: $1
+        - target_label: job
+          replacement: blackbox_icmp
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
