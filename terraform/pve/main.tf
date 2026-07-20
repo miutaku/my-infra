@@ -96,7 +96,7 @@ module "dev_application_server" {
   memory            = 10 * 1024
   proxmox_nodes     = ["pve-b550m"]
   clone_template    = local.ubuntu_template
-  disk_size         = 64
+  disk_size         = 128
   vlan_tag          = 20
   cloudinit_storage = "local-zfs"
 }
@@ -176,10 +176,6 @@ module "pbs" {
   cloudinit_storage = "local-zfs"
 }
 
-moved {
-  from = module.magic_mirror_server
-  to   = module.displaylink_kiosk
-}
 
 module "displaylink_kiosk" {
   source = "./modules/proxmox_vm"
