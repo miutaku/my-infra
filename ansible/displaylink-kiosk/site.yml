@@ -66,6 +66,50 @@
         kiosk_url: "{{ kiosk_url_secret.stdout }}"
       no_log: true
 
+    - name: Validate Tuya light sensor settings
+      ansible.builtin.assert:
+        that:
+          - bsm_tuya_light_sensor_device_id_id | length > 0
+          - bsm_tuya_light_sensor_local_key_id | length > 0
+          - tuya_light_sensor_ip | length > 0
+          - tuya_light_sensor_display_off_below_lux | float < tuya_light_sensor_display_on_above_lux | float
+          - tuya_light_sensor_required_samples | int > 0
+        fail_msg: >-
+          Enablement requires the two BSM Secret IDs, sensor IP, and an off threshold
+          lower than the on threshold.
+      when: tuya_light_sensor_enabled | bool
+
+    - name: Get Tuya light sensor secrets from BSM
+      ansible.builtin.shell:
+        cmd: >-
+          bws secret get {{ item.id | quote }} |
+          jq -er '.value | strings | select(length > 0)'
+        executable: /bin/bash
+      environment:
+        BWS_ACCESS_TOKEN: "{{ lookup('ansible.builtin.env', 'BWS_ACCESS_TOKEN') }}"
+        PATH: "{{ lookup('ansible.builtin.env', 'HOME') }}/bin:/usr/local/bin:/usr/bin:/bin"
+      loop:
+        - name: device_id
+          id: "{{ bsm_tuya_light_sensor_device_id_id }}"
+        - name: local_key
+          id: "{{ bsm_tuya_light_sensor_local_key_id }}"
+      loop_control:
+        label: "{{ item.name }}"
+      delegate_to: localhost
+      become: false
+      register: tuya_light_sensor_secrets
+      check_mode: false
+      changed_when: false
+      no_log: true
+      when: tuya_light_sensor_enabled | bool
+
+    - name: Set Tuya light sensor secrets
+      ansible.builtin.set_fact:
+        tuya_light_sensor_device_id: "{{ tuya_light_sensor_secrets.results[0].stdout }}"
+        tuya_light_sensor_local_key: "{{ tuya_light_sensor_secrets.results[1].stdout }}"
+      no_log: true
+      when: tuya_light_sensor_enabled | bool
+
     - name: Verify supported operating system
       ansible.builtin.assert:
         that:
