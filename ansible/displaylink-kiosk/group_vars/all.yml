@@ -2,10 +2,24 @@
 # BSM Secret IDs (values: Kiosk username and URL)
 bsm_kiosk_user_id: "628a2ff7-d36f-4e6b-9ecb-b48700a26343"
 bsm_kiosk_url_id: "c60c7771-1777-40b3-a96a-b48700bb3799"
+# 空文字の間は照度連動サービスをインストールしない。
+bsm_tuya_light_sensor_device_id_id: "fc5819d4-b893-409d-943e-b493001bd515"
+bsm_tuya_light_sensor_local_key_id: "89654d16-d9f8-4f03-9e10-b493001c0138"
 kiosk_timezone: Asia/Tokyo
 kiosk_display_connector: DVI-I-1
 kiosk_display_mode: 1920x1080@60.000
 kiosk_display_scale: 1.0
+
+tuya_light_sensor_enabled: true
+tuya_light_sensor_ip: "192.168.40.250"
+tuya_light_sensor_version: "3.4"
+tuya_light_sensor_lux_dps: "2"
+tuya_light_sensor_lux_scale: 1.0
+tuya_light_sensor_poll_interval: 15
+# ヒステリシス: 20 lx以下で消灯、30 lx以上で復帰。境界内では現在状態を維持する。
+tuya_light_sensor_display_off_below_lux: 20
+tuya_light_sensor_display_on_above_lux: 30
+tuya_light_sensor_required_samples: 2
 
 displaylink_installer_repo: "https://github.com/AdnanHodzic/displaylink-debian.git"
 displaylink_installer_version: master
@@ -26,3 +40,4 @@ kiosk_packages:
   - libelf-dev
   - pkg-config
   - fonts-noto-cjk
+  - python3-venv

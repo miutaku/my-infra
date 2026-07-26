@@ -289,3 +289,108 @@
   ansible.builtin.command: systemctl set-default graphical.target
   register: graphical_target
   changed_when: "'Created symlink' in graphical_target.stderr"
+
+- name: Create TinyTuya virtual environment
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -m
+      - venv
+      - /opt/tinytuya-display
+  args:
+    creates: /opt/tinytuya-display/bin/python
+  when: tuya_light_sensor_enabled | bool
+
+- name: Install TinyTuya for display automation
+  ansible.builtin.pip:
+    name: tinytuya==1.18.1
+    virtualenv: /opt/tinytuya-display
+  when: tuya_light_sensor_enabled | bool
+
+- name: Install Tuya light display controller
+  ansible.builtin.template:
+    src: tuya-light-display.py.j2
+    dest: /opt/tinytuya-display/controller.py
+    owner: root
+    group: root
+    mode: "0755"
+  when: tuya_light_sensor_enabled | bool
+  notify:
+    - Restart gdm
+    - Restart Tuya light display
+
+- name: Install Tuya light display environment
+  ansible.builtin.template:
+    src: tuya-light-display.env.j2
+    dest: "/home/{{ kiosk_user }}/.config/tuya-light-display.env"
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0600"
+  no_log: true
+  when: tuya_light_sensor_enabled | bool
+  notify:
+    - Restart gdm
+    - Restart Tuya light display
+
+- name: Create kiosk user systemd directory
+  ansible.builtin.file:
+    path: "/home/{{ kiosk_user }}/.config/systemd/user/default.target.wants"
+    state: directory
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0755"
+  when: tuya_light_sensor_enabled | bool
+
+- name: Install Tuya light display user service
+  ansible.builtin.template:
+    src: tuya-light-display.service.j2
+    dest: "/home/{{ kiosk_user }}/.config/systemd/user/tuya-light-display.service"
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+    mode: "0644"
+  when: tuya_light_sensor_enabled | bool
+  notify:
+    - Restart gdm
+    - Restart Tuya light display
+
+- name: Enable Tuya light display user service
+  ansible.builtin.file:
+    src: "../tuya-light-display.service"
+    dest: "/home/{{ kiosk_user }}/.config/systemd/user/default.target.wants/tuya-light-display.service"
+    state: link
+    force: true
+    owner: "{{ kiosk_user }}"
+    group: "{{ kiosk_user }}"
+  when: tuya_light_sensor_enabled | bool
+  notify:
+    - Restart gdm
+    - Restart Tuya light display
+
+- name: Resolve kiosk user ID for systemd
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ kiosk_user }}"
+    fail_key: true
+  when: tuya_light_sensor_enabled | bool
+
+- name: Start Tuya light display user service
+  ansible.builtin.systemd_service:
+    name: tuya-light-display.service
+    scope: user
+    daemon_reload: true
+    enabled: true
+    state: started
+  become_user: "{{ kiosk_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[kiosk_user][1] }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts.getent_passwd[kiosk_user][1] }}/bus"
+  when:
+    - tuya_light_sensor_enabled | bool
+    - not ansible_check_mode
+
+- name: Disable Tuya light display user service
+  ansible.builtin.file:
+    path: "/home/{{ kiosk_user }}/.config/systemd/user/default.target.wants/tuya-light-display.service"
+    state: absent
+  when: not (tuya_light_sensor_enabled | bool)
+  notify: Restart gdm
