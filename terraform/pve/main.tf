@@ -187,7 +187,7 @@ module "displaylink_kiosk" {
   vmid_start        = 5000
   tags              = ["ubuntu_2604", "displaylink", "kiosk", "iot"]
   cpu_cores         = 1
-  memory            = 2048
+  memory            = 4096
   kvm_vga_type      = "none"
   kvm_vga_memory    = null
   proxmox_nodes     = ["pve-b550m"] # USB DisplayLink device is on this node
