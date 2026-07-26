@@ -1,0 +1,15 @@
+[Unit]
+Description=Control DisplayLink output from Tuya illuminance
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/tuya-light-display.env
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+ExecStart=/opt/tinytuya-display/bin/python /opt/tinytuya-display/controller.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

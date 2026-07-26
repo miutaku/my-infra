@@ -265,6 +265,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.40.230", mac: "94:e0:d6:67:7f:fb" } # security camera
       - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
       - { ip: "192.168.40.232", mac: "38:2c:e5:6d:5e:65" } # Tuya 16A smart plug
+      - { ip: "192.168.40.250", mac: "c0:f8:53:93:0c:29" } # Tuya light sensor
 
 # ---------------------------------------------------------------------------
 # DHCPv6
