@@ -26,6 +26,15 @@ spec:
       labels:
         app: tnlastation-ffmpeg-worker-encode
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: tnlastation-ffmpeg-worker-streaming
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -61,7 +70,7 @@ spec:
           resources:
             requests:
               cpu: "1"
-              memory: 1Gi
+              memory: 512Mi
             limits:
               cpu: "8"
               memory: 4Gi
