@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ffmpeg-worker-streaming
+  namespace: app-tnlastation
+spec:
+  template:
+    spec:
+      containers:
+        - name: ffmpeg-worker
+          env:
+            - $patch: replace
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "8080"
+            - name: EPGSTATION_CONFIG
+              value: /epgstation-config/config.yml
+            - name: EPGSTATION_LOG_DIR
+              value: /var/lib/tnlastation/logs
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: Ffmpeg__PublicBaseUrl
+              value: http://$(POD_NAME).ffmpeg-worker-streaming-headless.app-tnlastation-staging.svc.cluster.local:8080
+            - name: TZ
+              value: Asia/Tokyo

@@ -17,6 +17,14 @@ locals {
       backend       = "http://epgstation.app-epgstation.svc.cluster.local:8888"
       no_tls_verify = false
     }
+    "tnlastation" = {
+      backend       = "http://tnlastation.app-tnlastation.svc.cluster.local:8080"
+      no_tls_verify = false
+    }
+    "tnlastation-staging" = {
+      backend       = "http://tnlastation.app-tnlastation-staging.svc.cluster.local:8080"
+      no_tls_verify = false
+    }
     "konomitv" = {
       backend       = "http://konomitv.app-konomitv.svc.cluster.local:7000"
       no_tls_verify = false
@@ -161,7 +169,7 @@ locals {
   # Every entry here must exist as a key in rke2_services or oke_services.
   access_protected_subdomains = toset([
     "argocd-rke2", "argocd-oke", "wol",
-    "epgstation", "konomitv", "nextcloud",
+    "epgstation", "tnlastation", "tnlastation-staging", "konomitv", "nextcloud",
     "unifi", "wifi-ap",
     "ix2215",
     "nas-01", "nas-02",

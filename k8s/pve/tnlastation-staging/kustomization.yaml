@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app-tnlastation-staging
+resources:
+  - ../tnlastation
+images:
+  - name: ghcr.io/miutaku/tnlastation-backend
+    newTag: staging
+  - name: ghcr.io/miutaku/tnlastation-ffmpeg-worker
+    newTag: staging
+  - name: ghcr.io/miutaku/tnlastation-frontend
+    newTag: staging
+patches:
+  - path: backend-patch.yaml
+  - path: streaming-worker-patch.yaml
+  - path: secret-patch.yaml
+  - target:
+      kind: PersistentVolume
+      name: tnlastation-recorded-pv
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: tnlastation-staging-recorded-pv
+      - op: replace
+        path: /spec/nfs/path
+        value: /mnt/raid1_case/recorded-staging
+  - target:
+      kind: PersistentVolumeClaim
+      name: tnlastation-recorded
+    patch: |-
+      - op: replace
+        path: /spec/volumeName
+        value: tnlastation-staging-recorded-pv
+  - target:
+      kind: PersistentVolume
+      name: tnlastation-app-data-pv
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: tnlastation-staging-app-data-pv
+      - op: replace
+        path: /spec/nfs/path
+        value: /mnt/raid1_case/tnlastation-staging
+  - target:
+      kind: PersistentVolumeClaim
+      name: tnlastation-app-data
+    patch: |-
+      - op: replace
+        path: /spec/volumeName
+        value: tnlastation-staging-app-data-pv
