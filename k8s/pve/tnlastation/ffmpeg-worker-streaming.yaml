@@ -46,6 +46,15 @@ spec:
         tnlastation.miutaku.work/config-revision: epgstation-stream-presets-v1
     spec:
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 60
+              preference:
+                matchExpressions:
+                  - key: topology.miutaku/proxmox-node
+                    operator: In
+                    values:
+                      - pve-b550m
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
@@ -57,7 +66,7 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
+          whenUnsatisfiable: DoNotSchedule
           labelSelector:
             matchLabels:
               app: tnlastation-ffmpeg-worker-streaming
@@ -77,6 +86,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: Worker__NodeName
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: Ffmpeg__PublicBaseUrl
               value: http://$(POD_NAME).ffmpeg-worker-streaming-headless.app-tnlastation.svc.cluster.local:8080
             - name: TZ

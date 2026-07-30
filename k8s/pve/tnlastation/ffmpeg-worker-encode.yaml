@@ -34,6 +34,15 @@ spec:
         tnlastation.miutaku.work/config-revision: epgstation-stream-presets-v1
     spec:
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: topology.miutaku/proxmox-node
+                    operator: In
+                    values:
+                      - pve-x570
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100

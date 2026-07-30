@@ -39,13 +39,19 @@ DBのPVC、更新、障害範囲はapplication本体から分離されていま�
 
 ## FFmpeg Workerとautoscaling
 
-Workerにnode selectorは設定していないため、resourceを満たす任意のnodeで動作します。
+Workerは`topology.miutaku/proxmox-node`ラベルを使い、録画TSエンコードを
+Ryzen 9 5950Xの`pve-x570`側、ストリーミングをRyzen 5 5600Xの
+`pve-b550m`側へ優先配置します。優先先を使用できない場合は、もう一方へ退避できます。
+ストリーミングPodは両worker nodeへ必ず分散されます。
+
+backendは各Streaming Workerの実行中FFmpeg数とnode名をhealth APIから取得し、
+物理コア数の16:6で負荷を正規化して開始先を選びます。
 CPU使用率60%を目標にHPAが次の範囲でscaleします。
 
 | pool | controller | replicas | requests | limits |
 | --- | --- | --- | --- | --- |
-| 録画TSエンコード | Deployment | 1–4 | CPU 1、memory 1 GiB | CPU 8、memory 4 GiB |
-| ストリーミング | StatefulSet | 1–3 | CPU 500m、memory 512 MiB | CPU 4、memory 2 GiB |
+| 録画TSエンコード | Deployment | 1–4 | CPU 1、memory 512 MiB | CPU 8、memory 4 GiB |
+| ストリーミング | StatefulSet | 2–3 | CPU 500m、memory 512 MiB | CPU 4、memory 2 GiB |
 
 録画TS WorkerはHTTP LBでjobを受けず、各PodがPostgreSQLの共有queueから1件ずつ
 原子的にclaimします。30秒のleaseを10秒ごとに更新し、Pod消失時は期限切れjobを
