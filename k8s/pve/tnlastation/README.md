@@ -50,7 +50,7 @@ CPU使用率60%を目標にHPAが次の範囲でscaleします。
 
 | pool | controller | replicas | requests | limits |
 | --- | --- | --- | --- | --- |
-| 録画TSエンコード | Deployment | 1–4 | CPU 1、memory 512 MiB | CPU 8、memory 4 GiB |
+| 録画TSエンコード | Deployment | 1–2 | CPU 1、memory 512 MiB | CPU 8、memory 4 GiB |
 | ストリーミング | StatefulSet | 2–3 | CPU 500m、memory 512 MiB | CPU 4、memory 2 GiB |
 
 録画TS WorkerはHTTP LBでjobを受けず、各PodがPostgreSQLの共有queueから1件ずつ
