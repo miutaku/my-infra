@@ -42,11 +42,15 @@ module "rke2_worker" {
   base_macaddr = var.rke2_base_worker_macaddr
   vmid_start   = 12001
   tags         = ["ubuntu_2604", "rke2", "agent", "worker"]
-  cpu_cores    = 4
+  # Match the physical core count of each Proxmox host. FFmpeg benefits from
+  # real cores; SMT threads are left as headroom for the host and other VMs.
+  cpu_cores = 6
   cpu_cores_by_proxmox_node = {
-    pve-x570 = 12
+    pve-x570 = 16
   }
-  memory            = 8192
+  # Both hosts have 64 GiB. 12 GiB removes the Kubernetes scheduling bottleneck
+  # while retaining at least 8 GiB of measured host-side available memory.
+  memory            = 12 * 1024
   clone_template    = local.ubuntu_template
   disk_size         = 96
   proxmox_nodes     = var.proxmox_nodes
