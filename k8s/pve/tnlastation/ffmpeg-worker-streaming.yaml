@@ -42,6 +42,8 @@ spec:
     metadata:
       labels:
         app: tnlastation-ffmpeg-worker-streaming
+      annotations:
+        tnlastation.miutaku.work/config-revision: epgstation-stream-presets-v1
     spec:
       affinity:
         podAntiAffinity:
