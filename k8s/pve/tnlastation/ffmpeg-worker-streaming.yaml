@@ -43,6 +43,15 @@ spec:
       labels:
         app: tnlastation-ffmpeg-worker-streaming
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: tnlastation-ffmpeg-worker-encode
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
