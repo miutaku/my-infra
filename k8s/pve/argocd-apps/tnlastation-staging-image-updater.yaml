@@ -1,0 +1,35 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: tnlastation-staging
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  writeBackConfig:
+    method: argocd
+  applicationRefs:
+    - namePattern: tnlastation-staging
+      images:
+        - alias: backend
+          imageName: ghcr.io/miutaku/tnlastation-backend:staging
+          commonUpdateSettings:
+            updateStrategy: digest
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/miutaku/tnlastation-backend
+        - alias: ffmpeg-worker
+          imageName: ghcr.io/miutaku/tnlastation-ffmpeg-worker:staging
+          commonUpdateSettings:
+            updateStrategy: digest
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/miutaku/tnlastation-ffmpeg-worker
+        - alias: frontend
+          imageName: ghcr.io/miutaku/tnlastation-frontend:staging
+          commonUpdateSettings:
+            updateStrategy: digest
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/miutaku/tnlastation-frontend
