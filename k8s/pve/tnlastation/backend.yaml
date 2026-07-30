@@ -77,6 +77,16 @@ spec:
               value: http://ffmpeg-worker-encode.app-tnlastation.svc.cluster.local:8080
             - name: FfmpegWorker__StreamingBaseUrl
               value: http://ffmpeg-worker-streaming.app-tnlastation.svc.cluster.local:8080
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: FfmpegWorker__StreamingBaseUrls__0
+              value: http://ffmpeg-worker-streaming-0.ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
+            - name: FfmpegWorker__StreamingBaseUrls__1
+              value: http://ffmpeg-worker-streaming-1.ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
+            - name: FfmpegWorker__StreamingBaseUrls__2
+              value: http://ffmpeg-worker-streaming-2.ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
             - name: ConnectionStrings__PostgreSQL
               valueFrom:
                 secretKeyRef:
