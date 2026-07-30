@@ -16,9 +16,21 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: app-tnlastation-staging
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: ffmpeg-worker-encode
+      jsonPointers:
+        - /spec/replicas
+    - group: apps
+      kind: StatefulSet
+      name: ffmpeg-worker-streaming
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
