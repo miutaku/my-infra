@@ -89,6 +89,13 @@ spec:
             limits:
               cpu: "4"
               memory: 2Gi
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - curl -sf --max-time 7100 -X POST http://localhost:8080/internal/drain || true
           readinessProbe:
             httpGet:
               path: /health
@@ -114,7 +121,7 @@ spec:
               mountPath: /var/lib/tnlastation
             - name: recorded
               mountPath: /recorded
-      terminationGracePeriodSeconds: 120
+      terminationGracePeriodSeconds: 7200
       volumes:
         - name: config
           configMap:
