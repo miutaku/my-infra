@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: app-tnlastation
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          command:
+            - sh
+            - -ec
+            - until pg_isready -h postgres.infra-db-staging.svc.cluster.local -U tnlastation -d tnlastation; do sleep 2; done
+      containers:
+        - name: backend
+          env:
+            - name: FfmpegWorker__BaseUrl
+              value: http://ffmpeg-worker-streaming:8080
+            - name: FfmpegWorker__EncodeBaseUrl
+              value: http://ffmpeg-worker-encode:8080
+            - name: FfmpegWorker__StreamingBaseUrl
+              value: http://ffmpeg-worker-streaming:8080
