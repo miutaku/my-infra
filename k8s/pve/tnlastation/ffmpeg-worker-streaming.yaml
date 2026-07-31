@@ -63,9 +63,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app: tnlastation-ffmpeg-worker-encode
-      # ノードは 2 台、HPA は 3 replica まで増やす。DoNotSchedule だと 3 本目が置けず
-      # Pending のまま残り、StatefulSet の更新が序数の大きい方で止まって -1/-0 へ永久に
-      # 届かなくなる。散らすのは希望であって条件ではないので、置けないより載せる。
+      # ノード 2 台に HPA 3 replica。DoNotSchedule だと 3 本目が置けず更新が止まる。
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -89,8 +87,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            # backend が配信の重み付けに使うノード名。落ちると全ノードが重み 1 として扱われ、
-            # CPU の少ないノードへも同じだけ配信が乗る。
+            # backend の配信重み付けに使う。欠けると全ノードが重み 1 になる。
             - name: Worker__NodeName
               valueFrom:
                 fieldRef:
@@ -99,8 +96,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            # namespace は overlay ごとに変わるが、自分の namespace を読めば patch は要らない。
-            # $(...) は先に定義した env しか展開しないので、POD_NAME/POD_NAMESPACE より後に置く。
+            # $(...) は先に定義した env しか展開しない。POD_NAME より後に置くこと。
             - name: Ffmpeg__PublicBaseUrl
               value: http://$(POD_NAME).ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
             - name: TZ
