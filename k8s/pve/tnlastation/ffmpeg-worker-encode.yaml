@@ -31,7 +31,7 @@ spec:
       labels:
         app: tnlastation-ffmpeg-worker-encode
       annotations:
-        tnlastation.miutaku.work/config-revision: epgstation-stream-presets-v1
+        tnlastation.miutaku.work/config-revision: live-without-re-v2
     spec:
       affinity:
         nodeAffinity:
