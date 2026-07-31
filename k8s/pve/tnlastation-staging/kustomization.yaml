@@ -11,6 +11,40 @@ images:
   - name: ghcr.io/miutaku/tnlastation-frontend
     newTag: staging
 patches:
+  # staging は staging tagを上書きし続けるので、既定の IfNotPresent だとnodeが古いimageを
+  # 使い続け、buildし直しても入れ替わらない。ここだけ必ず取りに行かせる。
+  # prdは版で固定したtagなので不要。
+  - target:
+      kind: Deployment
+      name: backend
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+      - op: add
+        path: /spec/template/spec/initContainers/1/imagePullPolicy
+        value: Always
+  - target:
+      kind: Deployment
+      name: ffmpeg-worker-encode
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+  - target:
+      kind: Deployment
+      name: frontend
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+  - target:
+      kind: StatefulSet
+      name: ffmpeg-worker-streaming
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
   - target:
       kind: Service
       name: tnlastation
