@@ -11,6 +11,16 @@ TNLAStationを宅内RKE2へdeployするmanifestです。EPGStationとは別の
 - 録画領域とapplication共有領域をTrueNAS NFSのRWX PVCで共有
 - SecretはExternal Secrets OperatorでBitwarden Secrets Managerから取得
 - `tnlastation.miutaku.work`をCloudflare Tunnel経由でgatewayへ接続
+- LANからはMetalLBのLoadBalancer経由で直接接続 (CoreDNSに名前を登録済み)
+
+| 環境 | IP | 名前 |
+|---|---|---|
+| prd | 192.168.20.210 | `tnlastation.miutaku.internal:8080` |
+| staging | 192.168.20.215 | `tnlastation-staging.miutaku.internal:8080` |
+
+画面はsocket.ioを使わないため、`clientSocketioPort: 443` (Cloudflare Tunnel向け) の
+ままでもLAN直アクセスに影響はありません。EPGStation互換の外部clientから使う場合だけ
+この値が効きます。
 
 ## 事前準備
 

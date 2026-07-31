@@ -3,8 +3,11 @@ kind: Service
 metadata:
   name: tnlastation
   namespace: app-tnlastation
+  annotations:
+    # LAN へ公開する。staging は overlay で別の IP に差し替える。
+    metallb.universe.tf/loadBalancerIPs: "192.168.20.210"
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: tnlastation-gateway
   ports:
