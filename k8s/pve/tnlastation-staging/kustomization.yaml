@@ -12,7 +12,6 @@ images:
     newTag: staging
 patches:
   - path: backend-patch.yaml
-  - path: streaming-worker-patch.yaml
   - path: secret-patch.yaml
   - target:
       kind: PersistentVolume
