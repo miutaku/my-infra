@@ -11,6 +11,13 @@ images:
   - name: ghcr.io/miutaku/tnlastation-frontend
     newTag: staging
 patches:
+  - target:
+      kind: Service
+      name: tnlastation
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/metallb.universe.tf~1loadBalancerIPs
+        value: "192.168.20.215"
   - path: backend-patch.yaml
   - path: secret-patch.yaml
   - target:
