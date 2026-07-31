@@ -78,6 +78,41 @@ spec:
             # 低遅延ライブ (LL-HLS)。空なら選択肢に出さない。
             - name: Streaming__LowLatencyHls__PlaylistUrlTemplate
               value: /lowlatency/live/{streamId}/index.m3u8
+            # LL-HLS の画質。添字がそのまま mode になるので、並びを変えると既存の URL の意味が変わる。
+            # 1 つでも指定すると既定値は使われなくなるため、使う画質はすべて書く。
+            # 1080p は 720p のおよそ 2 倍の CPU を食う。同時視聴数はそのぶん減る。
+            - name: Streaming__LiveModes__0__Name
+              value: 720p
+            - name: Streaming__LiveModes__0__Height
+              value: "720"
+            - name: Streaming__LiveModes__0__VideoBitrate
+              value: 3000k
+            - name: Streaming__LiveModes__0__AudioBitrate
+              value: 192k
+            - name: Streaming__LiveModes__1__Name
+              value: 480p
+            - name: Streaming__LiveModes__1__Height
+              value: "480"
+            - name: Streaming__LiveModes__1__VideoBitrate
+              value: 1500k
+            - name: Streaming__LiveModes__1__AudioBitrate
+              value: 128k
+            - name: Streaming__LiveModes__2__Name
+              value: 360p
+            - name: Streaming__LiveModes__2__Height
+              value: "360"
+            - name: Streaming__LiveModes__2__VideoBitrate
+              value: 700k
+            - name: Streaming__LiveModes__2__AudioBitrate
+              value: 96k
+            - name: Streaming__LiveModes__3__Name
+              value: 1080p
+            - name: Streaming__LiveModes__3__Height
+              value: "1080"
+            - name: Streaming__LiveModes__3__VideoBitrate
+              value: 6000k
+            - name: Streaming__LiveModes__3__AudioBitrate
+              value: 192k
             - name: FfmpegWorker__StreamingBaseUrl
               value: http://ffmpeg-worker-streaming.app-tnlastation.svc.cluster.local:8080
             - name: POD_NAMESPACE
