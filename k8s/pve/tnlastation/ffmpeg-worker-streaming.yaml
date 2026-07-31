@@ -86,12 +86,20 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            # backend が配信の重み付けに使うノード名。落ちると全ノードが重み 1 として扱われ、
+            # CPU の少ないノードへも同じだけ配信が乗る。
             - name: Worker__NodeName
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # namespace は overlay ごとに変わるが、自分の namespace を読めば patch は要らない。
+            # $(...) は先に定義した env しか展開しないので、POD_NAME/POD_NAMESPACE より後に置く。
             - name: Ffmpeg__PublicBaseUrl
-              value: http://$(POD_NAME).ffmpeg-worker-streaming-headless.app-tnlastation.svc.cluster.local:8080
+              value: http://$(POD_NAME).ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
             - name: TZ
               value: Asia/Tokyo
           ports:
