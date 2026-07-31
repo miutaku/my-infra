@@ -50,6 +50,8 @@ spec:
     - hard
     - timeo=600
     - retrans=3
+    # 既定 (acdirmin=30) だと worker が書いた HLS playlist が backend から 20 秒以上見えない。
+    - actimeo=1
   persistentVolumeReclaimPolicy: Retain
 ---
 apiVersion: v1
