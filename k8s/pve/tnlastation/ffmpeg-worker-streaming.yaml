@@ -107,6 +107,8 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          # limits.cpu が同時視聴の上限を決める。worker は割り当て CPU から自分の定員を
+          # 算出して backend へ報告し、backend は全 pod の合計を上限に使う。
           resources:
             requests:
               cpu: 500m
