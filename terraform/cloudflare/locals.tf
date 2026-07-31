@@ -18,11 +18,11 @@ locals {
       no_tls_verify = false
     }
     "tnlastation" = {
-      backend       = "http://tnlastation.app-tnlastation.svc.cluster.local:8080"
+      backend       = "http://tnlastation.app-tnlastation.svc.cluster.local:8888"
       no_tls_verify = false
     }
     "tnlastation-staging" = {
-      backend       = "http://tnlastation.app-tnlastation-staging.svc.cluster.local:8080"
+      backend       = "http://tnlastation.app-tnlastation-staging.svc.cluster.local:8888"
       no_tls_verify = false
     }
     "konomitv" = {
