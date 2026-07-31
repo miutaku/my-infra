@@ -15,8 +15,8 @@ TNLAStationを宅内RKE2へdeployするmanifestです。EPGStationとは別の
 
 | 環境 | IP | 名前 |
 |---|---|---|
-| prd | 192.168.20.210 | `tnlastation.miutaku.internal:8080` |
-| staging | 192.168.20.215 | `tnlastation-staging.miutaku.internal:8080` |
+| prd | 192.168.20.210 | `tnlastation.miutaku.internal:8888` |
+| staging | 192.168.20.215 | `tnlastation-staging.miutaku.internal:8888` |
 
 画面はsocket.ioを使わないため、`clientSocketioPort: 443` (Cloudflare Tunnel向け) の
 ままでもLAN直アクセスに影響はありません。EPGStation互換の外部clientから使う場合だけ

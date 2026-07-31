@@ -12,7 +12,8 @@ spec:
     app: tnlastation-gateway
   ports:
     - name: http
-      port: 8080
+      # compose (TNLA_PORT) と揃える。gateway 自身は 8080 で待つ。
+      port: 8888
       targetPort: http
 ---
 apiVersion: apps/v1
