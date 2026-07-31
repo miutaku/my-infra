@@ -9,4 +9,5 @@ resources:
   - ffmpeg-worker-streaming.yaml
   - backend.yaml
   - frontend.yaml
+  - mediamtx.yaml
   - gateway.yaml

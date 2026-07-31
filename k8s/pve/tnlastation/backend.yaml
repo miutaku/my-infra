@@ -75,6 +75,9 @@ spec:
             - name: FfmpegWorker__EncodeBaseUrl
               # probeとthumbnail用。録画TSのjob本体はWorkerがPostgreSQLからpullする。
               value: http://ffmpeg-worker-encode.app-tnlastation.svc.cluster.local:8080
+            # 低遅延ライブ (LL-HLS)。空なら選択肢に出さない。
+            - name: Streaming__LowLatencyHls__PlaylistUrlTemplate
+              value: /lowlatency/live/{streamId}/index.m3u8
             - name: FfmpegWorker__StreamingBaseUrl
               value: http://ffmpeg-worker-streaming.app-tnlastation.svc.cluster.local:8080
             - name: POD_NAMESPACE

@@ -349,6 +349,10 @@ data:
             server frontend:3000;
         }
 
+        upstream mediamtx {
+            server mediamtx:8888;
+        }
+
         server {
             listen 8080;
             server_name _;
@@ -371,6 +375,12 @@ data:
 
             location /streamfiles/ {
                 proxy_pass http://backend;
+                proxy_buffering off;
+            }
+
+            # 低遅延ライブ (LL-HLS)。部分セグメントは細かく届くので溜めずに流す。
+            location /lowlatency/ {
+                proxy_pass http://mediamtx/;
                 proxy_buffering off;
             }
 

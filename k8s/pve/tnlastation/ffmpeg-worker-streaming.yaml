@@ -92,6 +92,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            # 低遅延ライブのとき、受信した TS をここへ publish する。
+            - name: Ffmpeg__LowLatencyPublishUrlTemplate
+              value: rtsp://mediamtx:8554/live/{streamId}
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
