@@ -29,7 +29,7 @@ spec:
       labels:
         app: tnlastation-backend
       annotations:
-        tnlastation.miutaku.work/config-revision: epgstation-stream-presets-v1
+        tnlastation.miutaku.work/config-revision: live-without-re-v2
     spec:
       initContainers:
         - name: wait-for-postgres
