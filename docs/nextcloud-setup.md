@@ -40,22 +40,15 @@ kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
   su -s /bin/sh www-data -c "php occ files_external:create <名前> local null::null -c datadir=/mnt/nas/<名前>"
 ```
 
-## 2. MariaDB に DB とユーザーを作成
+## 2. MariaDB の DB とユーザー
 
-共有 MariaDB (`infra-db`) に一度だけ手動で作成する
-(StatefulSet の `MYSQL_DATABASE` 環境変数は初回 init 時のみ有効なため)。
+手動作業は不要。共有 MariaDB (`infra-db`) の `nextcloud` DB とユーザーは
+[mariadb/nextcloud-db-user.yaml](../k8s/pve/mariadb/nextcloud-db-user.yaml) の
+ArgoCD PostSync hook Job が冪等に作成する。パスワードは BSM の
+`NEXTCLOUD_MYSQL_PASSWORD` から ExternalSecret 経由で渡る。
 
-```bash
-kubectl exec -it -n infra-db mariadb-0 -- \
-  mysql -uroot -p"$(kubectl get secret -n infra-db mariadb-credentials -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 -d)"
-```
-
-```sql
-CREATE DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE USER 'nextcloud'@'%' IDENTIFIED BY '<NEXTCLOUD_MYSQL_PASSWORD>';
-GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'%';
-FLUSH PRIVILEGES;
-```
+StatefulSet の `MARIADB_DATABASE` / `MARIADB_USER` は初回 init 時にしか効かず、
+そこで作られるのは `epgstation` ユーザーのみ。`nextcloud` ユーザーはこの hook が担当する。
 
 日次バックアップは [mariadb/backup-cronjob.yaml](../k8s/pve/mariadb/backup-cronjob.yaml) の
 `APPS` に `nextcloud:nextcloud` を追加済み (OCI S3 へ dump)。

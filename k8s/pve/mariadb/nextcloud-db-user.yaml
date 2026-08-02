@@ -1,0 +1,73 @@
+---
+# nextcloud の DB ユーザーは MariaDB entrypoint の MARIADB_USER (epgstation) では作られない。
+# datadir を作り直したときに手動 SQL が必要にならないよう、PostSync hook で冪等に作成する。
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: nextcloud-db-user
+  namespace: infra-db
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: bitwarden
+    kind: ClusterSecretStore
+  target:
+    name: nextcloud-db-user
+    creationPolicy: Owner
+  data:
+    - secretKey: NEXTCLOUD_MYSQL_PASSWORD
+      remoteRef:
+        # BSM シークレット名: NEXTCLOUD_MYSQL_PASSWORD
+        # app-nextcloud の nextcloud-secrets と同じ値を参照する
+        key: NEXTCLOUD_MYSQL_PASSWORD
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mariadb-ensure-db-users
+  namespace: infra-db
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ensure-users
+          image: mariadb:12.0
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              # mariadb が起動しきるまで待つ
+              until mariadb -h mariadb.infra-db.svc.cluster.local \
+                      -u root -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" > /dev/null 2>&1; do
+                echo "waiting for mariadb..."
+                sleep 5
+              done
+
+              mariadb -h mariadb.infra-db.svc.cluster.local -u root -p"${MYSQL_ROOT_PASSWORD}" <<SQL
+              CREATE DATABASE IF NOT EXISTS nextcloud
+                CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+              CREATE USER IF NOT EXISTS 'nextcloud'@'%' IDENTIFIED BY '${NEXTCLOUD_MYSQL_PASSWORD}';
+              ALTER USER 'nextcloud'@'%' IDENTIFIED BY '${NEXTCLOUD_MYSQL_PASSWORD}';
+              GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'%';
+              FLUSH PRIVILEGES;
+              SQL
+
+              echo "db users ensured"
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-backup-credentials
+                  key: MYSQL_ROOT_PASSWORD
+            - name: NEXTCLOUD_MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-db-user
+                  key: NEXTCLOUD_MYSQL_PASSWORD

@@ -2,6 +2,10 @@
 kind: Namespace
 apiVersion: v1
 metadata:
+  annotations:
+    # Application の cascade delete から除外する。namespace が消えると
+    # 中の PVC ごと失われるため。
+    argocd.argoproj.io/sync-options: Delete=false
   name: app-gptwol
   labels:
     name: gptwol

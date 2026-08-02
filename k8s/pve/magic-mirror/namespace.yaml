@@ -1,4 +1,8 @@
 apiVersion: v1
 kind: Namespace
 metadata:
+  annotations:
+    # Application の cascade delete から除外する。namespace が消えると
+    # 中の PVC ごと失われるため。
+    argocd.argoproj.io/sync-options: Delete=false
   name: app-magic-mirror
