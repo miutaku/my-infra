@@ -56,25 +56,37 @@ api_services() {
   curl -sf --max-time 30 "${API}/services" 2>/dev/null || true
 }
 
-# "取得済み<TAB>全体"
+# ロゴを取得しうるサービスだけを対象にする。
+#
+# Mirakurun の Service.isLogoDataExists() は logoId が数値でなければ常に false を返す。
+# ワンセグ系など SDT に logo_transmission_descriptor を持たないサービスは logoId が
+# null のままなので、hasLogoData が true になることは永久にない。これを対象に含めると
+# チャンネルが完了扱いにならず、毎回 max-wait まで待たされる。
+#
+# logoId = -1 は「まだ判明していない」で、BS/CS は DSM-CC 受信時に logoId ごと
+# 埋まるため対象に残す。
+FETCHABLE='.logoId != null'
+
 logo_stat() {
-  api_services | jq -r '[(map(select(.hasLogoData)) | length), length] | @tsv' 2>/dev/null || true
+  api_services | jq -r "
+    map(select($FETCHABLE))
+    | [(map(select(.hasLogoData)) | length), length] | @tsv" 2>/dev/null || true
 }
 
 # 未取得サービスが残っているチャンネル (type 指定、重複除去)
 pending_channels() {
   local type="$1"
-  api_services | jq -r --arg t "$type" '
-    map(select(.channel.type == $t and (.hasLogoData | not)))
-    | map(.channel.channel | tostring) | unique | .[]' 2>/dev/null || true
+  api_services | jq -r --arg t "$type" "
+    map(select(.channel.type == \$t and $FETCHABLE and (.hasLogoData | not)))
+    | map(.channel.channel | tostring) | unique | .[]" 2>/dev/null || true
 }
 
 # 指定チャンネル上に残っている未取得サービス数。取得失敗時は空文字。
 pending_on() {
   local type="$1" ch="$2"
-  api_services | jq -r --arg t "$type" --arg c "$ch" '
-    [ .[] | select(.channel.type == $t and (.channel.channel | tostring) == $c
-                   and (.hasLogoData | not)) ] | length' 2>/dev/null || true
+  api_services | jq -r --arg t "$type" --arg c "$ch" "
+    [ .[] | select(.channel.type == \$t and (.channel.channel | tostring) == \$c
+                   and $FETCHABLE and (.hasLogoData | not)) ] | length" 2>/dev/null || true
 }
 
 # チャンネルを掴み、そのチャンネルのロゴが揃うか上限に達するまで待つ
