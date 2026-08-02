@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# Mirakurun に全局のロゴを再取得させる。
+#
+# Mirakurun はロゴを放送波から拾って /app-data/logo-data/ に貯める。
+# 取得の実体は TSFilter#_standbyLogoData で、チャンネルを掴んでいる間だけ
+# GR は CDT (PID 0x29)、BS/CS は DSM-CC を待ち受ける (最大30分)。
+# 明示的な再取得 API は無いため、未取得のチャンネルを順に掴んで待つ。
+#
+# PVC を作り直した後などロゴが空になったときに使う。
+#
+# 使い方:
+#   ./scripts/mirakurun-fetch-logos                 # 全チャンネル
+#   ./scripts/mirakurun-fetch-logos --dry-run       # 対象を出すだけ
+#   ./scripts/mirakurun-fetch-logos --max-wait 1800 # 1chあたりの上限を延ばす
+#
+# 環境変数:
+#   MIRAKURUN_URL   既定 http://192.168.20.203:40772
+#
+# 録画との競合を避けるため最低優先度 (X-Mirakurun-Priority: 0) で受信する。
+# EPGStation は recPriority: 2 / conflictPriority: 1 で録画するため、録画が始まれば
+# こちらが Mirakurun に切られ、次のチャンネルへ進む。
+# Mirakurun の仕様上 priority の最小値は 0 で、負値は HTTP 400 になる。
+set -euo pipefail
+
+MIRAKURUN_URL="${MIRAKURUN_URL:-http://192.168.20.203:40772}"
+MAX_WAIT=900          # 1チャンネルあたりの上限秒
+POLL=30               # 取得状況の確認間隔
+MAX_PASS=3            # 全体を回す最大回数
+PRIORITY=0            # Mirakurun の最小値。EPGStation の録画 (2) に必ず譲る
+DRY_RUN=0
+
+usage() { sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --max-wait) MAX_WAIT="$2"; shift 2 ;;
+    --poll)     POLL="$2"; shift 2 ;;
+    --passes)   MAX_PASS="$2"; shift 2 ;;
+    --priority)
+      PRIORITY="$2"
+      if [[ ! "$PRIORITY" =~ ^[0-9]+$ ]]; then
+        echo "--priority は 0 以上の整数 (Mirakurun が負値を 400 で拒否する): $PRIORITY" >&2
+        exit 1
+      fi
+      shift 2 ;;
+    --dry-run)  DRY_RUN=1; shift ;;
+    -h|--help)  usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 1 ;;
+  esac
+done
+
+API="${MIRAKURUN_URL}/api"
+
+# API が一時的にこけても収集を止めない。呼び出し側で空文字を扱う。
+api_services() {
+  curl -sf --max-time 30 "${API}/services" 2>/dev/null || true
+}
+
+# "取得済み<TAB>全体"
+logo_stat() {
+  api_services | jq -r '[(map(select(.hasLogoData)) | length), length] | @tsv' 2>/dev/null || true
+}
+
+# 未取得サービスが残っているチャンネル (type 指定、重複除去)
+pending_channels() {
+  local type="$1"
+  api_services | jq -r --arg t "$type" '
+    map(select(.channel.type == $t and (.hasLogoData | not)))
+    | map(.channel.channel | tostring) | unique | .[]' 2>/dev/null || true
+}
+
+# 指定チャンネル上に残っている未取得サービス数。取得失敗時は空文字。
+pending_on() {
+  local type="$1" ch="$2"
+  api_services | jq -r --arg t "$type" --arg c "$ch" '
+    [ .[] | select(.channel.type == $t and (.channel.channel | tostring) == $c
+                   and (.hasLogoData | not)) ] | length' 2>/dev/null || true
+}
+
+# チャンネルを掴み、そのチャンネルのロゴが揃うか上限に達するまで待つ
+tune_until_done() {
+  local type="$1" ch="$2" waited=0 remain pid
+
+  curl -sf -o /dev/null --max-time "$((MAX_WAIT + 30))" \
+    -H "X-Mirakurun-Priority: ${PRIORITY}" \
+    "${API}/channels/${type}/${ch}/stream?decode=1" &
+  pid=$!
+
+  # チューナー競合や 4xx は即死するので、待ち時間を無駄にせず先に弾く
+  sleep 3
+  if ! kill -0 "$pid" 2>/dev/null; then
+    echo "  SKIP ${type}/${ch} 受信を開始できなかった"
+    return 1
+  fi
+
+  while [[ "$waited" -lt "$MAX_WAIT" ]]; do
+    sleep "$POLL"
+    waited=$((waited + POLL))
+
+    # 優先度で切られた / チューナーが取れなかった場合は次へ
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "  SKIP ${type}/${ch} 受信が切れた (${waited}s)"
+      return 1
+    fi
+
+    remain="$(pending_on "$type" "$ch")"
+    if [[ "$remain" == "0" ]]; then
+      echo "  OK   ${type}/${ch} 全取得 (${waited}s)"
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+      return 0
+    fi
+  done
+
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  echo "  TIME ${type}/${ch} 残り$(pending_on "$type" "$ch")件で打ち切り (${MAX_WAIT}s)"
+  return 1
+}
+
+# 1系統を頭から回す。
+# BS の DSM-CC は networkId 4/6/7 (BS と CS) をまとめて配信するため、
+# 1チャンネル受信しただけで他チャンネル分も揃うことがある。
+# 受信前に都度確認して、済んだチャンネルは飛ばす。
+run_type() {
+  local type="$1" ch
+  local -a list=()
+
+  mapfile -t list < <(pending_channels "$type")
+  [[ ${#list[@]} -eq 0 ]] && return 0
+  echo "  ${type}: 対象 ${#list[@]}ch"
+
+  for ch in "${list[@]}"; do
+    [[ -z "$ch" ]] && continue
+    [[ "$(pending_on "$type" "$ch")" == "0" ]] && continue
+    echo "  ---> ${type}/${ch} 受信開始 ($(date +%H:%M:%S))"
+    tune_until_done "$type" "$ch" || true
+  done
+}
+
+report_pending() {
+  local t
+  for t in GR BS CS; do
+    local -a chs=()
+    mapfile -t chs < <(pending_channels "$t")
+    if [[ ${#chs[@]} -eq 0 ]]; then
+      echo "  ${t}: 完了"
+    else
+      echo "  ${t}: ${#chs[@]}ch -> ${chs[*]}"
+    fi
+  done
+}
+
+stat_line="$(logo_stat)"
+if [[ -z "$stat_line" ]]; then
+  echo "Mirakurun に接続できない: ${API}" >&2
+  exit 1
+fi
+read -r start_n total_n <<< "$stat_line"
+
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "ロゴ取得済み: ${start_n} / ${total_n}"
+  report_pending
+  exit 0
+fi
+
+echo "開始 $(date '+%F %T') / ロゴ ${start_n} / ${total_n} / max-wait=${MAX_WAIT}s priority=${PRIORITY}"
+
+for pass in $(seq 1 "$MAX_PASS"); do
+  read -r before_n _ <<< "$(logo_stat)"
+  [[ "$before_n" == "$total_n" ]] && break
+
+  echo "--- pass ${pass} (${before_n}/${total_n}) ---"
+
+  # GR は地上波チューナー、BS/CS は衛星チューナーを使うので並列に回せる
+  run_type GR &
+  gr_pid=$!
+  ( run_type BS; run_type CS ) &
+  sat_pid=$!
+  wait "$gr_pid" || true
+  wait "$sat_pid" || true
+
+  read -r after_n _ <<< "$(logo_stat)"
+  echo "--- pass ${pass} 終了: ${before_n} -> ${after_n} / ${total_n} ---"
+
+  # 増えなくなったら局が送出していないので粘らない
+  if [[ "$after_n" == "$before_n" ]]; then
+    echo "増加が止まったため終了する"
+    break
+  fi
+done
+
+read -r end_n _ <<< "$(logo_stat)"
+echo "終了 $(date '+%F %T') / ロゴ ${start_n} -> ${end_n} / ${total_n}"
+
+if [[ "$end_n" != "$total_n" ]]; then
+  echo
+  echo "未取得が残っている。局側の CDT / DSM-CC 送出間隔によるものなので、"
+  echo "時間を空けるか --max-wait を延ばして再実行する。"
+  report_pending
+  exit 2
+fi
