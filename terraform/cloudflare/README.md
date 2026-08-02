@@ -46,7 +46,6 @@ Email Workerを使う場合は、Workerを配備したうえでaction typeを `w
 | `epgstation.miutaku.work` | rke2 | `http://epgstation.app-epgstation.svc.cluster.local:8888` | 必須 |
 | `tnlastation.miutaku.work` | rke2 | `http://tnlastation.app-tnlastation.svc.cluster.local:8888` | 必須 |
 | `tnlastation-staging.miutaku.work` | rke2 | `http://tnlastation.app-tnlastation-staging.svc.cluster.local:8888` | 必須 |
-| `konomitv.miutaku.work` | rke2 | `http://konomitv.app-konomitv.svc.cluster.local:7000` | 必須 |
 | `nextcloud.miutaku.work` | rke2 | `http://nextcloud.app-nextcloud.svc.cluster.local:80` | 必須 |
 | `unifi.miutaku.work` | rke2 | `https://192.168.0.132:11443` | 必須 |
 | `wifi-ap.miutaku.work` | rke2 | `https://192.168.0.253` | 必須 |

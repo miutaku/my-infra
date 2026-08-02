@@ -167,6 +167,50 @@ Application リソースが消えるだけで、その配下の Deployment / Nam
 > `root-app` 自体にも付けているため、`root-app` を削除すると全 Application と
 > その配下リソースが連鎖削除される。root-app の削除は意図的な場合のみ行う。
 
+### Namespace は manifest に持たない
+
+finalizer を付けると `kubectl delete app <name>` が実データを消す操作になるため、
+巻き添え範囲を最小化する。各アプリの Namespace は manifest として持たず、
+Application 側の `CreateNamespace=true` に一本化する (postgres / victoria-metrics と同じ形)。
+
+Namespace を manifest に持つと ArgoCD の管理対象になり、cascade delete で
+namespace ごと消える。とくに `infra-db` は postgres と mariadb が共有しているため、
+mariadb を消すと postgres まで巻き添えになる。
+
+> **既存アプリから `namespace.yaml` を外すときの手順**
+>
+> live の Namespace には tracking label が付いているため、manifest を git から消して
+> そのまま sync すると `prune: true` により **Namespace ごと削除される**。
+> merge の前に tracking を外しておくこと。
+>
+> ```bash
+> # 現状確認 (INSTANCE 列に値があるものが対象)
+> kubectl get ns <ns>... \
+>   -o custom-columns='NS:.metadata.name,INSTANCE:.metadata.labels.app\.kubernetes\.io/instance'
+>
+> # tracking を外す (存在しない場合はエラーになるので || true で吸収)
+> kubectl label ns <ns> app.kubernetes.io/instance- || true
+> ```
+>
+> tracking 方式は `argocd-cmd-params-cm` で未指定 = 既定の label 方式。
+> annotation 方式に切り替えた場合は `argocd.argoproj.io/tracking-id` を外す。
+
+### 消えては困る PVC / PV には Delete=false
+
+`local-path` は `reclaimPolicy: Delete` なので、PVC が cascade delete で消えると
+中身も失われる。git に無い状態を持つ PVC には次を付けて cascade delete から除外する。
+
+```yaml
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+```
+
+静的 NFS PV と、それを掴む PVC は必ず対で付ける。片方だけ残ると PVC が `Lost` になり、
+再作成時に `kubectl patch pv <name> -p '{"spec":{"claimRef":null}}'` の手作業が要る。
+
+適用済み: `mirakurun-data`、`nextcloud-html-pvc`、`nextcloud-nas-recorded-pv` + `-pvc`。
+
 ## Troubleshooting: tfc-agent "Cannot register more than 1 agents"
 
 Terraform Cloud の Agent 登録上限に達している場合、同じ token を使う agent が
