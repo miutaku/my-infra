@@ -126,10 +126,9 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 kubectl -n argocd delete secret argocd-initial-admin-secret
 ```
 
-## Application の finalizer 方針
+## Application を追加するときの規約
 
-`argocd-apps/` 配下と `root-app.yaml` の全 Application に、原則として cascade delete の
-finalizer を付ける。
+`argocd-apps/` 配下と `root-app.yaml` の全 Application に例外なく finalizer を付ける。
 
 ```yaml
 metadata:
@@ -137,12 +136,12 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 ```
 
-これが無いと、Application manifest をリポジトリから消して root-app が prune しても
-Application リソースが消えるだけで、配下の実リソースはクラスタに残る。
-新しい Application を追加するときも必ず付ける。
+無いと Application を git から消しても配下リソースがクラスタに残る。
+`root-app` にも付いているため、`root-app` の削除は全アプリの連鎖削除になる。
 
-> `root-app` 自体にも付けているため、`root-app` を削除すると全 Application と
-> その配下リソースが連鎖削除される。
+Namespace は `namespace.yaml` を作らず Application の `CreateNamespace=true` に任せる。
+状態を持つ PVC / PV には `argocd.argoproj.io/sync-options: Delete=false` を付ける。
+理由と詳細は `k8s/pve/argocd/README.md` を参照。
 
 ## 同期状態の確認
 
