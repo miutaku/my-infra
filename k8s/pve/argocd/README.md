@@ -146,6 +146,27 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 | 1 | coredns, metallb, local-path-provisioner, wol |
 | 2 | victoria-metrics, blackbox-exporter, cloudflared, magic-mirror |
 
+## Application の finalizer 方針
+
+`argocd-apps/` 配下と `root-app.yaml` の全 Application に、原則として cascade delete の
+finalizer を付ける。
+
+```yaml
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+```
+
+これが無いと、Application manifest をリポジトリから消して root-app が prune しても
+Application リソースが消えるだけで、その配下の Deployment / Namespace などは
+クラスタに孤児として残る。finalizer を付けておけば Application 削除時に
+配下リソースまで削除され、GitOps 上の削除がクラスタに正しく反映される。
+
+新しい Application を追加するときも必ず付ける。
+
+> `root-app` 自体にも付けているため、`root-app` を削除すると全 Application と
+> その配下リソースが連鎖削除される。root-app の削除は意図的な場合のみ行う。
+
 ## Troubleshooting: tfc-agent "Cannot register more than 1 agents"
 
 Terraform Cloud の Agent 登録上限に達している場合、同じ token を使う agent が

@@ -126,6 +126,24 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 kubectl -n argocd delete secret argocd-initial-admin-secret
 ```
 
+## Application の finalizer 方針
+
+`argocd-apps/` 配下と `root-app.yaml` の全 Application に、原則として cascade delete の
+finalizer を付ける。
+
+```yaml
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+```
+
+これが無いと、Application manifest をリポジトリから消して root-app が prune しても
+Application リソースが消えるだけで、配下の実リソースはクラスタに残る。
+新しい Application を追加するときも必ず付ける。
+
+> `root-app` 自体にも付けているため、`root-app` を削除すると全 Application と
+> その配下リソースが連鎖削除される。
+
 ## 同期状態の確認
 
 ```bash
