@@ -6,6 +6,8 @@ kind: Application
 metadata:
   name: oci-prd-apps
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
