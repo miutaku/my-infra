@@ -5,10 +5,7 @@ Cloudflare の DNS・Email Routing・Tunnel・Zero Trust Access・Tunnel private
 0.0.0.0/0 に向けた入口として扱わない。
 
 公開ホスト名で扱いやすい HTTP/HTTPS 管理 UI は Cloudflare Access protected application として出す。
-任意ポート・複数プロトコルが発生する宅内通信は、Tailscale subnet router と同じ粒度で Cloudflare Tunnel private routes に寄せる。
-
-Tailscale subnet router は全経路移行が終わるまで emergency access として残す。
-
+任意ポート・複数プロトコルが発生する宅内通信は、VLAN 単位で Cloudflare Tunnel private routes に寄せる。
 ---
 
 ## 構成リソース
@@ -246,7 +243,7 @@ terraform output  # または TFC UI から確認
 
 ## WARP private network access
 
-Tailscale subnet router の置き換え対象はこの経路。
+宅内 private network への到達はこの経路に一本化している (旧 Tailscale subnet router の置き換え先)。
 `ssh` / `kubectl` / `NFS` / `HTTP` / `Proxmox API` / `UPS/NUT` など、ポートごとの published app にしない通信は WARP 経由で private IP へ直接接続する。
 
 接続例:

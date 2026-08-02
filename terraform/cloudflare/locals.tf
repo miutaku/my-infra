@@ -82,8 +82,8 @@ locals {
   }
 
   # Private network routes exposed through the RKE2 (home) tunnel.
-  # These mirror the Tailscale subnet-router routes and are consumed by
-  # Cloudflare One Client (WARP), not by public DNS hostnames.
+  # These are consumed by Cloudflare One Client (WARP), not by public DNS
+  # hostnames.
   rke2_private_routes = {
     native = {
       network = "192.168.0.0/24"

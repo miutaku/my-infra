@@ -42,7 +42,6 @@ Bitwarden Secrets Manager (https://bitwarden.com/products/secrets-manager/) で�
    | `GRAFANA_PDC_HOSTED_GRAFANA_ID` | Grafana Cloud の Hosted Grafana ID (数値) | PDC agent 設定値 |
    | `GRAFANA_PDC_CLUSTER` | Grafana Cloud の PDC クラスタ識別子 (文字列) | PDC agent 設定値 |
    | `CLOUDFLARE_RKE2_TUNNEL_TOKEN` | `terraform output -raw rke2_tunnel_token` で取得 | Cloudflare Tunnel token |
-   | `TAILSCALE_AUTH_KEY` | Tailscale Admin Console → Settings → Keys | Tailscale auth key |
    | `MM_OW_API_KEY` | OpenWeatherMap API キー | MagicMirror² 天気モジュール API key |
    | `MM_CALENDAR_URL` | Google Calendar iCal URL | MagicMirror² カレンダーモジュール |
 
@@ -144,7 +143,7 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 |------|--------|
 | -2 | external-secrets (ESO operator + bitwarden-sdk-server サブチャート) |
 | 0 | external-secrets-config (ClusterSecretStore) |
-| 1 | coredns, metallb, local-path-provisioner, tailscale, wol |
+| 1 | coredns, metallb, local-path-provisioner, wol |
 | 2 | victoria-metrics, blackbox-exporter, cloudflared, magic-mirror |
 
 ## Troubleshooting: tfc-agent "Cannot register more than 1 agents"
