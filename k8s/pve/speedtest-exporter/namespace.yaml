@@ -1,4 +1,8 @@
 apiVersion: v1
 kind: Namespace
 metadata:
+  annotations:
+    # monitoring は pve-exporter / speedtest-exporter / victoria-metrics が共有する。
+    # Application の cascade delete と prune の両方から除外する。
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: monitoring

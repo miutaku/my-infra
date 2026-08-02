@@ -139,9 +139,13 @@ metadata:
 無いと Application を git から消しても配下リソースがクラスタに残る。
 `root-app` にも付いているため、`root-app` の削除は全アプリの連鎖削除になる。
 
-Namespace は `namespace.yaml` を作らず Application の `CreateNamespace=true` に任せる。
-状態を持つ PVC / PV には `argocd.argoproj.io/sync-options: Delete=false` を付ける。
-理由と詳細は `k8s/pve/argocd/README.md` を参照。
+Namespace と、状態を持つ PVC / PV には `argocd.argoproj.io/sync-options: Delete=false` を
+付けて cascade delete から除外する。`namespace.yaml` は git から消さない
+(消すと prune で live namespace ごと削除される)。
+
+この規約により namespace と PVC は Application 削除では消えないので、アプリを完全撤去する
+ときは `kubectl delete ns <ns>` などの手作業が要る。理由・撤去手順とも
+`k8s/pve/argocd/README.md` の「Application を撤去するとき」を参照。
 
 ## 同期状態の確認
 
