@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: mirakurun-data
   namespace: app-mirakurun
+  annotations:
+    # Application の cascade delete から除外する。local-path は reclaimPolicy Delete のため
+    # PVC が消えるとチューナー設定ごと失われる。
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
     - ReadWriteOnce

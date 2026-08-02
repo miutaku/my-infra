@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: nextcloud-html-pvc
   namespace: app-nextcloud
+  annotations:
+    # Application の cascade delete から除外する。local-path は reclaimPolicy Delete のため
+    # PVC が消えるとアプリデータごと失われる。
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,6 +20,10 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: nextcloud-nas-recorded-pv
+  annotations:
+    # 下の PVC と対で cascade delete から除外する。片方だけ消えると PVC が Lost になり、
+    # 再作成時に claimRef の手動クリアが必要になる。
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   # NFS 静的 PV の capacity は非強制の名目値 (実容量は NAS 側 ZFS に従う)。
   # 実態 (raid1_case 約213GB) に合わせておく。
@@ -38,6 +46,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: nextcloud-nas-recorded-pvc
   namespace: app-nextcloud
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
     - ReadWriteMany
