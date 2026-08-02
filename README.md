@@ -35,14 +35,13 @@ flowchart LR
       CF_Tunnel([Tunnel])
     end
     TFC([Terraform Cloud])
-    TailscaleNet((Tailscale))
     subgraph Grafana[Grafana Cloud]
       GC_Grafana([Managed Grafana])
       GC_Prometheus[(Managed Prometheus)]
       GC_Grafana ~~~ GC_Prometheus
     end
     GitHub([GitHub])
-    Cloudflare ~~~ TFC ~~~ GitHub ~~~ Grafana ~~~ TailscaleNet
+    Cloudflare ~~~ TFC ~~~ GitHub ~~~ Grafana
   end
 
   subgraph Home[宅内]
@@ -84,9 +83,8 @@ flowchart LR
         subgraph RKE2_agents[SaaS / OSS agents]
           CFPod([cloudflared])
           TFCAgent([tfc-agent])
-          Tailscale((Tailscale subnet router<br/> for Emergency Access))
           PDC([PDC agent])
-          CFPod ~~~ PDC ~~~ TFCAgent ~~~ Tailscale
+          CFPod ~~~ PDC ~~~ TFCAgent
         end
         subgraph RKE2_system[RKE2 system]
           ESO([external-secrets<br/>Bitwarden BSM])
@@ -128,7 +126,6 @@ flowchart LR
   CF_Tunnel -.->|tunnel| CFPod
   CF_Tunnel -.->|tunnel| OCICloudflared
 
-  TailscaleNet <--> Internet
   IX --> Internet
 
   UOS --->|management| US8
@@ -144,7 +141,6 @@ flowchart LR
   KonomiTV --> Mirakurun
   KonomiTV -->|read recorded| NAS
   NextCloud -->|External Storage / NFS RO| NAS
-  Tailscale <-.-> |tunnel| TailscaleNet
   OCITFCAgent <-.->|tunnel| TFC
   TFC <-.->|tunnel| TFCAgent -->|API request| PVE_API
   pveEx -->|API Request| PVE
@@ -168,8 +164,8 @@ flowchart LR
   classDef zoneApps fill:#fdf2f8,stroke:#ec4899,color:#500724,stroke-width:2px
 
   class ArgoCD_OCI,ArgoCD,OCICert,MetalLB control
-  class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,Tailscale,PDC cloud
-  class IX,US8,AP,TailscaleNet nwDevice
+  class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,PDC cloud
+  class IX,US8,AP nwDevice
   class NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
   class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,NextCloud,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
   class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability

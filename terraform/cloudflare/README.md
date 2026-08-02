@@ -5,10 +5,7 @@ Cloudflare の DNS・Email Routing・Tunnel・Zero Trust Access・Tunnel private
 0.0.0.0/0 に向けた入口として扱わない。
 
 公開ホスト名で扱いやすい HTTP/HTTPS 管理 UI は Cloudflare Access protected application として出す。
-任意ポート・複数プロトコルが発生する宅内通信は、Tailscale subnet router と同じ粒度で Cloudflare Tunnel private routes に寄せる。
-
-Tailscale subnet router は全経路移行が終わるまで emergency access として残す。
-
+任意ポート・複数プロトコルが発生する宅内通信は、VLAN 単位で Cloudflare Tunnel private routes に寄せる。
 ---
 
 ## 構成リソース
@@ -246,7 +243,7 @@ terraform output  # または TFC UI から確認
 
 ## WARP private network access
 
-Tailscale subnet router の置き換え対象はこの経路。
+宅内 private network への到達はこの経路に一本化している (旧 Tailscale subnet router の置き換え先)。
 `ssh` / `kubectl` / `NFS` / `HTTP` / `Proxmox API` / `UPS/NUT` など、ポートごとの published app にしない通信は WARP 経由で private IP へ直接接続する。
 
 接続例:
@@ -292,13 +289,13 @@ Google / GitHub / Okta など外部 IdP で認証する場合は、必要な IdP
 WARP client の install / enroll / connect は端末側の作業として残る。
 Device enrollment permissions は provider v5 の Terraform resource に露出していないため、必要なら Cloudflare dashboard 側で許可する。
 
-### Tailscale からの移行順
+### セットアップ手順 (Tailscale からの移行時に実施した順序)
 
 1. `terraform apply` で private routes と WARP client profile を作る。
 2. WARP client を install / enroll / connect する。
 3. `ssh root@192.168.0.115`、`curl -k https://192.168.20.250:8007`、`dig @192.168.20.201 pve-x570.miutaku.internal` などで疎通確認する。
 4. Ansible や手順書は private IP または `*.miutaku.internal` のまま使う。
-5. 数日運用してから Tailscale subnet router を emergency access だけに縮退する。
+5. 数日運用して安定を確認後、Tailscale subnet router (`k8s/pve/tailscale`) を撤去済み。
 
 ---
 
