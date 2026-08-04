@@ -62,6 +62,8 @@ jobs:
 
       - name: Bump image tag and commit (GitOps)
         if: github.event_name == 'push'
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           TAG="${GITHUB_SHA:0:7}"
@@ -76,5 +78,21 @@ jobs:
             exit 0
           fi
           git commit -m "chore(mirakurun): deploy image $TAG"
+
+          # main は required_signatures / required_status_checks ルールセットで
+          # 保護されているが、Admin ロールは常にバイパスできる。GITHUB_TOKEN には
+          # Admin 権限がないため、BSM に登録した Admin 権限 PAT で push する。
+          mkdir -p "$HOME/bin"
+          curl -fsSL "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip" -o /tmp/bws.zip
+          python3 -c "import zipfile; zipfile.ZipFile('/tmp/bws.zip').extract('bws', '$HOME/bin/')"
+          chmod +x "$HOME/bin/bws"
+          GITOPS_PAT=$("$HOME/bin/bws" secret list | python3 -c 'import sys, json; data=json.load(sys.stdin); print(next((item.get("value") for item in data if item.get("key")=="my-infra-gitops-push"), ""))')
+          if [ -z "$GITOPS_PAT" ]; then
+            echo 'BSM secret my-infra-gitops-push was not found or is empty' >&2
+            exit 1
+          fi
+          echo "::add-mask::$GITOPS_PAT"
+
+          git remote set-url origin "https://x-access-token:${GITOPS_PAT}@github.com/${{ github.repository }}.git"
           git pull --rebase --autostash
           git push

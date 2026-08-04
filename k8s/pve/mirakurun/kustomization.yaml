@@ -11,4 +11,4 @@ resources:
 
 images:
   - name: ghcr.io/miutaku/mirakurun
-    newTag: d847ead
+    newTag: e47c455
