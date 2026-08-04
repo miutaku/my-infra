@@ -24,7 +24,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install BSM CLI and fetch IX_PUBLIC_IPv4
         env:
@@ -43,7 +43,7 @@ jobs:
           fi
           echo "TF_VAR_ix_public_ipv4=$IX_PUBLIC_IPv4" >> $GITHUB_ENV
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
@@ -60,7 +60,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install BSM CLI and fetch IX_PUBLIC_IPv4
         env:
@@ -79,7 +79,7 @@ jobs:
           fi
           echo "TF_VAR_ix_public_ipv4=$IX_PUBLIC_IPv4" >> $GITHUB_ENV
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
