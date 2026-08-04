@@ -38,9 +38,9 @@ jobs:
       run:
         working-directory: packer/${{ matrix.template }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: hashicorp/setup-packer@v3
+      - uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789 # v3
 
       - name: packer init
         run: packer init .
