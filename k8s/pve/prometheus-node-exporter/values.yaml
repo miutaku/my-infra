@@ -14,3 +14,9 @@ resources:
     memory: 32Mi
   limits:
     memory: 128Mi
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - key: CriticalAddonsOnly
+    operator: Exists
