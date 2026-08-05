@@ -52,7 +52,7 @@ config:
     # node_exporter は host 側の systemd service なので、Kubernetes からは
     # 「:9100 が起動しているか」を事前判定できない。ここは非 k8s VM だけを明示する。
     # RKE2 ノード自体は下の node_kubernetes ジョブが自動検出する。
-    - job_name: node
+    - job_name: node_vm
       static_configs:
         - targets: ["192.168.20.101:9100"]
           labels:
