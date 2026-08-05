@@ -1,0 +1,16 @@
+# ServiceMonitor はこのリポジトリでは管理しない
+serviceMonitor:
+  enabled: false
+
+# 既存のパケット焼き込みsystemd node_exporter(9100)とhostNetwork上で
+# ポートが競合しないよう、RKE2ノード向けはこのDaemonSetだけ9101で listen する。
+service:
+  port: 9101
+  targetPort: 9101
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
