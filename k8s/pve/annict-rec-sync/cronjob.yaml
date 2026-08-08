@@ -46,7 +46,7 @@ spec:
                   value: "true"
                 # DRY_RUN=true でログのみ。実際に予約する場合は false。
                 - name: DRY_RUN
-                  value: "false"
+                  value: "true"
               volumeMounts:
                 - name: channel-map
                   mountPath: /config
