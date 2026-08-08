@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/miutaku/tnlastation-frontend:1.1.0
+          image: ghcr.io/miutaku/tnlastation-frontend:1.1.1
           env:
             - name: NODE_ENV
               value: production
@@ -59,4 +59,3 @@ spec:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
-
