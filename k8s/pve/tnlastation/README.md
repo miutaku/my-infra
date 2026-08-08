@@ -26,8 +26,8 @@ TNLAStationを宅内RKE2へdeployするmanifestです。EPGStationとは別の
 
 Bitwarden Secrets Managerへ`TNLASTATION_POSTGRES_PASSWORD`を登録してください。
 
-backendとFFmpeg Workerは、用途別poolとHLSの担当Pod追跡を含む`1.1.0` imageを参照します。
-TNLAStation-backendで`v1.1.0`をreleaseしてからArgo CDで同期してください。
+backendとFFmpeg Workerは`1.1.2`、frontendは`1.1.1` imageを参照します。
+各TNLAStation componentの対応するversionをreleaseしてからArgo CDで同期してください。
 
 TrueNAS `192.168.20.192`へ次のdirectoryが必要です。
 
