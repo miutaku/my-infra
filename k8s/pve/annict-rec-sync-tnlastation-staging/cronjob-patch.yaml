@@ -4,7 +4,7 @@ metadata:
   name: annict-rec-sync-tnlastation
   namespace: app-annict-rec-sync-tnlastation
 spec:
-  schedule: "20 18 * * *"  # 03:20 JST 相当 (UTC)。prod 版と時間をずらす。
+  schedule: "20 18 * * *"  # 03:20 JST 相当 (UTC)
   jobTemplate:
     spec:
       template:
@@ -14,7 +14,5 @@ spec:
               env:
                 - name: EPGSTATION_BASE_URL
                   value: http://backend.app-tnlastation-staging.svc.cluster.local:8080
-                # staging は production と Mirakurun (チューナー) を共有しているため、
-                # 二重予約・チューナー競合を避けて DRY_RUN=true (ログのみ) を既定にする。
                 - name: DRY_RUN
                   value: "true"
