@@ -80,14 +80,19 @@ jobs:
          git switch -c "$BRANCH"
          
          cd k8s/pve/annict-rec-sync
-         
+
+         kustomize edit set image \
+           ghcr.io/miutaku/annict-rec-sync=ghcr.io/miutaku/annict-rec-sync:"$TAG"
+
+         cd "$GITHUB_WORKSPACE/k8s/pve/annict-rec-sync-tnlastation"
+
          kustomize edit set image \
            ghcr.io/miutaku/annict-rec-sync=ghcr.io/miutaku/annict-rec-sync:"$TAG"
 
          cd "$GITHUB_WORKSPACE"
 
-         git add k8s/pve/annict-rec-sync/kustomization.yaml
-         
+         git add k8s/pve/annict-rec-sync/kustomization.yaml k8s/pve/annict-rec-sync-tnlastation/kustomization.yaml
+
          if git diff --staged --quiet; then
            echo "image tag unchanged; nothing to commit"
            exit 0

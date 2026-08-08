@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: annict-rec-sync-tnlastation
+  namespace: app-annict-rec-sync-tnlastation
+spec:
+  schedule: "20 18 * * *"  # 03:20 JST 相当 (UTC)。prod 版と時間をずらす。
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: annict-rec-sync-tnlastation
+              env:
+                - name: EPGSTATION_BASE_URL
+                  value: http://backend.app-tnlastation-staging.svc.cluster.local:8080
+                # staging は production と Mirakurun (チューナー) を共有しているため、
+                # 二重予約・チューナー競合を避けて DRY_RUN=true (ログのみ) を既定にする。
+                - name: DRY_RUN
+                  value: "true"
