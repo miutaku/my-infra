@@ -5,11 +5,9 @@ metadata:
   namespace: app-annict-rec-sync-tnlastation
 data:
   # Annict の channel 名 -> TNLAStation (EPGStation 互換API) channelId のマッピング。
-  # TNLAStation は既存 EPGStation と同じ Mirakurun を参照しているため、
-  # channelId は k8s/pve/annict-rec-sync/channel-map-configmap.yaml と同一の値になる。
-  # 実機確認する場合は
+  # channelId は環境固有 (networkId/serviceId から導出) のため、必ず実機から生成すること:
   #   curl -s http://192.168.20.210:8888/api/channels | jq 'map({name, halfWidthName, id})'
-  # の出力と突き合わせる。
+  # の出力と Annict の channel 名を突き合わせて埋める。
   # キーは正規化 (NFKC + 空白除去 + 小文字化) して比較するので多少の表記揺れは吸収される。
   # 未マップの channel は DRY_RUN 実行時にログ警告として列挙されるので、それを見て追記する。
   channel-map.json: |
