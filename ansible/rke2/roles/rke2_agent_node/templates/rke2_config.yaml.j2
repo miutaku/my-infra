@@ -12,6 +12,10 @@ node-label:
 {% if proxmox_node is defined %}
   - "topology.miutaku/proxmox-node={{ proxmox_node }}"
 {% endif %}
+{% if tnlastation_batch_encode | default(false) | bool %}
+  # Low-priority batch encoding only. Streaming workloads remain amd64-only.
+  - "workload.miutaku/tnlastation-batch-encode=true"
+{% endif %}
 {% if 'rke2-dvb-worker' in group_names %}
   # Physical Earthsoft PT3 tuner passed through from the Proxmox host.
   - "hardware.miutaku/dvb=true"
