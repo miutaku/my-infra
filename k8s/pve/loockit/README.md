@@ -13,8 +13,8 @@ without adding an authenticated proxy.
 Before enabling the deployment, create these two Bitwarden Secrets Manager
 entries:
 
-- `LOOCKIT_DESK_BOT_SECRET_KEY`
-- `LOOCKIT_DESK_BOT_PUBLIC_KEY`
+- `LOOCKIT_INTERCOM_BOT_SECRET_KEY`
+- `LOOCKIT_INTERCOM_BOT_PUBLIC_KEY`
 
 Then rename `secret.externalsecret.yaml.example` to `secret.yaml`, add it to
 `kustomization.yaml`, and change `spec.replicas` in `deployment.yaml` from `0`
