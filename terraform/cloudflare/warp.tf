@@ -3,7 +3,7 @@
 # invalid" because no policy exists to authorize device enrollment.
 resource "cloudflare_zero_trust_access_application" "warp_enrollment" {
   account_id = var.account_id
-  name       = "Device enrollment permissions-managed-by-tf"
+  name       = "Warp Login App"
   type       = "warp"
 
   policies = [{

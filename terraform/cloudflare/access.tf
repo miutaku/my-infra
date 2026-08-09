@@ -19,4 +19,10 @@ resource "cloudflare_zero_trust_access_application" "protected" {
       }
     ]
   }]
+
+  # Access policies may be extended operationally in the dashboard. Avoid
+  # deleting those out-of-band policies during unrelated infrastructure runs.
+  lifecycle {
+    ignore_changes = [policies]
+  }
 }
