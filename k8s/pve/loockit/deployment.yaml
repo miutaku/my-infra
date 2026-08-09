@@ -4,8 +4,7 @@ metadata:
   name: loockit
   namespace: app-loockit
 spec:
-  # Enable after loockit-keys is created from Bitwarden Secrets Manager.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -68,4 +67,3 @@ spec:
           hostPath:
             path: /run/dbus
             type: Directory
-
