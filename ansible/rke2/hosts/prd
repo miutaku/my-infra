@@ -6,15 +6,15 @@
 192.168.20.136 keepalived_priority=90  hostname=lb-02-rke2-haproxy-keepalived-ubuntu-26-04-home-amd64
 
 [rke2-server-primary]
-192.168.20.126 hostname=master-01-rke2-server-ubuntu-26-04-home-amd64
+192.168.20.126 hostname=master-01-rke2-server-ubuntu-26-04-home-pve-amd64
 
 [rke2-server-secondary]
-192.168.20.127 hostname=master-02-rke2-server-ubuntu-26-04-home-amd64
-192.168.20.128 hostname=master-03-rke2-server-ubuntu-26-04-home-amd64
+192.168.20.127 hostname=master-02-rke2-server-ubuntu-26-04-home-pve-amd64
+192.168.20.128 hostname=master-03-rke2-server-ubuntu-26-04-home-pve-amd64
 
 [rke2-agent]
-192.168.20.129 hostname=worker-01-rke2-agent-ubuntu-26-04-home-amd64 proxmox_node=pve-x570
-192.168.20.130 hostname=worker-02-rke2-agent-ubuntu-26-04-home-amd64 proxmox_node=pve-b550m
+192.168.20.129 hostname=worker-01-rke2-agent-ubuntu-26-04-home-pve-amd64 proxmox_node=pve-x570 kubernetes_hostname_compat=worker-01-rke2-agent-ubuntu-26-04-home-amd64
+192.168.20.130 hostname=worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64 proxmox_node=pve-b550m
 192.168.10.107 hostname=worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64
 192.168.10.109 hostname=worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64
 
