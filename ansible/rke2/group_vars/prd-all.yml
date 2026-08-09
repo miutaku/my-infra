@@ -6,9 +6,9 @@ lb:
 haproxy:
   bind: "{{ lb.vip }}"
   servers:
-    - name: "master-01-rke2-server-ubuntu-26-04-home-amd64"
+    - name: "master-01-rke2-server-ubuntu-26-04-home-pve-amd64"
       ip: 192.168.20.126
-    - name: "master-02-rke2-server-ubuntu-26-04-home-amd64"
+    - name: "master-02-rke2-server-ubuntu-26-04-home-pve-amd64"
       ip: 192.168.20.127
-    - name: "master-03-rke2-server-ubuntu-26-04-home-amd64"
+    - name: "master-03-rke2-server-ubuntu-26-04-home-pve-amd64"
       ip: 192.168.20.128

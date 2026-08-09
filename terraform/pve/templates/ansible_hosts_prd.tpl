@@ -18,7 +18,7 @@ ${host.ip} hostname=${host.hostname}
 
 [rke2-agent]
 %{ for host in agent_hosts ~}
-${host.ip} hostname=${host.hostname} proxmox_node=${host.proxmox_node}
+${host.ip} hostname=${host.hostname} proxmox_node=${host.proxmox_node}%{ if host.kubernetes_hostname_compat != null } kubernetes_hostname_compat=${host.kubernetes_hostname_compat}%{ endif }
 %{ endfor ~}
 %{ for host in arm_agent_hosts ~}
 ${host.ip} hostname=${host.hostname}

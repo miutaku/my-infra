@@ -57,6 +57,38 @@
     - role: rke2_all_node
       tags: rke2_all_node
 
+- name: Apply Kubernetes-managed labels to RKE2 Agent Nodes
+  hosts: rke2-server-primary
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+  tasks:
+    - name: Apply agent role and hostname compatibility labels
+      ansible.builtin.command:
+        argv: >-
+          {{
+            [
+              '/var/lib/rancher/rke2/bin/kubectl',
+              '--kubeconfig',
+              '/etc/rancher/rke2/rke2.yaml',
+              'label',
+              'node',
+              hostvars[item].hostname,
+              'node-role.kubernetes.io/agent=true',
+              '--overwrite'
+            ]
+            + (
+              ['kubernetes.io/hostname=' + hostvars[item].kubernetes_hostname_compat]
+              if hostvars[item].kubernetes_hostname_compat is defined
+              else []
+            )
+          }}
+      loop: "{{ groups['rke2-agent'] + groups['rke2-dvb-worker'] }}"
+      register: rke2_agent_label_result
+      changed_when: "'not labeled' not in rke2_agent_label_result.stdout"
+      tags: rke2_agent_labels
+
 - name: Configure DVB Worker Node (PT3 driver + RKE2 agent)
   hosts: rke2-dvb-worker
   strategy: debug

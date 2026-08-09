@@ -137,9 +137,9 @@ spec:
               value: http://ffmpeg-worker-streaming-1.ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
             - name: FfmpegWorker__StreamingBaseUrls__2
               value: http://ffmpeg-worker-streaming-2.ffmpeg-worker-streaming-headless.$(POD_NAMESPACE).svc.cluster.local:8080
-            - name: FfmpegWorker__StreamingNodeWeights__worker-01-rke2-agent-ubuntu-26-04-home-amd64
+            - name: FfmpegWorker__StreamingNodeWeights__worker-01-rke2-agent-ubuntu-26-04-home-pve-amd64
               value: "16"
-            - name: FfmpegWorker__StreamingNodeWeights__worker-02-rke2-agent-ubuntu-26-04-home-amd64
+            - name: FfmpegWorker__StreamingNodeWeights__worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64
               value: "6"
             - name: ConnectionStrings__PostgreSQL
               valueFrom:

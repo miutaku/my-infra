@@ -1,15 +1,28 @@
 ---
 server: https://{{ lb.vip }}:9345
 token: "{{ rke2_node_token | trim }}"
+node-name: "{{ hostname }}"
 node-ip: "{{ ansible_host | default(inventory_hostname) }}"
 node-label:
   - "node.miutaku/role=agent"
+{% if kubernetes_hostname_compat is defined %}
+  # Preserve immutable local-path PV node affinity after an RKE2 node rename.
+  - "kubernetes.io/hostname={{ kubernetes_hostname_compat }}"
+{% endif %}
 {% if proxmox_node is defined %}
   - "topology.miutaku/proxmox-node={{ proxmox_node }}"
 {% endif %}
 {% if 'rke2-dvb-worker' in group_names %}
   # DVB 専用ノード: Mirakurun 以外の Pod がスケジュールされないよう Taint を設定
   - "hardware.miutaku/dvb=true"
+{% endif %}
+{% if ansible_architecture in ['aarch64', 'arm64'] or 'rke2-dvb-worker' in group_names %}
 node-taint:
+{% if ansible_architecture in ['aarch64', 'arm64'] %}
+  # Generic workloads may use amd64-only images or network exports.
+  - "node.miutaku/architecture=arm64:NoSchedule"
+{% endif %}
+{% if 'rke2-dvb-worker' in group_names %}
   - "hardware.miutaku/dvb=true:NoSchedule"
+{% endif %}
 {% endif %}
