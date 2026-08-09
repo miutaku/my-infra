@@ -17,6 +17,7 @@ spec:
     spec:
       nodeSelector:
         hardware.miutaku/dvb: "true"
+        hardware.miutaku/pt3: "true"
       tolerations:
         - key: hardware.miutaku/dvb
           operator: Equal

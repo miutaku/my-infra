@@ -218,7 +218,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.20.128", mac: "bc:24:11:97:96:03" } # master-03 (RKE2 server)
       - { ip: "192.168.20.129", mac: "bc:24:11:23:32:01" } # worker-01 (RKE2 agent)
       - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # worker-02 (RKE2 agent)
-      - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # dvb-worker (RKE2 agent, PT3 passthrough)
+      - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # worker-03 (RKE2 agent, PT3 passthrough)
       - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01 (RKE2 LB)
       - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02 (RKE2 LB)
       - { ip: "192.168.20.191", mac: "52:54:00:24:99:02" } # nas-01 (TrueNAS Scale)
