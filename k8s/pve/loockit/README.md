@@ -10,13 +10,11 @@ The REST and gRPC APIs have no built-in authentication. The Service is therefore
 the mounted host D-Bus socket). Do not expose it with a LoadBalancer or Ingress
 without adding an authenticated proxy.
 
-Before enabling the deployment, create these two Bitwarden Secrets Manager
-entries:
+The deployment reads these entries from Bitwarden Secrets Manager through an
+ExternalSecret:
 
 - `LOOCKIT_INTERCOM_BOT_SECRET_KEY`
 - `LOOCKIT_INTERCOM_BOT_PUBLIC_KEY`
 
-Then rename `secret.externalsecret.yaml.example` to `secret.yaml`, add it to
-`kustomization.yaml`, and change `spec.replicas` in `deployment.yaml` from `0`
-to `1`. Keeping the ExternalSecret out of the active resources until both
-entries exist prevents a missing credential from degrading the Argo CD app.
+They are materialized as the `loockit-keys` Kubernetes Secret and injected as
+environment variables. Never store their values in Git.
