@@ -60,7 +60,7 @@ spec:
               app: tnlastation-ffmpeg-worker-encode
       containers:
         - name: ffmpeg-worker
-          image: ghcr.io/miutaku/tnlastation-ffmpeg-worker:1.1.2
+          image: ghcr.io/miutaku/tnlastation-ffmpeg-worker:1.1.3
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Production

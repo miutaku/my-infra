@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/miutaku/tnlastation-frontend:1.1.1
+          image: ghcr.io/miutaku/tnlastation-frontend:1.1.2
           env:
             - name: NODE_ENV
               value: production
