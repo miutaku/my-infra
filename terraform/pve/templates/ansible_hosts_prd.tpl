@@ -24,9 +24,9 @@ ${host.ip} hostname=${host.hostname} proxmox_node=${host.proxmox_node}%{ if host
 ${host.ip} hostname=${host.hostname}
 %{ endfor ~}
 
-# DVB 専用ワーカー (PT3 パススルー付き) — Mirakurun Pod 専用ノード
+# PT3 パススルー付きワーカー — Mirakurun Pod 専用ノード
 [rke2-dvb-worker]
-${dvb_worker.ip} hostname=${dvb_worker.hostname} proxmox_node=${dvb_worker.proxmox_node}
+${dvb_worker.ip} hostname=${dvb_worker.hostname} proxmox_node=${dvb_worker.proxmox_node} kubernetes_hostname_compat=${dvb_worker.kubernetes_hostname_compat}
 
 [rke2-server:children]
 rke2-server-primary
