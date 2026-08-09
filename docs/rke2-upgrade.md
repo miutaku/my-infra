@@ -7,11 +7,11 @@
 
 | 役割 | ノード | IP アドレス |
 |---|---|---|
-| server / etcd | `master-01-rke2-server-ubuntu-26-04-home-amd64` | `192.168.20.126` |
-| server / etcd | `master-02-rke2-server-ubuntu-26-04-home-amd64` | `192.168.20.127` |
-| server / etcd | `master-03-rke2-server-ubuntu-26-04-home-amd64` | `192.168.20.128` |
-| agent | `worker-01-rke2-agent-ubuntu-26-04-home-amd64` | `192.168.20.129` |
-| agent | `worker-02-rke2-agent-ubuntu-26-04-home-amd64` | `192.168.20.130` |
+| server / etcd | `master-01-rke2-server-ubuntu-26-04-home-pve-amd64` | `192.168.20.126` |
+| server / etcd | `master-02-rke2-server-ubuntu-26-04-home-pve-amd64` | `192.168.20.127` |
+| server / etcd | `master-03-rke2-server-ubuntu-26-04-home-pve-amd64` | `192.168.20.128` |
+| agent | `worker-01-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.129` |
+| agent | `worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.130` |
 | DVB 専用 agent | `dvb-worker-01-rke2-agent-ubuntu-26-04-home-amd64` | `192.168.20.131` |
 
 HAProxy / Keepalived の LB 2 台は RKE2 を実行していないため、本手順の更新対象外。
@@ -207,7 +207,7 @@ server 3台のversionが同一であることを確認したら、primary server
 
 ```bash
 export RKE2_CURRENT_VERSION="$(
-  kubectl get node master-01-rke2-server-ubuntu-26-04-home-amd64 \
+  kubectl get node master-01-rke2-server-ubuntu-26-04-home-pve-amd64 \
     -o jsonpath='{.status.nodeInfo.kubeletVersion}'
 )"
 export RKE2_CURRENT_VERSION_FS="${RKE2_CURRENT_VERSION//+/_}"
@@ -269,7 +269,7 @@ ls -lh "${ETCD_BACKUP_FILE}"
 ### 4.1 master-01
 
 ```bash
-export NODE='master-01-rke2-server-ubuntu-26-04-home-amd64'
+export NODE='master-01-rke2-server-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.126'
 
 kubectl cordon "${NODE}"
@@ -331,7 +331,7 @@ server restart直後はHAProxyのhealth check反映までVIP経由の`kubectl`�
 4.1 と同じコマンドを、次の変数で実行する。
 
 ```bash
-export NODE='master-02-rke2-server-ubuntu-26-04-home-amd64'
+export NODE='master-02-rke2-server-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.127'
 ```
 
@@ -340,7 +340,7 @@ export NODE_IP='192.168.20.127'
 4.1 と同じコマンドを、次の変数で実行する。
 
 ```bash
-export NODE='master-03-rke2-server-ubuntu-26-04-home-amd64'
+export NODE='master-03-rke2-server-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.128'
 ```
 
@@ -385,7 +385,7 @@ Nextcloudの停止を許容できる時間帯に行う。
 ### 5.1 worker-01
 
 ```bash
-export NODE='worker-01-rke2-agent-ubuntu-26-04-home-amd64'
+export NODE='worker-01-rke2-agent-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.129'
 
 kubectl get pods -A --field-selector "spec.nodeName=${NODE}" -o wide
@@ -421,7 +421,7 @@ kubectl get pods -A \
 5.1 と同じコマンドを、次の変数で実行する。
 
 ```bash
-export NODE='worker-02-rke2-agent-ubuntu-26-04-home-amd64'
+export NODE='worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.130'
 ```
 

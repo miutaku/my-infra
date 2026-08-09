@@ -25,7 +25,7 @@ resource "local_file" "ansible_displaylink_kiosk_hosts" {
     kiosk_hosts = [
       for i, hostname in local.kiosk_hostnames : {
         ip       = var.displaylink_kiosk_ips[i]
-        hostname = hostname
+        hostname = replace(hostname, "-home-amd64", "-home-pve-amd64")
       }
     ]
   })
@@ -37,7 +37,7 @@ resource "local_file" "ansible_hosts_prd" {
     lb_hosts = [
       for i, hostname in local.lb_hostnames : {
         ip       = var.rke2_lb_ips[i]
-        hostname = hostname
+        hostname = replace(hostname, "-home-amd64", "-home-pve-amd64")
         priority = i == 0 ? 100 : 90
       }
     ]
@@ -55,9 +55,10 @@ resource "local_file" "ansible_hosts_prd" {
     ]
     agent_hosts = [
       for i, hostname in local.agent_hostnames : {
-        ip           = var.rke2_worker_ips[i]
-        hostname     = hostname
-        proxmox_node = var.proxmox_nodes[i % length(var.proxmox_nodes)]
+        ip                         = var.rke2_worker_ips[i]
+        hostname                   = replace(hostname, "-home-amd64", "-home-pve-amd64")
+        proxmox_node               = var.proxmox_nodes[i % length(var.proxmox_nodes)]
+        kubernetes_hostname_compat = i == 0 ? hostname : null
       }
     ]
     arm_agent_hosts = local.arm_agent_hosts
@@ -76,7 +77,7 @@ resource "local_file" "ansible_prd_all" {
     server_hosts = [
       for i, hostname in local.server_hostnames : {
         ip       = var.rke2_server_ips[i]
-        hostname = hostname
+        hostname = replace(hostname, "-home-amd64", "-home-pve-amd64")
       }
     ]
   })

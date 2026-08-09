@@ -18,7 +18,7 @@ fi
 target="$(sed -n 's/^rke2_version: *"\([^"]*\)"/\1/p' "${version_file}")"
 [[ -n "${target}" ]] || { echo "target version is empty" >&2; exit 1; }
 
-primary='master-01-rke2-server-ubuntu-26-04-home-amd64'
+primary='master-01-rke2-server-ubuntu-26-04-home-pve-amd64'
 current="$(kubectl --context "${context}" get node "${primary}" -o jsonpath='{.status.nodeInfo.kubeletVersion}')"
 if [[ "${current}" == "${target}" ]]; then
   echo "target is already installed; running health-only preflight"

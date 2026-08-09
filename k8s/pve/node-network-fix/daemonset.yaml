@@ -25,6 +25,11 @@ spec:
       containers:
         - name: fix
           image: busybox
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
           command:
             - /bin/sh
             - -c
@@ -32,6 +37,23 @@ spec:
               while true; do
                 if ip link show flannel.1 > /dev/null 2>&1; then
                   nsenter -t 1 -m -- ethtool -K flannel.1 tx-checksumming off 2>/dev/null || true
+
+                  # A renamed RKE2 node gets a new Node object and PodCIDR. On
+                  # this routed underlay Flannel can leave only the route/neigh
+                  # entries behind and omit the VXLAN FDB entry. Keep a full
+                  # mesh of the known VTEPs so traffic also has a return path.
+                  add_vtep() {
+                    [ "$NODE_IP" = "$2" ] || nsenter -t 1 -m -n -- \
+                      bridge fdb replace "$1" dev flannel.1 dst "$2" self permanent
+                  }
+                  add_vtep 12:3e:65:a6:c9:21 192.168.20.126
+                  add_vtep 4a:d7:e4:1c:91:25 192.168.20.127
+                  add_vtep aa:05:8a:16:f8:67 192.168.20.128
+                  add_vtep 1e:05:0b:f0:60:dc 192.168.20.129
+                  add_vtep 96:6c:6e:71:b4:65 192.168.20.130
+                  add_vtep 06:b9:a7:b4:6d:8b 192.168.20.131
+                  add_vtep 82:e1:cf:c6:2d:b5 192.168.10.107
+                  add_vtep c6:e2:46:e6:0a:a6 192.168.10.109
                 fi
                 sleep 5
               done
