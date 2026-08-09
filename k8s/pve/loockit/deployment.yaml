@@ -17,6 +17,7 @@ spec:
     spec:
       nodeSelector:
         hardware.miutaku/bluetooth: "true"
+        device.miutaku/sesame-intercom: "true"
       tolerations:
         - key: node.miutaku/architecture
           operator: Equal
@@ -49,7 +50,7 @@ spec:
               memory: 384Mi
           readinessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: rest
             initialDelaySeconds: 5
             periodSeconds: 10

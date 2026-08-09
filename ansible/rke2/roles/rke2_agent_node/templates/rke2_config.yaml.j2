@@ -20,6 +20,10 @@ node-label:
   # Host BlueZ is available to a D-Bus-mounted BLE workload.
   - "hardware.miutaku/bluetooth=true"
 {% endif %}
+{% if sesame_intercom | default(false) | bool %}
+  # This node is within reliable BLE range of the intercom SESAME Bot.
+  - "device.miutaku/sesame-intercom=true"
+{% endif %}
 {% if 'rke2-dvb-worker' in group_names %}
   # Physical Earthsoft PT3 tuner passed through from the Proxmox host.
   - "hardware.miutaku/dvb=true"
