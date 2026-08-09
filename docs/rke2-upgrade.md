@@ -12,7 +12,7 @@
 | server / etcd | `master-03-rke2-server-ubuntu-26-04-home-pve-amd64` | `192.168.20.128` |
 | agent | `worker-01-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.129` |
 | agent | `worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.130` |
-| DVB 専用 agent | `dvb-worker-01-rke2-agent-ubuntu-26-04-home-amd64` | `192.168.20.131` |
+| PT3 専用 agent | `worker-03-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.131` |
 
 HAProxy / Keepalived の LB 2 台は RKE2 を実行していないため、本手順の更新対象外。
 
@@ -431,7 +431,7 @@ DVB workerはPT3をPCIパススルーしており、Mirakurunを他ノードへ�
 録画中および直近に予約録画がないことを確認し、停止を許容できる時間帯に実施する。
 
 ```bash
-export NODE='dvb-worker-01-rke2-agent-ubuntu-26-04-home-amd64'
+export NODE='worker-03-rke2-agent-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.131'
 
 kubectl get pods -A --field-selector "spec.nodeName=${NODE}" -o wide

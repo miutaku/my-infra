@@ -63,9 +63,10 @@ resource "local_file" "ansible_hosts_prd" {
     ]
     arm_agent_hosts = local.arm_agent_hosts
     dvb_worker = {
-      ip           = var.rke2_dvb_worker_ip
-      hostname     = local.dvb_worker_hostname
-      proxmox_node = "pve-x570"
+      ip                         = var.rke2_dvb_worker_ip
+      hostname                   = "worker-03-rke2-agent-ubuntu-26-04-home-pve-amd64"
+      proxmox_node               = "pve-x570"
+      kubernetes_hostname_compat = local.dvb_worker_hostname
     }
   })
 }
