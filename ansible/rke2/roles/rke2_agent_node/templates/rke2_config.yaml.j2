@@ -3,7 +3,7 @@ server: https://{{ lb.vip }}:9345
 token: "{{ rke2_node_token | trim }}"
 node-ip: "{{ ansible_host | default(inventory_hostname) }}"
 node-label:
-  - "kubernetes.io/role=agent"
+  - "node.miutaku/role=agent"
 {% if proxmox_node is defined %}
   - "topology.miutaku/proxmox-node={{ proxmox_node }}"
 {% endif %}
