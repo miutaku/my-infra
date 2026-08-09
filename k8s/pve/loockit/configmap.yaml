@@ -26,7 +26,6 @@ data:
     cloud_fallback = false
 
     [[devices]]
-    id = "desk-bot"
+    id = "intercom-bot"
     model = "SESAMEBOT1"
     ble_address = "E0:5B:CF:D3:A3:60"
-
