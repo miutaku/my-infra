@@ -16,6 +16,8 @@ data:
     enabled = true
     host = "0.0.0.0"
     port = 8080
+    rate_limit_requests = 5
+    rate_limit_window_seconds = 60
 
     [mqtt]
     enabled = false
