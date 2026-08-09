@@ -17,7 +17,6 @@ spec:
     spec:
       nodeSelector:
         hardware.miutaku/bluetooth: "true"
-        device.miutaku/sesame-intercom: "true"
       tolerations:
         - key: node.miutaku/architecture
           operator: Equal
@@ -25,7 +24,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: loockit
-          image: ghcr.io/miutaku/loockit:0.1.0
+          image: ghcr.io/miutaku/loockit:0.1.1
           imagePullPolicy: IfNotPresent
           args:
             - run
