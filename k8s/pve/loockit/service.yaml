@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: loockit
+  namespace: app-loockit
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: loockit
+  ports:
+    - name: rest
+      port: 8080
+      targetPort: rest
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+

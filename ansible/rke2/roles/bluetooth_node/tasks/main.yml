@@ -1,0 +1,22 @@
+---
+- name: Install Bluetooth userspace
+  ansible.builtin.apt:
+    name:
+      - bluez
+      - rfkill
+    state: present
+    update_cache: true
+
+- name: Unblock Bluetooth
+  ansible.builtin.command:
+    argv:
+      - rfkill
+      - unblock
+      - bluetooth
+  changed_when: false
+
+- name: Enable and start Bluetooth
+  ansible.builtin.service:
+    name: bluetooth
+    enabled: true
+    state: started
