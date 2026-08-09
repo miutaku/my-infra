@@ -31,6 +31,15 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: Always
+  # ARM64の余力は本番バッチエンコード専用。STGとの同時実行で4GBノードを
+  # overcommitしないよう、STGでは専用workerを起動しない。
+  - target:
+      kind: Deployment
+      name: ffmpeg-worker-encode-arm64
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
   - target:
       kind: Deployment
       name: frontend
