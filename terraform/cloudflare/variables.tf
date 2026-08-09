@@ -50,3 +50,9 @@ variable "access_allowed_emails" {
   description = "List of email addresses allowed through Cloudflare Access for protected services."
   type        = list(string)
 }
+
+variable "loockit_android_client_csr" {
+  description = "PEM CSR generated with the private key kept on the Android provisioning host."
+  type        = string
+  default     = ""
+}
