@@ -51,7 +51,7 @@ spec:
             - -ec
             - until pg_isready -h postgres.infra-db.svc.cluster.local -U tnlastation -d tnlastation; do sleep 2; done
         - name: migrate
-          image: ghcr.io/miutaku/tnlastation-backend:1.1.2
+          image: ghcr.io/miutaku/tnlastation-backend:1.1.3
           command:
             - dotnet
             - /app/migrator/TNLAStation.Migrator.dll
@@ -67,7 +67,7 @@ spec:
               value: Asia/Tokyo
       containers:
         - name: backend
-          image: ghcr.io/miutaku/tnlastation-backend:1.1.2
+          image: ghcr.io/miutaku/tnlastation-backend:1.1.3
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Production
