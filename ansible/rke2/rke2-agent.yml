@@ -52,6 +52,9 @@
       tags: common
     - role: sysctl
       tags: sysctl
+    - role: bluetooth_node
+      when: bluetooth_controller | default(false) | bool
+      tags: bluetooth_node
     - role: rke2_agent_node
       tags: rke2_agent_node
     - role: rke2_all_node
