@@ -186,10 +186,10 @@ ix_dhcp_profiles:
       - "192.168.20.201"  # CoreDNS (primary)
       - "192.168.10.254"  # BVI10 (secondary)
     fixed_assignments:
-      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 4GB eth0
-      - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 4GB wlan0
-      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 2GB eth0
-      - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 2GB wlan0
+      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 2GB eth0 (worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64)
+      - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 2GB wlan0
+      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 4GB eth0 (worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64)
+      - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 4GB wlan0
       - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0 (#1)
       - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0 (#2)
       - { ip: "192.168.10.117", mac: "e0:51:d8:10:35:e4" } # nucbox-3 NIC1

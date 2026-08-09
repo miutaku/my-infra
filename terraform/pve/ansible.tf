@@ -4,6 +4,18 @@ locals {
   agent_hostnames     = sort(keys(module.rke2_worker.mac_addresses))
   dvb_worker_hostname = keys(module.rke2_dvb_worker.mac_addresses)[0]
   kiosk_hostnames     = sort(keys(module.displaylink_kiosk.mac_addresses))
+  # Physical Raspberry Pi workers are not managed by this Terraform stack, but
+  # belong in the generated RKE2 inventory so a later apply does not drop them.
+  rpi_arm64_agent_hosts = [
+    {
+      ip       = "192.168.10.107"
+      hostname = "worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64"
+    },
+    {
+      ip       = "192.168.10.109"
+      hostname = "worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64"
+    },
+  ]
 }
 
 
@@ -48,6 +60,7 @@ resource "local_file" "ansible_hosts_prd" {
         proxmox_node = var.proxmox_nodes[i % length(var.proxmox_nodes)]
       }
     ]
+    arm_agent_hosts = local.arm_agent_hosts
     dvb_worker = {
       ip           = var.rke2_dvb_worker_ip
       hostname     = local.dvb_worker_hostname
