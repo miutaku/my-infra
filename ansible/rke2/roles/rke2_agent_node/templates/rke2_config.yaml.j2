@@ -16,6 +16,10 @@ node-label:
   # Low-priority batch encoding only. Streaming workloads remain amd64-only.
   - "workload.miutaku/tnlastation-batch-encode=true"
 {% endif %}
+{% if bluetooth_controller | default(false) | bool %}
+  # Host BlueZ is available to a D-Bus-mounted BLE workload.
+  - "hardware.miutaku/bluetooth=true"
+{% endif %}
 {% if 'rke2-dvb-worker' in group_names %}
   # Physical Earthsoft PT3 tuner passed through from the Proxmox host.
   - "hardware.miutaku/dvb=true"
