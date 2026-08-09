@@ -15,6 +15,8 @@
 [rke2-agent]
 192.168.20.129 hostname=worker-01-rke2-agent-ubuntu-26-04-home-amd64 proxmox_node=pve-x570
 192.168.20.130 hostname=worker-02-rke2-agent-ubuntu-26-04-home-amd64 proxmox_node=pve-b550m
+192.168.10.107 hostname=worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64
+192.168.10.109 hostname=worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64
 
 # DVB 専用ワーカー (PT3 パススルー付き) — Mirakurun Pod 専用ノード
 [rke2-dvb-worker]

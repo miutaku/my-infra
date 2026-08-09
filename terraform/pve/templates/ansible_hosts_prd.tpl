@@ -20,6 +20,9 @@ ${host.ip} hostname=${host.hostname}
 %{ for host in agent_hosts ~}
 ${host.ip} hostname=${host.hostname} proxmox_node=${host.proxmox_node}
 %{ endfor ~}
+%{ for host in arm_agent_hosts ~}
+${host.ip} hostname=${host.hostname}
+%{ endfor ~}
 
 # DVB 専用ワーカー (PT3 パススルー付き) — Mirakurun Pod 専用ノード
 [rke2-dvb-worker]
