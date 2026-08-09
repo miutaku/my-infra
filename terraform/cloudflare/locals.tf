@@ -13,6 +13,10 @@ locals {
       backend       = "http://gptwol-service.app-gptwol.svc.cluster.local:5000"
       no_tls_verify = false
     }
+    "iot-api" = {
+      backend       = "http://loockit.app-loockit.svc.cluster.local:8080"
+      no_tls_verify = false
+    }
     "epgstation" = {
       backend       = "http://epgstation.app-epgstation.svc.cluster.local:8888"
       no_tls_verify = false
@@ -160,6 +164,8 @@ locals {
 
   # All known public-hostname services merged for validation.
   _all_services = merge(local.rke2_services, local.oke_services)
+
+  loockit_api_hostname = "iot-api.${var.domain}"
 
   # Subdomains that require Cloudflare Access (SSO) protection.
   # Every entry here must exist as a key in rke2_services or oke_services.
