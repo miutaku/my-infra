@@ -6,7 +6,6 @@ resources:
   - configmap.yaml
   - pvc.yaml
   - ffmpeg-worker-encode.yaml
-  - ffmpeg-worker-encode-arm64.yaml
   - ffmpeg-worker-streaming.yaml
   - backend.yaml
   - frontend.yaml
