@@ -4,9 +4,12 @@ metadata:
   name: loockit
   namespace: app-loockit
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: loockit
@@ -15,8 +18,16 @@ spec:
       labels:
         app.kubernetes.io/name: loockit
     spec:
+      serviceAccountName: loockit
       nodeSelector:
         hardware.miutaku/bluetooth: "true"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: loockit
+              topologyKey: kubernetes.io/hostname
       tolerations:
         - key: node.miutaku/architecture
           operator: Equal
@@ -24,7 +35,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: loockit
-          image: ghcr.io/miutaku/loockit:0.1.3
+          image: ghcr.io/miutaku/loockit:0.1.4
           imagePullPolicy: IfNotPresent
           args:
             - run
@@ -33,6 +44,13 @@ spec:
           envFrom:
             - secretRef:
                 name: loockit-keys
+          env:
+            - name: LOOCKIT_LEADER_ELECTION
+              value: "true"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
             - name: rest
               containerPort: 8080
@@ -49,9 +67,15 @@ spec:
               memory: 384Mi
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: rest
             initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: rest
+            initialDelaySeconds: 10
             periodSeconds: 10
           volumeMounts:
             - name: config
