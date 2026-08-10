@@ -7,6 +7,7 @@ spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: loockit
+    loockit.miutaku/active: "true"
   ports:
     - name: rest
       port: 8080
@@ -14,4 +15,3 @@ spec:
     - name: grpc
       port: 50051
       targetPort: grpc
-

@@ -11,6 +11,12 @@ metadata:
   namespace: app-loockit
 rules:
   - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - patch
+  - apiGroups:
       - coordination.k8s.io
     resources:
       - leases
