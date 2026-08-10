@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: loockit
+  namespace: app-loockit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: loockit-lease
+  namespace: app-loockit
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    resourceNames:
+      - loockit-ble-leader
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: loockit-lease
+  namespace: app-loockit
+subjects:
+  - kind: ServiceAccount
+    name: loockit
+    namespace: app-loockit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: loockit-lease
