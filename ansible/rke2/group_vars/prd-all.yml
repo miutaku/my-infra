@@ -1,5 +1,3 @@
-# このファイルは terraform/pve によって自動生成されます。直接編集しないでください。
-# 更新: terraform apply (terraform/pve/)
 lb:
   vip: 192.168.20.227
 

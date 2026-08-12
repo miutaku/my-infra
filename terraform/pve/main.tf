@@ -70,7 +70,7 @@ module "rke2_dvb_worker" {
   macaddrs_override = [var.rke2_dvb_worker_macaddr]
   vmid_start        = 12900
   tags              = ["ubuntu_2604", "rke2", "agent", "worker", "dvb"]
-  cpu_cores         = 1
+  cpu_cores         = 2
   memory            = 3072
   clone_template    = local.ubuntu_template
   disk_size         = 32

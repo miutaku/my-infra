@@ -98,17 +98,20 @@ flowchart LR
 `variables.tf` の `rke2_lb_ips` / `rke2_server_ips` / `rke2_worker_ips` には  
 DHCP 静的リースで割り当てる予定の IP を設定する。これらは Ansible inventory 生成に使われる。
 
-## Ansible inventory の自動生成
+## Ansible inventory
 
-`terraform apply` 後、`ansible.tf` が以下のファイルを自動生成する:
+以下は手動管理の静的ファイル (旧 `ansible.tf` の `local_file` による自動生成をやめた):
 
-| 生成先ファイル | 内容 |
+| ファイル | 内容 |
 |---|---|
 | `ansible/rke2/hosts/prd` | RKE2 Ansible インベントリ (INI 形式) |
 | `ansible/rke2/group_vars/prd-all.yml` | LB VIP・HAProxy サーバー一覧 |
+| `ansible/displaylink-kiosk/hosts/prd` | DisplayLink kiosk インベントリ |
 
-生成後は GitHub Actions が変更を自動コミット (`chore(ansible): auto-update RKE2 inventory from terraform output`)。  
-**これらのファイルは直接編集しないこと。**
+VM を追加・変更した場合は `terraform apply` 後に `terraform output` で MAC/IP を確認し、
+上記ファイルを手動で編集すること
+(HCP Terraform のリモート実行では `local_file` の書き込み先がリモートのサンドボックスになり、
+ローカルの作業ディレクトリ/リポジトリには反映されないため、自動生成をやめた)。
 
 ## 前提条件
 
