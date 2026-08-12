@@ -1,0 +1,26 @@
+---
+- name: Validate CPU frequency settings
+  ansible.builtin.assert:
+    that:
+      - cpu_frequency_min_khz | int >= 100000
+      - (cpu_frequency_max_khz | int) >= (cpu_frequency_min_khz | int)
+      - cpu_frequency_governor | length > 0
+    fail_msg: Invalid CPU frequency range or governor
+
+- name: Install CPU frequency limit service
+  ansible.builtin.template:
+    src: cpu-frequency-limit.service.j2
+    dest: /etc/systemd/system/cpu-frequency-limit.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart CPU frequency limit
+
+- name: Enable and start CPU frequency limit service
+  ansible.builtin.systemd_service:
+    name: cpu-frequency-limit.service
+    enabled: true
+    state: started
+    daemon_reload: true

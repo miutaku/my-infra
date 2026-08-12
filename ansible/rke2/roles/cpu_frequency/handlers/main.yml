@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Restart CPU frequency limit
+  ansible.builtin.systemd_service:
+    name: cpu-frequency-limit.service
+    state: restarted
