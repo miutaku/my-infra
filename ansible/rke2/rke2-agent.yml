@@ -55,6 +55,9 @@
     - role: bluetooth_node
       when: bluetooth_controller | default(false) | bool
       tags: bluetooth_node
+    - role: cpu_frequency
+      when: cpu_frequency_max_khz is defined
+      tags: cpu_frequency
     - role: rke2_agent_node
       tags: rke2_agent_node
     - role: rke2_all_node

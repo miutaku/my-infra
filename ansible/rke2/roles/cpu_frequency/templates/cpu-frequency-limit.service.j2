@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply CPU frequency limits
+After=systemd-modules-load.service
+ConditionPathExists=/sys/devices/system/cpu/cpufreq
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for policy in /sys/devices/system/cpu/cpufreq/policy*; do echo {{ cpu_frequency_governor | quote }} > "$policy/scaling_governor"; echo {{ cpu_frequency_min_khz | int }} > "$policy/scaling_min_freq"; echo {{ cpu_frequency_max_khz | int }} > "$policy/scaling_max_freq"; done'
+
+[Install]
+WantedBy=multi-user.target
