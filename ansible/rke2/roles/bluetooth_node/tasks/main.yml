@@ -20,3 +20,28 @@
     name: bluetooth
     enabled: true
     state: started
+
+- name: Set BlueZ AutoEnable so the adapter powers on after reboot
+  community.general.ini_file:
+    path: /etc/bluetooth/main.conf
+    section: Policy
+    option: AutoEnable
+    value: "true"
+    mode: "0644"
+    owner: root
+    group: root
+  notify:
+    - Restarted bluetooth service
+
+- name: Disabled onboard WiFi (unused; RKE2 traffic is on eth0) to remove BLE/WiFi radio coexistence interference
+  ansible.builtin.lineinfile:
+    path: /boot/firmware/config.txt
+    line: "dtoverlay=disable-wifi"
+    insertafter: '^dtoverlay=dwc2$'
+    state: present
+  register: disable_wifi_overlay
+
+- name: Reboot to apply disable-wifi overlay
+  ansible.builtin.reboot:
+    reboot_timeout: 180
+  when: disable_wifi_overlay.changed

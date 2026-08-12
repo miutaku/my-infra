@@ -3,6 +3,10 @@ server: https://{{ lb.vip }}:9345
 token: "{{ rke2_node_token | trim }}"
 node-name: "{{ hostname }}"
 node-ip: "{{ ansible_host | default(inventory_hostname) }}"
+kubelet-arg:
+  # Prune unused container images more aggressively than the kubelet default (85/80%).
+  - "image-gc-high-threshold=70"
+  - "image-gc-low-threshold=60"
 node-label:
   - "node.miutaku/role=agent"
 {% if kubernetes_hostname_compat is defined %}

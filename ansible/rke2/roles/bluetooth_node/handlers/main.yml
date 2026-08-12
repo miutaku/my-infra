@@ -1,0 +1,5 @@
+---
+- name: Restarted bluetooth service
+  ansible.builtin.service:
+    name: bluetooth
+    state: restarted
