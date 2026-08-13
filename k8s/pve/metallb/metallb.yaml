@@ -7,6 +7,13 @@ metadata:
 spec:
   ipAddressPools:
     - home-k8s-address-pool
+  nodeSelectors:
+    # The VIP pool belongs to VLAN 20. Advertise it only from Proxmox
+    # workers attached to that L2 segment, not from Raspberry Pi nodes on
+    # VLAN 10.
+    - matchExpressions:
+        - key: topology.miutaku/proxmox-node
+          operator: Exists
 ---
 #apiVersion: metallb.io/v1beta1
 #kind: BGPAdvertisement
