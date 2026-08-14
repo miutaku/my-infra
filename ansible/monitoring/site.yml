@@ -1,12 +1,30 @@
 ---
-- name: Install node_exporter on existing VMs (one-time migration)
-  hosts: monitored_vms
+- name: Install node_exporter on monitored Linux hosts
+  hosts: monitored_vms:monitored_physical_hosts
   become: true
   vars:
     node_exporter_version: "1.8.2"
-    node_exporter_arch: "linux-amd64"
+    node_exporter_arch_map:
+      x86_64: linux-amd64
+      aarch64: linux-arm64
+      armv6l: linux-armv6
+      armv7l: linux-armv7
+    node_exporter_arch: "{{ node_exporter_arch_map[ansible_architecture] }}"
 
   tasks:
+    - name: Validate node_exporter architecture
+      assert:
+        that: ansible_architecture in node_exporter_arch_map
+        fail_msg: "Unsupported node_exporter architecture: {{ ansible_architecture }}"
+
+    - name: Install hardware sensor utilities on physical hosts
+      apt:
+        name: lm-sensors
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      when: inventory_hostname in groups['monitored_physical_hosts']
+
     - name: Create node_exporter system user
       user:
         name: node_exporter
@@ -61,7 +79,9 @@
           ExecStart=/usr/local/bin/node_exporter \
             --web.listen-address=0.0.0.0:9100 \
             --collector.systemd \
-            --collector.processes
+            --collector.processes \
+            --collector.hwmon \
+            --collector.thermal_zone
           Restart=on-failure
           RestartSec=5s
 
