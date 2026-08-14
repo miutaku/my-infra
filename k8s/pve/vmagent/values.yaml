@@ -50,7 +50,8 @@ config:
           target_label: node
 
     # node_exporter は host 側の systemd service なので、Kubernetes からは
-    # 「:9100 が起動しているか」を事前判定できない。ここは非 k8s VM だけを明示する。
+    # 「:9100 が起動しているか」を事前判定できない。ここは非 k8s VM と
+    # 物理ホスト(Raspberry Pi / Proxmox VE)を明示する。
     # RKE2 ノード自体は下の node_kubernetes ジョブが自動検出する。
     - job_name: node_vm
       static_configs:
@@ -66,6 +67,22 @@ config:
         - targets: ["192.168.0.132:9100"]
           labels:
             instance: unifi-os-server
+        - targets: ["192.168.10.112:9100"]
+          labels:
+            instance: nut-pi-01
+            machine_type: raspberry-pi
+        - targets: ["192.168.10.113:9100"]
+          labels:
+            instance: nut-pi-02
+            machine_type: raspberry-pi
+        - targets: ["192.168.0.115:9100"]
+          labels:
+            instance: pve-x570
+            machine_type: proxmox-ve
+        - targets: ["192.168.0.119:9100"]
+          labels:
+            instance: pve-b550m
+            machine_type: proxmox-ve
 
     # RKE2 ノードの node_exporter は prometheus-node-exporter DaemonSet
     # (monitoring ns, hostNetwork:9101) を Kubernetes Pod discovery で自動検出する。
@@ -82,6 +99,10 @@ config:
           target_label: instance
           regex: (.+?-rke2)-(?:server|agent)-.*
           replacement: $1
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: machine_type
+          regex: worker-(?:11|12)-rke2-agent-.*-rpi4-arm64
+          replacement: raspberry-pi
 
     - job_name: snmp
       metrics_path: /snmp
