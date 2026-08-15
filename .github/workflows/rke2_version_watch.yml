@@ -61,9 +61,9 @@ jobs:
           if gh pr view "${branch}" >/dev/null 2>&1; then
             gh pr edit "${branch}" \
               --title "chore(rke2): update ${CURRENT} to ${LATEST}" \
-              --body "Automated RKE2 stable-channel update. Merge does not deploy; review all required checks and run the protected production upgrade workflow separately."
+              --body "Automated RKE2 stable-channel update. Merge does not deploy; there is no automated production upgrade workflow. Perform the rolling upgrade manually per docs/rke2-upgrade.md (rke2_upgrade_validate.yml only runs preflight checks and an Ansible check-mode dry run)."
           else
             gh pr create --base main --head "${branch}" \
               --title "chore(rke2): update ${CURRENT} to ${LATEST}" \
-              --body "Automated RKE2 stable-channel update. Merge does not deploy; review all required checks and run the protected production upgrade workflow separately."
+              --body "Automated RKE2 stable-channel update. Merge does not deploy; there is no automated production upgrade workflow. Perform the rolling upgrade manually per docs/rke2-upgrade.md (rke2_upgrade_validate.yml only runs preflight checks and an Ansible check-mode dry run)."
           fi
