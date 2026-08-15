@@ -51,12 +51,14 @@
       192.168.20.210  tnlastation.miutaku.internal
       192.168.20.215  tnlastation-staging.miutaku.internal
       192.168.20.227  rke2-vip.miutaku.internal
+      192.168.20.250  pbs-01.miutaku.internal
 
       # VLAN 30: クライアントネットワーク
       192.168.30.210  gaming-pc.miutaku.internal
       192.168.30.211  work-windows.miutaku.internal
 
       # VLAN 40: IoT ネットワーク
+      192.168.40.110   smart-display.miutaku.internal
       192.168.40.120   tv.miutaku.internal
 
       fallthrough
