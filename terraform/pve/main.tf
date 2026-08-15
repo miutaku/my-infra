@@ -8,7 +8,7 @@ module "rke2_lb" {
   vmid_start        = 10001
   tags              = ["ubuntu_2604", "rke2", "lb", "haproxy", "keepalived"]
   cpu_cores         = 1
-  memory            = 1536
+  memory            = 1 * 1024
   clone_template    = local.ubuntu_template
   proxmox_nodes     = var.proxmox_nodes
   vlan_tag          = 20
@@ -25,7 +25,7 @@ module "rke2_server" {
   vmid_start        = 11001
   tags              = ["ubuntu_2604", "rke2", "server", "master"]
   cpu_cores         = 2
-  memory            = 8192
+  memory            = 4 * 1024
   clone_template    = local.ubuntu_template
   disk_size         = 48
   proxmox_nodes     = ["pve-x570", "pve-b550m", "pve-b550m"]
@@ -71,7 +71,7 @@ module "rke2_dvb_worker" {
   vmid_start        = 12900
   tags              = ["ubuntu_2604", "rke2", "agent", "worker", "dvb"]
   cpu_cores         = 2
-  memory            = 3072
+  memory            = 3 * 1024
   clone_template    = local.ubuntu_template
   disk_size         = 32
   proxmox_nodes     = ["pve-x570"] # PT3 PCI device is on this node
@@ -171,7 +171,7 @@ module "pbs" {
   vmid_start        = 14001
   tags              = ["debian_13", "pbs", "backup"]
   cpu_cores         = 2
-  memory            = 8192 # S3 datastore の in-memory キャッシュ拡大 + proxy のメモリ逼迫(実測 3.3G/3.8G)解消のため増設
+  memory            = 6 * 1024 # PBS 推奨要件 (4GiB + バックアップストレージ 1TiB毎に1GiB) を踏まえて調整。
   clone_template    = local.debian_template
   proxmox_nodes     = ["pve-x570"] # 平常時の稼働ノード。障害時は手動で pve-b550m へ移行する
   disk_size         = 20           # OS ディスク (lean)。datastore 実体は S3 なので小容量で足りる
