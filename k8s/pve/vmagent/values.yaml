@@ -55,34 +55,40 @@ config:
     # RKE2 ノード自体は下の node_kubernetes ジョブが自動検出する。
     - job_name: node_vm
       static_configs:
-        - targets: ["192.168.20.101:9100"]
+        - targets: ["dev-app-server.miutaku.internal:9100"]
           labels:
             instance: dev-app-server
-        - targets: ["192.168.20.135:9100"]
+        - targets: ["lb-01-rke2.miutaku.internal:9100"]
           labels:
             instance: lb-01
-        - targets: ["192.168.20.136:9100"]
+        - targets: ["lb-02-rke2.miutaku.internal:9100"]
           labels:
             instance: lb-02
-        - targets: ["192.168.0.132:9100"]
+        - targets: ["unifi.miutaku.internal:9100"]
           labels:
             instance: unifi-os-server
-        - targets: ["192.168.10.112:9100"]
+        - targets: ["rpib-plus-512m-01.miutaku.internal:9100"]
           labels:
             instance: nut-pi-01
             machine_type: raspberry-pi
-        - targets: ["192.168.10.113:9100"]
+        - targets: ["rpib-plus-512m-02.miutaku.internal:9100"]
           labels:
             instance: nut-pi-02
             machine_type: raspberry-pi
-        - targets: ["192.168.0.115:9100"]
+        - targets: ["pve-x570.miutaku.internal:9100"]
           labels:
             instance: pve-x570
             machine_type: proxmox-ve
-        - targets: ["192.168.0.119:9100"]
+        - targets: ["pve-b550m.miutaku.internal:9100"]
           labels:
             instance: pve-b550m
             machine_type: proxmox-ve
+        - targets: ["pbs-01.miutaku.internal:9100"]
+          labels:
+            instance: pbs-01
+        - targets: ["smart-display.miutaku.internal:9100"]
+          labels:
+            instance: smart-display
 
     # RKE2 ノードの node_exporter は prometheus-node-exporter DaemonSet
     # (monitoring ns, hostNetwork:9101) を Kubernetes Pod discovery で自動検出する。
