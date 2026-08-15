@@ -171,7 +171,7 @@ module "pbs" {
   vmid_start        = 14001
   tags              = ["debian_13", "pbs", "backup"]
   cpu_cores         = 2
-  memory            = 6 * 1024 # PBS 推奨要件 (4GiB + バックアップストレージ 1TiB毎に1GiB) を踏まえて調整。
+  memory            = 4 * 1024 # PBS 推奨要件 (4GiB + バックアップストレージ 1TiB毎に1GiB) を踏まえて調整。
   clone_template    = local.debian_template
   proxmox_nodes     = ["pve-x570"] # 平常時の稼働ノード。障害時は手動で pve-b550m へ移行する
   disk_size         = 20           # OS ディスク (lean)。datastore 実体は S3 なので小容量で足りる
