@@ -39,9 +39,4 @@
     line: "dtoverlay=disable-wifi"
     insertafter: '^dtoverlay=dwc2$'
     state: present
-  register: disable_wifi_overlay
-
-- name: Reboot to apply disable-wifi overlay
-  ansible.builtin.reboot:
-    reboot_timeout: 180
-  when: disable_wifi_overlay.changed
+  notify: Reboot to apply disable-wifi overlay

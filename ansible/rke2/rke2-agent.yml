@@ -55,6 +55,18 @@
     - role: bluetooth_node
       when: bluetooth_controller | default(false) | bool
       tags: bluetooth_node
+
+# Play boundary flushes bluetooth_node's reboot handler before rke2_agent_node
+# runs (roles: can't contain a bare `meta: flush_handlers` entry).
+- name: Configure RKE2 Agent Nodes (post-reboot)
+  hosts: rke2-agent
+  strategy: debug
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+    rke2_node_token: "{{ hostvars[inventory_hostname].rke2_node_token }}"
+  roles:
     - role: cpu_frequency
       when: cpu_frequency_max_khz is defined
       tags: cpu_frequency
