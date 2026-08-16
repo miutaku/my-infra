@@ -31,11 +31,11 @@ spec:
               kubernetes.io/os: linux
             containers:
               - name: runner
-                image: ghcr.io/actions/actions-runner:2.334.0
+                image: ghcr.io/actions/actions-runner:2.336.0
                 command: ["/home/runner/run.sh"]
                 resources:
                   requests:
-                    cpu: "100m"
+                    cpu: "50m"
                     memory: "512Mi"
                   limits:
                     cpu: "1500m"
