@@ -17,10 +17,22 @@ spec:
       releaseName: nginx-gateway-fabric
       valuesObject:
         nginxGateway:
+          replicas: 2
           nodeSelector:
             kubernetes.io/arch: arm64
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "90Mi"
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: nginx-gateway-fabric
+                      app.kubernetes.io/instance: nginx-gateway-fabric
         nginx:
-          replicas: 2
           service:
             type: LoadBalancer
             annotations:
@@ -28,22 +40,6 @@ spec:
               service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
               service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
               service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
-          nodeSelector:
-            kubernetes.io/arch: arm64
-          container:
-            resources:
-              requests:
-                cpu: "100m"
-                memory: "90Mi"
-          pod:
-            affinity:
-              podAntiAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  - topologyKey: kubernetes.io/hostname
-                    labelSelector:
-                      matchLabels:
-                        app.kubernetes.io/name: nginx-gateway-fabric
-                        app.kubernetes.io/instance: nginx-gateway-fabric
           config:
             # 旧ingress-nginxの use-forwarded-headers + proxy-real-ip-cidr 相当
             rewriteClientIP:
