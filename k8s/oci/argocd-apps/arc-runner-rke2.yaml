@@ -35,7 +35,7 @@ spec:
                 command: ["/home/runner/run.sh"]
                 resources:
                   requests:
-                    cpu: "100m"
+                    cpu: "50m"
                     memory: "512Mi"
                   limits:
                     cpu: "1500m"
