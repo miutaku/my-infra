@@ -68,7 +68,7 @@ jobs:
       - name: Bump image tag and commit (GitOps)
         if: github.event_name == 'push'
         env:
-          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+          BWS_ACCESS_TOKEN: ${{ secrets.GH_MY_INFRA_BWS_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           TAG="${GITHUB_SHA:0:7}"
