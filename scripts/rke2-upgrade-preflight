@@ -92,7 +92,7 @@ while read -r ip; do
   [[ -n "${ip}" ]] || continue
   ssh "${ssh_options[@]}" "${ssh_user}@${ip}" \
     'test ! -e /var/run/reboot-required && { sudo systemctl is-active --quiet rke2-server 2>/dev/null || sudo systemctl is-active --quiet rke2-agent; }'
-done < <(awk '$1 ~ /^192\.168\.20\.(12[6-9]|130|131)$/ {print $1}' "${inventory}")
+done < <(awk '$1 ~ /^192\.168\.20\.(12[6-9]|130|131)$/ || $1 ~ /^192\.168\.10\.(107|109)$/ {print $1}' "${inventory}")
 
 echo '[preflight] etcd cluster'
 etcd_health="$(kubectl --context "${context}" -n kube-system exec "etcd-${primary}" -- \
