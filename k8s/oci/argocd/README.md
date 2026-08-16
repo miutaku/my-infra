@@ -84,7 +84,6 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | -2 | oci-external-secrets | ESO operator + bitwarden-sdk-server サブチャート |
 | 0 | oci-external-secrets-config | ClusterSecretStore |
 | 1 | oci-cert-manager | cert-manager (CRD 含む) |
-| 1 | oci-longhorn | Longhorn |
 | 2 | oci-cert-manager-config | ClusterIssuer (Let's Encrypt) |
 | 3 | oci-ingress-nginx | ingress-nginx |
 | 4 | oci-cloudflared | Cloudflare Tunnel |
@@ -92,7 +91,6 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | 2 | oci-arc-runner-rke2 | `my-infra` RKE2 preflight用ephemeral runner scale set |
 | 4 | oci-pve-tfc-agent | Terraform Cloud agent (pve-home workspace) |
 | 4 | oci-reventer-tfc-agent | Terraform Cloud agent (reventer workspace) |
-| 4 | oci-encode-worker | OCI エンコードワーカー |
 
 ## BSM シークレット一覧
 

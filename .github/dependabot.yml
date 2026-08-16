@@ -7,11 +7,3 @@ updates:
     labels:
       - "dependencies"
       - "docker"
-
-  - package-ecosystem: "docker"
-    directory: "/docker/encode-worker"
-    schedule:
-      interval: "daily"
-    labels:
-      - "dependencies"
-      - "docker"

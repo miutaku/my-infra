@@ -9,16 +9,13 @@ truenas_datasets:
       comment: recorded
       networks:
         - 192.168.20.0/24
-        - 10.0.0.0/16 # OCI VCN (encode-worker が mount)
   - name: raid1_case/thumbnail
     nfs:
       comment: thumbnail
       networks:
         - 192.168.20.0/24
-        - 10.0.0.0/16
   - name: raid1_case/drop
     nfs:
       comment: drop
       networks:
         - 192.168.20.0/24
-        - 10.0.0.0/16

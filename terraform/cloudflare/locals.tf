@@ -152,10 +152,6 @@ locals {
 
   # Services exposed through the OKE (cloud) tunnel — miutaku.work zone.
   oke_services = {
-    "encode-worker" = {
-      backend       = "http://encode-worker.app-encode-worker.svc.cluster.local:8080"
-      no_tls_verify = false
-    }
     "argocd-oke" = {
       backend       = "http://argocd-server.argocd.svc.cluster.local:80"
       no_tls_verify = false
