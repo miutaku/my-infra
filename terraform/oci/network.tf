@@ -156,13 +156,6 @@ resource "oci_core_security_list" "worker_sl" {
     stateless = false
   }
 
-  # 自宅 LAN (IX2215 VPN 経由) → worker node (encode-worker の NFS mount)
-  ingress_security_rules {
-    protocol  = "all"
-    source    = var.home_lan_cidr
-    stateless = false
-  }
-
   egress_security_rules {
     protocol    = "all"
     destination = "0.0.0.0/0"
