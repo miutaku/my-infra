@@ -8,4 +8,4 @@ Unattended-Upgrade::Allowed-Origins {
         "${distro_id}:${distro_codename}-backports";
 };
 Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-Time "{{ ansible_hostname.split('-')[1] }}:00";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ hostname.split('-')[1] }}:00";
