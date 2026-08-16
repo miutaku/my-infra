@@ -156,7 +156,7 @@ resource "oci_core_security_list" "worker_sl" {
     stateless = false
   }
 
-  # 自宅 LAN (IX2215 VPN 経由) → worker node (NFS mount, EPGStation → Mirakurun など)
+  # 自宅 LAN (IX2215 VPN 経由) → worker node (encode-worker の NFS mount など)
   ingress_security_rules {
     protocol  = "all"
     source    = var.home_lan_cidr
