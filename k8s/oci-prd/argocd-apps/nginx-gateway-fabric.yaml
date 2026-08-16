@@ -1,35 +1,37 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: oci-prd-ingress-nginx
+  name: oci-prd-nginx-gateway-fabric
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
-    repoURL: https://kubernetes.github.io/ingress-nginx
-    chart: ingress-nginx
-    targetRevision: "4.11.3"
+    repoURL: oci://ghcr.io/nginx/charts/nginx-gateway-fabric
+    chart: nginx-gateway-fabric
+    targetRevision: "2.6.7"
     helm:
-      releaseName: ingress-nginx
+      releaseName: nginx-gateway-fabric
       valuesObject:
-        controller:
+        nginxGateway:
           nodeSelector:
             kubernetes.io/arch: arm64
+        nginx:
           service:
+            type: LoadBalancer
             annotations:
+              # OCI Always Free: 10Mbps flexible shape (旧ingress-nginxと同条件)
               service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
               service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
               service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
-          config:
-            use-forwarded-headers: "true"
-            compute-full-forwarded-for: "true"
+          nodeSelector:
+            kubernetes.io/arch: arm64
   destination:
     name: oke-prd
-    namespace: ingress-nginx
+    namespace: nginx-gateway
   syncPolicy:
     automated:
       prune: true
