@@ -42,6 +42,9 @@ terraform/pve/.tmp/
 # Local planning docs
 ROADMAP.md
 
+# RKE2 etcd snapshot backups (docs/rke2-upgrade.md runbook output)
+rke2-backups/
+
 # SNMP MIB files (vendor licensing / NEC terms of use)
 *.mib
 k8s/pve/snmp-exporter/generator/snmp.yml
