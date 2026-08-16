@@ -36,6 +36,7 @@ spec:
             - sh
             - -c
             - |
+              set -eu
               apk add --no-cache gettext
               mkdir -p /app/config/enc
               for f in /config-src/config.yml /config-src/notify.sh \
