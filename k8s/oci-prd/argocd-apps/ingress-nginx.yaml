@@ -17,8 +17,18 @@ spec:
       releaseName: ingress-nginx
       valuesObject:
         controller:
+          replicaCount: 2
           nodeSelector:
             kubernetes.io/arch: arm64
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: ingress-nginx
+                      app.kubernetes.io/instance: ingress-nginx
+                      app.kubernetes.io/component: controller
           service:
             annotations:
               service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
