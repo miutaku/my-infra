@@ -3,3 +3,7 @@
   ansible.builtin.service:
     name: bluetooth
     state: restarted
+
+- name: Reboot to apply disable-wifi overlay
+  ansible.builtin.reboot:
+    reboot_timeout: 180
