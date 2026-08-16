@@ -28,7 +28,7 @@ jobs:
 
       - name: Install BSM CLI and fetch IX_PUBLIC_IPv4
         env:
-          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+          BWS_ACCESS_TOKEN: ${{ secrets.GH_MY_INFRA_BWS_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/bin"
@@ -64,7 +64,7 @@ jobs:
 
       - name: Install BSM CLI and fetch IX_PUBLIC_IPv4
         env:
-          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+          BWS_ACCESS_TOKEN: ${{ secrets.GH_MY_INFRA_BWS_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/bin"
