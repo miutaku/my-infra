@@ -152,8 +152,6 @@ jobs:
           printf '%s' "${RKE2_SSH_KNOWN_HOSTS_B64}" | base64 --decode > "${HOME}/.ssh/known_hosts"
           chmod 0600 "${RUNNER_TEMP}/rke2/kubeconfig" \
             "${RUNNER_TEMP}/rke2/id_ed25519" "${HOME}/.ssh/known_hosts"
-          echo "DEBUG known_hosts lines: $(wc -l < "${HOME}/.ssh/known_hosts")"
-          echo "DEBUG known_hosts sha256: $(sha256sum "${HOME}/.ssh/known_hosts" | cut -d' ' -f1)"
           ssh-keygen -y -f "${RUNNER_TEMP}/rke2/id_ed25519" > "${HOME}/.ssh/id_rsa.pub"
           chmod 0644 "${HOME}/.ssh/id_rsa.pub"
 
