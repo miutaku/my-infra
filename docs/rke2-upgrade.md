@@ -12,6 +12,8 @@
 | server / etcd | `master-03-rke2-server-ubuntu-26-04-home-pve-amd64` | `192.168.20.128` |
 | agent | `worker-01-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.129` |
 | agent | `worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.130` |
+| BLE中継 agent (arm64) | `worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64` | `192.168.10.107` |
+| BLE中継 agent (arm64) | `worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64` | `192.168.10.109` |
 | PT3 専用 agent | `worker-03-rke2-agent-ubuntu-26-04-home-pve-amd64` | `192.168.20.131` |
 
 HAProxy / Keepalived の LB 2 台は RKE2 を実行していないため、本手順の更新対象外。
@@ -183,7 +185,8 @@ kubectl get --raw='/readyz?verbose'
 
 ```bash
 for ip in 192.168.20.126 192.168.20.127 192.168.20.128 \
-          192.168.20.129 192.168.20.130 192.168.20.131; do
+          192.168.20.129 192.168.20.130 192.168.20.131 \
+          192.168.10.107 192.168.10.109; do
   ssh "miutaku@${ip}" \
     'hostname; test ! -e /var/run/reboot-required || echo REBOOT_REQUIRED; sudo grep -E "Automatic-Reboot(|-Time)" /etc/apt/apt.conf.d/50unattended-upgrades'
 done
@@ -197,7 +200,8 @@ done
 
 ```bash
 for ip in 192.168.20.126 192.168.20.127 192.168.20.128 \
-          192.168.20.129 192.168.20.130 192.168.20.131; do
+          192.168.20.129 192.168.20.130 192.168.20.131 \
+          192.168.10.107 192.168.10.109; do
   ssh "miutaku@${ip}" 'hostname; sudo rke2 --version | head -n 1'
 done
 ```
@@ -376,11 +380,13 @@ kubectl get pv \
 |---|---|---|
 | worker-01 | MariaDB、VictoriaMetrics | EPGStationのDB利用、録画予約・録画動作、監視データ収集に影響 |
 | worker-02 | Nextcloud | Nextcloudが停止 |
+| worker-11 / worker-12 | loockit (`app-loockit`, 2 replica中1つ) | Pod anti-affinity (`requiredDuringSchedulingIgnoredDuringExecution`, 1 node 1 replica) により、退避したPodはもう一方のRPiへ再スケジュールされずuncordonまでPending。leader electionで機能は継続するが、その間は冗長性が無い |
 | DVB worker | Mirakurun | チューナー利用、EPGStationの録画・番組取得が停止 |
 
 このほかPDBなし・1 replicaのPodは、別ノードで再起動するまで瞬断する。worker-01と
 DVB workerの更新は必ず録画中および直近に予約録画がない時間帯に行う。worker-02も
-Nextcloudの停止を許容できる時間帯に行う。
+Nextcloudの停止を許容できる時間帯に行う。worker-11とworker-12は同時にdrainせず、
+片方ずつ順番に行う(同時に行うとloockitの2 replicaが両方Pendingになる)。
 
 ### 5.1 worker-01
 
@@ -423,6 +429,32 @@ kubectl get pods -A \
 ```bash
 export NODE='worker-02-rke2-agent-ubuntu-26-04-home-pve-amd64'
 export NODE_IP='192.168.20.130'
+```
+
+### 5.3 worker-11
+
+worker-11 と worker-12 は Raspberry Pi 4 (arm64) 上の RKE2 agentで、他ノードと異なり
+`ansible/rke2/roles/bluetooth_node` (Bluetooth) と `cpu_frequency` (CPU周波数制限) の
+対象ノードでもある。ただし本手順はこれらのAnsible roleを実行せず、rke2-agent
+バイナリのみをin-placeで更新するため、この2ノード固有の設定には影響しない。
+
+5.1 と同じコマンドを、次の変数で実行する。
+
+```bash
+export NODE='worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64'
+export NODE_IP='192.168.10.107'
+```
+
+### 5.4 worker-12
+
+worker-11 の作業完了・uncordon・loockit Pod復旧を確認してから実施する
+(同時に行うとloockitの2 replicaが両方Pendingになるため)。
+
+5.1 と同じコマンドを、次の変数で実行する。
+
+```bash
+export NODE='worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64'
+export NODE_IP='192.168.10.109'
 ```
 
 ## 6. DVB 専用 agent の更新
@@ -473,7 +505,7 @@ kubectl get events -A --sort-by='.lastTimestamp'
 
 完了条件:
 
-- 全6ノードが対象バージョンで `Ready`。
+- 全8ノードが対象バージョンで `Ready`。
 - `SchedulingDisabled` のまま残ったノードがない。
 - 原因不明の異常Podがない。
 - Argo CD、CoreDNS、Cloudflare Tunnel、ストレージ利用アプリが正常。
