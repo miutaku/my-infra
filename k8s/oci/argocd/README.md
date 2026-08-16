@@ -144,7 +144,7 @@ Namespace と、状態を持つ PVC / PV には `argocd.argoproj.io/sync-options
 
 この規約により namespace と PVC は Application 削除では消えないので、アプリを完全撤去する
 ときは `kubectl delete ns <ns>` などの手作業が要る。理由・撤去手順とも
-`k8s/pve/argocd/README.md` の「Application を撤去するとき」を参照。
+[k8s/pve/argocd/OPERATIONS.md](../../pve/argocd/OPERATIONS.md) の「Application を撤去するとき」を参照。
 
 ## 同期状態の確認
 
