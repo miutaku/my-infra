@@ -1,0 +1,121 @@
+---
+- name: Get current kubelet version
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - get
+      - node
+      - "{{ hostname }}"
+      - -o
+      - jsonpath={.status.nodeInfo.kubeletVersion}
+  delegate_to: localhost
+  become: false
+  register: rke2_upgrade_current_version
+  changed_when: false
+
+- name: End play for this host if already at target version
+  when: rke2_upgrade_current_version.stdout == rke2_version
+  ansible.builtin.meta: end_host
+
+- name: Cordon node
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - cordon
+      - "{{ hostname }}"
+  delegate_to: localhost
+  become: false
+  changed_when: true
+
+- name: Download RKE2 install script
+  ansible.builtin.get_url:
+    url: https://get.rke2.io
+    dest: /tmp/rke2-install.sh
+    mode: "0755"
+
+- name: Install target RKE2 server version
+  ansible.builtin.command: /tmp/rke2-install.sh
+  environment:
+    INSTALL_RKE2_TYPE: server
+    INSTALL_RKE2_VERSION: "{{ rke2_version }}"
+  changed_when: true
+
+- name: Remove downloaded install script
+  ansible.builtin.file:
+    path: /tmp/rke2-install.sh
+    state: absent
+
+- name: Restart rke2-server
+  ansible.builtin.systemd_service:
+    name: rke2-server
+    state: restarted
+
+- name: Wait for node Ready at target version
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - wait
+      - --for=condition=Ready
+      - node/{{ hostname }}
+      - --timeout={{ rke2_upgrade_server_ready_timeout }}s
+  delegate_to: localhost
+  become: false
+  changed_when: false
+
+- name: Wait for kubeletVersion to report target version
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - wait
+      - --for=jsonpath={.status.nodeInfo.kubeletVersion}={{ rke2_version }}
+      - node/{{ hostname }}
+      - --timeout={{ rke2_upgrade_server_ready_timeout }}s
+  delegate_to: localhost
+  become: false
+  changed_when: false
+
+- name: Check etcd endpoint health across the cluster
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - -n
+      - kube-system
+      - exec
+      - etcd-{{ hostname }}
+      - --
+      - etcdctl
+      - --endpoints=https://127.0.0.1:2379
+      - --cacert=/var/lib/rancher/rke2/server/tls/etcd/server-ca.crt
+      - --cert=/var/lib/rancher/rke2/server/tls/etcd/server-client.crt
+      - --key=/var/lib/rancher/rke2/server/tls/etcd/server-client.key
+      - endpoint
+      - health
+      - --cluster
+  delegate_to: localhost
+  become: false
+  register: rke2_upgrade_etcd_health
+  until: "'unhealthy' not in rke2_upgrade_etcd_health.stdout"
+  retries: "{{ rke2_upgrade_server_etcd_retries }}"
+  delay: "{{ rke2_upgrade_server_etcd_delay }}"
+  changed_when: false
+
+- name: Verify all three etcd members are present and healthy
+  ansible.builtin.assert:
+    that: rke2_upgrade_etcd_health.stdout_lines | select('search', 'is healthy') | list | length == 3
+    fail_msg: "Expected 3 healthy etcd members, got: {{ rke2_upgrade_etcd_health.stdout }}"
+
+- name: Uncordon node
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - uncordon
+      - "{{ hostname }}"
+  delegate_to: localhost
+  become: false
+  changed_when: true
