@@ -15,6 +15,9 @@ spec:
     targetRevision: "2.6.7"
     helm:
       releaseName: nginx-gateway-fabric
+      # crds/内のCRDが262144バイト超でArgoCDのapplyが毎回失敗するため除外。
+      # `kubectl apply --server-side --force-conflicts` で別途投入済み。
+      skipCrds: true
       valuesObject:
         nginxGateway:
           replicas: 2
@@ -90,15 +93,6 @@ spec:
                 matchLabels:
                   app.kubernetes.io/name: nginx-gateway-fabric
                   app.kubernetes.io/instance: nginx-gateway-fabric
-  ignoreDifferences:
-    # >262144-byte annotation cap; ArgoCD's own apply fails every sync
-    # regardless of ServerSideApply/Replace. Installed once via
-    # `kubectl apply --server-side`; ignored so ArgoCD stops retrying it.
-    - group: apiextensions.k8s.io
-      kind: CustomResourceDefinition
-      name: nginxproxies.gateway.nginx.org
-      jsonPointers:
-        - /spec
   destination:
     server: https://kubernetes.default.svc
     namespace: nginx-gateway
