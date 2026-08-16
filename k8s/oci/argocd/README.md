@@ -2,6 +2,9 @@
 
 OCI OKE クラスタへの ArgoCD インストールと App-of-Apps の初期化手順。
 
+> **⚠️ このクラスタは `my-infra` 専用ではない。** 変更前に
+> [OPERATIONS.md](OPERATIONS.md) を必ず読むこと。
+
 ## 前提条件
 
 - `kubectl` が OKE クラスタに向いていること
@@ -125,26 +128,9 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 kubectl -n argocd delete secret argocd-initial-admin-secret
 ```
 
-## Application を追加するときの規約
+## Application の追加・撤去
 
-`argocd-apps/` 配下と `root-app.yaml` の全 Application に例外なく finalizer を付ける。
-
-```yaml
-metadata:
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-```
-
-無いと Application を git から消しても配下リソースがクラスタに残る。
-`root-app` にも付いているため、`root-app` の削除は全アプリの連鎖削除になる。
-
-Namespace と、状態を持つ PVC / PV には `argocd.argoproj.io/sync-options: Delete=false` を
-付けて cascade delete から除外する。`namespace.yaml` は git から消さない
-(消すと prune で live namespace ごと削除される)。
-
-この規約により namespace と PVC は Application 削除では消えないので、アプリを完全撤去する
-ときは `kubectl delete ns <ns>` などの手作業が要る。理由・撤去手順とも
-[k8s/pve/argocd/OPERATIONS.md](../../pve/argocd/OPERATIONS.md) の「Application を撤去するとき」を参照。
+[OPERATIONS.md](OPERATIONS.md) を参照。
 
 ## 同期状態の確認
 
