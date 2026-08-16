@@ -1,0 +1,4 @@
+---
+rke2_upgrade_server_ready_timeout: 600
+rke2_upgrade_server_etcd_retries: 12
+rke2_upgrade_server_etcd_delay: 5

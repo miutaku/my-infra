@@ -1,0 +1,114 @@
+---
+- name: Get current kubelet version
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - get
+      - node
+      - "{{ hostname }}"
+      - -o
+      - jsonpath={.status.nodeInfo.kubeletVersion}
+  delegate_to: localhost
+  become: false
+  register: rke2_upgrade_current_version
+  changed_when: false
+
+- name: End play for this host if already at target version
+  when: rke2_upgrade_current_version.stdout == rke2_version
+  ansible.builtin.meta: end_host
+
+- name: Cordon and drain node
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - drain
+      - "{{ hostname }}"
+      - --ignore-daemonsets
+      - --delete-emptydir-data
+      - --timeout={{ rke2_upgrade_agent_drain_timeout }}s
+  delegate_to: localhost
+  become: false
+  changed_when: true
+
+- name: Download RKE2 install script
+  ansible.builtin.get_url:
+    url: https://get.rke2.io
+    dest: /tmp/rke2-install.sh
+    mode: "0755"
+
+- name: Install target RKE2 agent version
+  ansible.builtin.command: /tmp/rke2-install.sh
+  environment:
+    INSTALL_RKE2_TYPE: agent
+    INSTALL_RKE2_VERSION: "{{ rke2_version }}"
+  changed_when: true
+
+- name: Remove downloaded install script
+  ansible.builtin.file:
+    path: /tmp/rke2-install.sh
+    state: absent
+
+- name: Restart rke2-agent
+  ansible.builtin.systemd_service:
+    name: rke2-agent
+    state: restarted
+
+- name: Wait for node Ready at target version
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - wait
+      - --for=condition=Ready
+      - node/{{ hostname }}
+      - --timeout={{ rke2_upgrade_agent_ready_timeout }}s
+  delegate_to: localhost
+  become: false
+  changed_when: false
+
+- name: Wait for kubeletVersion to report target version
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - wait
+      - --for=jsonpath={.status.nodeInfo.kubeletVersion}={{ rke2_version }}
+      - node/{{ hostname }}
+      - --timeout={{ rke2_upgrade_agent_ready_timeout }}s
+  delegate_to: localhost
+  become: false
+  changed_when: false
+
+- name: Uncordon node
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - uncordon
+      - "{{ hostname }}"
+  delegate_to: localhost
+  become: false
+  changed_when: true
+
+# Cluster-wide, not per-node: node-pinned Pods (local-path, PT3/loockit)
+# only get a scheduling target back once this node is uncordoned.
+- name: Wait for cluster-wide Pod recovery
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --context={{ rke2_kube_context }}
+      - get
+      - pods
+      - -A
+      - --field-selector=status.phase!=Running,status.phase!=Succeeded
+      - -o
+      - jsonpath={.items[*].metadata.name}
+  delegate_to: localhost
+  become: false
+  register: rke2_upgrade_unhealthy_pods
+  until: rke2_upgrade_unhealthy_pods.stdout == ""
+  retries: "{{ rke2_upgrade_agent_recovery_retries }}"
+  delay: "{{ rke2_upgrade_agent_recovery_delay }}"
+  changed_when: false
