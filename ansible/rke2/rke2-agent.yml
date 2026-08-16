@@ -55,6 +55,20 @@
     - role: bluetooth_node
       when: bluetooth_controller | default(false) | bool
       tags: bluetooth_node
+
+# Separate play so any reboot handler notified by bluetooth_node (disable-wifi
+# overlay) flushes here, before rke2_agent_node runs — matching the previous
+# inline `reboot` task's position. `roles:` entries cannot contain a bare
+# `meta: flush_handlers` step, so the play boundary is used instead.
+- name: Configure RKE2 Agent Nodes (post-reboot)
+  hosts: rke2-agent
+  strategy: debug
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+    rke2_node_token: "{{ hostvars[inventory_hostname].rke2_node_token }}"
+  roles:
     - role: cpu_frequency
       when: cpu_frequency_max_khz is defined
       tags: cpu_frequency
