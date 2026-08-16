@@ -1,0 +1,119 @@
+---
+- name: Pre-upgrade safety checks and etcd backup
+  hosts: rke2-server-primary
+  gather_facts: true
+  become: true
+  vars:
+    ansible_user: miutaku
+  tasks:
+    - name: Run live preflight checks
+      ansible.builtin.command: scripts/rke2-upgrade-preflight
+      args:
+        chdir: "{{ playbook_dir }}/../.."
+      delegate_to: localhost
+      become: false
+      changed_when: false
+
+    - name: Save etcd snapshot
+      ansible.builtin.command:
+        argv:
+          - rke2
+          - etcd-snapshot
+          - save
+          - --name
+          - "pre-upgrade-to-{{ rke2_version | regex_replace('\\+', '_') }}"
+      changed_when: true
+
+    - name: Archive etcd snapshots on primary server
+      community.general.archive:
+        path: /var/lib/rancher/rke2/server/db/snapshots
+        dest: "/tmp/etcd-pre-upgrade-to-{{ rke2_version | regex_replace('\\+', '_') }}.tar.gz"
+        format: gz
+        mode: "0600"
+
+    - name: Fetch etcd snapshot archive to control node
+      ansible.builtin.fetch:
+        src: "/tmp/etcd-pre-upgrade-to-{{ rke2_version | regex_replace('\\+', '_') }}.tar.gz"
+        dest: "{{ playbook_dir }}/../../rke2-backups/"
+        flat: true
+
+    - name: Remove temporary archive from remote host
+      ansible.builtin.file:
+        path: "/tmp/etcd-pre-upgrade-to-{{ rke2_version | regex_replace('\\+', '_') }}.tar.gz"
+        state: absent
+
+    - name: Verify fetched archive checksum
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../../rke2-backups/etcd-pre-upgrade-to-{{ rke2_version | regex_replace('\\+', '_') }}.tar.gz"
+        checksum_algorithm: sha256
+      delegate_to: localhost
+      become: false
+      register: rke2_upgrade_local_archive
+
+    - name: Assert archive is non-empty
+      ansible.builtin.assert:
+        that: rke2_upgrade_local_archive.stat.size > 0
+
+    - name: Report snapshot checksum and reminder to preserve the server token
+      ansible.builtin.debug:
+        msg:
+          - "etcd snapshot archived: rke2-backups/etcd-pre-upgrade-to-{{ rke2_version | regex_replace('\\+', '_') }}.tar.gz"
+          - "sha256: {{ rke2_upgrade_local_archive.stat.checksum }}"
+          - "Reminder: confirm BSM my-infra/RKE2_SERVER_TOKEN is current before proceeding (not automated -- see docs/rke2-upgrade.md)."
+
+- name: Upgrade RKE2 servers one at a time
+  hosts: rke2-server
+  serial: 1
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+  roles:
+    - role: rke2_upgrade_server
+      tags: rke2_upgrade_server
+
+- name: Upgrade RKE2 agents one at a time
+  hosts: rke2-agent
+  serial: 1
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+  roles:
+    - role: rke2_upgrade_agent
+      tags: rke2_upgrade_agent
+
+- name: Upgrade DVB worker last
+  hosts: rke2-dvb-worker
+  serial: 1
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+  roles:
+    - role: rke2_upgrade_agent
+      tags: rke2_upgrade_agent
+
+- name: Post-upgrade summary
+  hosts: rke2-server-primary
+  gather_facts: false
+  become: false
+  vars:
+    ansible_user: miutaku
+  tasks:
+    - name: Get final node versions
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --context={{ rke2_kube_context | default('rke2-pve') }}
+          - get
+          - nodes
+          - -o
+          - custom-columns=NAME:.metadata.name,VERSION:.status.nodeInfo.kubeletVersion,READY:.status.conditions[?(@.type=="Ready")].status
+      delegate_to: localhost
+      register: rke2_upgrade_final_nodes
+      changed_when: false
+
+    - name: Report final node versions
+      ansible.builtin.debug:
+        msg: "{{ rke2_upgrade_final_nodes.stdout_lines }}"

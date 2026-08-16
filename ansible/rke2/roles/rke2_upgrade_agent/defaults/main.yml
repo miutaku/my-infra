@@ -1,0 +1,5 @@
+---
+rke2_upgrade_agent_ready_timeout: 600
+rke2_upgrade_agent_drain_timeout: 600
+rke2_upgrade_agent_recovery_retries: 30
+rke2_upgrade_agent_recovery_delay: 10

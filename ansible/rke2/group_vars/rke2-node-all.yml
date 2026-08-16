@@ -2,6 +2,9 @@
 # Desired RKE2 production version. Updated by rke2_version_watch.yml.
 rke2_version: "v1.35.7+rke2r1"
 
+# kubectl context used by rke2-upgrade.yml to query/drain/cordon nodes.
+rke2_kube_context: rke2-pve
+
 kernel_modules:
   - br_netfilter
 sysctl_settings:
