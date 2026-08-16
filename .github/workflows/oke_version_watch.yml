@@ -83,9 +83,11 @@ jobs:
           body="Automated OKE supported-version update (STG tenancy).
 
           **Merging this PR auto-applies via Terraform Cloud and upgrades the control plane in place.**
-          Existing worker nodes keep ${CURRENT} until cycled. Cycle the node **destroy-first**
-          (create-first would exceed the 200GB free-tier block storage cap; see
-          \`node_pool_boot_volume_gbs\` in terraform/oci/variables.tf)."
+          Existing worker nodes keep ${CURRENT} until manually replaced — this is a Basic Cluster,
+          so there is no managed Node Cycling. Replace the worker via
+          \`oci ce node-pool delete-node --is-decrement-size false\` (fetch node-pool/node OCIDs
+          live, never hardcode). Must be **destroy-first**: create-first would exceed the 200GB
+          free-tier block storage cap; see \`node_pool_boot_volume_gbs\` in terraform/oci/variables.tf."
           if gh pr view "${branch}" >/dev/null 2>&1; then
             gh pr edit "${branch}" \
               --title "chore(oke): update ${CURRENT} to ${TARGET}" \
