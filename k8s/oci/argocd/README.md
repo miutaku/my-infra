@@ -86,7 +86,8 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | 1 | oci-cert-manager | cert-manager (CRD 含む) |
 | 1 | oci-longhorn | Longhorn |
 | 2 | oci-cert-manager-config | ClusterIssuer (Let's Encrypt) |
-| 3 | oci-ingress-nginx | ingress-nginx |
+| 1 | oci-gateway-api-crds | Gateway API CRD (standard channel, NGF同梱版) |
+| 2 | oci-nginx-gateway-fabric | NGINX Gateway Fabric (GatewayClassのみ・Gateway未作成) |
 | 4 | oci-cloudflared | Cloudflare Tunnel |
 | 1 | oci-arc-controller / oci-arc-runners-config | Actions Runner Controller + credentials |
 | 2 | oci-arc-runner-rke2 | `my-infra` RKE2 preflight用ephemeral runner scale set |
