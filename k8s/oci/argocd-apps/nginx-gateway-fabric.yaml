@@ -20,6 +20,7 @@ spec:
           nodeSelector:
             kubernetes.io/arch: arm64
         nginx:
+          replicas: 2
           service:
             type: LoadBalancer
             annotations:
@@ -29,6 +30,20 @@ spec:
               service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
           nodeSelector:
             kubernetes.io/arch: arm64
+          container:
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "90Mi"
+          pod:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - topologyKey: kubernetes.io/hostname
+                    labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: nginx-gateway-fabric
+                        app.kubernetes.io/instance: nginx-gateway-fabric
           config:
             # 旧ingress-nginxの use-forwarded-headers + proxy-real-ip-cidr 相当
             rewriteClientIP:
@@ -65,6 +80,20 @@ spec:
                   value: "172.64.0.0/13"
                 - type: CIDR
                   value: "131.0.72.0/22"
+        extraObjects:
+          # chartにnginx用PDBのvaluesが無いため生マニフェストで追加
+          - |
+            apiVersion: policy/v1
+            kind: PodDisruptionBudget
+            metadata:
+              name: nginx-gateway-fabric
+              namespace: nginx-gateway
+            spec:
+              minAvailable: 1
+              selector:
+                matchLabels:
+                  app.kubernetes.io/name: nginx-gateway-fabric
+                  app.kubernetes.io/instance: nginx-gateway-fabric
   ignoreDifferences:
     # >262144-byte annotation cap; ArgoCD's own apply fails every sync
     # regardless of ServerSideApply/Replace. Installed once via
