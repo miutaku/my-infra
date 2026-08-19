@@ -17,7 +17,7 @@ spec:
         kubernetes.io/arch: amd64
       containers:
         - name: annict-scraper
-          image: ghcr.io/miutaku/annict-subscription-scraper:latest
+          image: ghcr.io/miutaku/annict-subscription-scraper:sha-b9568db
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
