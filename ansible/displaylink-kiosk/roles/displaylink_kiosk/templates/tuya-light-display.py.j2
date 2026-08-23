@@ -3,6 +3,8 @@
 
 import logging
 import os
+import re
+import signal
 import subprocess
 import time
 
@@ -25,9 +27,82 @@ POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "15"))
 OFF_BELOW = float(os.getenv("DISPLAY_OFF_BELOW_LUX", "20"))
 ON_ABOVE = float(os.getenv("DISPLAY_ON_ABOVE_LUX", "30"))
 REQUIRED_SAMPLES = int(os.getenv("REQUIRED_SAMPLES", "2"))
+KIOSK_URL = os.environ["KIOSK_URL"]
+FIREFOX = "/usr/bin/firefox"
 
 DISPLAY_CONFIG = "org.gnome.Mutter.DisplayConfig"
 DISPLAY_PATH = "/org/gnome/Mutter/DisplayConfig"
+
+stop_requested = False
+firefox_process: subprocess.Popen[str] | None = None
+
+
+def request_stop(signum: int, _frame: object) -> None:
+    global stop_requested
+    LOG.info("Received signal %s; shutting down", signum)
+    stop_requested = True
+
+
+def start_firefox() -> None:
+    """Start Firefox in kiosk mode, or replace it after an unexpected exit."""
+    global firefox_process
+    if firefox_process is not None and firefox_process.poll() is None:
+        return
+    if firefox_process is not None:
+        LOG.warning("Firefox exited with status %s; restarting", firefox_process.returncode)
+
+    environment = os.environ.copy()
+    environment["MOZ_ENABLE_WAYLAND"] = "1"
+    firefox_process = subprocess.Popen(
+        [FIREFOX, "--kiosk", KIOSK_URL],
+        env=environment,
+        start_new_session=True,
+    )
+    LOG.info("Firefox kiosk started with PID %d", firefox_process.pid)
+
+
+def stop_firefox() -> None:
+    """Stop Firefox and its process group before powering off the display."""
+    global firefox_process
+    if firefox_process is None:
+        return
+    if firefox_process.poll() is None:
+        LOG.info("Stopping Firefox kiosk PID %d", firefox_process.pid)
+        os.killpg(firefox_process.pid, signal.SIGTERM)
+        try:
+            firefox_process.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            LOG.warning("Firefox did not stop within 15 seconds; killing it")
+            os.killpg(firefox_process.pid, signal.SIGKILL)
+            firefox_process.wait(timeout=5)
+    firefox_process = None
+
+
+def get_display_power() -> bool:
+    """Return Mutter's current display power state (0=on, 3=off)."""
+    result = subprocess.run(
+        [
+            "/usr/bin/gdbus",
+            "call",
+            "--session",
+            "--dest",
+            DISPLAY_CONFIG,
+            "--object-path",
+            DISPLAY_PATH,
+            "--method",
+            "org.freedesktop.DBus.Properties.Get",
+            DISPLAY_CONFIG,
+            "PowerSaveMode",
+        ],
+        check=True,
+        timeout=10,
+        capture_output=True,
+        text=True,
+    )
+    match = re.search(r"<(\d+)>", result.stdout)
+    if match is None:
+        raise RuntimeError(f"unexpected PowerSaveMode response: {result.stdout!r}")
+    return int(match.group(1)) == 0
 
 
 def set_display_power(enabled: bool) -> None:
@@ -78,34 +153,54 @@ def main() -> None:
     device.set_version(VERSION)
     device.set_socketTimeout(5)
 
-    display_on = True
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
+
+    try:
+        display_on = get_display_power()
+    except Exception:
+        # Preserve the historical fail-open behavior if Mutter is not ready yet.
+        LOG.exception("Could not read initial display state; assuming on")
+        display_on = True
     pending_state = None
     matching_samples = 0
+    if display_on:
+        start_firefox()
 
-    while True:
-        try:
-            lux = read_lux(device)
-            LOG.info("Illuminance %.2f lx", lux)
-            wanted = False if lux <= OFF_BELOW else True if lux >= ON_ABOVE else display_on
+    try:
+        while not stop_requested:
+            try:
+                lux = read_lux(device)
+                LOG.info("Illuminance %.2f lx", lux)
+                wanted = False if lux <= OFF_BELOW else True if lux >= ON_ABOVE else display_on
 
-            if wanted == display_on:
-                pending_state = None
-                matching_samples = 0
-            else:
-                if wanted == pending_state:
-                    matching_samples += 1
-                else:
-                    pending_state = wanted
-                    matching_samples = 1
-                if matching_samples >= REQUIRED_SAMPLES:
-                    set_display_power(wanted)
-                    display_on = wanted
+                if wanted == display_on:
                     pending_state = None
                     matching_samples = 0
-        except Exception:
-            # A sensor/network failure must not unexpectedly blank or wake a display.
-            LOG.exception("Sensor poll or display control failed")
-        time.sleep(POLL_INTERVAL)
+                    if display_on:
+                        start_firefox()
+                else:
+                    if wanted == pending_state:
+                        matching_samples += 1
+                    else:
+                        pending_state = wanted
+                        matching_samples = 1
+                    if matching_samples >= REQUIRED_SAMPLES:
+                        if wanted:
+                            set_display_power(True)
+                            start_firefox()
+                        else:
+                            stop_firefox()
+                            set_display_power(False)
+                        display_on = wanted
+                        pending_state = None
+                        matching_samples = 0
+            except Exception:
+                # A sensor/network failure must not unexpectedly blank or wake a display.
+                LOG.exception("Sensor poll, display control, or Firefox control failed")
+            time.sleep(POLL_INTERVAL)
+    finally:
+        stop_firefox()
 
 
 if __name__ == "__main__":

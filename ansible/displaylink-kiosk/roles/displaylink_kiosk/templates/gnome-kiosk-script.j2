@@ -15,5 +15,11 @@ while [ "${attempt}" -lt 30 ]; do
   sleep 1
 done
 
+{% if tuya_light_sensor_enabled | bool %}
+# Keep the GNOME Kiosk script session alive independently of Firefox.  The
+# illuminance controller starts and stops Firefox together with display power.
+exec /usr/bin/sleep infinity
+{% else %}
 export MOZ_ENABLE_WAYLAND=1
 exec /usr/bin/firefox --kiosk {{ kiosk_url | quote }}
+{% endif %}
