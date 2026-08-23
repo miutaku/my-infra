@@ -42,7 +42,7 @@ playbookがパスワードなしの非sudoユーザーとして作成します�
 
 ## Tuya照度センサー連動
 
-照度センサーをTinyTuyaで15秒ごとに取得し、暗くなったらMutterのDisplayLink出力をDPMS off、明るくなったらonへ戻せます。
+照度センサーをTinyTuyaで15秒ごとに取得し、暗くなったらFirefoxを終了してからMutterのDisplayLink出力をDPMS off、明るくなったらDisplayLink出力をonにしてFirefoxをKioskモードで起動します。
 DisplayLinkが唯一の画面であるため、論理モニターを削除するのではなくMutterの`PowerSaveMode`を使います。初期値では無効です。
 
 まずTinyTuya wizardを再実行し、新しいセンサーのDevice ID、Local Key、IP、protocol versionを確認します。
@@ -70,6 +70,8 @@ tuya_light_sensor_display_on_above_lux: 30
 20 lx以下が2回続くと画面を停止し、30 lx以上が2回続くと再開します。
 20–30 lxでは現在状態を維持するため、閾値付近での頻繁な切り替えを防ぎます。
 センサー通信が失敗した場合も画面状態は変更しません。
+GNOME Kioskセッション自体はFirefoxと分離して常駐します。画面ON中にFirefoxが異常終了した
+場合は、次のセンサーポーリング時にKioskモードで自動的に再起動します。
 
 適用後の確認:
 ```bash
@@ -107,8 +109,8 @@ pipenv run ansible-playbook site.yml --check --diff
 ```
 
 DisplayLinkドライバーを初めて導入した場合は、playbookの最後にVMを再起動します。
-再起動後、GDMが `gnome-kiosk-script-x11` セッションへ自動ログインし、Firefoxが
-`kiosk_url` を全画面表示します。
+再起動後、GDMが `gnome-kiosk-script-wayland` セッションへ自動ログインします。
+照度連動が有効な場合、Firefoxは画面ON中だけ`kiosk_url`を全画面表示します。
 
 ## 確認
 
