@@ -7,6 +7,9 @@ PartOf=graphical-session.target
 Type=simple
 EnvironmentFile=%h/.config/tuya-light-display.env
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=MOZ_ENABLE_WAYLAND=1
 ExecStart=/opt/tinytuya-display/bin/python /opt/tinytuya-display/controller.py
 Restart=always
 RestartSec=10
