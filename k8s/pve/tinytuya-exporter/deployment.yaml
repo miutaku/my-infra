@@ -22,7 +22,7 @@ spec:
               containerPort: 9123
           env:
             - name: TUYA_DEVICE_NAME
-              value: tuya-16a
+              value: ups
             - name: TUYA_DEVICE_IP
               value: 192.168.40.232
             - name: TUYA_DEVICE_ID

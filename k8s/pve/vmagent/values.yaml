@@ -192,7 +192,27 @@ config:
         - targets:
             - tinytuya-exporter.monitoring.svc.cluster.local:9123
           labels:
-            instance: tuya-16a
+            instance: ups
+        - targets:
+            - tinytuya-exporter-desk.monitoring.svc.cluster.local:9123
+          labels:
+            instance: desk
+        - targets:
+            - tinytuya-exporter-refrigerator.monitoring.svc.cluster.local:9123
+          labels:
+            instance: refrigerator
+        - targets:
+            - tinytuya-exporter-washing-machine.monitoring.svc.cluster.local:9123
+          labels:
+            instance: washing-machine
+        - targets:
+            - tinytuya-exporter-bedside.monitoring.svc.cluster.local:9123
+          labels:
+            instance: bedside
+        - targets:
+            - tinytuya-exporter-entrance.monitoring.svc.cluster.local:9123
+          labels:
+            instance: entrance
 
     - job_name: blackbox_http
       metrics_path: /probe
