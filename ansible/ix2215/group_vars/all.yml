@@ -264,7 +264,12 @@ ix_dhcp_profiles:
       - { ip: "192.168.40.229", mac: "3c:61:05:ce:9c:15" } # ceiling light
       - { ip: "192.168.40.230", mac: "94:e0:d6:67:7f:fb" } # security camera
       - { ip: "192.168.40.231", mac: "38:56:10:c7:a3:e9" } # SESAME WiFi module
-      - { ip: "192.168.40.232", mac: "38:2c:e5:6d:5e:65" } # Tuya 16A smart plug
+      - { ip: "192.168.40.232", mac: "38:2c:e5:6d:5e:65" } # Tuya 16A smart plug (UPS)
+      - { ip: "192.168.40.233", mac: "e4:ae:e4:95:78:7d" } # Tuya 16A smart plug (desk)
+      - { ip: "192.168.40.234", mac: "e4:ae:e4:98:b5:a7" } # Tuya 16A smart plug (refrigerator)
+      - { ip: "192.168.40.235", mac: "e4:ae:e4:95:60:4c" } # Tuya 16A smart plug (washing machine)
+      - { ip: "192.168.40.236", mac: "e4:ae:e4:93:ec:6a" } # Tuya 16A smart plug (bedside)
+      - { ip: "192.168.40.237", mac: "e4:ae:e4:98:ae:0b" } # Tuya 16A smart plug (entrance)
       - { ip: "192.168.40.250", mac: "c0:f8:53:93:0c:29" } # Tuya light sensor
 
 # ---------------------------------------------------------------------------
