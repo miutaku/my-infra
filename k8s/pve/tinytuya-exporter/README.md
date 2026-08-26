@@ -94,8 +94,8 @@ Device IDとLocal KeyはGitへ保存せず、Bitwarden Secrets Manager（BSM）�
 
 ```sh
 export BWS_ACCESS_TOKEN='<machine-account-access-token>'
-bws secret create TINYTUYA_TUYA16A_DEVICE_ID 'DEVICE_ID'
-bws secret create TINYTUYA_TUYA16A_LOCAL_KEY 'LOCAL_KEY'
+bws secret create TINYTUYA_TUYA16A_UPS_DEVICE_ID 'DEVICE_ID'
+bws secret create TINYTUYA_TUYA16A_UPS_LOCAL_KEY 'LOCAL_KEY'
 ```
 
 値をコマンド履歴へ残したくない場合は、先頭に空白を付けて実行する設定
@@ -104,8 +104,20 @@ bws secret create TINYTUYA_TUYA16A_LOCAL_KEY 'LOCAL_KEY'
 `secret.yaml`の`ExternalSecret`がBSMの次の名前を参照し、Kubernetes Secret
 `monitoring/tinytuya-device`を生成する。
 
-- `TINYTUYA_TUYA16A_DEVICE_ID` → `device-id`
-- `TINYTUYA_TUYA16A_LOCAL_KEY` → `local-key`
+- `TINYTUYA_TUYA16A_UPS_DEVICE_ID` → `device-id`
+- `TINYTUYA_TUYA16A_UPS_LOCAL_KEY` → `local-key`
+
+追加のTuya 16Aスマートプラグは、用途ごとに次のBWS Secretへ登録する。
+
+| 用途 | 固定IP | BWS Secret prefix |
+|---|---|---|
+| デスク | `192.168.40.233` | `TINYTUYA_TUYA16A_DESK` |
+| 冷蔵庫 | `192.168.40.234` | `TINYTUYA_TUYA16A_REFRIGERATOR` |
+| 洗濯機 | `192.168.40.235` | `TINYTUYA_TUYA16A_WASHING_MACHINE` |
+| ベッドサイド | `192.168.40.236` | `TINYTUYA_TUYA16A_BEDSIDE` |
+| 玄関 | `192.168.40.237` | `TINYTUYA_TUYA16A_ENTRANCE` |
+
+各prefixに`_DEVICE_ID`と`_LOCAL_KEY`を付けた2件を使用する。
 
 IPアドレス`192.168.40.232`は秘密情報ではないため、Deploymentの
 `TUYA_DEVICE_IP`へ直接設定する。
