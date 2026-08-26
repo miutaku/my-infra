@@ -1,12 +1,13 @@
 # TinyTuya exporter
 
-Tuya 16AスマートプラグをLAN経由で15秒ごとに読み、Prometheus形式で公開する。
-vmagentがこのServiceをscrapeし、既存のVictoriaMetricsへremote_writeする。
+6台のTuya 16AスマートプラグをLAN経由で15秒ごとに読み、Prometheus形式で公開する。
+デバイスごとに独立したDeploymentとServiceを持ち、vmagentが各Serviceをscrapeして
+既存のVictoriaMetricsへremote_writeする。
 
 前提:
 
 - Tuya 16AはSmart Lifeアプリへ登録済みである
-- スマートプラグには固定IP `192.168.40.232` を割り当てる
+- スマートプラグには固定IP `192.168.40.232`〜`192.168.40.237` を割り当てる
 - PodネットワークからスマートプラグのTCP 6668へ到達できるようにする
 
 ## Device IDとLocal Keyの取得
@@ -101,7 +102,7 @@ bws secret create TINYTUYA_TUYA16A_UPS_LOCAL_KEY 'LOCAL_KEY'
 値をコマンド履歴へ残したくない場合は、先頭に空白を付けて実行する設定
 （`HISTCONTROL=ignorespace`）を利用するか、BSMのWeb UIから同名のSecretを作成する。
 
-`secret.yaml`の`ExternalSecret`がBSMの次の名前を参照し、Kubernetes Secret
+`secret.yaml`の`ExternalSecret`がBSMの各Secretを参照し、Kubernetes Secret
 `monitoring/tinytuya-device`を生成する。
 
 - `TINYTUYA_TUYA16A_UPS_DEVICE_ID` → `device-id`
@@ -118,6 +119,8 @@ bws secret create TINYTUYA_TUYA16A_UPS_LOCAL_KEY 'LOCAL_KEY'
 | 玄関 | `192.168.40.237` | `TINYTUYA_TUYA16A_ENTRANCE` |
 
 各prefixに`_DEVICE_ID`と`_LOCAL_KEY`を付けた2件を使用する。
+Kubernetes Secret内では用途名を小文字にした
+`<用途>-device-id`と`<用途>-local-key`へマッピングする。
 
 IPアドレス`192.168.40.232`は秘密情報ではないため、Deploymentの
 `TUYA_DEVICE_IP`へ直接設定する。
@@ -128,6 +131,7 @@ Argo CD同期後の状態確認:
 kubectl -n monitoring get externalsecret tinytuya-device
 kubectl -n monitoring describe externalsecret tinytuya-device
 kubectl -n monitoring get secret tinytuya-device
+kubectl -n monitoring get deploy,svc -l 'app in (tinytuya-exporter,tinytuya-exporter-desk,tinytuya-exporter-refrigerator,tinytuya-exporter-washing-machine,tinytuya-exporter-bedside,tinytuya-exporter-entrance)'
 ```
 
 Secret値そのものは表示しない。`SecretSynced=True`になり、Kubernetes Secretが
@@ -156,3 +160,6 @@ Deploymentでは`TUYA_REQUEST_UPDATEDPS=false`を設定している。
 - `tuya_switch_on`
 - `tuya_up`
 - `tuya_last_success_timestamp_seconds`
+
+`device`ラベルとvmagentの`instance`ラベルには、`ups`、`desk`、
+`refrigerator`、`washing-machine`、`bedside`、`entrance`のいずれかが入る。
