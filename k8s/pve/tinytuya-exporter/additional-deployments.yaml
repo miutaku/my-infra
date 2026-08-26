@@ -1,0 +1,334 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-desk
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinytuya-exporter-desk
+  template:
+    metadata:
+      labels:
+        app: tinytuya-exporter-desk
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/miutaku/tinytuya-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9123
+          env:
+            - name: TUYA_DEVICE_NAME
+              value: desk
+            - name: TUYA_DEVICE_IP
+              value: 192.168.40.233
+            - name: TUYA_DEVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: desk-device-id
+            - name: TUYA_LOCAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: desk-local-key
+            - name: TUYA_VERSION
+              value: "3.5"
+            - name: POLL_INTERVAL_SECONDS
+              value: "15"
+            - name: TUYA_REQUEST_UPDATEDPS
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinytuya-exporter-desk
+  namespace: monitoring
+spec:
+  selector:
+    app: tinytuya-exporter-desk
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-refrigerator
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinytuya-exporter-refrigerator
+  template:
+    metadata:
+      labels:
+        app: tinytuya-exporter-refrigerator
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/miutaku/tinytuya-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9123
+          env:
+            - name: TUYA_DEVICE_NAME
+              value: refrigerator
+            - name: TUYA_DEVICE_IP
+              value: 192.168.40.234
+            - name: TUYA_DEVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: refrigerator-device-id
+            - name: TUYA_LOCAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: refrigerator-local-key
+            - name: TUYA_VERSION
+              value: "3.5"
+            - name: POLL_INTERVAL_SECONDS
+              value: "15"
+            - name: TUYA_REQUEST_UPDATEDPS
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinytuya-exporter-refrigerator
+  namespace: monitoring
+spec:
+  selector:
+    app: tinytuya-exporter-refrigerator
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-washing-machine
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinytuya-exporter-washing-machine
+  template:
+    metadata:
+      labels:
+        app: tinytuya-exporter-washing-machine
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/miutaku/tinytuya-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9123
+          env:
+            - name: TUYA_DEVICE_NAME
+              value: washing-machine
+            - name: TUYA_DEVICE_IP
+              value: 192.168.40.235
+            - name: TUYA_DEVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: washing-machine-device-id
+            - name: TUYA_LOCAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: washing-machine-local-key
+            - name: TUYA_VERSION
+              value: "3.5"
+            - name: POLL_INTERVAL_SECONDS
+              value: "15"
+            - name: TUYA_REQUEST_UPDATEDPS
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinytuya-exporter-washing-machine
+  namespace: monitoring
+spec:
+  selector:
+    app: tinytuya-exporter-washing-machine
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-bedside
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinytuya-exporter-bedside
+  template:
+    metadata:
+      labels:
+        app: tinytuya-exporter-bedside
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/miutaku/tinytuya-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9123
+          env:
+            - name: TUYA_DEVICE_NAME
+              value: bedside
+            - name: TUYA_DEVICE_IP
+              value: 192.168.40.236
+            - name: TUYA_DEVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: bedside-device-id
+            - name: TUYA_LOCAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: bedside-local-key
+            - name: TUYA_VERSION
+              value: "3.5"
+            - name: POLL_INTERVAL_SECONDS
+              value: "15"
+            - name: TUYA_REQUEST_UPDATEDPS
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinytuya-exporter-bedside
+  namespace: monitoring
+spec:
+  selector:
+    app: tinytuya-exporter-bedside
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-entrance
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinytuya-exporter-entrance
+  template:
+    metadata:
+      labels:
+        app: tinytuya-exporter-entrance
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/miutaku/tinytuya-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9123
+          env:
+            - name: TUYA_DEVICE_NAME
+              value: entrance
+            - name: TUYA_DEVICE_IP
+              value: 192.168.40.237
+            - name: TUYA_DEVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: entrance-device-id
+            - name: TUYA_LOCAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinytuya-device
+                  key: entrance-local-key
+            - name: TUYA_VERSION
+              value: "3.5"
+            - name: POLL_INTERVAL_SECONDS
+              value: "15"
+            - name: TUYA_REQUEST_UPDATEDPS
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinytuya-exporter-entrance
+  namespace: monitoring
+spec:
+  selector:
+    app: tinytuya-exporter-entrance
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
