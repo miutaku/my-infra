@@ -21,6 +21,7 @@ spec:
       serviceAccountName: loockit
       nodeSelector:
         hardware.miutaku/bluetooth: "true"
+        loockit.miutaku/receiver: "true"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
