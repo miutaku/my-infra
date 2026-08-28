@@ -25,6 +25,9 @@ data:
     [history]
     enabled = false
 
+    [ble]
+    scan_duration_seconds = 30
+
     cloud_fallback = false
 
     [[devices]]

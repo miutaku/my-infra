@@ -39,4 +39,12 @@
     line: "dtoverlay=disable-wifi"
     insertafter: '^dtoverlay=dwc2$'
     state: present
-  notify: Reboot to apply disable-wifi overlay
+  notify: Reboot to apply radio overlays
+
+- name: Configure onboard Bluetooth state
+  ansible.builtin.lineinfile:
+    path: /boot/firmware/config.txt
+    line: "dtoverlay=disable-bt"
+    insertafter: '^dtoverlay=disable-wifi$'
+    state: "{{ 'present' if disable_onboard_bluetooth | default(false) | bool else 'absent' }}"
+  notify: Reboot to apply radio overlays
