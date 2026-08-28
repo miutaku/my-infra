@@ -40,6 +40,7 @@
     insertafter: '^dtoverlay=dwc2$'
     state: present
   notify: Reboot to apply radio overlays
+  when: ansible_facts['architecture'] in ['aarch64', 'arm64']
 
 - name: Configure onboard Bluetooth state
   ansible.builtin.lineinfile:
@@ -48,3 +49,4 @@
     insertafter: '^dtoverlay=disable-wifi$'
     state: "{{ 'present' if disable_onboard_bluetooth | default(false) | bool else 'absent' }}"
   notify: Reboot to apply radio overlays
+  when: ansible_facts['architecture'] in ['aarch64', 'arm64']

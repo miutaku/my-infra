@@ -24,6 +24,10 @@ node-label:
   # Host BlueZ is available to a D-Bus-mounted BLE workload.
   - "hardware.miutaku/bluetooth=true"
 {% endif %}
+{% if loockit_receiver | default(false) | bool %}
+  # Bluetooth receiver placed near the SESAME Bot.
+  - "loockit.miutaku/receiver=true"
+{% endif %}
 {% if 'rke2-dvb-worker' in group_names %}
   # Physical Earthsoft PT3 tuner passed through from the Proxmox host.
   - "hardware.miutaku/dvb=true"
