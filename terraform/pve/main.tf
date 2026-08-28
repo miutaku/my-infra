@@ -56,6 +56,13 @@ module "rke2_worker" {
   proxmox_nodes     = var.proxmox_nodes
   vlan_tag          = 20
   cloudinit_storage = "local-zfs"
+  usbs = {
+    usb0 = {
+      mapping = {
+        mapping_id = "loockit_bluetooth"
+      }
+    }
+  }
 }
 
 # DVB 専用 RKE2 worker — PT3 PCI パススルー付き。pve-x570 に固定。
