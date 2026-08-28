@@ -4,6 +4,6 @@
     name: bluetooth
     state: restarted
 
-- name: Reboot to apply disable-wifi overlay
+- name: Reboot to apply radio overlays
   ansible.builtin.reboot:
     reboot_timeout: 180
