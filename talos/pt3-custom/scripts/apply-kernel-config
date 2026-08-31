@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 2 ]]; then
+  echo "usage: $0 PKGS_TREE CONFIG_FRAGMENT" >&2
+  exit 2
+fi
+
+pkgs_tree=$1
+fragment=$2
+config="${pkgs_tree}/kernel/build/config-amd64"
+
+[[ -f ${config} ]]
+[[ -f ${fragment} ]]
+
+grep -qx 'CONFIG_MEDIA_SUPPORT=m' "${config}"
+grep -qx 'CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y' "${config}"
+grep -qx 'CONFIG_DVB_CORE=m' "${config}"
+grep -qx '# CONFIG_DVB_PT3 is not set' "${config}"
+grep -qx 'CONFIG_DVB_PT3=m' "${fragment}"
+
+sed -i 's/^# CONFIG_DVB_PT3 is not set$/CONFIG_DVB_PT3=m/' "${config}"
+
+grep -qx 'CONFIG_DVB_PT3=m' "${config}"
+git -C "${pkgs_tree}" diff --check
+git -C "${pkgs_tree}" diff --exit-code -- kernel/build/config-arm64
+

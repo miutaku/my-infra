@@ -1,0 +1,4 @@
+# Earthsoft PT3 is already in the upstream Linux tree. Talos enables the media
+# and DVB core as modules, but deliberately leaves this board driver disabled.
+CONFIG_DVB_PT3=m
+
