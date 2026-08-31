@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 3 ]]; then
+  echo "usage: $0 TALOS_TREE EXPECTED_PKGS_VERSION EXPECTED_PKGS_COMMIT" >&2
+  exit 2
+fi
+
+talos_tree=$1
+expected_version=$2
+expected_commit=$3
+
+actual_version=$(sed -n 's/^PKGS ?= //p' "${talos_tree}/Makefile")
+[[ ${actual_version} == "${expected_version}" ]] || {
+  echo "Talos expects pkgs ${actual_version}, pin says ${expected_version}" >&2
+  exit 1
+}
+
+[[ ${expected_commit} =~ ^[0-9a-f]{40}$ ]]
+
