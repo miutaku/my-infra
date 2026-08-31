@@ -63,6 +63,10 @@ jobs:
       - name: Enable only the upstream PT3 driver
         run: talos/pt3-custom/scripts/apply-kernel-config /tmp/pkgs talos/pt3-custom/kernel-config.fragment
 
+      # Talos bldr uses BuildKit merge operations, which are unavailable in the
+      # runner's legacy default Docker builder.
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
       - name: Log in to GHCR
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         with:
