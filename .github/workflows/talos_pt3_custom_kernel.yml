@@ -1,0 +1,118 @@
+name: Talos PT3 custom kernel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    paths:
+      - '.github/workflows/talos_pt3_custom_kernel.yml'
+      - 'talos/pt3-custom/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/talos_pt3_custom_kernel.yml'
+      - 'talos/pt3-custom/**'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: talos-pt3-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      OCI_REGISTRY: ghcr.io
+      OCI_NAMESPACE: ${{ github.repository }}/talos-pt3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Load immutable source versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          source talos/pt3-custom/versions.env
+          echo "TALOS_VERSION=${TALOS_VERSION}" >> "${GITHUB_ENV}"
+          echo "PKGS_REF=${PKGS_REF}" >> "${GITHUB_ENV}"
+          echo "PKGS_VERSION=${PKGS_VERSION}" >> "${GITHUB_ENV}"
+          echo "IMAGE_TAG=${TALOS_VERSION}-pt3-${GITHUB_SHA::12}" >> "${GITHUB_ENV}"
+
+      - name: Reclaim space on the ephemeral runner
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          docker system prune --all --force
+          df -h /
+
+      - name: Check out matching upstream sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "${TALOS_VERSION}" \
+            https://github.com/siderolabs/talos.git /tmp/talos
+          git init /tmp/pkgs
+          git -C /tmp/pkgs remote add origin https://github.com/siderolabs/pkgs.git
+          git -C /tmp/pkgs fetch --depth 1 origin "${PKGS_REF}"
+          git -C /tmp/pkgs checkout --detach FETCH_HEAD
+          talos/pt3-custom/scripts/verify-source-pins \
+            /tmp/talos "${PKGS_VERSION}" "${PKGS_REF}"
+
+      - name: Enable only the upstream PT3 driver
+        run: talos/pt3-custom/scripts/apply-kernel-config /tmp/pkgs talos/pt3-custom/kernel-config.fragment
+
+      - name: Log in to GHCR
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish signed kernel package
+        working-directory: /tmp/pkgs
+        shell: bash
+        run: |
+          set -euo pipefail
+          make kernel \
+            PLATFORM=linux/amd64 \
+            REGISTRY="${OCI_REGISTRY}" \
+            USERNAME="${OCI_NAMESPACE}" \
+            TAG="${IMAGE_TAG}" \
+            PUSH=true
+
+      - name: Build and publish Talos installer
+        working-directory: /tmp/talos
+        shell: bash
+        run: |
+          set -euo pipefail
+          custom_kernel="${OCI_REGISTRY}/${OCI_NAMESPACE}/kernel:${IMAGE_TAG}"
+          common=(
+            PLATFORM=linux/amd64
+            INSTALLER_ARCH=amd64
+            REGISTRY="${OCI_REGISTRY}"
+            USERNAME="${OCI_NAMESPACE}"
+            TAG="${IMAGE_TAG}"
+            PKG_KERNEL="${custom_kernel}"
+          )
+          make kernel initramfs imager installer-base "${common[@]}" PUSH=true
+          make installer "${common[@]}"
+
+      - name: Record immutable installer digest
+        working-directory: /tmp/talos
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${OCI_REGISTRY}/${OCI_NAMESPACE}/installer:${IMAGE_TAG}"
+          digest=$(docker buildx imagetools inspect "${image}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          test -n "${digest}"
+          printf 'installer=%s@%s\n' "${image}" "${digest}" | tee "${GITHUB_WORKSPACE}/talos-pt3-installer.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: talos-pt3-installer-reference
+          path: talos-pt3-installer.txt
+          if-no-files-found: error
+          retention-days: 14
+
