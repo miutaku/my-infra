@@ -73,11 +73,20 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: rest
+            exec:
+              command:
+                - python
+                - -c
+                - >-
+                  import os, urllib.request;
+                  assert len(os.listdir('/proc/1/fd')) < 96,
+                  'possible D-Bus FD leak';
+                  urllib.request.urlopen('http://127.0.0.1:8080/healthz',
+                  timeout=3).read()
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           volumeMounts:
             - name: config
               mountPath: /config
