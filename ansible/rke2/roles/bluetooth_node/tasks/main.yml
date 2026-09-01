@@ -7,6 +7,34 @@
     state: present
     update_cache: true
 
+- name: Raise the system D-Bus per-UID connection ceiling for BLE clients
+  ansible.builtin.template:
+    src: system-local.conf.j2
+    dest: /etc/dbus-1/system-local.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reloaded system D-Bus configuration
+
+- name: Create bluetooth service override directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/bluetooth.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Keep retrying BlueZ after transient D-Bus exhaustion
+  ansible.builtin.template:
+    src: restart.conf.j2
+    dest: /etc/systemd/system/bluetooth.service.d/restart.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reloaded systemd configuration
+    - Restarted bluetooth service
+
 - name: Unblock Bluetooth
   ansible.builtin.command:
     argv:

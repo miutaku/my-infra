@@ -20,3 +20,12 @@ ExternalSecret:
 
 They are materialized as the `loockit-keys` Kubernetes Secret and injected as
 environment variables. Never store their values in Git.
+
+## D-Bus failure containment
+
+Bleak uses the host system D-Bus through `/run/dbus`. A broken BlueZ session can
+otherwise leave D-Bus sockets behind during reconnect/leader-election loops.
+The liveness probe recycles only the affected Loockit Pod before PID 1 reaches
+96 open FDs. The `bluetooth_node` Ansible role independently raises the system
+bus per-UID connection ceiling to 1024 and configures BlueZ to retry after a
+transient failure. Normal Loockit Pods use roughly 14--16 FDs.
