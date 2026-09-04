@@ -123,6 +123,10 @@ locals {
         host        = "${var.zero_trust_team_name}.cloudflareaccess.com"
         description = "Cloudflare Zero Trust team domain"
       }
+      adguard_private_dns = {
+        host        = "dns.adguard-dns.com"
+        description = "Android Private DNS resolver"
+      }
     },
     {
       for s in local.access_protected_subdomains : s => {
