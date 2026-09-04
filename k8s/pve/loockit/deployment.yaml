@@ -36,7 +36,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: loockit
-          image: ghcr.io/miutaku/loockit:0.1.12
+          image: ghcr.io/miutaku/loockit:0.1.13
           imagePullPolicy: IfNotPresent
           args:
             - run
