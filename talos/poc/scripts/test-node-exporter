@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+expected_server="${TALOS_POC_KUBE_SERVER:-https://192.168.20.137:6443}"
+chart_version="${TALOS_POC_NODE_EXPORTER_CHART_VERSION:-4.56.1}"
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/node-exporter/namespace.yaml"
+KUBECONFIG="${kubeconfig}" helm upgrade --install node-exporter prometheus-node-exporter \
+  --repo https://prometheus-community.github.io/helm-charts \
+  --version "${chart_version}" \
+  --namespace monitoring \
+  --values "${poc_dir}/kubernetes/node-exporter/values.yaml" \
+  --wait --timeout 5m
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n monitoring rollout status \
+  daemonset/node-exporter-prometheus-node-exporter --timeout=180s
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/node-exporter/test.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-node-exporter \
+  wait --for=condition=Ready pod/metrics-client --timeout=180s
+
+metrics="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-node-exporter \
+  exec metrics-client -- wget -qO- \
+  http://node-exporter-prometheus-node-exporter.monitoring.svc.cluster.local:9100/metrics)"
+required=(
+  node_cpu_seconds_total
+  node_memory_MemAvailable_bytes
+  node_filesystem_size_bytes
+  'node_scrape_collector_success{collector="hwmon"} 1'
+  'node_scrape_collector_success{collector="thermal_zone"} 1'
+)
+for metric in "${required[@]}"; do
+  if [[ "${metrics}" != *"${metric}"* ]]; then
+    echo "required node-exporter metric/collector missing: ${metric}" >&2
+    exit 1
+  fi
+done
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete \
+  namespace talos-poc-node-exporter --wait=true
+echo "node-exporter test passed: CPU, memory, filesystem and temperature collectors available; test namespace deleted"

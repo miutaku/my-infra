@@ -1,0 +1,11 @@
+# PoC worker専用。2026-08-30のmaintenance APIで、空のscsi1だけがこのstable
+# by-id symlinkを持つことを確認した。system disk scsi0には一致しない。
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: local-path-provisioner
+provisioning:
+  diskSelector:
+    match: "'/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1' in disk.symlinks && !system_disk"
+  # scsi1 is a 16 GiB virtual disk; leave space for the partition table/alignment.
+  minSize: 15GiB
+  maxSize: 15GiB

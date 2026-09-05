@@ -420,6 +420,7 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 
 | ドキュメント | 内容 |
 |---|---|
+| [docs/talos-migration-project.md](docs/talos-migration-project.md) | RKE2からTalosへの非破壊移行プロジェクト、検証Gate、データ移行・切り戻し手順 |
 | [docs/ups-shutdown.md](docs/ups-shutdown.md) | UPS(APC×2 / NUT)連動の安全シャットダウン構成。実装は `ansible/nut/` |
 | [docs/truenas-nfs-setup.md](docs/truenas-nfs-setup.md) | TrueNAS NFS セットアップ |
 

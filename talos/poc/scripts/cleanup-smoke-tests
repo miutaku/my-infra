@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+poc_context="${TALOS_POC_KUBE_CONTEXT:-talos-poc}"
+expected_server="${TALOS_POC_KUBE_SERVER:-https://192.168.20.137:6443}"
+actual_server="$(kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+kubectl --context "${poc_context}" delete namespace talos-poc-smoke --ignore-not-found=true --wait=true
+echo "deleted talos-poc-smoke namespace; local-path provisioner remains for subsequent PoC phases"

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+controlplane_ip="${TALOS_POC_CONTROLPLANE_IP:-192.168.20.137}"
+expected_server="https://${controlplane_ip}:6443"
+namespace=talos-poc-nfs-read
+
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/nfs-smoke/read-only.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" wait \
+  --for=condition=Ready pod/nfs-reader --timeout=180s
+
+mount_options="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" exec nfs-reader -- \
+  awk '$2 == "/mnt/recorded" { print $4 }' /proc/mounts)"
+if [[ ",${mount_options}," != *,ro,* ]]; then
+  echo "NFS safety failure: /mnt/recorded is not mounted read-only (${mount_options:-missing})" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" exec nfs-reader -- \
+  sh -c 'test -r /mnt/recorded && ls /mnt/recorded >/dev/null'
+if KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" exec nfs-reader -- \
+  touch /mnt/recorded/.talos-poc-must-not-exist >/dev/null 2>&1; then
+  echo "NFS safety failure: write unexpectedly succeeded" >&2
+  exit 1
+fi
+
+echo "NFS read-only test passed: NFSv4.1 export is readable and mounted ro"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete namespace "${namespace}" --wait=true
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete pv talos-poc-nfs-read --wait=true
+echo "deleted temporary NFS read test resources"

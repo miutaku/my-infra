@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pod=$(kubectl --context rke2-pve -n app-tnlastation get pod \
+  -l app=tnlastation-backend -o jsonpath='{.items[0].metadata.name}')
+
+kubectl --context rke2-pve -n app-tnlastation exec -i "${pod}" -c backend -- sh -s <<'POD'
+set -eu
+for path in '/api/recording?isHalfWidth=true' '/api/reserves?isHalfWidth=true'; do
+  result=/tmp/talos-migration-api-result.json
+  if curl -fsS "http://192.168.20.210:8888${path}" -o "${result}"; then
+    total=$(sed -n 's/.*"total":[[:space:]]*\([0-9][0-9]*\).*/\1/p' "${result}" | head -n 1)
+    case "${total}" in
+      ''|*[!0-9]*) echo "invalid total for ${path}" >&2; exit 1 ;;
+    esac
+    echo "${path} total=${total}"
+  else
+    echo "${path} unavailable"
+  fi
+  rm -f "${result}"
+done
+POD

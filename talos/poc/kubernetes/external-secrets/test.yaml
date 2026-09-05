@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: talos-poc-secret-source
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: talos-poc-secret-target
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: poc-source
+  namespace: talos-poc-secret-source
+type: Opaque
+stringData:
+  marker: talos-poc-external-secret-only
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eso-reader
+  namespace: talos-poc-secret-target
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: eso-reader
+  namespace: talos-poc-secret-source
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - selfsubjectrulesreviews
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: eso-reader
+  namespace: talos-poc-secret-source
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: eso-reader
+subjects:
+  - kind: ServiceAccount
+    name: eso-reader
+    namespace: talos-poc-secret-target
+---
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: talos-poc
+  namespace: talos-poc-secret-target
+spec:
+  provider:
+    kubernetes:
+      remoteNamespace: talos-poc-secret-source
+      server:
+        caProvider:
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+      auth:
+        serviceAccount:
+          name: eso-reader
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: talos-poc
+  namespace: talos-poc-secret-target
+spec:
+  refreshInterval: 15s
+  secretStoreRef:
+    name: talos-poc
+    kind: SecretStore
+  target:
+    name: talos-poc-synced
+    creationPolicy: Owner
+  data:
+    - secretKey: marker
+      remoteRef:
+        key: poc-source
+        property: marker

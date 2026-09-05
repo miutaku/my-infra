@@ -1,0 +1,14 @@
+serviceMonitor:
+  enabled: false
+extraArgs:
+  - --collector.hwmon
+  - --collector.thermal_zone
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+tolerations:
+  - effect: NoSchedule
+    operator: Exists

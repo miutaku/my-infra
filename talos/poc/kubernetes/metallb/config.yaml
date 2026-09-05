@@ -1,0 +1,24 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: talos-poc
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.20.228/32
+  autoAssign: false
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: talos-poc
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - talos-poc
+  nodeSelectors:
+    - matchExpressions:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+            - linux

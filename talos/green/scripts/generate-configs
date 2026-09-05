@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+green_dir="$(cd -- "${script_dir}/.." && pwd)"
+env_file="${green_dir}/green.env"
+output_dir="${green_dir}/.generated"
+
+[[ -f "${env_file}" ]] || { echo "missing ${env_file}" >&2; exit 1; }
+set -a
+# shellcheck disable=SC1090
+source "${env_file}"
+set +a
+
+for name in TALOS_CLUSTER_NAME TALOS_VERSION KUBERNETES_VERSION SCHEMATIC_ID INSTALLER_DIGEST TALOS_ENDPOINT TALOS_INSTALL_DISK; do
+  [[ -n "${!name:-}" ]] || { echo "${name} is required" >&2; exit 1; }
+done
+[[ "${TALOS_ENDPOINT}" == "https://192.168.20.228:6443" ]] || {
+  echo "refusing unexpected production API endpoint ${TALOS_ENDPOINT}" >&2; exit 1;
+}
+[[ "${TALOS_INSTALL_DISK}" == "/dev/sda" ]] || { echo "expected /dev/sda system disk" >&2; exit 1; }
+[[ "${INSTALLER_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "invalid installer digest" >&2; exit 1; }
+command -v talosctl >/dev/null || { echo "talosctl ${TALOS_VERSION} is required" >&2; exit 1; }
+[[ ! -e "${output_dir}" ]] || { echo "refusing to overwrite ${output_dir}" >&2; exit 1; }
+
+install -d -m 0700 "${output_dir}"
+talosctl gen config "${TALOS_CLUSTER_NAME}" "${TALOS_ENDPOINT}" \
+  --output "${output_dir}" \
+  --install-disk "${TALOS_INSTALL_DISK}" \
+  --install-image "factory.talos.dev/installer/${SCHEMATIC_ID}@${INSTALLER_DIGEST}" \
+  --kubernetes-version "${KUBERNETES_VERSION}" \
+  --config-patch "@${green_dir}/patches/cluster.yaml" \
+  --config-patch-control-plane "@${green_dir}/patches/controlplane-vip.yaml" \
+  --config-patch-worker "@${green_dir}/patches/worker-storage.yaml"
+chmod 0600 "${output_dir}"/*
+echo "generated production credentials under ${output_dir}; do not commit or print them"

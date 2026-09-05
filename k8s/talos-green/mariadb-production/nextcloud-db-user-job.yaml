@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mariadb-ensure-nextcloud-user
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ensure-users
+          image: mariadb:11.8
+          command:
+            - sh
+            - -ec
+            - |
+              until mariadb -h mariadb.infra-db.svc.cluster.local \
+                -u root -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; do
+                sleep 5
+              done
+              mariadb -h mariadb.infra-db.svc.cluster.local \
+                -u root -p"${MYSQL_ROOT_PASSWORD}" <<SQL
+              CREATE DATABASE IF NOT EXISTS nextcloud
+                CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+              CREATE USER IF NOT EXISTS 'nextcloud'@'%' IDENTIFIED BY '${NEXTCLOUD_MYSQL_PASSWORD}';
+              ALTER USER 'nextcloud'@'%' IDENTIFIED BY '${NEXTCLOUD_MYSQL_PASSWORD}';
+              GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'%';
+              FLUSH PRIVILEGES;
+              SQL
+              mariadb -h mariadb.infra-db.svc.cluster.local \
+                -u nextcloud -p"${NEXTCLOUD_MYSQL_PASSWORD}" nextcloud \
+                -e "SELECT 1" >/dev/null
+              echo "nextcloud database credential verified"
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-credentials
+                  key: MYSQL_ROOT_PASSWORD
+            - name: NEXTCLOUD_MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-db-user
+                  key: NEXTCLOUD_MYSQL_PASSWORD

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+green_kubeconfig="${repo_root}/talos/green/.generated/kubeconfig"
+blue=(kubectl --context rke2-pve -n monitoring)
+green=(kubectl --kubeconfig "${green_kubeconfig}" -n monitoring)
+blue_pod=victoria-metrics-victoria-metrics-single-server-0
+receiver=victoria-metrics-copy-receiver
+
+"${green[@]}" exec "${receiver}" -c receiver -- find /target -mindepth 1 -delete
+
+snapshot_json=$("${blue[@]}" exec "${blue_pod}" -c vmsingle -- \
+  wget -qO- --post-data= http://127.0.0.1:8428/snapshot/create)
+snapshot=$(jq -r .snapshot <<<"${snapshot_json}")
+[[ -n ${snapshot} && ${snapshot} != null ]]
+echo "Snapshot: ${snapshot}"
+
+cleanup() {
+  "${blue[@]}" exec "${blue_pod}" -c vmsingle -- \
+    wget -qO- --post-data= \
+    "http://127.0.0.1:8428/snapshot/delete?snapshot=${snapshot}" >/dev/null || true
+}
+trap cleanup EXIT
+
+"${blue[@]}" exec "${blue_pod}" -c vmsingle -- \
+  tar -C "/storage/snapshots/${snapshot}" -czhf - . |
+  "${green[@]}" exec -i "${receiver}" -c receiver -- tar -C /target -xzf -
+
+blue_stats=$("${blue[@]}" exec "${blue_pod}" -c vmsingle -- \
+  sh -ec '
+    cd "/storage/snapshots/$1"
+    files=$(find -L . -type f | wc -l)
+    bytes=$(find -L . -type f -exec stat -c %s {} \; | awk "{sum+=\$1} END{print sum+0}")
+    digest=$(find -L . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d" " -f1)
+    printf "%s|%s|%s\n" "$files" "$bytes" "$digest"
+  ' sh "${snapshot}")
+
+green_stats=$("${green[@]}" exec "${receiver}" -c receiver -- \
+  sh -ec '
+    cd /target
+    files=$(find . -type f | wc -l)
+    bytes=$(find . -type f -exec stat -c %s {} \; | awk "{sum+=\$1} END{print sum+0}")
+    digest=$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d" " -f1)
+    printf "%s|%s|%s\n" "$files" "$bytes" "$digest"
+  ')
+
+echo "Blue:  ${blue_stats}"
+echo "Green: ${green_stats}"
+[[ ${blue_stats} == "${green_stats}" ]]
+echo "VictoriaMetrics snapshot copy matches"
+
+cleanup
+trap - EXIT
+"${blue[@]}" exec "${blue_pod}" -c vmsingle -- \
+  wget -qO- http://127.0.0.1:8428/snapshot/list

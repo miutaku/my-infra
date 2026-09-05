@@ -3,4 +3,5 @@ kind: Kustomization
 # MetalLB の Helm chart は ArgoCD Application (metallb.yaml) で管理する
 # ここでは L2Advertisement / IPAddressPool の設定のみ管理する
 resources:
+  - namespace.yaml
   - metallb.yaml

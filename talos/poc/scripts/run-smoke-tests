@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+namespace=talos-poc-smoke
+poc_context="${TALOS_POC_KUBE_CONTEXT:-talos-poc}"
+expected_server="${TALOS_POC_KUBE_SERVER:-https://192.168.20.137:6443}"
+actual_server="$(kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+kubectl --context "${poc_context}" apply -k "${poc_dir}/kubernetes/local-path"
+kubectl --context "${poc_context}" apply -f "${poc_dir}/kubernetes/smoke/manifests.yaml"
+kubectl --context "${poc_context}" -n "${namespace}" wait --for=condition=available deployment/echo --timeout=180s
+kubectl --context "${poc_context}" -n "${namespace}" wait --for=condition=ready pod/allowed-client pod/denied-client pod/local-retention --timeout=180s
+
+kubectl --context "${poc_context}" -n "${namespace}" exec allowed-client -- nslookup kubernetes.default.svc.cluster.local
+kubectl --context "${poc_context}" -n "${namespace}" exec allowed-client -- wget -qO- --timeout=5 http://echo
+
+if kubectl --context "${poc_context}" -n "${namespace}" exec denied-client -- wget -qO- --timeout=3 http://echo >/dev/null 2>&1; then
+  echo "NetworkPolicy failure: denied-client reached echo" >&2
+  exit 1
+fi
+
+sentinel_before="$(kubectl --context "${poc_context}" -n "${namespace}" exec local-retention -- cat /data/sentinel)"
+kubectl --context "${poc_context}" -n "${namespace}" delete pod local-retention --wait=true
+kubectl --context "${poc_context}" apply -f "${poc_dir}/kubernetes/smoke/manifests.yaml"
+kubectl --context "${poc_context}" -n "${namespace}" wait --for=condition=ready pod/local-retention --timeout=180s
+sentinel_after="$(kubectl --context "${poc_context}" -n "${namespace}" exec local-retention -- cat /data/sentinel)"
+
+if [[ -z "${sentinel_before}" || "${sentinel_before}" != "${sentinel_after}" ]]; then
+  echo "local volume retention failure" >&2
+  exit 1
+fi
+
+echo "smoke tests passed: DNS, Service, NetworkPolicy, and local volume pod recreation"
+echo "run cleanup-smoke-tests after recording the result"

@@ -16,6 +16,13 @@ spec:
       targetRevision: "0.14.9"
       helm:
         releaseName: metallb
+        values: |
+          # Talos 1.13 / kube-proxy nftables環境では、FRR speakerを全nodeへ
+          # 配置すると同居nodeのClusterIP通信を阻害した。L2到達可能な
+          # 専用worker 1台だけへ配置し、VIP広告経路を一意にする。
+          speaker:
+            nodeSelector:
+              kubernetes.io/hostname: talos-4jt-93y
     # L2Advertisement / IPAddressPool の設定
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
