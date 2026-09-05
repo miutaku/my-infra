@@ -907,14 +907,44 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-05 | Codex | 監視・周辺アプリをGreen Argo CDへ展開 | Victoria復元dataで起動、vmagent/DNS/Tunnel/CI agent/exporter群を同期 | Loockit以外はGreen管理へ移行 |
 | 2026-09-05 | Codex | Loockit BlueZ sidecar PoC | USB `0bda:8771`はTalos guestに見えるがstock kernelに`bluetooth`/`btusb`がなくBlueZ management interfaceを作れない | PoC停止、USBをUbuntu 12001へ復帰、RKE2 agentは停止 |
 | 2026-09-06 | Codex | 23:00予約ID 23の本番録画を事後検証 | recorded ID 426、H.265 300,520,785 bytes、23:38更新のNFS実fileをGreen API/Pod双方で確認 | 録画系cutover Gate合格 |
+| 2026-09-06 | Codex | Raspberry Pi worker-11/12をRKE2から退役 | 業務Podなしを確認してcordon/drain、rke2-agent停止・無効化、inventoryを退役groupへ変更 | Ubuntu/BlueZ/SSHと電源はrollback用に維持 |
 
 ### 2026-09-05 cutover時点の残課題
 
-- Loockit APIは認証なしで`/devices`へ応答する。Ubuntu専用OCIホスト化は、privileged/host networkと
-  LAN露出を避ける設計（認証proxyまたは送信元を限定したbridge公開）が確定するまで実行しない。
+- Loockit APIは認証なしで`/devices`へ応答する。LoockitはProxmox LXCへ外出しし、専用IP、
+  USB Bluetooth排他割当、送信元制限、Green側selectorless Service/EndpointSliceで収容する。
+  Talos custom kernel案は採用しない。
 - MetalLB speakerは`talos-4jt-93y`だけへ固定する。複数node化はTalos/kube-proxy nftablesとの
   相互作用を再現・解消してから行う。
 - Blueはrollback保持期間中、application controllerと書込みworkloadを停止したまま残す。
+
+### Raspberry Pi worker-11 / worker-12の扱い（2026-09-06）
+
+両機はbare metal Ubuntu Raspberry Pi 4で、内蔵BluetoothとUSB Bluetoothを各1台持つ。一方、移行時点で
+配置されていたのはCNI、kube-proxy、node-exporter等のcluster system Podだけで、業務Podと
+`loockit.miutaku/receiver=true` labelはない。このためTalos化してarm64 Kubernetes nodeとして維持する
+利点はない。
+
+両nodeをcordon/drainし、`rke2-agent`を停止・無効化した。Ansible inventoryでも`rke2-agent`から
+`retired-rke2-agent`へ移し、通常のRKE2 playbookで再参加しないようにした。利用を終了する方針とし、
+Loockit LXCの本切替後に電源停止する。再利用する場合もKubernetes nodeへ自動復帰させない。
+
+### Loockit LXC PoC結果（2026-09-06）
+
+非特権Ubuntu LXC 12902（`192.168.20.133`）をpve-x570へ構築した。Bluetooth management interfaceは
+container namespaceから直接利用できないため、HCI/BlueZはProxmox hostが所有する。host側の
+`xdg-dbus-proxy`は`org.bluez`だけを許可し、生成socketだけをLXCへread-only bindする。raw USB、
+host network、特権LXCは使用しない。
+
+Loockit 0.1.14 OCIへ既存鍵をmode 0600で移し、次を確認した。
+
+- LXC/OCI再起動後の自動復旧、`healthz`、`readyz`
+- USB controller `00:E0:4C:23:99:87`の認識
+- intercom Botとfront doorのBLE advertisement検出
+- intercom Botの状態・電池取得とBearer認証付き`click`成功
+- APIはLXCのbridge IPで提供し、Greenではselectorless Service/EndpointSliceから接続
+
+Talos custom kernelは不要になり、LoockitはMirakurunと同様にKubernetes外の構成管理対象とする。
 
 ### Loockit向けTalos custom image調査（2026-09-06）
 

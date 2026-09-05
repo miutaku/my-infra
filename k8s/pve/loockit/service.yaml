@@ -5,13 +5,10 @@ metadata:
   namespace: app-loockit
 spec:
   type: ClusterIP
-  selector:
-    app.kubernetes.io/name: loockit
-    loockit.miutaku/active: "true"
   ports:
     - name: rest
       port: 8080
-      targetPort: rest
+      targetPort: 8080
     - name: grpc
       port: 50051
-      targetPort: grpc
+      targetPort: 50051
