@@ -17,6 +17,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: loockit
+      annotations:
+        loockit.miutaku/config-revision: front-door-v1
     spec:
       serviceAccountName: loockit
       nodeSelector:
