@@ -17,6 +17,8 @@ ExternalSecret:
 
 - `LOOCKIT_INTERCOM_BOT_SECRET_KEY`
 - `LOOCKIT_INTERCOM_BOT_PUBLIC_KEY`
+- `LOOCKIT_FRONT_DOOR_SECRET_KEY`
+- `LOOCKIT_FRONT_DOOR_PUBLIC_KEY`
 
 They are materialized as the `loockit-keys` Kubernetes Secret and injected as
 environment variables. Never store their values in Git.

@@ -34,3 +34,8 @@ data:
     id = "intercom-bot"
     model = "SESAMEBOT1"
     ble_address = "E0:5B:CF:D3:A3:60"
+
+    [[devices]]
+    id = "front-door"
+    model = "SESAME4"
+    ble_address = "D5:5E:96:7B:87:8A"
