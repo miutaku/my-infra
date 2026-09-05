@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+controlplane_ip="${TALOS_POC_CONTROLPLANE_IP:-192.168.20.137}"
+expected_server="https://${controlplane_ip}:6443"
+namespace=talos-poc-nfs-write
+
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/nfs-smoke/write.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" wait \
+  --for=condition=Ready pod/nfs-writer --timeout=180s
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" exec nfs-writer -- \
+  sh -c 'set -e; file=/mnt/test/talos-poc-write-test; test ! -e "$file"; dd if=/dev/zero of="$file" bs=4096 count=1 conv=fsync >/dev/null 2>&1; test -s "$file"; rm -f "$file"; sync; test ! -e "$file"'
+
+echo "NFS write test passed: create, fsync, verify, and delete succeeded"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete namespace "${namespace}" --wait=true
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete pv talos-poc-nfs-write --wait=true
+echo "deleted temporary NFS write test Kubernetes resources"

@@ -35,6 +35,8 @@ go.work.sum
 
 # terraform
 *.terraform*
+!terraform/talos-poc/.terraform.lock.hcl
+!terraform/talos-green/.terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
 terraform/pve/.tmp/
@@ -44,6 +46,18 @@ ROADMAP.md
 
 # RKE2 etcd snapshot backups (docs/rke2-upgrade.md runbook output)
 rke2-backups/
+
+# Talos machine configs contain cluster PKI and client credentials.
+talos/poc/.generated/
+talos/poc/poc.env
+terraform/talos-poc/.state/
+terraform/talos-poc/*.tfplan
+terraform/talos-poc/terraform.tfvars
+talos/green/.generated/
+talos/green/green.env
+terraform/talos-green/.state/
+terraform/talos-green/*.tfplan
+terraform/talos-green/terraform.tfvars
 
 # SNMP MIB files (vendor licensing / NEC terms of use)
 *.mib

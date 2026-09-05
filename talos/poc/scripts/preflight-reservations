@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pve_host="${PVE_CHECK_HOST:-root@192.168.0.115}"
+probe_host="${VLAN20_PROBE_HOST:-miutaku@192.168.20.129}"
+blue_context="${BLUE_KUBE_CONTEXT:-rke2-pve}"
+ssh_args=(-F /dev/null -o BatchMode=yes)
+
+vm_ids=(13001 13002)
+mac_addresses=(02:54:00:13:00:01 02:54:00:13:00:02)
+node_ips=(192.168.20.137 192.168.20.138)
+metallb_ip=192.168.20.228
+
+failures=0
+
+fail() {
+  echo "COLLISION: $*" >&2
+  failures=$((failures + 1))
+}
+
+echo "[1/3] checking Proxmox VM IDs and MAC addresses through ${pve_host}"
+cluster_resources="$(ssh "${ssh_args[@]}" "${pve_host}" \
+  'pvesh get /cluster/resources --type vm --output-format json')"
+
+for vm_id in "${vm_ids[@]}"; do
+  if grep -Eq "\"vmid\"[[:space:]]*:[[:space:]]*${vm_id}([^0-9]|$)" <<<"${cluster_resources}"; then
+    fail "Proxmox VM ID ${vm_id} already exists"
+  else
+    echo "  free VM ID: ${vm_id}"
+  fi
+done
+
+vm_configs="$(ssh "${ssh_args[@]}" "${pve_host}" \
+  'grep -H . /etc/pve/qemu-server/*.conf || true')"
+
+for mac in "${mac_addresses[@]}"; do
+  if grep -Fqi "${mac}" <<<"${vm_configs}"; then
+    fail "Proxmox MAC ${mac} already exists"
+  else
+    echo "  free MAC: ${mac}"
+  fi
+done
+
+echo "[2/3] checking current Kubernetes Service addresses"
+service_addresses="$(kubectl --context "${blue_context}" get services --all-namespaces \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}{"/"}{.metadata.name}{" "}{.spec.clusterIP}{" "}{range .spec.externalIPs[*]}{.}{" "}{end}{range .status.loadBalancer.ingress[*]}{.ip}{" "}{end}{"\n"}{end}')"
+
+if grep -Eq "(^|[[:space:]])${metallb_ip//./\.}([[:space:]]|$)" <<<"${service_addresses}"; then
+  fail "MetalLB test IP ${metallb_ip} is already assigned to a Service"
+else
+  echo "  unassigned Service IP: ${metallb_ip}"
+fi
+
+echo "[3/3] probing reserved IPs from VLAN 20 through ${probe_host}"
+for ip in "${node_ips[@]}" "${metallb_ip}"; do
+  probe_result="$(ssh "${ssh_args[@]}" "${probe_host}" \
+    "if ping -c 2 -W 1 '${ip}' >/dev/null 2>&1; then echo reachable; else echo no-icmp-reply; fi; ip neigh show '${ip}' || true")"
+  if grep -q '^reachable$' <<<"${probe_result}"; then
+    fail "${ip} answered ICMP from VLAN 20"
+  elif grep -Eiq 'lladdr.*(REACHABLE|STALE|DELAY|PROBE|PERMANENT)' <<<"${probe_result}"; then
+    fail "${ip} has a resolved neighbor entry: ${probe_result//$'\n'/ }"
+  else
+    echo "  no ICMP reply or resolved neighbor: ${ip}"
+  fi
+done
+
+if ((failures > 0)); then
+  echo "reservation preflight failed with ${failures} collision(s)" >&2
+  exit 1
+fi
+
+cat <<'EOF'
+reservation preflight passed
+
+Note: an IP that does not answer ICMP can still be in use. Review DHCP leases, static
+reservations, switch/router neighbor tables, and the Terraform live plan before apply.
+EOF

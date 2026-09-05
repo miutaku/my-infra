@@ -1,0 +1,8 @@
+# PoC is L2-only. Disable both BGP backends to avoid unnecessary FRR workloads.
+speaker:
+  frr:
+    enabled: false
+frrk8s:
+  enabled: false
+prometheus:
+  rbacPrometheus: false

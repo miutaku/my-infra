@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loockit
+  namespace: app-loockit
+spec:
+  replicas: 1
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-ayb-pmi
+        hardware.miutaku/bluetooth: null
+        loockit.miutaku/receiver: null
+      containers:
+        - name: loockit
+          volumeMounts:
+            - name: dbus
+              mountPath: /run/dbus
+        - name: bluez
+          image: ubuntu:26.04
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+            - /bin/bash
+            - -lc
+            - >-
+              export DEBIAN_FRONTEND=noninteractive;
+              apt-get update;
+              apt-get install -y --no-install-recommends bluez dbus;
+              mkdir -p /run/dbus;
+              rm -f /run/dbus/pid /run/dbus/system_bus_socket;
+              dbus-daemon --system --fork;
+              exec bluetoothd --nodetach
+          volumeMounts:
+            - name: dbus
+              mountPath: /run/dbus
+            - name: usb
+              mountPath: /dev/bus/usb
+      volumes:
+        - name: dbus
+          emptyDir: {}
+          hostPath: null
+        - name: usb
+          hostPath:
+            path: /dev/bus/usb
+            type: Directory

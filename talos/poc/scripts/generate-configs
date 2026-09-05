@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+env_file="${poc_dir}/poc.env"
+output_dir="${poc_dir}/.generated"
+
+if [[ ! -f "${env_file}" ]]; then
+  echo "missing ${env_file}; copy poc.env.example and fill reserved PoC values" >&2
+  exit 1
+fi
+
+set -a
+# shellcheck disable=SC1090
+source "${env_file}"
+set +a
+
+required=(
+  TALOS_CLUSTER_NAME
+  TALOS_VERSION
+  KUBERNETES_VERSION
+  SCHEMATIC_ID
+  TALOS_ENDPOINT
+  TALOS_INSTALL_DISK
+)
+for name in "${required[@]}"; do
+  if [[ -z "${!name:-}" ]]; then
+    echo "${name} is required in ${env_file}" >&2
+    exit 1
+  fi
+done
+
+if [[ "${TALOS_VERSION}" == *x || "${SCHEMATIC_ID}" == replace-* || "${TALOS_ENDPOINT}" == *replace-* ]]; then
+  echo "placeholder remains in ${env_file}" >&2
+  exit 1
+fi
+
+if [[ "${TALOS_ENDPOINT}" != https://*:6443 ]]; then
+  echo "TALOS_ENDPOINT must be https://<reserved-poc-ip>:6443" >&2
+  exit 1
+fi
+
+case "${TALOS_ENDPOINT}" in
+  *192.168.20.227*)
+    echo "refusing to use the Blue RKE2 API VIP 192.168.20.227" >&2
+    exit 1
+    ;;
+esac
+
+if [[ "${TALOS_INSTALL_DISK}" != /dev/sda ]]; then
+  echo "PoC baseline expects the empty OS disk at /dev/sda; review README before changing it" >&2
+  exit 1
+fi
+
+if ! command -v talosctl >/dev/null 2>&1; then
+  echo "talosctl is required and must match ${TALOS_VERSION}" >&2
+  exit 1
+fi
+
+if [[ -e "${output_dir}" ]]; then
+  echo "refusing to overwrite ${output_dir}; archive results securely or remove it deliberately" >&2
+  exit 1
+fi
+
+mkdir -p "${output_dir}"
+chmod 0700 "${output_dir}"
+
+installer_image="factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}"
+talosctl gen config \
+  "${TALOS_CLUSTER_NAME}" \
+  "${TALOS_ENDPOINT}" \
+  --output "${output_dir}" \
+  --install-disk "${TALOS_INSTALL_DISK}" \
+  --install-image "${installer_image}" \
+  --kubernetes-version "${KUBERNETES_VERSION}" \
+  --config-patch "@${poc_dir}/patches/cluster.yaml" \
+  --config-patch-worker "@${poc_dir}/patches/worker-storage.yaml"
+
+chmod 0600 "${output_dir}"/*
+echo "generated secret-bearing configs under ${output_dir}; do not commit or share them"

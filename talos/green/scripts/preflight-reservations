@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pve_host="${PVE_CHECK_HOST:-root@192.168.0.115}"
+probe_host="${VLAN20_PROBE_HOST:-miutaku@192.168.20.129}"
+blue_context="${BLUE_KUBE_CONTEXT:-rke2-pve}"
+ssh_args=(-F /dev/null -o BatchMode=yes)
+vm_ids=(13001 13002 13003 13004 13005)
+mac_addresses=(02:54:00:13:00:01 02:54:00:13:00:02 02:54:00:13:00:03 02:54:00:13:00:04 02:54:00:13:00:05)
+reserved_ips=(192.168.20.137 192.168.20.138 192.168.20.139 192.168.20.140 192.168.20.141 192.168.20.228)
+failures=0
+
+fail() { echo "COLLISION: $*" >&2; failures=$((failures + 1)); }
+resources="$(ssh "${ssh_args[@]}" "${pve_host}" 'pvesh get /cluster/resources --type vm --output-format json')"
+configs="$(ssh "${ssh_args[@]}" "${pve_host}" 'grep -H . /etc/pve/qemu-server/*.conf || true')"
+for id in "${vm_ids[@]}"; do
+  grep -Eq "\"vmid\"[[:space:]]*:[[:space:]]*${id}([^0-9]|$)" <<<"${resources}" && fail "VM ID ${id} exists" || true
+done
+for mac in "${mac_addresses[@]}"; do
+  grep -Fqi "${mac}" <<<"${configs}" && fail "MAC ${mac} exists" || true
+done
+services="$(kubectl --context "${blue_context}" get services -A -o json)"
+for ip in "${reserved_ips[@]}"; do
+  jq -e --arg ip "${ip}" '.items[] | select(.spec.clusterIP==$ip or any(.spec.externalIPs[]?; .==$ip) or any(.status.loadBalancer.ingress[]?; .ip==$ip))' <<<"${services}" >/dev/null && fail "Blue Service uses ${ip}" || true
+  probe="$(ssh "${ssh_args[@]}" "${probe_host}" "if ping -c 2 -W 1 '${ip}' >/dev/null 2>&1; then echo reachable; else echo no-reply; fi; ip neigh show '${ip}' || true")"
+  grep -q '^reachable$' <<<"${probe}" && fail "${ip} answers ICMP" || true
+  grep -Eiq 'lladdr.*(REACHABLE|STALE|DELAY|PROBE|PERMANENT)' <<<"${probe}" && fail "${ip} has a resolved neighbor" || true
+done
+((failures == 0)) || { echo "preflight failed: ${failures} collision(s)" >&2; exit 1; }
+echo "production Green reservations are collision-free"

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+talosconfig="${TALOSCONFIG:-${poc_dir}/.generated/talosconfig}"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+controlplane_ip="${TALOS_POC_CONTROLPLANE_IP:-192.168.20.137}"
+worker_ip="${TALOS_POC_WORKER_IP:-192.168.20.138}"
+namespace=talos-poc-smoke
+pod=local-retention
+expected_server="https://${controlplane_ip}:6443"
+
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to reboot cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+worker_node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get nodes -o json |
+  jq -r --arg ip "${worker_ip}" '.items[] | select(any(.status.addresses[]; .type == "InternalIP" and .address == $ip)) | .metadata.name')"
+pod_node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" get "pod/${pod}" -o jsonpath='{.spec.nodeName}')"
+
+if [[ -z "${worker_node}" || "${pod_node}" != "${worker_node}" ]]; then
+  echo "refusing reboot: ${namespace}/${pod} runs on ${pod_node:-<none>}, expected worker ${worker_node:-<none>}" >&2
+  exit 1
+fi
+
+sentinel_before="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" exec "${pod}" -- cat /data/sentinel)"
+[[ -n "${sentinel_before}" ]]
+
+talosctl --talosconfig "${talosconfig}" --nodes "${worker_ip}" --endpoints "${controlplane_ip}" \
+  reboot --wait --timeout=5m
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" wait --for=condition=Ready \
+  "node/${worker_node}" --timeout=180s
+# A bare Pod is intentionally used by the smoke manifest. Talos graceful node
+# shutdown terminates it permanently, so recreate the Pod like a controller would.
+# The PVC is not deleted and must bind the recreated Pod to the same local PV.
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" delete \
+  "pod/${pod}" --ignore-not-found=true --wait=true
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/smoke/manifests.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" wait --for=condition=Ready \
+  "pod/${pod}" --timeout=180s
+
+for attempt in $(seq 1 60); do
+  if sentinel_after="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n "${namespace}" exec "${pod}" -- cat /data/sentinel 2>/dev/null)" &&
+    [[ "${sentinel_after}" == "${sentinel_before}" ]]; then
+    echo "local volume reboot test passed on ${worker_node}: sentinel ${sentinel_after}"
+    exit 0
+  fi
+  sleep 3
+done
+
+echo "local volume reboot test failed: sentinel was not preserved after worker reboot" >&2
+exit 1

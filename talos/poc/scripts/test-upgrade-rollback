@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+talosconfig="${TALOSCONFIG:-${poc_dir}/.generated/talosconfig}"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+controlplane_ip="${TALOS_POC_CONTROLPLANE_IP:-192.168.20.137}"
+worker_ip="${TALOS_POC_WORKER_IP:-192.168.20.138}"
+expected_server="https://${controlplane_ip}:6443"
+baseline_version="${TALOS_POC_UPGRADE_BASELINE:-v1.13.8}"
+target_version="${TALOS_POC_UPGRADE_TARGET:-v1.13.9}"
+
+# shellcheck disable=SC1091
+source "${poc_dir}/poc.env"
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+if [[ "${worker_ip}" != 192.168.20.138 || "${controlplane_ip}" != 192.168.20.137 ]]; then
+  echo "refusing unexpected PoC node addresses" >&2
+  exit 1
+fi
+if [[ -z "${SCHEMATIC_ID:-}" ]]; then
+  echo "SCHEMATIC_ID is missing from poc.env" >&2
+  exit 1
+fi
+if [[ -n "$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get pvc -A -o name)" ]]; then
+  echo "refusing upgrade test while Green contains PVCs" >&2
+  exit 1
+fi
+
+worker_node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get nodes -o json |
+  jq -r --arg ip "${worker_ip}" '.items[] | select(any(.status.addresses[]; .type == "InternalIP" and .address == $ip)) | .metadata.name')"
+if [[ -z "${worker_node}" ]]; then
+  echo "Green worker node not found" >&2
+  exit 1
+fi
+
+node_version() {
+  talosctl --talosconfig "${talosconfig}" --nodes "${worker_ip}" --endpoints "${controlplane_ip}" \
+    version --short 2>/dev/null | awk '/Tag:/ {print $2}'
+}
+
+wait_version_ready() {
+  local expected="$1"
+  local observed=""
+  for attempt in $(seq 1 120); do
+    observed="$(node_version || true)"
+    ready="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get "node/${worker_node}" \
+      -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || true)"
+    if [[ "${observed}" == "${expected}" && "${ready}" == True ]]; then
+      echo "worker ready on ${expected}"
+      return 0
+    fi
+    sleep 3
+  done
+  echo "worker did not become Ready on ${expected}; observed ${observed:-none}" >&2
+  return 1
+}
+
+upgrade_to() {
+  local version="$1"
+  talosctl --talosconfig "${talosconfig}" --nodes "${worker_ip}" --endpoints "${controlplane_ip}" \
+    upgrade --image "factory.talos.dev/installer/${SCHEMATIC_ID}:${version}" \
+    --drain=true --wait=true --timeout=10m
+  wait_version_ready "${version}"
+}
+
+if [[ "$(node_version)" != "${target_version}" ]]; then
+  echo "worker must start on ${target_version}" >&2
+  exit 1
+fi
+
+# Seed the A/B slots with adjacent patch versions, prove forward upgrade, then
+# exercise the rollback API and restore the declared target version.
+upgrade_to "${baseline_version}"
+upgrade_to "${target_version}"
+rollback_started=false
+for attempt in $(seq 1 24); do
+  if talosctl --talosconfig "${talosconfig}" --nodes "${worker_ip}" --endpoints "${controlplane_ip}" rollback; then
+    rollback_started=true
+    break
+  fi
+  # The installer may briefly retain a shared block-device probe lock after
+  # the node reports Ready. Wait for release rather than forcing disk access.
+  sleep 5
+done
+if [[ "${rollback_started}" != true ]]; then
+  echo "rollback did not start after waiting for the installer disk lock" >&2
+  exit 1
+fi
+wait_version_ready "${baseline_version}"
+upgrade_to "${target_version}"
+
+echo "Talos upgrade/rollback test passed: ${baseline_version} -> ${target_version} -> rollback -> ${target_version}"

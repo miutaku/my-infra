@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+expected_server="${TALOS_POC_KUBE_SERVER:-https://192.168.20.137:6443}"
+test_ip="${TALOS_POC_METALLB_IP:-192.168.20.228}"
+chart_version="${TALOS_POC_METALLB_CHART_VERSION:-0.16.1}"
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+if [[ "${test_ip}" != 192.168.20.228 ]]; then
+  echo "refusing unreserved MetalLB IP ${test_ip}; expected 192.168.20.228" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/metallb/namespace.yaml"
+KUBECONFIG="${kubeconfig}" helm upgrade --install metallb metallb \
+  --repo https://metallb.github.io/metallb \
+  --version "${chart_version}" \
+  --namespace metallb-system \
+  --values "${poc_dir}/kubernetes/metallb/values.yaml" \
+  --wait --timeout 5m
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/metallb/config.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/metallb/test.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-metallb \
+  wait --for=condition=available deployment/echo --timeout=180s
+
+for attempt in $(seq 1 60); do
+  assigned="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-metallb \
+    get service echo -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+  if [[ "${assigned}" == "${test_ip}" ]]; then
+    break
+  fi
+  sleep 2
+done
+if [[ "${assigned:-}" != "${test_ip}" ]]; then
+  echo "MetalLB did not assign ${test_ip}" >&2
+  exit 1
+fi
+
+probe_host="${TALOS_POC_L2_PROBE_HOST:-miutaku@192.168.20.129}"
+response="$(ssh "${probe_host}" curl --fail --silent --show-error --max-time 10 "http://${test_ip}/")"
+if [[ "${response}" != "talos-poc-metallb-ok" ]]; then
+  echo "unexpected response through ${test_ip}" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete namespace talos-poc-metallb --wait=true
+echo "MetalLB L2 test passed: ${test_ip} assigned and reachable from ${probe_host}; test namespace deleted"

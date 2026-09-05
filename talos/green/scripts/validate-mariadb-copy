@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+green_kubeconfig="${repo_root}/talos/green/.generated/kubeconfig"
+blue_result=$(mktemp)
+green_result=$(mktemp)
+trap 'rm -f "${blue_result}" "${green_result}"' EXIT
+
+collect() {
+  local target=$1
+  local -a kube_args
+  if [[ ${target} == blue ]]; then
+    kube_args=(--context rke2-pve)
+  else
+    kube_args=(--kubeconfig "${green_kubeconfig}")
+  fi
+
+  kubectl "${kube_args[@]}" -n infra-db exec -i mariadb-0 -- sh -s <<'POD'
+set -eu
+
+mariadb-dump -uroot -p"${MARIADB_ROOT_PASSWORD}" \
+  --no-data --skip-comments --routines --events --triggers \
+  --databases epgstation nextcloud | sha256sum
+
+count_sql=$(mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -N -e \
+  "SELECT CONCAT(
+     'SELECT ', QUOTE(CONCAT(TABLE_SCHEMA, '.', TABLE_NAME)),
+     ', COUNT(*) FROM ', CHAR(96), TABLE_SCHEMA, CHAR(96), '.',
+     CHAR(96), TABLE_NAME, CHAR(96), ';')
+   FROM information_schema.TABLES
+   WHERE TABLE_SCHEMA IN ('epgstation', 'nextcloud')
+     AND TABLE_TYPE = 'BASE TABLE'
+   ORDER BY TABLE_SCHEMA, TABLE_NAME")
+printf '%s\n' "${count_sql}" | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -N
+
+checksum_sql=$(mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -N -e \
+  "SELECT CONCAT(
+     'CHECKSUM TABLE ', CHAR(96), TABLE_SCHEMA, CHAR(96), '.',
+     CHAR(96), TABLE_NAME, CHAR(96), ';')
+   FROM information_schema.TABLES
+   WHERE TABLE_SCHEMA IN ('epgstation', 'nextcloud')
+     AND TABLE_TYPE = 'BASE TABLE'
+   ORDER BY TABLE_SCHEMA, TABLE_NAME")
+printf '%s\n' "${checksum_sql}" | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -N
+
+mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -N -e \
+  "SHOW GRANTS FOR 'epgstation'@'%'; SHOW GRANTS FOR 'nextcloud'@'%';"
+POD
+}
+
+collect blue >"${blue_result}"
+collect green >"${green_result}"
+
+echo "Blue lines: $(wc -l <"${blue_result}")"
+echo "Green lines: $(wc -l <"${green_result}")"
+if diff -u "${blue_result}" "${green_result}"; then
+  echo "MariaDB schema, row counts, checksums, and grants match"
+else
+  echo "MariaDB comparison has differences (live-source drift is possible)" >&2
+  exit 1
+fi

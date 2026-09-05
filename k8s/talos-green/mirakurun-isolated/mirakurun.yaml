@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mirakurun
+spec:
+  type: ClusterIP
+  selector: {app: mirakurun}
+  ports: [{name: http, port: 40772, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mirakurun
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: mirakurun}
+  template:
+    metadata:
+      labels: {app: mirakurun}
+    spec:
+      imagePullSecrets: [{name: ghcr-pull-secret}]
+      containers:
+        - name: mirakurun
+          image: ghcr.io/miutaku/mirakurun:e47c455
+          ports: [{name: http, containerPort: 40772}]
+          env:
+            - {name: TZ, value: Asia/Tokyo}
+            - {name: BCAS_KEYS_FILE, value: /opt/bin/bcas_keys}
+          volumeMounts:
+            - {name: config, mountPath: /app-config/server.yml, subPath: server.yml}
+            - {name: config, mountPath: /app-config/tuners.yml, subPath: tuners.yml}
+            - {name: config, mountPath: /app-config/channels.yml, subPath: channels.yml}
+            - {name: bcas-keys, mountPath: /opt/bin/bcas_keys, subPath: bcas_keys, readOnly: true}
+            - {name: data, mountPath: /app-data}
+          readinessProbe:
+            httpGet: {path: /api/version, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 200m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+      volumes:
+        - name: config
+          configMap: {name: mirakurun-config}
+        - name: bcas-keys
+          secret: {secretName: mirakurun-bcas-keys}
+        - name: data
+          persistentVolumeClaim: {claimName: mirakurun-data}
