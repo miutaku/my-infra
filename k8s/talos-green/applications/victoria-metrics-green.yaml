@@ -12,6 +12,15 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
+  # The restored StatefulSet already owns a bound local-path claim. Kubernetes
+  # defaults fields inside this immutable template differently from Argo's
+  # normalized manifest; data-bearing claim changes must never be auto-applied.
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: victoria-metrics-green
+      jsonPointers:
+        - /spec/volumeClaimTemplates
   syncPolicy:
     automated:
       prune: true
@@ -19,3 +28,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
