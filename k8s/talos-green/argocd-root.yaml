@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/miutaku/my-infra.git
+    targetRevision: main
+    path: k8s/pve/argocd-apps
+    directory:
+      # Hardware/OS-specific and restored-state apps have Green-specific owners.
+      exclude: '{loockit.yaml,node-network-fix.yaml,rke2-coredns-config.yaml,victoria-metrics.yaml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: talos-green-apps
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/miutaku/my-infra.git
+    targetRevision: main
+    path: k8s/talos-green/applications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

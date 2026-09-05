@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: talos-poc-nfs-read
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: talos-poc-nfs-read
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: [ReadOnlyMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+    - ro
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/recorded
+    readOnly: true
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recorded-read-only
+  namespace: talos-poc-nfs-read
+spec:
+  accessModes: [ReadOnlyMany]
+  storageClassName: ""
+  volumeName: talos-poc-nfs-read
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs-reader
+  namespace: talos-poc-nfs-read
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+  containers:
+    - name: reader
+      image: docker.io/library/busybox:1.37.0
+      command: [sleep, infinity]
+      volumeMounts:
+        - name: recorded
+          mountPath: /mnt/recorded
+          readOnly: true
+      resources:
+        requests:
+          cpu: 5m
+          memory: 8Mi
+        limits:
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+  volumes:
+    - name: recorded
+      persistentVolumeClaim:
+        claimName: recorded-read-only
+        readOnly: true

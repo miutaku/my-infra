@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+green_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${green_dir}/.generated/kubeconfig}"
+context="${TALOS_GREEN_KUBE_CONTEXT:-admin@talos-green}"
+expected_server="https://192.168.20.228:6443"
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+[[ "${actual_server}" == "${expected_server}" ]] || {
+  echo "refusing cluster ${actual_server:-<none>}; expected ${expected_server}" >&2; exit 1;
+}
+
+label_by_ip() {
+  local ip="$1" pve_node="$2" role="$3" node
+  node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" get nodes -o json |
+    jq -er --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type=="InternalIP" and .address==$ip)) | .metadata.name')"
+  KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
+    "topology.miutaku/proxmox-node=${pve_node}" "node.miutaku/role=${role}"
+}
+
+label_by_ip 192.168.20.137 pve-x570 controlplane
+label_by_ip 192.168.20.138 pve-b550m controlplane
+label_by_ip 192.168.20.139 pve-b550m controlplane
+label_by_ip 192.168.20.140 pve-x570 agent
+label_by_ip 192.168.20.141 pve-b550m agent

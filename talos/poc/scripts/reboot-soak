@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+talosconfig="${TALOSCONFIG:-${poc_dir}/.generated/talosconfig}"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+controlplane_ip="${TALOS_POC_CONTROLPLANE_IP:-192.168.20.137}"
+worker_ip="${TALOS_POC_WORKER_IP:-192.168.20.138}"
+cycles="${TALOS_POC_REBOOT_CYCLES:-3}"
+expected_server="https://${controlplane_ip}:6443"
+
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to reboot cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+node_for_ip() {
+  local ip="$1"
+  KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get nodes -o json |
+    jq -r --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type == "InternalIP" and .address == $ip)) | .metadata.name'
+}
+
+controlplane_node="$(node_for_ip "${controlplane_ip}")"
+worker_node="$(node_for_ip "${worker_ip}")"
+[[ -n "${controlplane_node}" && -n "${worker_node}" ]]
+
+wait_cluster_ready() {
+  local attempt
+  for attempt in $(seq 1 60); do
+    if KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get --raw=/readyz >/dev/null 2>&1 &&
+      KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" wait --for=condition=Ready \
+        "node/${controlplane_node}" "node/${worker_node}" --timeout=5s >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 3
+  done
+  echo "cluster did not return Ready within 180 seconds" >&2
+  return 1
+}
+
+for cycle in $(seq 1 "${cycles}"); do
+  echo "cycle ${cycle}/${cycles}: rebooting worker ${worker_ip}"
+  talosctl --talosconfig "${talosconfig}" --nodes "${worker_ip}" --endpoints "${controlplane_ip}" \
+    reboot --wait --timeout=5m
+  wait_cluster_ready
+
+  echo "cycle ${cycle}/${cycles}: rebooting control plane ${controlplane_ip}"
+  talosctl --talosconfig "${talosconfig}" --nodes "${controlplane_ip}" --endpoints "${controlplane_ip}" \
+    reboot --wait --timeout=5m
+  wait_cluster_ready
+
+  KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" get nodes
+done
+
+echo "reboot soak passed: ${cycles} worker/control-plane cycles"

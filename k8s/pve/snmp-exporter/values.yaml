@@ -6,8 +6,7 @@ service:
   type: ClusterIP
 
 nodeSelector:
-  # Keep the compatibility hostname label used by worker-01 local-path PVs.
-  kubernetes.io/hostname: worker-01-rke2-agent-ubuntu-26-04-home-amd64
+  kubernetes.io/hostname: talos-ayb-pmi
 
 resources:
   requests:

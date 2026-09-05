@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+expected_server="${TALOS_POC_KUBE_SERVER:-https://192.168.20.137:6443}"
+argocd_version="${TALOS_POC_ARGOCD_VERSION:-v3.3.10}"
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/argocd/namespace.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd apply \
+  --server-side --force-conflicts \
+  -f "https://raw.githubusercontent.com/argoproj/argo-cd/${argocd_version}/manifests/install.yaml"
+
+for deployment in argocd-applicationset-controller argocd-dex-server argocd-notifications-controller argocd-redis argocd-repo-server argocd-server; do
+  KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd rollout status \
+    "deployment/${deployment}" --timeout=300s
+done
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd rollout status \
+  statefulset/argocd-application-controller --timeout=300s
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/argocd/project-application.yaml"
+
+for attempt in $(seq 1 120); do
+  sync_status="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd \
+    get application talos-poc-guestbook -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+  health_status="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd \
+    get application talos-poc-guestbook -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+  if [[ "${sync_status}" == Synced && "${health_status}" == Healthy ]]; then
+    break
+  fi
+  sleep 3
+done
+if [[ "${sync_status:-}" != Synced || "${health_status:-}" != Healthy ]]; then
+  echo "Argo CD application did not become Synced/Healthy: ${sync_status:-none}/${health_status:-none}" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-argocd \
+  wait --for=condition=available deployment --all --timeout=180s
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd \
+  get application talos-poc-guestbook
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd \
+  delete application talos-poc-guestbook --wait=true
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n argocd \
+  delete appproject talos-poc --wait=true
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" \
+  delete namespace talos-poc-argocd --ignore-not-found=true --wait=true
+echo "Argo CD test passed: isolated master/guestbook application Synced and Healthy; test resources deleted"

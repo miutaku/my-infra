@@ -1,0 +1,11 @@
+machine:
+  kubelet:
+    extraArgs:
+      # Talos official metrics-server guide: request CA-signed serving certs.
+      rotate-server-certificates: "true"
+cluster:
+  network:
+    cni:
+      name: flannel
+      flannel:
+        kubeNetworkPoliciesEnabled: true

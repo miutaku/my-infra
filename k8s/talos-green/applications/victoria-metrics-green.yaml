@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: victoria-metrics-green
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/miutaku/my-infra.git
+    targetRevision: main
+    path: k8s/talos-green/victoria-metrics-isolated
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

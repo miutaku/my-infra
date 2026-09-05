@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+poc_dir="$(cd -- "${script_dir}/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${poc_dir}/.generated/kubeconfig}"
+talosconfig="${TALOSCONFIG:-${poc_dir}/.generated/talosconfig}"
+poc_context="${TALOS_POC_KUBE_CONTEXT:-admin@talos-green-poc}"
+expected_server="${TALOS_POC_KUBE_SERVER:-https://192.168.20.137:6443}"
+chart_version="${TALOS_POC_METRICS_CHART_VERSION:-3.13.0}"
+approver_version="${TALOS_POC_KUBELET_APPROVER_VERSION:-v0.11.0}"
+controlplane_ip="${TALOS_POC_CONTROLPLANE_IP:-192.168.20.137}"
+worker_ip="${TALOS_POC_WORKER_IP:-192.168.20.138}"
+actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+
+if [[ "${actual_server}" != "${expected_server}" ]]; then
+  echo "refusing to modify cluster ${actual_server:-<none>}; expected ${expected_server}" >&2
+  exit 1
+fi
+
+if ! command -v talosctl >/dev/null 2>&1; then
+  echo "talosctl v1.13.9 is required in PATH" >&2
+  exit 1
+fi
+
+approver_url="https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/${approver_version}/deploy/standalone-install.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply -f "${approver_url}"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n kubelet-serving-cert-approver \
+  rollout status deployment/kubelet-serving-cert-approver --timeout=180s
+
+for ip in "${controlplane_ip}" "${worker_ip}"; do
+  talosctl --talosconfig "${talosconfig}" --nodes "${ip}" --endpoints "${controlplane_ip}" \
+    patch machineconfig --mode=no-reboot --patch @"${poc_dir}/patches/cluster.yaml"
+done
+
+KUBECONFIG="${kubeconfig}" helm upgrade --install metrics-server metrics-server \
+  --repo https://kubernetes-sigs.github.io/metrics-server/ \
+  --version "${chart_version}" \
+  --namespace kube-system \
+  --values "${poc_dir}/kubernetes/metrics-server/values.yaml" \
+  --wait --timeout 5m
+
+for attempt in $(seq 1 60); do
+  if KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" top nodes >/dev/null 2>&1; then
+    break
+  fi
+  sleep 3
+done
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" top nodes
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" apply \
+  -f "${poc_dir}/kubernetes/metrics-server/test.yaml"
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-metrics \
+  wait --for=condition=available deployment/cpu-burn --timeout=180s
+
+for attempt in $(seq 1 60); do
+  utilization="$(KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-metrics \
+    get hpa cpu-burn -o jsonpath='{.status.currentMetrics[0].resource.current.averageUtilization}' 2>/dev/null || true)"
+  if [[ "${utilization}" =~ ^[0-9]+$ ]]; then
+    break
+  fi
+  sleep 3
+done
+if [[ ! "${utilization:-}" =~ ^[0-9]+$ ]]; then
+  echo "HPA did not receive a CPU utilization metric" >&2
+  exit 1
+fi
+
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" -n talos-poc-metrics get hpa cpu-burn
+KUBECONFIG="${kubeconfig}" kubectl --context "${poc_context}" delete namespace talos-poc-metrics --wait=true
+echo "metrics-server test passed: HPA observed CPU utilization ${utilization}%; test namespace deleted"

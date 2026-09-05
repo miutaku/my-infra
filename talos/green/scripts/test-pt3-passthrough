@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+green_kubeconfig="${repo_root}/talos/green/.generated/kubeconfig"
+pve=root@192.168.0.115
+blue_node=worker-03-rke2-agent-ubuntu-26-04-home-pve-amd64
+green_node=talos-ayb-pmi
+blue_vm=12900
+green_vm=13004
+moved=false
+
+restore() {
+  set +e
+  kubectl --kubeconfig "${green_kubeconfig}" -n pt3-hardware-poc delete pod pt3-probe --wait=false >/dev/null 2>&1
+  kubectl --kubeconfig "${green_kubeconfig}" delete namespace pt3-hardware-poc --wait=false >/dev/null 2>&1
+
+  if [[ ${moved} == true ]]; then
+    ssh "${pve}" "qm stop ${green_vm} --skiplock 1 >/dev/null 2>&1 || true; qm set ${green_vm} --delete hostpci0 >/dev/null 2>&1 || true; qm start ${green_vm} >/dev/null 2>&1 || true"
+    ssh "${pve}" "qm stop ${blue_vm} --skiplock 1 >/dev/null 2>&1 || true; qm set ${blue_vm} --hostpci0 mapping=earthsoft_pt3 >/dev/null; qm start ${blue_vm} >/dev/null"
+  fi
+
+  kubectl --context rke2-pve uncordon "${blue_node}" >/dev/null 2>&1 || true
+  kubectl --context rke2-pve -n app-mirakurun scale deployment mirakurun --replicas=1 >/dev/null 2>&1 || true
+  kubectl --context rke2-pve -n app-mirakurun rollout status deployment/mirakurun --timeout=5m || true
+  kubectl --kubeconfig "${green_kubeconfig}" wait --for=condition=Ready "node/${green_node}" --timeout=5m || true
+}
+trap restore EXIT
+
+window=$("${repo_root}/talos/green/scripts/check-tnlastation-window")
+echo "${window}"
+recording=$(sed -n 's/.*recording.*total=//p' <<<"${window}")
+[[ ${recording} == 0 ]]
+
+ssh "${pve}" "qm config ${blue_vm} --current | grep -qx 'hostpci0: mapping=earthsoft_pt3'; ! qm config ${green_vm} --current | grep -q '^hostpci0:'"
+
+kubectl --context rke2-pve -n app-mirakurun scale deployment mirakurun --replicas=0
+kubectl --context rke2-pve -n app-mirakurun rollout status deployment/mirakurun --timeout=3m
+kubectl --context rke2-pve cordon "${blue_node}"
+
+ssh "${pve}" "qm shutdown ${blue_vm} --timeout 120; qm wait ${blue_vm} --timeout 130; qm set ${blue_vm} --delete hostpci0; qm shutdown ${green_vm} --timeout 120; qm wait ${green_vm} --timeout 130; qm set ${green_vm} --hostpci0 mapping=earthsoft_pt3; qm start ${green_vm}"
+moved=true
+
+kubectl --kubeconfig "${green_kubeconfig}" wait --for=condition=Ready "node/${green_node}" --timeout=5m
+kubectl --kubeconfig "${green_kubeconfig}" create namespace pt3-hardware-poc
+kubectl --kubeconfig "${green_kubeconfig}" label namespace pt3-hardware-poc \
+  pod-security.kubernetes.io/enforce=privileged \
+  pod-security.kubernetes.io/audit=privileged \
+  pod-security.kubernetes.io/warn=privileged
+kubectl --kubeconfig "${green_kubeconfig}" -n pt3-hardware-poc apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pt3-probe
+spec:
+  nodeName: ${green_node}
+  restartPolicy: Never
+  containers:
+    - name: probe
+      image: alpine:3.22
+      command: [sh, -ec, sleep 3600]
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - {name: host-dev, mountPath: /host-dev, readOnly: true}
+  volumes:
+    - name: host-dev
+      hostPath: {path: /dev, type: Directory}
+EOF
+kubectl --kubeconfig "${green_kubeconfig}" -n pt3-hardware-poc wait --for=condition=Ready pod/pt3-probe --timeout=3m
+
+kubectl --kubeconfig "${green_kubeconfig}" -n pt3-hardware-poc exec pt3-probe -- sh -ec '
+  found=0
+  for path in /sys/bus/pci/devices/*; do
+    [[ $(cat "$path/vendor" 2>/dev/null) == 0x1172 ]] || continue
+    [[ $(cat "$path/device" 2>/dev/null) == 0x4c15 ]] || continue
+    echo "PT3_PCI_PRESENT=${path##*/}"
+    found=1
+  done
+  [[ $found == 1 ]]
+  if grep -q "^earth_pt3 " /proc/modules; then
+    echo PT3_MODULE_PRESENT=true
+  else
+    echo PT3_MODULE_PRESENT=false
+  fi
+  adapters=$(find /host-dev/dvb -maxdepth 1 -type d -name "adapter*" 2>/dev/null | wc -l)
+  echo "PT3_DVB_ADAPTERS=${adapters}"
+'
+
+echo "PT3 probe complete; restoring Blue assignment"

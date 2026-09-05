@@ -26,7 +26,6 @@ flowchart LR
     end
   end
 
-
   subgraph ExtSvc[External Services]
     subgraph Cloudflare[Cloudflare]
       direction LR
