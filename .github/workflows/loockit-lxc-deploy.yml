@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: oke-rke2-admin
+    runs-on: talos-infra-admin
     timeout-minutes: 15
     permissions:
       contents: read
