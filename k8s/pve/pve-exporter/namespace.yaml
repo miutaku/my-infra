@@ -6,3 +6,9 @@ metadata:
     # Application の cascade delete と prune の両方から除外する。
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: monitoring
+  labels:
+    # node-exporter requires hostPID, hostNetwork and read-only hostPath mounts.
+    # This namespace contains trusted infrastructure monitoring workloads only.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

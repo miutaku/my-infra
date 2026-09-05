@@ -1,0 +1,21 @@
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: loockit-lxc
+  namespace: app-loockit
+  labels:
+    kubernetes.io/service-name: loockit
+    endpointslice.kubernetes.io/managed-by: staff
+addressType: IPv4
+ports:
+  - name: rest
+    protocol: TCP
+    port: 8080
+  - name: grpc
+    protocol: TCP
+    port: 50051
+endpoints:
+  - addresses:
+      - 192.168.20.133
+    conditions:
+      ready: true

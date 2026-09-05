@@ -20,9 +20,6 @@ spec:
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main
       ref: values
-    - repoURL: https://github.com/miutaku/my-infra.git
-      targetRevision: main
-      path: k8s/pve/prometheus-node-exporter
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
