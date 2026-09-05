@@ -1,0 +1,34 @@
+[grpc]
+host = "0.0.0.0"
+port = 50051
+
+[matter]
+enabled = false
+
+[rest]
+enabled = true
+host = "0.0.0.0"
+port = 8080
+rate_limit_requests = 5
+rate_limit_window_seconds = 60
+
+[mqtt]
+enabled = false
+
+[history]
+enabled = false
+
+[ble]
+scan_duration_seconds = 30
+
+cloud_fallback = false
+
+[[devices]]
+id = "intercom-bot"
+model = "SESAMEBOT1"
+ble_address = "E0:5B:CF:D3:A3:60"
+
+[[devices]]
+id = "front-door"
+model = "SESAME4"
+ble_address = "D5:5E:96:7B:87:8A"
