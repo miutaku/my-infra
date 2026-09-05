@@ -1,0 +1,39 @@
+name: Loockit version watch
+
+on:
+  schedule:
+    - cron: '23 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Open update pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          latest="$(gh api repos/miutaku/loockit/releases/latest --jq .tag_name)"
+          version="${latest#v}"
+          current="$(cut -d: -f2 ansible/loockit-lxc/image.env)"
+          if [[ "$current" == "$version" ]]; then
+            echo "Loockit is current at ${version}"
+            exit 0
+          fi
+          branch="deps/loockit-${version}"
+          sed -i "s|LOOCKIT_IMAGE=.*|LOOCKIT_IMAGE=ghcr.io/miutaku/loockit:${version}|" ansible/loockit-lxc/image.env
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+          git switch -c "$branch"
+          git add ansible/loockit-lxc/image.env
+          git commit -m "chore(loockit): update to ${version}"
+          git push --force-with-lease origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "chore(loockit): update to ${version}" \
+            --body "Automated Loockit release update. Merge triggers the LXC deploy workflow with health-check and automatic rollback."

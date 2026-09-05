@@ -1,0 +1,61 @@
+name: Loockit LXC deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ansible/loockit-lxc/**
+  workflow_dispatch:
+
+concurrency:
+  group: loockit-lxc-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: oke-rke2-admin
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install deployment tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ansible sshpass jq unzip
+          curl -fsSL https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip -o "${RUNNER_TEMP}/bws.zip"
+          unzip -q "${RUNNER_TEMP}/bws.zip" bws -d "${RUNNER_TEMP}/bin"
+          chmod +x "${RUNNER_TEMP}/bin/bws"
+
+      - name: Materialize short-lived deployment credentials
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.GH_MY_INFRA_BWS_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          export PATH="${RUNNER_TEMP}/bin:${PATH}"
+          secret_value() {
+            bws secret list | jq -er --arg key "$1" '.[] | select(.key == $key) | .value'
+          }
+          PVE_PASSWORD="$(secret_value PACKER_SSH_PASSWORD)"
+          echo "::add-mask::${PVE_PASSWORD}"
+          printf 'PVE_PASSWORD=%s\n' "$PVE_PASSWORD" >> "$GITHUB_ENV"
+          secret_file="${RUNNER_TEMP}/loockit.env"
+          umask 077
+          : > "$secret_file"
+          for key in \
+            LOOCKIT_INTERCOM_BOT_SECRET_KEY \
+            LOOCKIT_INTERCOM_BOT_PUBLIC_KEY \
+            LOOCKIT_FRONT_DOOR_SECRET_KEY \
+            LOOCKIT_FRONT_DOOR_PUBLIC_KEY \
+            LOOCKIT_API_BEARER_TOKEN; do
+            value="$(secret_value "$key")"
+            echo "::add-mask::${value}"
+            printf '%s=%s\n' "$key" "$value" >> "$secret_file"
+          done
+          echo "LOOCKIT_SECRET_ENV_FILE=${secret_file}" >> "$GITHUB_ENV"
+
+      - name: Deploy with health-check and rollback
+        working-directory: ansible/loockit-lxc
+        run: ansible-playbook -i hosts.yml site.yml

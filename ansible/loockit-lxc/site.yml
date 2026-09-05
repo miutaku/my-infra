@@ -1,0 +1,108 @@
+---
+- name: Configure and deploy Loockit LXC
+  hosts: pve-x570
+  become: true
+  gather_facts: false
+  vars:
+    loockit_ct_id: 12902
+    loockit_image: "{{ lookup('file', 'image.env').split('=', 1)[1] }}"
+  tasks:
+    - name: Install host Bluetooth and D-Bus proxy packages
+      ansible.builtin.apt:
+        name:
+          - bluez
+          - xdg-dbus-proxy
+        state: present
+        update_cache: true
+
+    - name: Install filtered BlueZ D-Bus proxy unit
+      ansible.builtin.copy:
+        src: loockit-dbus-proxy.service
+        dest: /etc/systemd/system/loockit-dbus-proxy.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Loockit D-Bus proxy
+
+    - name: Enable host Bluetooth and proxy
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+        daemon_reload: true
+      loop:
+        - bluetooth.service
+        - loockit-dbus-proxy.service
+
+    - name: Apply proxy unit changes before container validation
+      ansible.builtin.meta: flush_handlers
+
+    - name: Stage Loockit configuration on Proxmox host
+      ansible.builtin.copy:
+        src: config.toml
+        dest: /run/loockit-config.toml
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Copy Loockit configuration into LXC
+      ansible.builtin.command:
+        argv:
+          - pct
+          - push
+          - "{{ loockit_ct_id | string }}"
+          - /run/loockit-config.toml
+          - /etc/loockit/config.toml
+          - --perms
+          - "0644"
+      changed_when: true
+
+    - name: Stage Loockit secrets on Proxmox host
+      ansible.builtin.copy:
+        src: "{{ lookup('env', 'LOOCKIT_SECRET_ENV_FILE') }}"
+        dest: /run/loockit.env
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Copy Loockit secrets into LXC
+      ansible.builtin.command:
+        argv:
+          - pct
+          - push
+          - "{{ loockit_ct_id | string }}"
+          - /run/loockit.env
+          - /etc/loockit/loockit.env
+          - --perms
+          - "0600"
+      no_log: true
+      changed_when: true
+
+    - name: Install rollback-capable deploy script
+      ansible.builtin.copy:
+        src: deploy-container.sh
+        dest: /usr/local/sbin/deploy-loockit-lxc
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy pinned Loockit image
+      ansible.builtin.command: /usr/local/sbin/deploy-loockit-lxc
+      environment:
+        LOOCKIT_CT_ID: "{{ loockit_ct_id | string }}"
+        LOOCKIT_IMAGE: "{{ loockit_image }}"
+      register: deploy_result
+      changed_when: "'is ready' in deploy_result.stdout"
+
+    - name: Remove staged secret
+      ansible.builtin.file:
+        path: /run/loockit.env
+        state: absent
+
+  handlers:
+    - name: Restart Loockit D-Bus proxy
+      ansible.builtin.systemd_service:
+        name: loockit-dbus-proxy.service
+        state: restarted
+        daemon_reload: true
