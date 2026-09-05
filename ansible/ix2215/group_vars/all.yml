@@ -220,6 +220,7 @@ ix_dhcp_profiles:
       - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # worker-02 (RKE2 agent)
       - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # worker-03 (RKE2 agent, PT3 passthrough)
       - { ip: "192.168.20.132", mac: "bc:24:11:be:a0:30" } # Mirakurun LXC (PT3 via Proxmox host)
+      - { ip: "192.168.20.133", mac: "bc:24:11:be:a0:31" } # Loockit LXC (Bluetooth via Proxmox host)
       - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01 (RKE2 LB)
       - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02 (RKE2 LB)
       - { ip: "192.168.20.137", mac: "02:54:00:13:00:01" } # Talos Green control plane 01
