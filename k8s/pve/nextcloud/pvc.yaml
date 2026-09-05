@@ -34,6 +34,7 @@ spec:
   nfs:
     server: 192.168.20.192
     path: /mnt/raid1_case/recorded
+    readOnly: true
   mountOptions:
     - nfsvers=4.1
     - hard
