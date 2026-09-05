@@ -7,8 +7,6 @@ metadata:
     metallb.universe.tf/loadBalancerIPs: "192.168.20.203"
 spec:
   type: LoadBalancer
-  selector:
-    app: mirakurun
   ports:
     - name: http
       port: 40772
