@@ -916,6 +916,37 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
   相互作用を再現・解消してから行う。
 - Blueはrollback保持期間中、application controllerと書込みworkloadを停止したまま残す。
 
+### Loockit向けTalos custom image調査（2026-09-06）
+
+結論は「そのまま利用できる公式・公開custom imageはない」。Talos v1.13の公式amd64 kernel configは
+`CONFIG_BT is not set`であり、実機でも`0bda:8771` USB deviceは見える一方、`bluetooth`、`btusb`、
+`btrtl` moduleとHCI deviceは生成されなかった。
+
+公式extension catalogの`realtek-firmware`は`rtl_bt`一式を含み、RTL8761Bの
+`rtl8761b_fw.bin`/`rtl8761bu_fw.bin`供給には利用できる。ただし無効なkernel configを有効化したり
+kernel moduleを生成したりはしない。Image Factoryは既存extensionをTalos boot assetへ合成する仕組みで、
+stock kernelで無効なBluetooth subsystemを追加する用途には使えない。
+
+VMを増やさずTalosへ収容する場合は次を一組として保守する。
+
+1. `siderolabs/pkgs`のTalos release対応tagを基に、少なくとも`CONFIG_BT=m`、`CONFIG_BT_LE=y`、
+   `CONFIG_BT_RTL=m`、`CONFIG_BT_HCIBTUSB=m`、`CONFIG_BT_HCIBTUSB_RTL=y`を有効化する。
+2. 同一build/signing chainでkernelとmoduleを生成する。Talosは署名済みmoduleだけをloadするため、
+   stock kernelへ別buildの`btusb.ko`だけを追加してはならない。
+3. 公式`realtek-firmware` extensionをinstallerへ含める。
+4. Kubernetes Pod内でD-Bus/BlueZを起動し、USB device、`/sys`、必要capabilityだけを渡す。
+5. Green worker 13004だけをcanary upgradeし、HCI、2台のSESAME接続、intercom操作、再起動、rollbackを
+   合格させてから13005へ展開する。
+
+追従自動化はGitHub Actions + Renovate/Dependabotで可能だが、release検出だけでproductionへ自動適用しない。
+releaseごとにcustom kernel/installerをbuild・署名・SBOM/CVE scanし、13004 canary合格後にGitのinstaller
+digestを更新する二段階方式とする。公式手順:
+
+- https://docs.siderolabs.com/talos/v1.13/build-and-extend-talos/custom-images-and-development/customizing-the-kernel
+- https://docs.siderolabs.com/talos/v1.12/build-and-extend-talos/custom-images-and-development/kernel-module
+- https://github.com/siderolabs/extensions/tree/v1.13.9/firmware/realtek-firmware
+- https://github.com/siderolabs/pkgs/blob/v1.13.0/kernel/build/config-amd64
+
 ## 関連ファイル
 
 - [現行RKE2 Ansible](../ansible/rke2/README.md)
