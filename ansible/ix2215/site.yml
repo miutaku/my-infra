@@ -180,3 +180,4 @@
     - name: Show running-config
       ansible.builtin.debug:
         msg: "{{ running_config.stdout }}"
+      no_log: true

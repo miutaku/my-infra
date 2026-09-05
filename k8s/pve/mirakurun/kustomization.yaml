@@ -6,8 +6,8 @@ resources:
   - mirakurun-ghcr-pull-secret.yaml
   - mirakurun-configmap.yaml
   - mirakurun-pvc.yaml
-  - mirakurun-deployment.yaml
   - mirakurun-service.yaml
+  - mirakurun-endpointslice.yaml
 
 images:
   - name: ghcr.io/miutaku/mirakurun
