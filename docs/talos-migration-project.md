@@ -927,7 +927,8 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 
 両nodeをcordon/drainし、`rke2-agent`を停止・無効化した。Ansible inventoryでも`rke2-agent`から
 `retired-rke2-agent`へ移し、通常のRKE2 playbookで再参加しないようにした。利用を終了する方針とし、
-Loockit LXCの本切替後に電源停止する。再利用する場合もKubernetes nodeへ自動復帰させない。
+Loockit LXCの本切替後にOSから正常shutdownし、両機を電源停止した。ディスクは消去していない。
+再利用する場合もKubernetes nodeへ自動復帰させない。
 
 ### Loockit LXC PoC結果（2026-09-06）
 
@@ -943,6 +944,9 @@ Loockit 0.1.14 OCIへ既存鍵をmode 0600で移し、次を確認した。
 - intercom Botとfront doorのBLE advertisement検出
 - intercom Botの状態・電池取得とBearer認証付き`click`成功
 - APIはLXCのbridge IPで提供し、Greenではselectorless Service/EndpointSliceから接続
+
+本切替ではGreen ServiceからLXCへの疎通を確認後、Blue worker-02をdrainして`rke2-agent`を停止・無効化した。
+その後intercom Botとfront doorがともに`online:true`（front doorは`LOCKED`）へ収束したことを確認した。
 
 Talos custom kernelは不要になり、LoockitはMirakurunと同様にKubernetes外の構成管理対象とする。
 
