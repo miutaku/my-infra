@@ -19,7 +19,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: nextcloud-nas-recorded-pv
+  name: nextcloud-green-recorded-readonly-pv
   annotations:
     # 下の PVC と対で cascade delete から除外する。片方だけ消えると PVC が Lost になり、
     # 再作成時に claimRef の手動クリアが必要になる。
@@ -30,7 +30,7 @@ spec:
   capacity:
     storage: 200Gi
   accessModes:
-    - ReadWriteMany
+    - ReadOnlyMany
   nfs:
     server: 192.168.20.192
     path: /mnt/raid1_case/recorded
@@ -50,9 +50,9 @@ metadata:
     argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadOnlyMany
   resources:
     requests:
       storage: 200Gi
-  volumeName: nextcloud-nas-recorded-pv
+  volumeName: nextcloud-green-recorded-readonly-pv
   storageClassName: ""
