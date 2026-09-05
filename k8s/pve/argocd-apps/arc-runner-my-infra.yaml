@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-runner-my-infra
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set
+    targetRevision: 0.9.3
+    helm:
+      releaseName: talos-infra-admin
+      values: |
+        githubConfigUrl: "https://github.com/miutaku/my-infra"
+        githubConfigSecret: "github-my-infra-token-secret"
+        runnerScaleSetName: "talos-infra-admin"
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-systems-gha-rs-controller
+        minRunners: 0
+        maxRunners: 1
+        template:
+          spec:
+            nodeSelector:
+              kubernetes.io/arch: amd64
+              kubernetes.io/os: linux
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/home/runner/run.sh"]
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "512Mi"
+                  limits:
+                    cpu: "2"
+                    memory: "2Gi"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
