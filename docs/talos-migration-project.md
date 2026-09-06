@@ -948,6 +948,18 @@ Loockit 0.1.14 OCIへ既存鍵をmode 0600で移し、次を確認した。
 本切替ではGreen ServiceからLXCへの疎通を確認後、Blue worker-02をdrainして`rke2-agent`を停止・無効化した。
 その後intercom Botとfront doorがともに`online:true`（front doorは`LOCKED`）へ収束したことを確認した。
 
+更新は`ansible/loockit-lxc/image.env`でversionを固定する。日次GitHub Actionsがupstream releaseを監視し、
+新版のPRを作成する。merge後はGreenの`talos-infra-admin` ephemeral runnerがBWS内のcommand-restricted
+SSH keyを使い、LXCで該当semver imageだけを更新する。shell、port forwarding、任意imageは許可しない。
+deploy後にbounded BLE scan、API、intercom onlineを確認し、180秒以内に合格しなければ旧containerへ
+rollbackする。0.1.14のend-to-end deployとversion watcher no-opを実行して成功した。front doorは接続確立に
+時間差があるためdeploy Gateから分離し、切替後に1分間`online:true / LOCKED`を維持することを確認した。
+
+Green Argo CDのCloudflare Access URLは`https://argocd-rke2.miutaku.work`。名称は旧基盤由来だがbackendは
+Greenの`argocd-server`である。初回bootstrap時に`server.insecure=true`がlive ConfigMapへ反映されず、
+Access認証後にHTTPS redirect loopが発生した。ConfigMapを修正してserverをrolling restartし、Tunnel内部の
+HTTP応答がredirectなしの200になることを確認した。
+
 Talos custom kernelは不要になり、LoockitはMirakurunと同様にKubernetes外の構成管理対象とする。
 
 ### Loockit向けTalos custom image調査（2026-09-06）
