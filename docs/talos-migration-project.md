@@ -501,7 +501,7 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 
 - [ ] 7日以上の安定稼働を確認
 - [ ] Talos patch upgradeを本番で1回完了
-- [ ] backupからの復元演習を完了
+- [x] DB backupからの復元演習を完了（PostgreSQL 16表、MariaDB 12/135表）
 - [ ] RKE2固有CI、script、docsを廃止またはarchive
 - [ ] Terraform/Cloudflareの`rke2`名称をstate-safeに変更
 - [ ] Blue VMと旧local PVの削除を個別承認
@@ -908,6 +908,8 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-05 | Codex | Loockit BlueZ sidecar PoC | USB `0bda:8771`はTalos guestに見えるがstock kernelに`bluetooth`/`btusb`がなくBlueZ management interfaceを作れない | PoC停止、USBをUbuntu 12001へ復帰、RKE2 agentは停止 |
 | 2026-09-06 | Codex | 23:00予約ID 23の本番録画を事後検証 | recorded ID 426、H.265 300,520,785 bytes、23:38更新のNFS実fileをGreen API/Pod双方で確認 | 録画系cutover Gate合格 |
 | 2026-09-06 | Codex | Raspberry Pi worker-11/12をRKE2から退役 | 業務Podなしを確認してcordon/drain、rke2-agent停止・無効化、inventoryを退役groupへ変更 | Ubuntu/BlueZ/SSHと電源はrollback用に維持 |
+| 2026-09-06 | Codex | selectorless ServiceのEndpointSliceをGitOps化 | Argo CD既定除外からEndpointSliceを外し、Mirakurun/Loockitの両資源がSynced/Healthyかつ追跡対象であることを確認 | Greenの管理設定のみ。接続先変更なし |
+| 2026-09-06 | Codex | DB日次backupを拡張し隔離restore演習 | MariaDBのEPGStation/NextcloudとPostgreSQL本番/stagingをOCIへ保存。最新dumpを一時DBへ復元しPostgreSQL 16表、MariaDB 12/135表を確認。一時Job/Podは削除 | 本番DBはread-only dumpのみ |
 
 ### 2026-09-05 cutover時点の残課題
 
