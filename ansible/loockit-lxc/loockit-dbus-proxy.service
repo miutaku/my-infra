@@ -7,8 +7,9 @@ Requires=dbus.service bluetooth.service
 Type=simple
 RuntimeDirectory=loockit-dbus
 RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
 ExecStartPre=/bin/rm -f /run/loockit-dbus/system_bus_socket
-ExecStart=/usr/bin/xdg-dbus-proxy unix:path=/run/dbus/system_bus_socket /run/loockit-dbus/system_bus_socket --filter --talk=org.bluez --talk=org.freedesktop.DBus
+ExecStart=/usr/bin/xdg-dbus-proxy unix:path=/run/dbus/system_bus_socket /run/loockit-dbus/system_bus_socket --filter --talk=org.bluez --broadcast=org.bluez=* --talk=org.freedesktop.DBus
 ExecStartPost=/bin/sh -c 'while [ ! -S /run/loockit-dbus/system_bus_socket ]; do sleep 0.1; done; chmod 0666 /run/loockit-dbus/system_bus_socket'
 Restart=always
 RestartSec=2
