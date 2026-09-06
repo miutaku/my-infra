@@ -349,7 +349,7 @@ PoCで作るVM、disk、ISO、IP予約、DHCP lease、DNS、MetalLB IP、credent
 |---|---|---|---|---|---|---|
 | 基本PoC一式（VM 13001/13002、disk、ISO 2個、DHCP lease 2件） | my-infra | 2026-08-30 | 2026-08-31 | Gate 1不合格、不要判断、または本移行完了 | 削除済み。ID/MAC/IPは本番Greenへ再利用 | Terraform destroy 4件、旧PoC PKI/state/cache/local設定も削除 |
 | POC-06 NFS write dataset/share | my-infra | 2026-08-30 | 2026-08-30 | POC-06結果保存直後 | 削除済み | API statusでdataset=0/share=0、Kubernetes Namespace/PV不存在 |
-| Hardware PoC一式 | 未割当 | 未作成 | 試験当日 | HW-01/HW-02結果保存とBlue原状復帰 | 未作成 | - |
+| Hardware PoC一式 | my-infra | 2026-09-05 | 2026-09-06 | HW-01/HW-02結果保存と本番LXC方針確定 | 削除済み | PT3/BluetoothのTalos一時割当を解除。Mirakurun/Loockitは本番LXC 12901/12902へ収容 |
 
 PoCを途中で中止した場合も同じ削除ルールを適用する。将来の再試験に必要なものは、生成手順、
 manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源を温存しない。
@@ -500,12 +500,12 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 ### Phase 7: 安定化と廃止
 
 - [ ] 7日以上の安定稼働を確認
-- [ ] Talos patch upgradeを本番で1回完了
+- [ ] Talos patch upgradeを本番で1回完了（現行・公式最新とも1.13.9のため次patch待ち）
 - [x] DB backupからの復元演習を完了（PostgreSQL 16表、MariaDB 12/135表）
 - [ ] RKE2固有CI、script、docsを廃止またはarchive
 - [ ] Terraform/Cloudflareの`rke2`名称をstate-safeに変更
 - [ ] Blue VMと旧local PVの削除を個別承認
-- [ ] PoC資源台帳の全行を削除済みにし、削除証跡を記録
+- [x] PoC資源台帳の全行を削除済みにし、削除証跡を記録
 
 #### Gate 7
 
@@ -910,14 +910,16 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-06 | Codex | Raspberry Pi worker-11/12をRKE2から退役 | 業務Podなしを確認してcordon/drain、rke2-agent停止・無効化、inventoryを退役groupへ変更 | Ubuntu/BlueZ/SSHと電源はrollback用に維持 |
 | 2026-09-06 | Codex | selectorless ServiceのEndpointSliceをGitOps化 | Argo CD既定除外からEndpointSliceを外し、Mirakurun/Loockitの両資源がSynced/Healthyかつ追跡対象であることを確認 | Greenの管理設定のみ。接続先変更なし |
 | 2026-09-06 | Codex | DB日次backupを拡張し隔離restore演習 | MariaDBのEPGStation/NextcloudとPostgreSQL本番/stagingをOCIへ保存。最新dumpを一時DBへ復元しPostgreSQL 16表、MariaDB 12/135表を確認。一時Job/Podは削除 | 本番DBはread-only dumpのみ |
+| 2026-09-06 | Codex | MetalLB L2 speakerを冗長化 | 不要なFRR sidecarを無効化して2 workerへ配置。各worker上でDNS/ClusterIP/VIP疎通合格、owner Pod再生成中もVIP HTTP疎通継続 | speakerのrolling updateのみ。利用者向け疎通継続 |
 
 ### 2026-09-05 cutover時点の残課題
 
 - Loockit APIは認証なしで`/devices`へ応答する。LoockitはProxmox LXCへ外出しし、専用IP、
   USB Bluetooth排他割当、送信元制限、Green側selectorless Service/EndpointSliceで収容する。
   Talos custom kernel案は採用しない。
-- MetalLB speakerは`talos-4jt-93y`だけへ固定する。複数node化はTalos/kube-proxy nftablesとの
-  相互作用を再現・解消してから行う。
+- MetalLBの単一speaker課題は2026-09-06に解消した。L2 modeで不要だったFRR sidecarを無効化し、
+  2 workerへspeakerを配置した。両node上からDNS、ClusterIP、VIPへ疎通でき、広告owner Podの
+  再生成中もTNLAStation VIPへのHTTP疎通が継続した。
 - Blueはrollback保持期間中、application controllerと書込みworkloadを停止したまま残す。
 
 ### Raspberry Pi worker-11 / worker-12の扱い（2026-09-06）
