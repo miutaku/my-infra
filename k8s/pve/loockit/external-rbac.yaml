@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: loockit-external
+  namespace: app-loockit
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: loockit-external-token
+  namespace: app-loockit
+  annotations:
+    kubernetes.io/service-account.name: loockit-external
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: loockit-external-lease
+  namespace: app-loockit
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    resourceNames: ["loockit-ble-leader"]
+    verbs: ["get", "update"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: loockit-external-lease
+  namespace: app-loockit
+subjects:
+  - kind: ServiceAccount
+    name: loockit-external
+    namespace: app-loockit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: loockit-external-lease
