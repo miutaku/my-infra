@@ -7,6 +7,7 @@ data:
   haproxy.cfg: |
     global
       log stdout format raw local0
+      nbthread 1
     defaults
       log global
       timeout connect 3s
@@ -78,8 +79,8 @@ spec:
             runAsGroup: 99
             seccompProfile: {type: RuntimeDefault}
           resources:
-            requests: {cpu: 10m, memory: 24Mi}
-            limits: {cpu: 100m, memory: 64Mi}
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 128Mi}
           volumeMounts:
             - name: config
               mountPath: /usr/local/etc/haproxy
