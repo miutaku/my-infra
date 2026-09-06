@@ -1,7 +1,10 @@
 # Loockit LXC host configuration
 
-Loockit LXC 12902は非特権・bridge networkで動かす。Bluetooth kernel moduleとBlueZは
-`pve-x570`が所有し、このunitが`org.bluez`だけを許可したD-Bus socketを作る。
+Loockit LXC 12902/12903は非特権・bridge networkで動かす。Bluetooth kernel moduleとBlueZは
+各Proxmox hostが所有し、このunitが`org.bluez`だけを許可したD-Bus socketを作る。
+
+両instanceはGreenの同じKubernetes Leaseへ参加する。leaderだけがBLEへ接続して`/readyz`を
+200にし、standbyは503を返す。GreenのHAProxyがleaderだけへREST/gRPCを転送する。
 
 ```bash
 sudo install -m 0644 loockit-dbus-proxy.service /etc/systemd/system/
