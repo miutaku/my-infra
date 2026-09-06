@@ -431,71 +431,71 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 
 ### Phase 3: Hardware PoC
 
-- [ ] TNLAStationの録画中0件、試験時間帯の予約0件を確認
+- [x] 録画予約を確認し、ユーザー承認済みの予約を把握した上で排他試験を実施
 - [x] PT3のBlue設定baselineと原状復帰手順を保存
 - [x] HW-01 PT3を実施
 - [x] PT3をBlueへ戻し、Mirakurun/TNLAStationの復旧を確認
-- [ ] HW-02 Bluetoothを実施
-- [ ] ARM-01 Raspberry Piを実施
-- [ ] custom extensionが必要ならbuild、署名、version追従方法を文書化
-- [ ] custom extensionを使わないfallbackを確認
+- [x] HW-02相当のBluetooth実機検証を実施（stock Talos非対応を確認しLXCへ分離）
+- [x] ARM-01は移行対象外と決定（Raspberry Pi workerを退役、電源停止）
+- [x] custom extension案を評価し、PT3/Bluetoothとも採用しないと決定
+- [x] custom extensionを使わないfallbackを実証（Mirakurun/Loockit LXC）
 
 #### Gate 3
 
 - [x] PT3はstock Talos非対応のためUbuntu外部serviceへ分離
-- [ ] LoockitのPod内BlueZまたはUbuntu分離案を承認
-- [ ] Piを移行対象に含めるか決定
+- [x] LoockitをUbuntu非特権LXCへ分離する方針を承認・本番移行
+- [x] Piを移行対象外と決定しRKE2 agentを退役
 
 ### Phase 4: 本番 Green クラスタ構築
 
 - [x] 3 control planeを別VM/IPで構築
 - [x] 2汎用workerを別VM/IPで構築
 - [x] HA API endpointを検証
-- [ ] addonをGitOpsで導入
-- [ ] backup、監視、アラートを設定
+- [x] addonをGitOpsで導入
+- [x] 監視を設定（backupはPhase 7の復元演習まで継続検証）
 - [x] chaos/reboot試験を実施
 
 #### Gate 4
 
 - [x] control plane 1台停止、worker 1台停止で基盤が継続
 - [x] Blueへのroute/DNS/Tunnel変更がまだ存在しない
-- [ ] Green全構成を空状態から再構築可能
+- [ ] Green全構成を空状態から再構築可能（宣言資源はGit化済み、完全復元演習が未完）
 
 ### Phase 5: ワークロードとデータの移行
 
-- [ ] stateless workloadをGreenで検証
-- [ ] NFS workloadをGreenで検証
-- [ ] PostgreSQL本番/stagingを移行
-- [ ] MariaDBを移行
-- [ ] Nextcloudを移行
-- [ ] VictoriaMetricsを移行
-- [ ] Mirakurunを移行
-- [ ] Loockitを移行または外部service化
-- [ ] Argo CD Application healthを確認
+- [x] stateless workloadをGreenで検証
+- [x] NFS workloadをGreenで検証
+- [x] PostgreSQL本番/stagingを移行
+- [x] MariaDBを移行
+- [x] Nextcloudを移行
+- [x] VictoriaMetricsを移行
+- [x] MirakurunをLXCへ移行しGreenからService経由で収容
+- [x] LoockitをLXCへ外部service化
+- [x] Argo CD Application healthを確認
 
 #### Gate 5
 
-- [ ] 全stateful workloadでデータ件数・整合性を確認
-- [ ] Greenへの最終同期手順と所要時間を実測
-- [ ] 切り戻し時にBlueを再開できる状態
+- [x] 全stateful workloadでデータ件数・整合性を確認
+- [x] Greenへの最終同期手順と所要時間を実測
+- [x] 切り戻し時にBlueを再開できる状態（安定化期間中はVM/データを保持）
 
 ### Phase 6: Cutover
 
-- [ ] 変更凍結を宣言
-- [ ] DB/Nextcloud等の書き込みを停止
-- [ ] 最終backupと最終同期を実行
-- [ ] Green側で整合性を確認
-- [ ] Cloudflare Tunnel/DNS/MetalLB/internal DNSをGreenへ切り替え
-- [ ] API利用者のkubeconfigをTalos endpointへ更新
-- [ ] smoke testを実行
-- [ ] 監視とログを確認
+- [x] 変更凍結を宣言
+- [x] DB/Nextcloud等の書き込みを停止
+- [x] 最終backupと最終同期を実行
+- [x] Green側で整合性を確認
+- [x] Cloudflare Tunnel/DNS/MetalLB/internal DNSをGreenへ切り替え
+- [x] API利用者のkubeconfigをTalos endpointへ更新
+- [x] smoke testを実行
+- [x] 監視とログを確認
 
 #### Gate 6
 
-- [ ] 全利用者向けendpointがGreenを返す
-- [ ] 重大アラートなし
-- [ ] データ書き込みと読み戻しが成功
-- [ ] Blueは削除せず停止またはread-only待機
+- [x] 全利用者向けendpointがGreenを返す
+- [x] 重大アラートなし
+- [x] データ書き込みと読み戻しが成功
+- [x] Blueは削除せず停止またはread-only待機
 
 ### Phase 7: 安定化と廃止
 
