@@ -911,6 +911,7 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-06 | Codex | selectorless ServiceのEndpointSliceをGitOps化 | Argo CD既定除外からEndpointSliceを外し、Mirakurun/Loockitの両資源がSynced/Healthyかつ追跡対象であることを確認 | Greenの管理設定のみ。接続先変更なし |
 | 2026-09-06 | Codex | DB日次backupを拡張し隔離restore演習 | MariaDBのEPGStation/NextcloudとPostgreSQL本番/stagingをOCIへ保存。最新dumpを一時DBへ復元しPostgreSQL 16表、MariaDB 12/135表を確認。一時Job/Podは削除 | 本番DBはread-only dumpのみ |
 | 2026-09-06 | Codex | MetalLB L2 speakerを冗長化 | 不要なFRR sidecarを無効化して2 workerへ配置。各worker上でDNS/ClusterIP/VIP疎通合格、owner Pod再生成中もVIP HTTP疎通継続 | speakerのrolling updateのみ。利用者向け疎通継続 |
+| 2026-09-06 | Codex | Blue RKE2 Kubernetes VMを停止 | server VM 11001-11003、worker VM 12001-12002を正常shutdown。DVB VM 12900も停止済み。全6台を`onboot=0`にし、VM定義とdiskはrollback用に保持 | RKE2 nodeのみ停止。旧LB 10001/10002はrollback入口として稼働維持 |
 
 ### 2026-09-05 cutover時点の残課題
 
