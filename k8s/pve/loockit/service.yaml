@@ -4,6 +4,8 @@ metadata:
   name: loockit
   namespace: app-loockit
 spec:
+  selector:
+    app.kubernetes.io/name: loockit-proxy
   type: ClusterIP
   ports:
     - name: rest

@@ -1,10 +1,9 @@
 ---
 - name: Configure and deploy Loockit LXC
-  hosts: pve-x570
+  hosts: loockit_hosts
   become: true
   gather_facts: false
   vars:
-    loockit_ct_id: 12902
     loockit_image: "{{ lookup('file', 'image.env').split('=', 1)[1] }}"
   tasks:
     - name: Install host Bluetooth and D-Bus proxy packages
@@ -36,6 +35,53 @@
 
     - name: Apply proxy unit changes before container validation
       ansible.builtin.meta: flush_handlers
+
+    - name: Bind filtered D-Bus socket directory into LXC
+      ansible.builtin.command:
+        argv:
+          - pct
+          - set
+          - "{{ loockit_ct_id | string }}"
+          - -mp0
+          - /run/loockit-dbus,mp=/mnt/host-dbus,ro=1
+      changed_when: true
+
+    - name: Install Docker inside LXC
+      ansible.builtin.command:
+        argv:
+          - pct
+          - exec
+          - "{{ loockit_ct_id | string }}"
+          - --
+          - bash
+          - -ec
+          - >-
+            command -v docker >/dev/null ||
+            (apt-get update -qq && DEBIAN_FRONTEND=noninteractive
+            apt-get install -y -qq docker.io ca-certificates curl)
+      changed_when: true
+
+    - name: Create Kubernetes service account directory in LXC
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ loockit_ct_id | string }}", --, install, -d, -m, "0700", /etc/loockit/kubernetes]
+      changed_when: true
+
+    - name: Stage Kubernetes service account files on Proxmox host
+      ansible.builtin.copy:
+        src: "{{ lookup('env', 'LOOCKIT_KUBE_SA_DIR') }}/{{ item }}"
+        dest: "/run/loockit-kube-{{ item }}"
+        owner: root
+        group: root
+        mode: "0600"
+      loop: [token, ca.crt, namespace]
+      no_log: true
+
+    - name: Copy Kubernetes service account files into LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ loockit_ct_id | string }}", "/run/loockit-kube-{{ item }}", "/etc/loockit/kubernetes/{{ item }}", --perms, "0600"]
+      loop: [token, ca.crt, namespace]
+      no_log: true
+      changed_when: true
 
     - name: Stage Loockit configuration on Proxmox host
       ansible.builtin.copy:
@@ -92,6 +138,8 @@
       environment:
         LOOCKIT_CT_ID: "{{ loockit_ct_id | string }}"
         LOOCKIT_IMAGE: "{{ loockit_image }}"
+        LOOCKIT_ADDRESS: "{{ loockit_address }}"
+        LOOCKIT_IDENTITY: "{{ loockit_identity }}"
       register: deploy_result
       changed_when: "'is ready' in deploy_result.stdout"
 
@@ -99,6 +147,13 @@
       ansible.builtin.file:
         path: /run/loockit.env
         state: absent
+
+    - name: Remove staged Kubernetes service account files
+      ansible.builtin.file:
+        path: "/run/loockit-kube-{{ item }}"
+        state: absent
+      loop: [token, ca.crt, namespace]
+      no_log: true
 
   handlers:
     - name: Restart Loockit D-Bus proxy
