@@ -8,7 +8,7 @@ data:
     #!/bin/sh
     set -eu
 
-    apk add --no-cache mariadb-client rclone curl > /dev/null
+    apk add --no-cache mariadb-client postgresql-client rclone curl > /dev/null
 
     # バックアップ対象: "app:database" をスペース区切りで列挙
     # 共用クラスタにアプリが増えたら、この行を1要素足すだけ
@@ -65,6 +65,27 @@ data:
       rclone copyto /tmp/dump.sql.gz "oci:db-backup/${APP}/${FILENAME}"
       echo "[${APP}] upload completed: ${APP}/${FILENAME}"
 
+      RESULTS="${RESULTS}${APP}/${FILENAME} "
+    done
+
+    for ENTRY in \
+      "tnlastation:postgres.infra-db.svc.cluster.local" \
+      "tnlastation-staging:postgres.infra-db-staging.svc.cluster.local"; do
+      APP="${ENTRY%%:*}"
+      HOST="${ENTRY#*:}"
+      CURRENT="${APP}"
+      FILENAME="${APP}-${DATE}.dump"
+
+      PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
+        --host="${HOST}" \
+        --username=tnlastation \
+        --dbname=tnlastation \
+        --format=custom \
+        --file=/tmp/postgres.dump
+      echo "[${APP}] dump completed: $(du -sh /tmp/postgres.dump)"
+
+      rclone copyto /tmp/postgres.dump "oci:db-backup/${APP}/${FILENAME}"
+      echo "[${APP}] upload completed: ${APP}/${FILENAME}"
       RESULTS="${RESULTS}${APP}/${FILENAME} "
     done
 

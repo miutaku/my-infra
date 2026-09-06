@@ -28,6 +28,11 @@ spec:
                     secretKeyRef:
                       name: db-backup-credentials
                       key: MYSQL_ROOT_PASSWORD
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-backup-credentials
+                      key: POSTGRES_PASSWORD
                 - name: OCI_NAMESPACE
                   valueFrom:
                     secretKeyRef:
