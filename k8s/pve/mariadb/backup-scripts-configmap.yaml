@@ -8,7 +8,7 @@ data:
     #!/bin/sh
     set -eu
 
-    apk add --no-cache mariadb-client postgresql-client rclone curl > /dev/null
+    apk add --no-cache mariadb-client rclone curl > /dev/null
 
     # バックアップ対象: "app:database" をスペース区切りで列挙
     # 共用クラスタにアプリが増えたら、この行を1要素足すだけ
