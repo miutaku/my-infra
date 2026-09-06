@@ -1,0 +1,2 @@
+Defaults:loockit-deploy env_keep += "SSH_ORIGINAL_COMMAND"
+loockit-deploy ALL=(root) NOPASSWD: /usr/local/sbin/deploy-loockit-local

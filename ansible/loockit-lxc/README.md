@@ -22,3 +22,7 @@ materializeする。OCIは同socketを`/run/dbus/system_bus_socket`へread-only 
 `loockit-version-watch.yml`がupstream releaseを検出してPRを作成し、merge後にLAN内runner上の
 `loockit-lxc-deploy.yml`がこのplaybookを実行する。新containerが120秒以内にreadyにならなければ、
 deploy scriptは直前containerへ自動rollbackする。
+
+CIのSSH accountはshellを公開しない。`authorized_keys`のforced commandとsudoersを組み合わせ、
+root所有の`deploy-loockit-local`だけを実行できる。script自身もimageを
+`ghcr.io/miutaku/loockit:<semver>`へ制限する。accountを`docker` groupへ所属させてはならない。
