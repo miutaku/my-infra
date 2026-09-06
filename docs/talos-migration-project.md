@@ -912,7 +912,7 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-06 | Codex | DB日次backupを拡張し隔離restore演習 | MariaDBのEPGStation/NextcloudとPostgreSQL本番/stagingをOCIへ保存。最新dumpを一時DBへ復元しPostgreSQL 16表、MariaDB 12/135表を確認。一時Job/Podは削除 | 本番DBはread-only dumpのみ |
 | 2026-09-06 | Codex | MetalLB L2 speakerを冗長化 | 不要なFRR sidecarを無効化して2 workerへ配置。各worker上でDNS/ClusterIP/VIP疎通合格、owner Pod再生成中もVIP HTTP疎通継続 | speakerのrolling updateのみ。利用者向け疎通継続 |
 | 2026-09-06 | Codex | Blue RKE2 Kubernetes VMを停止 | server VM 11001-11003、worker VM 12001-12002を正常shutdown。DVB VM 12900も停止済み。全6台を`onboot=0`にし、VM定義とdiskはrollback用に保持 | RKE2 nodeのみ停止。旧LB 10001/10002はrollback入口として稼働維持 |
-| 2026-09-06 | Codex | Loockitを2 host HA化 | LXC 12902/x570と12903/b550mが限定Kubernetes LeaseでBLEを排他利用。2 replica HAProxyはleaderの`/readyz`だけを転送。x570停止試験で約20秒後にLease移動、約80秒後にb550m/API復旧。x570はstandby復帰 | Loockit v0.1.16。Secret一時ファイルは削除済み |
+| 2026-09-06 | Codex | Loockitを2 host HA化 | LXC 12902/x570と12903/b550mが限定Kubernetes LeaseでBLEを排他利用。2 replica HAProxyはleaderの`/readyz`だけを転送。両方向の停止試験で約20秒後にLease移動、約80-90秒後にBLE/API復旧。standby-first GitHub Actions deployも1分47秒で合格 | Loockit v0.1.16。Secret一時ファイルは削除済み |
 
 ### 2026-09-05 cutover時点の残課題
 
