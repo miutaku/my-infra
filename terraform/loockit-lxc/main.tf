@@ -1,8 +1,34 @@
+locals {
+  instances = {
+    x570 = {
+      node_name   = "pve-x570"
+      vm_id       = 12902
+      hostname    = "loockit-lxc"
+      address     = "192.168.20.133/24"
+      mac_address = "BC:24:11:BE:A0:31"
+    }
+    b550m = {
+      node_name   = "pve-b550m"
+      vm_id       = 12903
+      hostname    = "loockit-b550m"
+      address     = "192.168.20.134/24"
+      mac_address = "BC:24:11:BE:A0:32"
+    }
+  }
+}
+
+moved {
+  from = proxmox_virtual_environment_container.loockit
+  to   = proxmox_virtual_environment_container.loockit["x570"]
+}
+
 resource "proxmox_virtual_environment_container" "loockit" {
-  node_name     = "pve-x570"
-  vm_id         = 12902
-  description   = "Loockit LXC; BlueZ on pve-x570 owns the USB Bluetooth adapter. Managed by Terraform and Ansible."
-  tags          = ["bluetooth", "loockit", "managed"]
+  for_each = local.instances
+
+  node_name     = each.value.node_name
+  vm_id         = each.value.vm_id
+  description   = "Loockit HA LXC; BlueZ on ${each.value.node_name} owns the local USB Bluetooth adapter."
+  tags          = ["bluetooth", "loockit", "managed", "ha"]
   protection    = true
   started       = true
   start_on_boot = true
@@ -25,10 +51,10 @@ resource "proxmox_virtual_environment_container" "loockit" {
   }
 
   initialization {
-    hostname = "loockit-lxc"
+    hostname = each.value.hostname
     ip_config {
       ipv4 {
-        address = "192.168.20.133/24"
+        address = each.value.address
         gateway = "192.168.20.254"
       }
     }
@@ -37,7 +63,7 @@ resource "proxmox_virtual_environment_container" "loockit" {
   network_interface {
     name        = "eth0"
     bridge      = "vmbr0"
-    mac_address = "BC:24:11:BE:A0:31"
+    mac_address = each.value.mac_address
     vlan_id     = 20
     firewall    = true
   }
@@ -54,8 +80,6 @@ resource "proxmox_virtual_environment_container" "loockit" {
 
   lifecycle {
     prevent_destroy = true
-    # The host D-Bus bind mount is installed with root-only `pct set`; the
-    # API-token provider must preserve it on subsequent applies.
-    ignore_changes = [operating_system, mount_point]
+    ignore_changes  = [operating_system, mount_point]
   }
 }
