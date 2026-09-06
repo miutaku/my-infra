@@ -36,15 +36,28 @@
     - name: Apply proxy unit changes before container validation
       ansible.builtin.meta: flush_handlers
 
-    - name: Bind filtered D-Bus socket directory into LXC
+    - name: Read LXC configuration
       ansible.builtin.command:
-        argv:
-          - pct
-          - set
-          - "{{ loockit_ct_id | string }}"
-          - -mp0
-          - /run/loockit-dbus,mp=/mnt/host-dbus,ro=1
-      changed_when: true
+        argv: [pct, config, "{{ loockit_ct_id | string }}"]
+      register: loockit_ct_config
+      changed_when: false
+
+    - name: Install missing filtered D-Bus bind mount
+      when: "'mp0: /run/loockit-dbus,mp=/mnt/host-dbus,ro=1' not in loockit_ct_config.stdout"
+      block:
+        - name: Temporarily disable LXC deletion protection
+          ansible.builtin.command:
+            argv: [pct, set, "{{ loockit_ct_id | string }}", -protection, "0"]
+          changed_when: true
+        - name: Bind filtered D-Bus socket directory into LXC
+          ansible.builtin.command:
+            argv: [pct, set, "{{ loockit_ct_id | string }}", -mp0, "/run/loockit-dbus,mp=/mnt/host-dbus,ro=1"]
+          changed_when: true
+      always:
+        - name: Restore LXC deletion protection
+          ansible.builtin.command:
+            argv: [pct, set, "{{ loockit_ct_id | string }}", -protection, "1"]
+          changed_when: true
 
     - name: Install Docker inside LXC
       ansible.builtin.command:
@@ -58,7 +71,7 @@
           - >-
             command -v docker >/dev/null ||
             (apt-get update -qq && DEBIAN_FRONTEND=noninteractive
-            apt-get install -y -qq docker.io ca-certificates curl)
+            apt-get install -y -qq docker.io ca-certificates curl bluez sudo openssh-server)
       changed_when: true
 
     - name: Create Kubernetes service account directory in LXC
@@ -103,6 +116,11 @@
           - "0644"
       changed_when: true
 
+    - name: Write HA identity into LXC
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ loockit_ct_id | string }}", --, sh, -c, "printf '%s\\n' '{{ loockit_identity }}' > /etc/loockit/identity && chmod 0644 /etc/loockit/identity"]
+      changed_when: true
+
     - name: Stage Loockit secrets on Proxmox host
       ansible.builtin.copy:
         src: "{{ lookup('env', 'LOOCKIT_SECRET_ENV_FILE') }}"
@@ -132,6 +150,51 @@
         owner: root
         group: root
         mode: "0755"
+
+    - name: Stage restricted local deploy files on Proxmox host
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {src: deploy-container-local.sh, dest: /run/deploy-loockit-local, mode: "0755"}
+        - {src: loockit-deploy.sudoers, dest: /run/loockit-deploy.sudoers, mode: "0440"}
+
+    - name: Copy restricted local deploy files into LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ loockit_ct_id | string }}", "{{ item.src }}", "{{ item.dest }}", --perms, "{{ item.mode }}"]
+      loop:
+        - {src: /run/deploy-loockit-local, dest: /usr/local/sbin/deploy-loockit-local, mode: "0755"}
+        - {src: /run/loockit-deploy.sudoers, dest: /etc/sudoers.d/loockit-deploy, mode: "0440"}
+      changed_when: true
+
+    - name: Ensure restricted deployment account exists in LXC
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ loockit_ct_id | string }}", --, bash, -ec, "id loockit-deploy >/dev/null 2>&1 || useradd -m -s /bin/bash loockit-deploy; install -d -o loockit-deploy -g loockit-deploy -m 0700 /home/loockit-deploy/.ssh"]
+      changed_when: true
+
+    - name: Stage forced-command authorized key
+      ansible.builtin.copy:
+        content: >-
+          command="sudo /usr/local/sbin/deploy-loockit-local",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding {{ lookup('env', 'LOOCKIT_DEPLOY_PUBLIC_KEY') }}
+        dest: /run/loockit-deploy-authorized-key
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Install forced-command authorized key in LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ loockit_ct_id | string }}", /run/loockit-deploy-authorized-key, /home/loockit-deploy/.ssh/authorized_keys, --perms, "0600"]
+      no_log: true
+      changed_when: true
+
+    - name: Fix deployment account ownership and start SSH in LXC
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ loockit_ct_id | string }}", --, bash, -ec, "chown -R loockit-deploy:loockit-deploy /home/loockit-deploy/.ssh; systemctl enable --now ssh"]
+      changed_when: true
 
     - name: Deploy pinned Loockit image
       ansible.builtin.command: /usr/local/sbin/deploy-loockit-lxc
