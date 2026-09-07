@@ -38,19 +38,14 @@
 
       # VLAN 20: サーバネットワーク
       192.168.20.101  dev-app-server.miutaku.internal
-      192.168.20.126  master-01-rke2-server.miutaku.internal
-      192.168.20.127  master-02-rke2-server.miutaku.internal
-      192.168.20.128  master-03-rke2-server.miutaku.internal
-      192.168.20.129  worker-01-rke2-agent.miutaku.internal
-      192.168.20.130  worker-02-rke2-agent.miutaku.internal
-      192.168.20.135  lb-01.miutaku.internal lb-01-rke2.miutaku.internal
-      192.168.20.136  lb-02.miutaku.internal lb-02-rke2.miutaku.internal
+      192.168.20.135  lb-01.miutaku.internal
+      192.168.20.136  lb-02.miutaku.internal
       192.168.20.191  nas-01.miutaku.internal
       192.168.20.192  nas-02.miutaku.internal
       192.168.20.204  magic-mirror.miutaku.internal
       192.168.20.210  tnlastation.miutaku.internal
       192.168.20.215  tnlastation-staging.miutaku.internal
-      192.168.20.227  rke2-vip.miutaku.internal
+      192.168.20.228  home-k8s-vip.miutaku.internal
       192.168.20.250  pbs-01.miutaku.internal
 
       # VLAN 30: クライアントネットワーク

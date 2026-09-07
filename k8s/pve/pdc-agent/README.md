@@ -1,19 +1,19 @@
 # Grafana PDC (Private Data Connect) Agent
 
-Grafana Labs マネージド Grafana から **宅内 RKE2 の VictoriaMetrics** にアクセスするための
+Grafana Labs マネージドGrafanaから**home-k8sのVictoriaMetrics**にアクセスするための
 PDC agent。SSH リバーストンネルを確立し、Grafana Cloud がプライベートネットワーク内の
 データソースをクエリできるようにする。
 
 ## なぜ PDC agent が必要か
 
-VictoriaMetrics は宅内 RKE2 上のプライベートネットワーク (`192.168.0.x`) に存在する。
+VictoriaMetricsはhome-k8s上のプライベートネットワークに存在する。
 Grafana Labs マネージド Grafana から直接アクセスできないため、PDC agent が
 Grafana Cloud にアウトバウンド接続してリバーストンネルを張る。
 
 ```mermaid
 flowchart LR
   Grafana[Grafana Cloud<br/>managed Grafana]
-  PDC[PDC agent<br/>RKE2 / monitoring namespace]
+  PDC[PDC agent<br/>home-k8s / monitoring namespace]
   VM[VictoriaMetrics<br/>monitoring namespace]
 
   Grafana <-->|Private Data Connect| PDC

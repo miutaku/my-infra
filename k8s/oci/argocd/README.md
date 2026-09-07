@@ -92,7 +92,7 @@ kubectl apply -f k8s/oci/argocd/root-app.yaml
 | 2 | oci-nginx-gateway-fabric | NGINX Gateway Fabric (GatewayClassのみ・Gateway未作成) |
 | 4 | oci-cloudflared | Cloudflare Tunnel |
 | 1 | oci-arc-controller / oci-arc-runners-config | Actions Runner Controller + credentials |
-| 2 | oci-arc-runner-rke2 | `my-infra` RKE2 preflight用ephemeral runner scale set |
+| 2 | oci-arc-runner-home-k8s | `my-infra` home-k8s管理用ephemeral runner scale set |
 | 4 | oci-pve-tfc-agent | Terraform Cloud agent (pve-home workspace) |
 | 4 | oci-reventer-tfc-agent | Terraform Cloud agent (reventer workspace) |
 
