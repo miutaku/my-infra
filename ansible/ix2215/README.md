@@ -49,11 +49,8 @@ bsm_ix2215_ssh_password_id: "取得したUUID"
 ### 3. MAC アドレスを Terraform output から取得して更新する
 
 ```bash
-cd terraform/pve
-terraform output -json rke2_lb_mac_addresses
-terraform output -json rke2_server_mac_addresses
-terraform output -json rke2_worker_mac_addresses
-terraform output -json unifi_os_server_mac_addresses
+terraform -chdir=terraform/talos-green output -json nodes
+terraform -chdir=terraform/pve output -json unifi_os_server_mac_addresses
 ```
 
 出力された MAC アドレスを `group_vars/all.yml` の

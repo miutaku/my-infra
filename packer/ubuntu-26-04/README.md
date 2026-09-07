@@ -110,8 +110,8 @@ packer build -var-file=pve-b550m.pkrvars.hcl .
 Proxmox 側で VM の root ディスクを拡張している場合、service が
 `growpart` と `resize2fs` を使って `/` を自動拡張します。
 
-既に作成済みの RKE2 VM へ同じ仕組みを入れる場合は、
-`ansible/rke2/README.md` の `grow_rootfs` tag を使用します。
+既に作成済みのVMへ同じ仕組みを入れる場合は、対象VMの構成管理から
+`grow-rootfs-if-needed.service`を配布します。
 
 ## PVE ノード名のホスト名同期
 

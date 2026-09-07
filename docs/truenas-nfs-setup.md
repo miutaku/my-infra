@@ -12,7 +12,7 @@ EPGStation (録画/サムネイル) および OKE エンコードワーカーが
 | ---- | --- |
 | TrueNAS IP | 192.168.20.192 (nas-02) |
 | NFS Pool | `pool > raid1_case` |
-| アクセス元 | 192.168.20.0/24 (RKE2), 10.0.0.0/16 (OCI VCN) |
+| アクセス元 | 192.168.20.0/24 (home-k8s), 10.0.0.0/16 (OCI VCN) |
 | NFS バージョン | NFSv4.1 |
 
 ## 1. Dataset 作成
@@ -89,7 +89,7 @@ Networks:
 
 ## 5. 動作確認
 
-RKE2 worker または OKE ノードから:
+home-k8s workerまたはOKEノードから:
 
 ```bash
 # エクスポート一覧確認
