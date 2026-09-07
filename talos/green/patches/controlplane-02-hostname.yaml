@@ -1,4 +1,4 @@
 apiVersion: v1alpha1
 kind: HostnameConfig
 auto: off
-hostname: master-02-talos-controlplane-home-pve-amd64
+hostname: controlplane-02-talos-home-pve-amd64

@@ -43,7 +43,7 @@ resource "proxmox_virtual_environment_container" "mirakurun" {
   }
 
   initialization {
-    hostname = "mirakurun-01-server-ubuntu-26-04-home-lxc-amd64"
+    hostname = "mirakurun-01-ubuntu-26-04-home-lxc-amd64"
     ip_config {
       ipv4 {
         address = "192.168.20.132/24"
