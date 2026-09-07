@@ -502,7 +502,7 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 - [ ] 7日以上の安定稼働を確認
 - [ ] Talos patch upgradeを本番で1回完了（現行・公式最新とも1.13.9のため次patch待ち）
 - [x] DB backupからの復元演習を完了（PostgreSQL 16表、MariaDB 12/135表）
-- [ ] RKE2固有CI、script、docsを廃止またはarchive
+- [x] RKE2 version/upgrade CIを廃止し、rollback用script/docs/Ansibleはlegacy資産として明示
 - [x] 現役Terraform/Cloudflare識別子を`home-k8s`へstate-safeに変更（0 add / 0 destroy）
 - [ ] Blue VMと旧local PVの削除を個別承認
 - [x] PoC資源台帳の全行を削除済みにし、削除証跡を記録
@@ -1039,6 +1039,19 @@ digestを更新する二段階方式とする。公式手順:
 管理端末は`TALOSCONFIG`と`KUBECONFIG`に`.generated`内のファイルパスだけを設定する。資格情報の
 内容をshell設定へ埋め込まない。`green.env`はSecretを含まず、versionとinstaller digestの固定値は
 追跡済み`green.env.example`を正とする。
+
+### home-k8s名称統一（2026-09-07）
+
+- [x] 現役のCloudflare Tunnel、DNS、Access Application、private route、Terraform変数・outputを
+  `home-k8s`へ統一し、`moved`ブロックで既存resource IDを維持した。
+- [x] Terraform CloudのSensitive変数を同値の`tunnel_secret_home_k8s`へ移し、旧変数を削除した。
+- [x] 適用前planは0 add / 0 destroy、適用後planは`No changes`だった。
+- [x] Argo CD URLを`https://argocd-home-k8s.miutaku.work`へ変更し、Accessの正常な302応答を確認した。
+- [x] kubeconfig context、BWS Secret、OCI runner、監視label、README群を`home-k8s`へ統一した。
+- [x] 退役済みRKE2 version watch/upgrade validationを削除し、常時実行する
+  `home-k8s-validation`へ置換した。workflow実行`34123050786`は成功した。
+- [x] 現役設定範囲への`RKE2`再混入をCIで拒否する。Terraformのstate移行元、移行記録、停止中の
+  旧VMを保持するlegacy Terraform/Ansibleだけは、実体を誤認させないため固有名を維持する。
 
 - [現行RKE2 Ansible](../ansible/rke2/README.md)
 - [現行RKE2 upgrade手順](rke2-upgrade.md)
