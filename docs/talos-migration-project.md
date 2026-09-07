@@ -503,7 +503,7 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 - [ ] Talos patch upgradeを本番で1回完了（現行・公式最新とも1.13.9のため次patch待ち）
 - [x] DB backupからの復元演習を完了（PostgreSQL 16表、MariaDB 12/135表）
 - [ ] RKE2固有CI、script、docsを廃止またはarchive
-- [ ] Terraform/Cloudflareの`rke2`名称をstate-safeに変更
+- [x] 現役Terraform/Cloudflare識別子を`home-k8s`へstate-safeに変更（0 add / 0 destroy）
 - [ ] Blue VMと旧local PVの削除を個別承認
 - [x] PoC資源台帳の全行を削除済みにし、削除証跡を記録
 
@@ -961,8 +961,8 @@ deploy後にbounded BLE scan、API、intercom onlineを確認し、180秒以内�
 rollbackする。0.1.14のend-to-end deployとversion watcher no-opを実行して成功した。front doorは接続確立に
 時間差があるためdeploy Gateから分離し、切替後に1分間`online:true / LOCKED`を維持することを確認した。
 
-Green Argo CDのCloudflare Access URLは`https://argocd-rke2.miutaku.work`。名称は旧基盤由来だがbackendは
-Greenの`argocd-server`である。初回bootstrap時に`server.insecure=true`がlive ConfigMapへ反映されず、
+home-k8s Argo CDのCloudflare Access URLは`https://argocd-home-k8s.miutaku.work`。backendは
+home-k8sの`argocd-server`である。初回bootstrap時に`server.insecure=true`がlive ConfigMapへ反映されず、
 Access認証後にHTTPS redirect loopが発生した。ConfigMapを修正してserverをrolling restartし、Tunnel内部の
 HTTP応答がredirectなしの200になることを確認した。
 
@@ -1013,8 +1013,8 @@ digestを更新する二段階方式とする。公式手順:
   新Nodeの`kubernetes.io/hostname=talos-ayb-pmi`ラベルだけをPV互換値として維持した。
 - [x] node-exporter discoveryで`instance`へKubernetes Node名を必ず設定し、worker-01は
   `worker-01-talos`へ明示変換した。これにより`192.168.20.140:9101`表示を解消する。
-- [x] LB VM/PVE tag/Ubuntu hostnameから`rke2`を除去した。旧internal DNS名は移行猶予のaliasとして残し、
-  新しい`lb-01.miutaku.internal`/`lb-02.miutaku.internal`を正規名とした。
+- [x] LB VM/PVE tag/Ubuntu hostnameから`rke2`を除去し、
+  `lb-01.miutaku.internal`/`lb-02.miutaku.internal`を正規名とした。移行完了後に旧DNS aliasも削除した。
 - [x] LXCのPVE hostnameを`<service>-NN-ubuntu-26-04-home-lxc-amd64`へ統一した。
 - [x] Kubernetes実測（変更前）はcontrol plane 47–55%、worker-01 82%、worker-02 33%だった。
   control planeは4GiBを維持し、local PVが集中するworker-01を6→8GiB、worker-02を6→4GiBへ変更した。
@@ -1025,14 +1025,15 @@ digestを更新する二段階方式とする。公式手順:
 
 ### BWS Secret名称移行（2026-09-07）
 
-- [x] `RKE2_BWS_ACCESS_TOKEN`と同値の`TALOS_BWS_ACCESS_TOKEN`を同一BSM Projectへ作成し、
+- [x] `RKE2_BWS_ACCESS_TOKEN`と同値の`HOME_K8S_BWS_ACCESS_TOKEN`を同一BSM Projectへ作成し、
   Greenの`external-secrets/bitwarden-access-token`とSHA-256が一致することを確認した。
-- [x] `CLOUDFLARE_RKE2_TUNNEL_TOKEN`と同値の`CLOUDFLARE_TALOS_TUNNEL_TOKEN`を作成した。
-- [x] cloudflaredのExternalSecret参照をTalos名へ変更し、Argo CDが新revisionで
+- [x] `CLOUDFLARE_RKE2_TUNNEL_TOKEN`と同値の`CLOUDFLARE_HOME_K8S_TUNNEL_TOKEN`を作成した。
+- [x] cloudflaredのExternalSecret参照をhome-k8s名へ変更し、Argo CDが新revisionで
   `Synced/Healthy`、ExternalSecretが`SecretSynced`になることを確認した。
 - [x] 生成されたKubernetes Secretと新BSM SecretのSHA-256一致、cloudflared 2 PodのRunning、
   Cloudflare Access URLの正常な302応答を確認した。
 - [x] 置換済みの旧BWS 2件と、退役済みRKE2専用の`RKE2_SERVER_TOKEN`を削除した。
+- [x] 暫定的に作成したTalos固有名のBWS 2件も、home-k8s名とのハッシュ一致確認後に削除した。
 - [ ] `talos/green/.generated`一式を暗号化し、別ホストから復元可能な保管先へbackupする。
 
 管理端末は`TALOSCONFIG`と`KUBECONFIG`に`.generated`内のファイルパスだけを設定する。資格情報の
