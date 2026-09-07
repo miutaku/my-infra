@@ -1,0 +1,9 @@
+machine:
+  kubelet:
+    extraArgs:
+      hostname-override: talos-ayb-pmi
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: worker-01-talos-agent-home-pve-amd64

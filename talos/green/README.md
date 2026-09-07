@@ -22,3 +22,13 @@ Image Factory registryから新digestを再取得する。
 2台のProxmox上へ3 control planeを配置するため、control plane VM 1台停止には耐えるが、2台の
 control planeを持つ`pve-b550m`全損時はetcd quorumを失う。第三failure domain追加までは物理host障害を
 HA合格条件に含めない。
+
+## QEMU Guest Agent / hostname
+
+本番VMは`schematic.yaml`の公式`qemu-guest-agent` extensionを含むImage Factory installerを使い、
+Proxmox側もagent channelを有効にする。schematic IDとamd64 installer digestは
+`green.env.example`およびTerraformで固定する。extension追加後にVirtIO portを生成するには、Talosの
+kexecだけでなく一度QEMU VMを完全停止・起動する必要がある。
+
+各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01だけは既存local-path PVのimmutableな
+nodeAffinityとの互換性のため、Talos OS hostnameは正規名、Kubernetes Node名は`talos-ayb-pmi`を維持する。

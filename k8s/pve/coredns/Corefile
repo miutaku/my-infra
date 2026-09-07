@@ -43,8 +43,8 @@
       192.168.20.128  master-03-rke2-server.miutaku.internal
       192.168.20.129  worker-01-rke2-agent.miutaku.internal
       192.168.20.130  worker-02-rke2-agent.miutaku.internal
-      192.168.20.135  lb-01-rke2.miutaku.internal
-      192.168.20.136  lb-02-rke2.miutaku.internal
+      192.168.20.135  lb-01.miutaku.internal lb-01-rke2.miutaku.internal
+      192.168.20.136  lb-02.miutaku.internal lb-02-rke2.miutaku.internal
       192.168.20.191  nas-01.miutaku.internal
       192.168.20.192  nas-02.miutaku.internal
       192.168.20.204  magic-mirror.miutaku.internal

@@ -1,0 +1,4 @@
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: worker-02-talos-agent-home-pve-amd64

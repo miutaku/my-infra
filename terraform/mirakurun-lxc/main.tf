@@ -43,7 +43,7 @@ resource "proxmox_virtual_environment_container" "mirakurun" {
   }
 
   initialization {
-    hostname = "mirakurun-lxc"
+    hostname = "mirakurun-01-server-ubuntu-26-04-home-lxc-amd64"
     ip_config {
       ipv4 {
         address = "192.168.20.132/24"
@@ -75,8 +75,8 @@ resource "proxmox_virtual_environment_container" "mirakurun" {
   }
 
   startup {
-    order      = "20"
-    up_delay   = "30"
+    order    = "20"
+    up_delay = "30"
   }
 
   # template_file_id is creation-only. After import, PVE does not retain the
