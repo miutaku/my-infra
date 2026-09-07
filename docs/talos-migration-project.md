@@ -1009,8 +1009,8 @@ digestを更新する二段階方式とする。公式手順:
   `qm agent <vmid> ping`を確認した。
 - [x] Talos OS hostnameとPVE VM名はTalos固有の役割名に合わせ、control planeは
   `controlplane-NN-talos-home-pve-amd64`、workerは`worker-NN-talos-home-pve-amd64`とした。
-- [x] worker-01のlocal-path PV 6本はnodeAffinityがimmutableであるため、OS hostnameだけ正規化し、
-  Kubernetes Node identityは`talos-ayb-pmi`を互換名として維持した。
+- [x] worker-01のlocal-path PV 6本はnodeAffinityがimmutableであるため、Kubernetes Node名は正規化し、
+  新Nodeの`kubernetes.io/hostname=talos-ayb-pmi`ラベルだけをPV互換値として維持した。
 - [x] node-exporter discoveryで`instance`へKubernetes Node名を必ず設定し、worker-01は
   `worker-01-talos`へ明示変換した。これにより`192.168.20.140:9101`表示を解消する。
 - [x] LB VM/PVE tag/Ubuntu hostnameから`rke2`を除去した。旧internal DNS名は移行猶予のaliasとして残し、

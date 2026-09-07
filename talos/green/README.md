@@ -30,5 +30,6 @@ Proxmox側もagent channelを有効にする。schematic IDとamd64 installer di
 `green.env.example`およびTerraformで固定する。extension追加後にVirtIO portを生成するには、Talosの
 kexecだけでなく一度QEMU VMを完全停止・起動する必要がある。
 
-各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01だけは既存local-path PVのimmutableな
-nodeAffinityとの互換性のため、Talos OS hostnameは正規名、Kubernetes Node名は`talos-ayb-pmi`を維持する。
+各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01のKubernetes Node名も正規名とし、
+既存local-path PVのimmutableなnodeAffinityとの互換性は、新Nodeの`kubernetes.io/hostname`ラベル値を
+`talos-ayb-pmi`に維持することで確保する。
