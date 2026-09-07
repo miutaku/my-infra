@@ -1,6 +1,6 @@
 # Talos production Green infrastructure
 
-Blue RKE2と並行稼働させる本番Green専用rootであり、PoCおよび`terraform/pve`とstateを共有しない。
+home-k8s本番クラスタ専用rootであり、PoCおよび`terraform/pve`とstateを共有しない。
 VM ID `13001`–`13005`、各VMのdisk、両Proxmox nodeの専用ISOだけを管理する。
 
 初回は`start_vms=false`、`boot_from_iso=true`のままlive planを確認する。BSMの

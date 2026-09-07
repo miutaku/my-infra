@@ -1,6 +1,6 @@
 # NextCloud セットアップ手順
 
-RKE2 上で動かす NextCloud の初期セットアップ手順。
+home-k8s上で動かすNextcloudの初期セットアップ手順。
 マニフェストは [k8s/pve/nextcloud/](../k8s/pve/nextcloud/)、公開は Cloudflare Access 経由
 (`https://nextcloud.miutaku.work`)。
 
@@ -74,7 +74,7 @@ ExternalSecret は [nextcloud-secret.yaml](../k8s/pve/nextcloud/nextcloud-secret
 
 `terraform/cloudflare/locals.tf` に追加済み:
 
-- `rke2_services["nextcloud"]` → DNS CNAME + Tunnel ingress が自動生成される
+- `home_k8s_services["nextcloud"]` → DNS CNAME + Tunnel ingressが自動生成される
 - `access_protected_subdomains` に `nextcloud` → Access Application (メール許可リスト) が作成される
 
 ```bash
