@@ -213,12 +213,6 @@ ix_dhcp_profiles:
       - "192.168.20.254"  # BVI20 (secondary)
     fixed_assignments:
       - { ip: "192.168.20.101", mac: "52:54:00:25:01:01" } # dev-app-server
-      - { ip: "192.168.20.126", mac: "bc:24:11:97:96:01" } # retired control plane 01（rollback lease）
-      - { ip: "192.168.20.127", mac: "bc:24:11:97:96:02" } # retired control plane 02（rollback lease）
-      - { ip: "192.168.20.128", mac: "bc:24:11:97:96:03" } # retired control plane 03（rollback lease）
-      - { ip: "192.168.20.129", mac: "bc:24:11:23:32:01" } # retired worker 01（rollback lease）
-      - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # retired worker 02（rollback lease）
-      - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # retired DVB worker（rollback lease）
       - { ip: "192.168.20.132", mac: "bc:24:11:be:a0:30" } # Mirakurun LXC (PT3 via Proxmox host)
       - { ip: "192.168.20.133", mac: "bc:24:11:be:a0:31" } # Loockit LXC (Bluetooth via Proxmox host)
       - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01
