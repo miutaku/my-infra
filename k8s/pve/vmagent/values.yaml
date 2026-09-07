@@ -58,10 +58,10 @@ config:
         - targets: ["dev-app-server.miutaku.internal:9100"]
           labels:
             instance: dev-app-server
-        - targets: ["lb-01-rke2.miutaku.internal:9100"]
+        - targets: ["lb-01.miutaku.internal:9100"]
           labels:
             instance: lb-01
-        - targets: ["lb-02-rke2.miutaku.internal:9100"]
+        - targets: ["lb-02.miutaku.internal:9100"]
           labels:
             instance: lb-02
         - targets: ["unifi.miutaku.internal:9100"]
@@ -101,10 +101,20 @@ config:
         - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
           action: keep
           regex: prometheus-node-exporter
+        # Always prefer the Kubernetes node name to the discovered Pod IP.
+        # The following rule then shortens conventional RKE2/Talos hostnames.
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: instance
-          regex: (.+?-rke2)-(?:server|agent)-.*
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: instance
+          regex: (.+?-(?:rke2|talos))-(?:server|agent|controlplane)-.*
           replacement: $1
+        # worker-01 keeps its pre-rename Kubernetes Node identity because
+        # existing local-path PV nodeAffinity is immutable.
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: instance
+          regex: talos-ayb-pmi
+          replacement: worker-01-talos
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: machine_type
           regex: worker-(?:11|12)-rke2-agent-.*-rpi4-arm64

@@ -1,12 +1,22 @@
+moved {
+  from = module.rke2_lb.proxmox_vm_qemu.vm["lb-01-rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"]
+  to   = module.rke2_lb.proxmox_vm_qemu.vm["lb-01-haproxy-keepalived-ubuntu-26-04-home-amd64"]
+}
+
+moved {
+  from = module.rke2_lb.proxmox_vm_qemu.vm["lb-02-rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"]
+  to   = module.rke2_lb.proxmox_vm_qemu.vm["lb-02-haproxy-keepalived-ubuntu-26-04-home-amd64"]
+}
+
 module "rke2_lb" {
   source = "./modules/proxmox_vm"
 
   vm_count          = var.lb_vm_count
   name_prefix       = "lb"
-  name_suffix       = "rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"
+  name_suffix       = "haproxy-keepalived-ubuntu-26-04-home-amd64"
   base_macaddr      = var.rke2_base_lb_macaddr
   vmid_start        = 10001
-  tags              = ["ubuntu_2604", "rke2", "lb", "haproxy", "keepalived"]
+  tags              = ["ubuntu_2604", "lb", "haproxy", "keepalived"]
   cpu_cores         = 1
   memory            = 1 * 1024
   clone_template    = local.ubuntu_template

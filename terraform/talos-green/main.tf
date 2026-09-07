@@ -4,29 +4,29 @@ locals {
 
   nodes = {
     controlplane_01 = {
-      name        = "talos-green-controlplane-01", node_name = "pve-x570", vm_id = 13001
+      name        = "master-01-talos-controlplane-home-pve-amd64", node_name = "pve-x570", vm_id = 13001
       mac_address = "02:54:00:13:00:01", ipv4_address = "192.168.20.137"
       cpu_cores   = 2, memory_mb = 4096, data_disk_size = null
     }
     controlplane_02 = {
-      name        = "talos-green-controlplane-02", node_name = "pve-b550m", vm_id = 13002
+      name        = "master-02-talos-controlplane-home-pve-amd64", node_name = "pve-b550m", vm_id = 13002
       mac_address = "02:54:00:13:00:02", ipv4_address = "192.168.20.138"
       cpu_cores   = 2, memory_mb = 4096, data_disk_size = null
     }
     controlplane_03 = {
-      name        = "talos-green-controlplane-03", node_name = "pve-b550m", vm_id = 13003
+      name        = "master-03-talos-controlplane-home-pve-amd64", node_name = "pve-b550m", vm_id = 13003
       mac_address = "02:54:00:13:00:03", ipv4_address = "192.168.20.139"
       cpu_cores   = 2, memory_mb = 4096, data_disk_size = null
     }
     worker_01 = {
-      name        = "talos-green-worker-01", node_name = "pve-x570", vm_id = 13004
+      name        = "worker-01-talos-agent-home-pve-amd64", node_name = "pve-x570", vm_id = 13004
       mac_address = "02:54:00:13:00:04", ipv4_address = "192.168.20.140"
-      cpu_cores   = 8, memory_mb = 6144, data_disk_size = 64
+      cpu_cores   = 8, memory_mb = 8192, data_disk_size = 64
     }
     worker_02 = {
-      name        = "talos-green-worker-02", node_name = "pve-b550m", vm_id = 13005
+      name        = "worker-02-talos-agent-home-pve-amd64", node_name = "pve-b550m", vm_id = 13005
       mac_address = "02:54:00:13:00:05", ipv4_address = "192.168.20.141"
-      cpu_cores   = 4, memory_mb = 6144, data_disk_size = 64
+      cpu_cores   = 4, memory_mb = 4096, data_disk_size = 64
     }
   }
 }
@@ -65,7 +65,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
   scsi_hardware = "virtio-scsi-single"
 
   agent {
-    enabled = false
+    enabled = true
   }
 
   cpu {

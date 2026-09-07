@@ -3,14 +3,14 @@ locals {
     x570 = {
       node_name   = "pve-x570"
       vm_id       = 12902
-      hostname    = "loockit-lxc"
+      hostname    = "loockit-01-server-ubuntu-26-04-home-lxc-amd64"
       address     = "192.168.20.133/24"
       mac_address = "BC:24:11:BE:A0:31"
     }
     b550m = {
       node_name   = "pve-b550m"
       vm_id       = 12903
-      hostname    = "loockit-b550m"
+      hostname    = "loockit-02-server-ubuntu-26-04-home-lxc-amd64"
       address     = "192.168.20.134/24"
       mac_address = "BC:24:11:BE:A0:32"
     }
