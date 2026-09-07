@@ -36,7 +36,7 @@
   loop_control:
     label: "/mnt/{{ item.name }}"
 
-# RKE2 PV は nfsvers=4.1 でマウントする
+# home-k8s PVはnfsvers=4.1でマウントする
 - name: Enable NFSv3 + NFSv4
   arensb.truenas.nfs:
     protocols:

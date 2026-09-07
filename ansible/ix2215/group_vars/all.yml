@@ -186,9 +186,9 @@ ix_dhcp_profiles:
       - "192.168.20.201"  # CoreDNS (primary)
       - "192.168.10.254"  # BVI10 (secondary)
     fixed_assignments:
-      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # RPi4 2GB eth0 (worker-11-rke2-agent-ubuntu-26-04-home-rpi4-arm64)
+      - { ip: "192.168.10.107", mac: "dc:a6:32:f4:3e:e7" } # retired RPi4 2GB（lease削除承認待ち）
       - { ip: "192.168.10.108", mac: "dc:a6:32:f4:3e:e9" } # RPi4 2GB wlan0
-      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # RPi4 4GB eth0 (worker-12-rke2-agent-ubuntu-26-04-home-rpi4-arm64)
+      - { ip: "192.168.10.109", mac: "dc:a6:32:a0:3f:93" } # retired RPi4 4GB（lease削除承認待ち）
       - { ip: "192.168.10.110", mac: "dc:a6:32:a0:3f:94" } # RPi4 4GB wlan0
       - { ip: "192.168.10.112", mac: "b8:27:eb:54:33:22" } # RPiB+ eth0 (#1)
       - { ip: "192.168.10.113", mac: "b8:27:eb:b6:c1:8b" } # RPiB+ eth0 (#2)
@@ -201,7 +201,7 @@ ix_dhcp_profiles:
 
   # ------------------------------------------------------------------
   # VLAN 20: サーバネットワーク (192.168.20.0/24)
-  # VM サーバ / RKE2 クラスタ / NAS
+  # VMサーバ / home-k8s / NAS
   # MetalLB プール: 192.168.20.200-226
   # Keepalived VIP:  192.168.20.227
   # ------------------------------------------------------------------
@@ -213,16 +213,16 @@ ix_dhcp_profiles:
       - "192.168.20.254"  # BVI20 (secondary)
     fixed_assignments:
       - { ip: "192.168.20.101", mac: "52:54:00:25:01:01" } # dev-app-server
-      - { ip: "192.168.20.126", mac: "bc:24:11:97:96:01" } # master-01 (RKE2 server)
-      - { ip: "192.168.20.127", mac: "bc:24:11:97:96:02" } # master-02 (RKE2 server)
-      - { ip: "192.168.20.128", mac: "bc:24:11:97:96:03" } # master-03 (RKE2 server)
-      - { ip: "192.168.20.129", mac: "bc:24:11:23:32:01" } # worker-01 (RKE2 agent)
-      - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # worker-02 (RKE2 agent)
-      - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # worker-03 (RKE2 agent, PT3 passthrough)
+      - { ip: "192.168.20.126", mac: "bc:24:11:97:96:01" } # retired control plane 01（rollback lease）
+      - { ip: "192.168.20.127", mac: "bc:24:11:97:96:02" } # retired control plane 02（rollback lease）
+      - { ip: "192.168.20.128", mac: "bc:24:11:97:96:03" } # retired control plane 03（rollback lease）
+      - { ip: "192.168.20.129", mac: "bc:24:11:23:32:01" } # retired worker 01（rollback lease）
+      - { ip: "192.168.20.130", mac: "bc:24:11:23:32:02" } # retired worker 02（rollback lease）
+      - { ip: "192.168.20.131", mac: "bc:24:11:23:32:90" } # retired DVB worker（rollback lease）
       - { ip: "192.168.20.132", mac: "bc:24:11:be:a0:30" } # Mirakurun LXC (PT3 via Proxmox host)
       - { ip: "192.168.20.133", mac: "bc:24:11:be:a0:31" } # Loockit LXC (Bluetooth via Proxmox host)
-      - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01 (RKE2 LB)
-      - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02 (RKE2 LB)
+      - { ip: "192.168.20.135", mac: "bc:24:11:ad:44:01" } # lb-01
+      - { ip: "192.168.20.136", mac: "bc:24:11:ad:44:02" } # lb-02
       - { ip: "192.168.20.137", mac: "02:54:00:13:00:01" } # Talos Green control plane 01
       - { ip: "192.168.20.138", mac: "02:54:00:13:00:02" } # Talos Green control plane 02
       - { ip: "192.168.20.139", mac: "02:54:00:13:00:03" } # Talos Green control plane 03

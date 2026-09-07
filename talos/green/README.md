@@ -1,6 +1,6 @@
 # Talos production Green
 
-Blue RKE2と並行して構築する本番クラスタ。API endpointはTalos内蔵L2 VIP
+home-k8sの本番クラスタ。API endpointはTalos内蔵L2 VIP
 `https://192.168.20.228:6443`、nodeは`.137`–`.141`である。machine config、PKI、kubeconfigは
 `.generated`だけへ生成し、GitやBSMへ平文保存しない。
 installerはv1.13.9 amd64 manifestのdigestを`green.env.example`で固定し、version更新時は

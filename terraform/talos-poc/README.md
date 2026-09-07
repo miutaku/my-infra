@@ -64,7 +64,7 @@ planの対象が次だけであることを確認する。
 
 - Talos ISO 2個
 - 停止状態のPoC VM 2台
-- 既存VM、RKE2、network、storageのupdate/replace/deleteが0
+- 既存VM、home-k8s、network、storageのupdate/replace/deleteが0
 
 ## Cleanup
 

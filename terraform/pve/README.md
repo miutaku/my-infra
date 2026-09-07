@@ -7,9 +7,9 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 
 | モジュール | 台数 | 役割 | ノード配置 |
 |---|---|---|---|
-| `rke2_lb` | 2 | HAProxy + Keepalived (RKE2 LB) | 両ノード分散 |
-| `rke2_server` | 3 | RKE2 コントロールプレーン (etcd) | 両ノード分散 |
-| `rke2_worker` | 2 | RKE2 ワーカー | 両ノード分散 |
+| `rke2_lb` | 2 | 退役済みRKE2 LB（削除承認待ち） | 両ノード分散 |
+| `rke2_server` | 3 | 退役済みRKE2 control plane（停止中） | 両ノード分散 |
+| `rke2_worker` | 2 | 退役済みRKE2 worker（停止中） | 両ノード分散 |
 | `prd_rec_server` | 1 | 録画サーバー (pve-x570, PCI passthrough) | pve-x570 固定 |
 | `dev_rec_server` | 1 | 開発用録画サーバー (USB passthrough) | pve-b550m 固定 |
 | `dev_application_server` | 1 | 開発用アプリサーバー | pve-b550m 固定 |
@@ -95,8 +95,8 @@ flowchart LR
   Apply --> Output --> IX --> Reboot
 ```
 
-`variables.tf` の `rke2_lb_ips` / `rke2_server_ips` / `rke2_worker_ips` には  
-DHCP 静的リースで割り当てる予定の IP を設定する。これらは Ansible inventory 生成に使われる。
+home-k8s VMのIP/MACは`terraform/talos-green`で管理する。`terraform/pve`に残る`rke2_*`変数は
+削除承認まで旧VMのstate addressとDHCP情報を維持するためのlegacy項目であり、新規用途では使わない。
 
 ## Ansible inventory
 
@@ -104,8 +104,8 @@ DHCP 静的リースで割り当てる予定の IP を設定する。これら�
 
 | ファイル | 内容 |
 |---|---|
-| `ansible/rke2/hosts/prd` | RKE2 Ansible インベントリ (INI 形式) |
-| `ansible/rke2/group_vars/prd-all.yml` | LB VIP・HAProxy サーバー一覧 |
+| `ansible/rke2/hosts/prd` | 退役済みRKE2のlegacy inventory |
+| `ansible/rke2/group_vars/prd-all.yml` | 退役済みLB/HAProxyのlegacy設定 |
 | `ansible/displaylink-kiosk/hosts/prd` | DisplayLink kiosk インベントリ |
 
 VM を追加・変更した場合は `terraform apply` 後に `terraform output` で MAC/IP を確認し、
@@ -149,11 +149,11 @@ flowchart LR
   Terraform[terraform init / plan / apply]
   Outputs[terraform output<br/>MAC確認]
   IX[ansible/ix2215<br/>DHCP静的リース]
-  RKE2[ansible/rke2<br/>RKE2構成]
+  HomeK8s[terraform/talos-green + talos/green<br/>home-k8s構成]
   UOS[ansible/uos<br/>UniFi OS Server構成]
 
   Packer --> Vars --> Terraform --> Outputs --> IX
-  IX --> RKE2
+  IX --> HomeK8s
   IX --> UOS
 ```
 
@@ -186,9 +186,7 @@ Terraform適用後に [ansible/displaylink-kiosk/README.md](../../ansible/displa
 ## apply 後: MAC アドレスの確認
 
 ```bash
-terraform output -json rke2_lb_mac_addresses
-terraform output -json rke2_server_mac_addresses
-terraform output -json rke2_worker_mac_addresses
+terraform -chdir=../talos-green output -json nodes
 terraform output -json unifi_os_server_mac_addresses
 ```
 

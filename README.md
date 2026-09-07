@@ -204,7 +204,7 @@ my-infra/
 │   ├── pve/            Proxmox VM 全台 (TFC workspace: pve-home)
 │   └── cloudflare/     Cloudflare DNS / Tunnel / Zero Trust Access (TFC workspace: cloudflare)
 ├── ansible/
-│   ├── rke2/           RKE2 クラスタ構成 (HAProxy + Keepalived + RKE2)
+│   ├── rke2/           退役したRKE2構成（移行記録・rollback参照用）
 │   ├── ix2215/         IX2215 VLAN・DHCP 静的リース管理
 │   ├── uos/            UniFi OS Server 専用 VM 構成
 │   ├── monitoring/     既存 VM 向け node_exporter 補助 playbook
@@ -311,7 +311,7 @@ kubens               # namespace 一覧
 | OCI Terraform | [terraform/oci/README.md](./terraform/oci/README.md) | OKE 構築, TFC Variables |
 | PVE Terraform | [terraform/pve/README.md](./terraform/pve/README.md) | VM 作成, MAC/IP 管理, Ansible 自動生成 |
 | Cloudflare Terraform | [terraform/cloudflare/README.md](./terraform/cloudflare/README.md) | Tunnel, DNS, Zero Trust |
-| RKE2 Ansible | [ansible/rke2/README.md](./ansible/rke2/README.md) | RKE2 HA クラスタ構成 |
+| Legacy RKE2 Ansible | [ansible/rke2/README.md](./ansible/rke2/README.md) | 退役構成の履歴・rollback参照 |
 | IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | VLAN・DHCP 静的リース |
 | UniFi OS Server Ansible | [ansible/uos/README.md](./ansible/uos/README.md) | 専用 VM 上の UniFi OS Server 構成 |
 | PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
@@ -431,7 +431,7 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 | `terraform_cloudflare.yml` | `terraform/cloudflare/**` | plan (PR) / apply (main) |
 | `k8s_check_pve.yml` | `k8s/pve/**` | kustomize build |
 | `k8s_check_oci.yml` | `k8s/oci/**` | kustomize build |
-| `ansible_check_rke2.yml` | `ansible/rke2/**` | lint + syntax-check |
+| `ansible_check_rke2.yml` | `ansible/rke2/**` | legacy RKE2構成のlint + syntax-check |
 | `ansible_check_ix2215.yml` | `ansible/ix2215/**` | lint + syntax-check |
 | `packer.yml` | `packer/**` | packer validate (実ビルドは手動) |
 
