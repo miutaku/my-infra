@@ -1,0 +1,44 @@
+name: 'Ansible CI for load balancers'
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'ansible/load-balancer/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ansible/load-balancer/**'
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  ansible-check:
+    name: 'Lint and syntax check'
+    defaults:
+      run:
+        working-directory: ansible/load-balancer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pipenv and dependencies
+        run: |
+          pip3 install pipenv
+          pipenv install --dev
+
+      - name: Install Ansible collections
+        run: |
+          pipenv run ansible-galaxy install -r requirements.yml
+          pipenv run ansible-galaxy collection install -r requirements.yml
+
+      - name: Lint
+        run: pipenv run ansible-lint site.yml
+
+      - name: Syntax check
+        run: pipenv run ansible-playbook site.yml --syntax-check

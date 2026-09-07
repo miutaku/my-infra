@@ -1,0 +1,15 @@
+keepalived:
+  vrrp_id: 51
+
+kernel_modules:
+  - br_netfilter
+
+sysctl_settings:
+  - net.ipv4.ip_nonlocal_bind
+  - net.ipv4.ip_forward
+  - net.bridge.bridge-nf-call-iptables
+  - net.bridge.bridge-nf-call-ip6tables
+  - net.bridge.bridge-nf-call-arptables
+
+# BSM secret: KEEPALIVED_AUTH_PASS
+bsm_keepalived_auth_pass_id: "e53f5b66-5f36-4529-bfbb-b43c0140886b"

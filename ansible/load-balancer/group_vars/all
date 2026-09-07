@@ -1,0 +1,14 @@
+ssh_public_key_path: ~/.ssh/id_rsa.pub
+
+lb:
+  vip: 192.168.20.227
+
+haproxy:
+  bind: "{{ lb.vip }}"
+  servers:
+    - name: controlplane-01-talos-home-pve-amd64
+      ip: 192.168.20.137
+    - name: controlplane-02-talos-home-pve-amd64
+      ip: 192.168.20.138
+    - name: controlplane-03-talos-home-pve-amd64
+      ip: 192.168.20.139

@@ -1,0 +1,51 @@
+---
+- name: Installed keepalived
+  ansible.builtin.apt:
+    name: keepalived
+    state: present
+    update_cache: true
+  register: install_keepalived
+  retries: 100
+  delay: 5
+
+- name: Got keepalived auth_pass from BSM
+  ansible.builtin.shell:
+    cmd: "set -o pipefail && bws secret get {{ bsm_keepalived_auth_pass_id }} | jq -r '.value'"
+    executable: "/bin/bash"
+  environment:
+    BWS_ACCESS_TOKEN: "{{ lookup('env', 'BWS_ACCESS_TOKEN') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: keepalived_auth_pass
+  check_mode: false
+  changed_when: false
+
+- name: Set dummy auth_pass for check mode
+  ansible.builtin.set_fact:
+    keepalived_auth_pass:
+      stdout: "dummy_password"
+  when: ansible_check_mode
+
+- name: Set peer load balancer IPs (exclude self)
+  ansible.builtin.set_fact:
+    peer_load_balancer_ips: |
+      {%- set my_ip = ansible_default_ipv4.address -%}
+      {%- set ips = [] -%}
+      {%- for host in groups['load_balancer'] -%}
+        {%- set ip = hostvars[host]['ansible_default_ipv4']['address'] -%}
+        {%- if ip != my_ip -%}
+          {%- set _ = ips.append(ip) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ips | join('\n        ') }}
+
+- name: Prepared keepalived configuration
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restarted keepalived

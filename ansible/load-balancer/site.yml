@@ -1,0 +1,19 @@
+---
+- name: Configure generic HAProxy and Keepalived load balancers
+  hosts: load_balancer
+  strategy: debug
+  gather_facts: true
+  become: true
+  vars:
+    ansible_user: miutaku
+  roles:
+    - role: common
+      tags: common
+    - role: sysctl
+      tags: sysctl
+    - role: keepalived
+      tags: keepalived
+    - role: haproxy
+      tags: haproxy
+    - role: auto_update
+      tags: auto_update
