@@ -38,7 +38,7 @@ spec:
                 if ip link show flannel.1 > /dev/null 2>&1; then
                   nsenter -t 1 -m -- ethtool -K flannel.1 tx-checksumming off 2>/dev/null || true
 
-                  # A renamed RKE2 node gets a new Node object and PodCIDR. On
+                  # A renamed Kubernetes node gets a new Node object and PodCIDR. On
                   # this routed underlay Flannel can leave only the route/neigh
                   # entries behind and omit the VXLAN FDB entry. Keep a full
                   # mesh of the known VTEPs so traffic also has a return path.

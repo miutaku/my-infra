@@ -1,17 +1,17 @@
-resource "cloudflare_zero_trust_tunnel_cloudflared" "rke2" {
+resource "cloudflare_zero_trust_tunnel_cloudflared" "home_k8s" {
   account_id    = var.account_id
-  name          = "rke2-home-managed-by-tf"
-  tunnel_secret = var.tunnel_secret_rke2
+  name          = "home-k8s-managed-by-tf"
+  tunnel_secret = var.tunnel_secret_home_k8s
 }
 
-resource "cloudflare_zero_trust_tunnel_cloudflared_config" "rke2" {
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "home_k8s" {
   account_id = var.account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.rke2.id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.home_k8s.id
 
   config = {
     ingress = concat(
       [
-        for hostname, service in local.rke2_services : {
+        for hostname, service in local.home_k8s_services : {
           hostname = "${hostname}.${var.domain}"
           service  = service.backend
           origin_request = {
@@ -28,11 +28,11 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "rke2" {
   }
 }
 
-resource "cloudflare_zero_trust_tunnel_cloudflared_route" "rke2_private" {
-  for_each = local.rke2_private_routes
+resource "cloudflare_zero_trust_tunnel_cloudflared_route" "home_k8s_private" {
+  for_each = local.home_k8s_private_routes
 
   account_id = var.account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.rke2.id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.home_k8s.id
   network    = each.value.network
   comment    = each.value.comment
 }
@@ -67,9 +67,9 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "oke" {
   }
 }
 
-data "cloudflare_zero_trust_tunnel_cloudflared_token" "rke2" {
+data "cloudflare_zero_trust_tunnel_cloudflared_token" "home_k8s" {
   account_id = var.account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.rke2.id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.home_k8s.id
 }
 
 data "cloudflare_zero_trust_tunnel_cloudflared_token" "oke" {
@@ -77,8 +77,8 @@ data "cloudflare_zero_trust_tunnel_cloudflared_token" "oke" {
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.oke.id
 }
 
-output "rke2_tunnel_token" {
-  value     = data.cloudflare_zero_trust_tunnel_cloudflared_token.rke2.token
+output "home_k8s_tunnel_token" {
+  value     = data.cloudflare_zero_trust_tunnel_cloudflared_token.home_k8s.token
   sensitive = true
 }
 

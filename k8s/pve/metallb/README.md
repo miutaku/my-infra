@@ -1,6 +1,6 @@
-# MetalLB (LoadBalancer for RKE2)
+# MetalLB (LoadBalancer for home-k8s)
 
-RKE2 クラスタに L2 モードの LoadBalancer 機能を提供する。  
+宅内KubernetesクラスタにL2モードのLoadBalancer機能を提供する。
 ArgoCD App-of-Apps (`k8s/pve/argocd-apps/metallb.yaml`) で管理される。
 
 ## 構成

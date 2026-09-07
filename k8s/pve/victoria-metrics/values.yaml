@@ -8,7 +8,7 @@ server:
   persistentVolume:
     enabled: true
     size: 20Gi
-    storageClassName: local-path  # RKE2 デフォルトの local-path-provisioner
+    storageClassName: local-path  # home-k8sのlocal-path-provisioner
 
   service:
     servicePort: 8428

@@ -28,7 +28,7 @@ export KUBECONFIG="$HOME/my-infra/talos/green/.generated/kubeconfig"
 
 `.generated`は既存clusterのPKIと管理者資格情報を含むため、GitやSecrets Managerの通常Secretへ
 保存しない。端末故障に備え、ディレクトリ一式を暗号化したオフホストバックアップとして保管する。
-External Secrets Operatorのbootstrap credentialはBSMの`TALOS_BWS_ACCESS_TOKEN`を原本とする。
+External Secrets Operatorのbootstrap credentialはBSMの`HOME_K8S_BWS_ACCESS_TOKEN`を原本とする。
 
 2台のProxmox上へ3 control planeを配置するため、control plane VM 1台停止には耐えるが、2台の
 control planeを持つ`pve-b550m`全損時はetcd quorumを失う。第三failure domain追加までは物理host障害を

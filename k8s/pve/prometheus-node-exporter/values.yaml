@@ -3,7 +3,7 @@ serviceMonitor:
   enabled: false
 
 # 既存のパケット焼き込みsystemd node_exporter(9100)とhostNetwork上で
-# ポートが競合しないよう、RKE2ノード向けはこのDaemonSetだけ9101で listen する。
+# ポートが競合しないよう、home-k8sノード向けはこのDaemonSetだけ9101でlistenする。
 service:
   port: 9101
   targetPort: 9101

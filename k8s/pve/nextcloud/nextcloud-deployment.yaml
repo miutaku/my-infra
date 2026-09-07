@@ -50,7 +50,7 @@ spec:
             - name: NEXTCLOUD_TRUSTED_DOMAINS
               value: nextcloud.miutaku.work
             - name: TRUSTED_PROXIES
-              # RKE2 default pod CIDR (cloudflared pod からの X-Forwarded-For を信頼する)
+              # home-k8s pod CIDR (cloudflared pod からの X-Forwarded-For を信頼する)
               value: 10.42.0.0/16
             - name: OVERWRITEPROTOCOL
               value: https

@@ -1,5 +1,5 @@
 # 公開は Cloudflare Tunnel (cloudflared) 経由のみなので ClusterIP でよい。
-# terraform/cloudflare/locals.tf の rke2_services["nextcloud"] がこの Service を向く。
+# terraform/cloudflare/locals.tf の home_k8s_services["nextcloud"] がこの Service を向く。
 apiVersion: v1
 kind: Service
 metadata:

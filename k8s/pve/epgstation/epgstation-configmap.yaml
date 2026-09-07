@@ -53,7 +53,7 @@ data:
     concurrentEncodeNum: 1
     encode:
       # rate はタイムアウト倍率 (動画実時間 * rate 経過で EPGStation が
-      # エンコードプロセスを kill)。RKE2 / ローカル環境ではエンコード速度が
+      # エンコードプロセスを kill)。home-k8s / ローカル環境ではエンコード速度が
       # 変動しやすく、libx265 では実時間の 10〜50 倍近くかかることがある。
       # 注意: duration(ms) * rate が Node の setTimeout 上限 (2^31-1 ms ≒ 24.8 日)
       # を超えるとタイマーが即発火して開始直後に kill される。rate 100 なら

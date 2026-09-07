@@ -11,7 +11,7 @@ spec:
     path: k8s/pve/argocd-apps
     directory:
       # Hardware/OS-specific and restored-state apps have Green-specific owners.
-      exclude: '{loockit.yaml,node-network-fix.yaml,rke2-coredns-config.yaml,victoria-metrics.yaml}'
+      exclude: '{loockit.yaml,node-network-fix.yaml,victoria-metrics.yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

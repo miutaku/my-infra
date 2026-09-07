@@ -52,7 +52,7 @@ config:
     # node_exporter は host 側の systemd service なので、Kubernetes からは
     # 「:9100 が起動しているか」を事前判定できない。ここは非 k8s VM と
     # 物理ホスト(Raspberry Pi / Proxmox VE)を明示する。
-    # RKE2 ノード自体は下の node_kubernetes ジョブが自動検出する。
+    # home-k8sノード自体は下のnode_kubernetesジョブが自動検出する。
     - job_name: node_vm
       static_configs:
         - targets: ["dev-app-server.miutaku.internal:9100"]
@@ -90,7 +90,7 @@ config:
           labels:
             instance: smart-display
 
-    # RKE2 ノードの node_exporter は prometheus-node-exporter DaemonSet
+    # home-k8sノードのnode_exporterはprometheus-node-exporter DaemonSet
     # (monitoring ns, hostNetwork:9101) を Kubernetes Pod discovery で自動検出する。
     - job_name: node_kubernetes
       kubernetes_sd_configs:
@@ -102,13 +102,9 @@ config:
           action: keep
           regex: prometheus-node-exporter
         # Always prefer the Kubernetes node name to the discovered Pod IP.
-        # The following rule then shortens conventional RKE2/Talos hostnames.
+        # Shorten the current home-k8s node names for dashboards.
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: instance
-        - source_labels: [__meta_kubernetes_pod_node_name]
-          target_label: instance
-          regex: (.+?-rke2)-(?:server|agent)-.*
-          replacement: $1
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: instance
           regex: (.+-talos)-home-pve-amd64
@@ -119,10 +115,6 @@ config:
           target_label: instance
           regex: talos-ayb-pmi
           replacement: worker-01-talos
-        - source_labels: [__meta_kubernetes_pod_node_name]
-          target_label: machine_type
-          regex: worker-(?:11|12)-rke2-agent-.*-rpi4-arm64
-          replacement: raspberry-pi
 
     - job_name: snmp
       metrics_path: /snmp
@@ -298,16 +290,16 @@ config:
         - targets: ["192.168.20.192"]
           labels:
             instance: nas-02
-        - targets: ["192.168.20.227"]
+        - targets: ["192.168.20.228"]
           labels:
-            instance: rke2-vip
+            instance: home-k8s-vip
       relabel_configs:
         - source_labels: [__address__]
           target_label: __param_target
         - target_label: __address__
           replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
 
-    # RKE2 ノードの死活は Kubernetes Node discovery で自動検出する。
+    # home-k8sノードの死活はKubernetes Node discoveryで自動検出する。
     - job_name: blackbox_icmp_kubernetes_nodes
       metrics_path: /probe
       scrape_interval: 30s
@@ -320,7 +312,7 @@ config:
           target_label: __param_target
         - source_labels: [__meta_kubernetes_node_name]
           target_label: instance
-          regex: (.+?-rke2)-(?:server|agent)-.*
+          regex: (.+-talos)-home-pve-amd64
           replacement: $1
         - target_label: job
           replacement: blackbox_icmp

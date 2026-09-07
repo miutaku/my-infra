@@ -1,11 +1,11 @@
 locals {
-  # Services exposed through the RKE2 (home) tunnel.
+  # Services exposed through the home Kubernetes tunnel.
   # key           = subdomain prefix (e.g. "argocd" → argocd.<domain>)
   # backend       = internal URL reachable by cloudflared (k8s DNS or LAN IP)
   # no_tls_verify = skip TLS verification for self-signed certs
-  rke2_services = {
+  home_k8s_services = {
     # ── k8s services ──────────────────────────────────────────────────────────
-    "argocd-rke2" = {
+    "argocd-home-k8s" = {
       backend       = "http://argocd-server.argocd.svc.cluster.local:80"
       no_tls_verify = false
     }
@@ -81,29 +81,29 @@ locals {
     }
   }
 
-  # Private network routes exposed through the RKE2 (home) tunnel.
+  # Private network routes exposed through the home Kubernetes tunnel.
   # These are consumed by Cloudflare One Client (WARP), not by public DNS
   # hostnames.
-  rke2_private_routes = {
+  home_k8s_private_routes = {
     native = {
       network = "192.168.0.0/24"
-      comment = "home native VLAN via rke2 tunnel"
+      comment = "home native VLAN via home-k8s tunnel"
     }
     management = {
       network = "192.168.10.0/24"
-      comment = "home management VLAN via rke2 tunnel"
+      comment = "home management VLAN via home-k8s tunnel"
     }
     servers = {
       network = "192.168.20.0/24"
-      comment = "home server VLAN via rke2 tunnel"
+      comment = "home server VLAN via home-k8s tunnel"
     }
     clients = {
       network = "192.168.30.0/24"
-      comment = "home client VLAN via rke2 tunnel"
+      comment = "home client VLAN via home-k8s tunnel"
     }
     iot = {
       network = "192.168.40.0/24"
-      comment = "home IoT VLAN via rke2 tunnel"
+      comment = "home IoT VLAN via home-k8s tunnel"
     }
   }
 
@@ -112,7 +112,7 @@ locals {
     miutaku_internal = {
       suffix      = "miutaku.internal"
       dns_servers = ["192.168.20.201"]
-      description = "home CoreDNS via rke2 private route"
+      description = "home CoreDNS via home-k8s private route"
     }
   }
 
@@ -139,7 +139,7 @@ locals {
 
   warp_split_tunnel_includes = concat(
     [
-      for _, route in local.rke2_private_routes : {
+      for _, route in local.home_k8s_private_routes : {
         address     = route.network
         host        = null
         description = route.comment
@@ -163,14 +163,14 @@ locals {
   }
 
   # All known public-hostname services merged for validation.
-  _all_services = merge(local.rke2_services, local.oke_services)
+  _all_services = merge(local.home_k8s_services, local.oke_services)
 
   loockit_api_hostname = "loockit-api.${var.domain}"
 
   # Subdomains that require Cloudflare Access (SSO) protection.
-  # Every entry here must exist as a key in rke2_services or oke_services.
+  # Every entry here must exist as a key in home_k8s_services or oke_services.
   access_protected_subdomains = toset([
-    "argocd-rke2", "argocd-oke", "wol",
+    "argocd-home-k8s", "argocd-oke", "wol",
     "epgstation", "tnlastation", "tnlastation-staging", "nextcloud",
     "unifi", "wifi-ap",
     "ix2215",
