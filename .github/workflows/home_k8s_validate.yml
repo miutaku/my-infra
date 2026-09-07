@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+
       - name: Validate shell and Terraform formatting
         run: |
           bash -n scripts/setup-kubeconfig
