@@ -1023,6 +1023,22 @@ digestを更新する二段階方式とする。公式手順:
 公式仕様: [Talos HostnameConfig](https://docs.siderolabs.com/talos/v1.13/networking/configuration/hostname)、
 [Talos system extensions](https://docs.siderolabs.com/talos/v1.13/build-and-extend-talos/custom-images-and-development/system-extensions)。
 
+### BWS Secret名称移行（2026-09-07）
+
+- [x] `RKE2_BWS_ACCESS_TOKEN`と同値の`TALOS_BWS_ACCESS_TOKEN`を同一BSM Projectへ作成し、
+  Greenの`external-secrets/bitwarden-access-token`とSHA-256が一致することを確認した。
+- [x] `CLOUDFLARE_RKE2_TUNNEL_TOKEN`と同値の`CLOUDFLARE_TALOS_TUNNEL_TOKEN`を作成した。
+- [x] cloudflaredのExternalSecret参照をTalos名へ変更し、Argo CDが新revisionで
+  `Synced/Healthy`、ExternalSecretが`SecretSynced`になることを確認した。
+- [x] 生成されたKubernetes Secretと新BSM SecretのSHA-256一致、cloudflared 2 PodのRunning、
+  Cloudflare Access URLの正常な302応答を確認した。
+- [x] 置換済みの旧BWS 2件と、退役済みRKE2専用の`RKE2_SERVER_TOKEN`を削除した。
+- [ ] `talos/green/.generated`一式を暗号化し、別ホストから復元可能な保管先へbackupする。
+
+管理端末は`TALOSCONFIG`と`KUBECONFIG`に`.generated`内のファイルパスだけを設定する。資格情報の
+内容をshell設定へ埋め込まない。`green.env`はSecretを含まず、versionとinstaller digestの固定値は
+追跡済み`green.env.example`を正とする。
+
 - [現行RKE2 Ansible](../ansible/rke2/README.md)
 - [現行RKE2 upgrade手順](rke2-upgrade.md)
 - [Proxmox Terraform](../terraform/pve/README.md)
