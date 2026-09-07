@@ -19,6 +19,17 @@ Image Factory registryから新digestを再取得する。
 7. 5 node Ready、etcd 3 member、VIP failoverを確認後にISOよりdiskを優先する。
 8. `scripts/label-nodes`でIPからnodeを解決し、Proxmox failure domainとrole labelを付与する。
 
+管理端末では資格情報そのものをshell設定へ埋め込まず、次のパスだけを環境変数に設定する。
+
+```bash
+export TALOSCONFIG="$HOME/my-infra/talos/green/.generated/talosconfig"
+export KUBECONFIG="$HOME/my-infra/talos/green/.generated/kubeconfig"
+```
+
+`.generated`は既存clusterのPKIと管理者資格情報を含むため、GitやSecrets Managerの通常Secretへ
+保存しない。端末故障に備え、ディレクトリ一式を暗号化したオフホストバックアップとして保管する。
+External Secrets Operatorのbootstrap credentialはBSMの`TALOS_BWS_ACCESS_TOKEN`を原本とする。
+
 2台のProxmox上へ3 control planeを配置するため、control plane VM 1台停止には耐えるが、2台の
 control planeを持つ`pve-b550m`全損時はetcd quorumを失う。第三failure domain追加までは物理host障害を
 HA合格条件に含めない。
