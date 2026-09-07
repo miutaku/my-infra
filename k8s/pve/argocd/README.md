@@ -41,7 +41,7 @@ Bitwarden Secrets Manager (https://bitwarden.com/products/secrets-manager/) で�
    | `GRAFANA_PDC_TOKEN` | Grafana Cloud → Connections → Private data source connect で生成 | PDC agent 認証トークン |
    | `GRAFANA_PDC_HOSTED_GRAFANA_ID` | Grafana Cloud の Hosted Grafana ID (数値) | PDC agent 設定値 |
    | `GRAFANA_PDC_CLUSTER` | Grafana Cloud の PDC クラスタ識別子 (文字列) | PDC agent 設定値 |
-   | `CLOUDFLARE_RKE2_TUNNEL_TOKEN` | `terraform output -raw rke2_tunnel_token` で取得 | Cloudflare Tunnel token |
+   | `CLOUDFLARE_TALOS_TUNNEL_TOKEN` | `terraform output -raw rke2_tunnel_token` で取得 | Talos Greenで継続利用するCloudflare Tunnel token |
    | `MM_OW_API_KEY` | OpenWeatherMap API キー | MagicMirror² 天気モジュール API key |
    | `MM_CALENDAR_URL` | Google Calendar iCal URL | MagicMirror² カレンダーモジュール |
 
