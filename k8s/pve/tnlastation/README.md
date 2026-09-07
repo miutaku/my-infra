@@ -1,6 +1,6 @@
 # TNLAStation
 
-TNLAStationを宅内RKE2へdeployするmanifestです。EPGStationとは別の
+TNLAStationを宅内Kubernetes（home-k8s）へdeployするmanifestです。EPGStationとは別の
 `app-tnlastation` namespaceで動作します。
 
 ## 構成

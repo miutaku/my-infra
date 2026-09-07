@@ -1,10 +1,10 @@
 # ArgoCD Bootstrap
 
-RKE2 クラスタへの ArgoCD インストールと App-of-Apps の初期化手順。
+home-k8sへのArgoCDインストールとApp-of-Appsの初期化手順。
 
 ## 前提条件
 
-- `kubectl` が RKE2 クラスタに向いていること (`/etc/rancher/rke2/rke2.yaml`)
+- `kubectl`が`home-k8s` contextへ向いていること
 - `bws` CLI (Bitwarden Secrets Manager CLI) がインストール済みであること
 - Bitwarden Secrets Manager でプロジェクト `my-infra` と Machine Account が作成済みであること
 
@@ -21,8 +21,8 @@ kubectl wait -n argocd deploy/argocd-server --for=condition=Available --timeout=
 
 ## Step 2: local-path-provisioner の手動インストール
 
-RKE2 はデフォルトで local-path-provisioner を含まない。StorageClass `local-path` が必要なため、
-ArgoCD の同期前に手動でインストールする (1回のみ)。
+StorageClass `local-path`が必要なため、ArgoCDの同期前にlocal-path-provisionerを手動で
+インストールする（1回のみ）。
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
@@ -41,7 +41,7 @@ Bitwarden Secrets Manager (https://bitwarden.com/products/secrets-manager/) で�
    | `GRAFANA_PDC_TOKEN` | Grafana Cloud → Connections → Private data source connect で生成 | PDC agent 認証トークン |
    | `GRAFANA_PDC_HOSTED_GRAFANA_ID` | Grafana Cloud の Hosted Grafana ID (数値) | PDC agent 設定値 |
    | `GRAFANA_PDC_CLUSTER` | Grafana Cloud の PDC クラスタ識別子 (文字列) | PDC agent 設定値 |
-   | `CLOUDFLARE_TALOS_TUNNEL_TOKEN` | `terraform output -raw rke2_tunnel_token` で取得 | Talos Greenで継続利用するCloudflare Tunnel token |
+   | `CLOUDFLARE_HOME_K8S_TUNNEL_TOKEN` | `terraform output -raw home_k8s_tunnel_token` で取得 | 宅内Kubernetesで継続利用するCloudflare Tunnel token |
    | `MM_OW_API_KEY` | OpenWeatherMap API キー | MagicMirror² 天気モジュール API key |
    | `MM_CALENDAR_URL` | Google Calendar iCal URL | MagicMirror² カレンダーモジュール |
 
@@ -113,7 +113,7 @@ kubectl apply -f k8s/pve/argocd/root-app.yaml
 
 Cloudflare Tunnel 経由でアクセスする (cloudflared が同期された後):
 ```
-https://argocd-rke2.miutaku.work
+https://argocd-home-k8s.miutaku.work
 ```
 
 > **Note**: Cloudflare Access で保護されているため、ArgoCD ログイン画面の前に

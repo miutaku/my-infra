@@ -1,4 +1,4 @@
-# ArgoCD Operations (RKE2)
+# ArgoCD Operations (home-k8s)
 
 Application の追加・撤去、既知のトラブルシューティング。ブートストラップ手順は [README.md](README.md) を参照。
 

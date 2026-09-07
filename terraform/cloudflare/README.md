@@ -33,39 +33,39 @@ Email Workerを使う場合は、Workerを配備したうえでaction typeを `w
 
 | トンネル名 | 用途 | cloudflared の配置先 |
 |---|---|---|
-| `rke2-home-managed-by-tf` | 宅内 RKE2 / LAN 管理 UI と private network routes | RKE2 上の `cloudflared` Pod |
+| `home-k8s-managed-by-tf` | 宅内Kubernetes / LAN管理UIとprivate network routes | home-k8s上の`cloudflared` Pod |
 | `oke-cloud-managed-by-tf` | OKE 内の管理用 published apps | OKE 上の `cloudflared` Pod |
 
 ### Cloudflare Access 経由の HTTP/HTTPS 到達先
 
 | ホスト名 | トンネル | バックエンド | Access |
 |---|---|---|---|
-| `argocd-rke2.miutaku.work` | rke2 | `http://argocd-server.argocd.svc.cluster.local:80` | 必須 |
+| `argocd-home-k8s.miutaku.work` | home-k8s | `http://argocd-server.argocd.svc.cluster.local:80` | 必須 |
 | `argocd-oke.miutaku.work` | oke | `http://argocd-server.argocd.svc.cluster.local:80` | 必須 |
-| `wol.miutaku.work` | rke2 | `http://gptwol-service.app-gptwol.svc.cluster.local:5000` | 必須 |
-| `epgstation.miutaku.work` | rke2 | `http://epgstation.app-epgstation.svc.cluster.local:8888` | 必須 |
-| `tnlastation.miutaku.work` | rke2 | `http://tnlastation.app-tnlastation.svc.cluster.local:8888` | 必須 |
-| `tnlastation-staging.miutaku.work` | rke2 | `http://tnlastation.app-tnlastation-staging.svc.cluster.local:8888` | 必須 |
-| `nextcloud.miutaku.work` | rke2 | `http://nextcloud.app-nextcloud.svc.cluster.local:80` | 必須 |
-| `unifi.miutaku.work` | rke2 | `https://192.168.0.132:11443` | 必須 |
-| `wifi-ap.miutaku.work` | rke2 | `https://192.168.0.253` | 必須 |
-| `ix2215.miutaku.work` | rke2 | `http://192.168.10.254` | 必須 |
-| `nas-01.miutaku.work` | rke2 | `https://192.168.20.191` | 必須 |
-| `nas-02.miutaku.work` | rke2 | `https://192.168.20.192` | 必須 |
-| `pve-x570.miutaku.work` | rke2 | `https://192.168.0.115:8006` | 必須 |
-| `pve-b550m.miutaku.work` | rke2 | `https://192.168.0.119:8006` | 必須 |
-| `nanokvm-1.miutaku.work` | rke2 | `http://192.168.10.240` | 必須 |
-| `nanokvm-2.miutaku.work` | rke2 | `http://192.168.10.241` | 必須 |
+| `wol.miutaku.work` | home-k8s | `http://gptwol-service.app-gptwol.svc.cluster.local:5000` | 必須 |
+| `epgstation.miutaku.work` | home-k8s | `http://epgstation.app-epgstation.svc.cluster.local:8888` | 必須 |
+| `tnlastation.miutaku.work` | home-k8s | `http://tnlastation.app-tnlastation.svc.cluster.local:8888` | 必須 |
+| `tnlastation-staging.miutaku.work` | home-k8s | `http://tnlastation.app-tnlastation-staging.svc.cluster.local:8888` | 必須 |
+| `nextcloud.miutaku.work` | home-k8s | `http://nextcloud.app-nextcloud.svc.cluster.local:80` | 必須 |
+| `unifi.miutaku.work` | home-k8s | `https://192.168.0.132:11443` | 必須 |
+| `wifi-ap.miutaku.work` | home-k8s | `https://192.168.0.253` | 必須 |
+| `ix2215.miutaku.work` | home-k8s | `http://192.168.10.254` | 必須 |
+| `nas-01.miutaku.work` | home-k8s | `https://192.168.20.191` | 必須 |
+| `nas-02.miutaku.work` | home-k8s | `https://192.168.20.192` | 必須 |
+| `pve-x570.miutaku.work` | home-k8s | `https://192.168.0.115:8006` | 必須 |
+| `pve-b550m.miutaku.work` | home-k8s | `https://192.168.0.119:8006` | 必須 |
+| `nanokvm-1.miutaku.work` | home-k8s | `http://192.168.10.240` | 必須 |
+| `nanokvm-2.miutaku.work` | home-k8s | `http://192.168.10.241` | 必須 |
 
 ### WARP 経由の private routes
 
 | CIDR | 用途 | トンネル |
 |---|---|---|
-| `192.168.0.0/24` | native VLAN | rke2 |
-| `192.168.10.0/24` | 管理 VLAN | rke2 |
-| `192.168.20.0/24` | サーバ VLAN | rke2 |
-| `192.168.30.0/24` | クライアント VLAN | rke2 |
-| `192.168.40.0/24` | IoT VLAN | rke2 |
+| `192.168.0.0/24` | native VLAN | home-k8s |
+| `192.168.10.0/24` | 管理 VLAN | home-k8s |
+| `192.168.20.0/24` | サーバ VLAN | home-k8s |
+| `192.168.30.0/24` | クライアント VLAN | home-k8s |
+| `192.168.40.0/24` | IoT VLAN | home-k8s |
 
 この private route は DNS レコードを作らない。
 WARP client profile は Split Tunnel include mode でこれらの CIDR と必要な Zero Trust hostnames を WARP に入れる。
@@ -112,7 +112,7 @@ TFC workspace `cloudflare` に以下の Variables を登録する。
 | `domain` | no | `miutaku.work` |
 | `zero_trust_team_name` | no | WARP enrollment に使う team name。既定値は `my-infra` |
 | `warp_split_tunnel_include_hosts` | no | 外部 IdP など追加で WARP に入れる hostname map。通常は未設定でよい |
-| `tunnel_secret_rke2` | **yes** | `openssl rand -base64 32` の出力 |
+| `tunnel_secret_home_k8s` | **yes** | `openssl rand -base64 32` の出力 |
 | `tunnel_secret_oke` | **yes** | `openssl rand -base64 32` の出力 |
 | `access_allowed_emails` | no | JSON 配列形式: `["user@example.com"]` |
 
@@ -128,7 +128,7 @@ flowchart LR
   Token[Cloudflare API token作成]
   Vars[TFC workspace<br/>Variables登録]
   Terraform[terraform init / plan / apply]
-  Agent[cloudflaredを<br/>RKE2 / OKEへdeploy]
+  Agent[cloudflaredを<br/>home-k8s / OKEへdeploy]
   Client[WARP clientを<br/>install / enroll / connect]
   Test[private IP / internal DNSで疎通確認]
 
@@ -171,11 +171,11 @@ terraform apply
 
 ### HTTP/HTTPS published app
 
-`locals.tf` の `rke2_services` または `oke_services` にエントリを追加する。
+`locals.tf`の`home_k8s_services`または`oke_services`にエントリを追加する。
 
 ```hcl
-# 例: RKE2 に Grafana を追加する場合
-rke2_services = {
+# 例: home-k8sにGrafanaを追加する場合
+home_k8s_services = {
   argocd = { ... }  # 既存
 
   grafana = {
@@ -196,14 +196,14 @@ access_protected_subdomains = toset(["argocd", "grafana"])
 
 ### Private network route
 
-ポート単位で公開したくない通信は `rke2_private_routes` に CIDR を追加する。
+ポート単位で公開したくない通信は`home_k8s_private_routes`にCIDRを追加する。
 WARP 端末から対象 CIDR へ直接到達できるようになる。
 
 ```hcl
-rke2_private_routes = {
+home_k8s_private_routes = {
   example_vlan = {
     network = "192.168.50.0/24"
-    comment = "home example VLAN via rke2 tunnel"
+    comment = "home example VLAN via home-k8s tunnel"
   }
 }
 ```
@@ -217,14 +217,14 @@ rke2_private_routes = {
 
 ```bash
 # Cloudflare dashboard
-# Zero Trust → Networks → Tunnels → "rke2-home-managed-by-tf" / "oke-cloud-managed-by-tf" が存在すること
-# Zero Trust → Networks → Routes → rke2_private_routes の CIDR が tunnel route として存在すること
-# DNS → locals.tf の rke2_services / oke_services に対応する CNAME (proxied) が存在すること
+# Zero Trust → Networks → Tunnels → "home-k8s-managed-by-tf" / "oke-cloud-managed-by-tf" が存在すること
+# Zero Trust → Networks → Routes → home_k8s_private_routes の CIDR が tunnel route として存在すること
+# DNS → locals.tf の home_k8s_services / oke_services に対応する CNAME (proxied) が存在すること
 # Zero Trust → Access → Applications → access_protected_subdomains に対応する application が存在すること
 ```
 
 cloudflared が deploy されるまでトンネルは `INACTIVE` 状態になる。  
-RKE2・OKE ともに ArgoCD で `cloudflared` を deploy した後に `HEALTHY` に変わる。
+home-k8s・OKEともにArgoCDで`cloudflared`をdeployした後に`HEALTHY`へ変わる。
 
 ### cloudflared の tunnel 認証情報取得
 
@@ -235,7 +235,7 @@ cloudflared を k8s に deploy する際に tunnel の認証情報が必要に�
 terraform output  # または TFC UI から確認
 ```
 
-現在の k8s manifest は tunnel token を ExternalSecret 経由で注入する。RKE2 側は
+現在のk8s manifestはtunnel tokenをExternalSecret経由で注入する。home-k8s側は
 `k8s/pve/argocd/README.md`、OKE 側は `k8s/oci/argocd/README.md` を参照。
 
 ---
@@ -277,7 +277,7 @@ WARP client profile、Split Tunnel、Gateway proxy、Local Domain Fallback は `
 管理内容:
 
 - WARP client profile は default profile として `service_mode_v2.mode = "warp"` を設定する
-- Split Tunnel は default profile の include に `rke2_private_routes` の CIDR と Zero Trust / Access hostnames を入れ、WARP 経由にする
+- Split Tunnelはdefault profileのincludeに`home_k8s_private_routes`のCIDRとZero Trust / Access hostnamesを入れ、WARP経由にする
 - Gateway proxy は TCP / UDP を有効化し、TLS decrypt と root CA 配布は無効化する
 - `miutaku.internal` は Local Domain Fallback で CoreDNS (`192.168.20.201`) に向ける
 - client の mode 切替は無効化しつつ、organization からの離脱と client switch はロックしない
@@ -316,15 +316,15 @@ TFC の Variable は JSON 配列形式で設定する: `["user@example.com", "ot
 ### DNS レコードが反映されない
 
 CNAME の `proxied = true` のため、実際の tunnel IP は隠蔽される。  
-`dig argocd-rke2.miutaku.work` で Cloudflare の Anycast IP が返れば正常。
+`dig argocd-home-k8s.miutaku.work`でCloudflareのAnycast IPが返れば正常。
 
 ### Private IP に到達できない
 
-1. Cloudflare dashboard の `Networks → Routes` で対象 CIDR が `rke2-home-managed-by-tf` に紐づいているか確認する
+1. Cloudflare dashboardの`Networks → Routes`で対象CIDRが`home-k8s-managed-by-tf`に紐づいているか確認する
 2. WARP client が対象 Zero Trust organization に enroll され、Traffic and DNS mode で接続しているか確認する
 3. `cloudflare_zero_trust_device_default_profile.default_warp` の Split Tunnel include に対象 CIDR が含まれているか確認する
 4. Gateway proxy で TCP / UDP が有効か確認する
-5. RKE2 上の `cloudflared` Pod から対象 IP に到達できるか確認する
+5. home-k8s上の`cloudflared` Podから対象IPに到達できるか確認する
 
 ### `*.miutaku.internal` が解決できない
 

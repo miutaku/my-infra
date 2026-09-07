@@ -1,6 +1,6 @@
-# MagicMirror² on RKE2
+# MagicMirror² on home-k8s
 
-MagicMirror² の表示サーバを宅内 RKE2 上で動かす。
+MagicMirror² の表示サーバを宅内Kubernetes上で動かす。
 表示端末は専用 VM ではなく、タブレットのブラウザを kiosk モードで使う。
 
 ## Endpoint

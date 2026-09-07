@@ -1,6 +1,6 @@
 # loockit
 
-loockit runs on RKE2 nodes labeled `hardware.miutaku/bluetooth=true` and
+loockit historically ran on Kubernetes nodes labeled `hardware.miutaku/bluetooth=true` and
 `loockit.miutaku/receiver=true`. In production these are worker-01 on pve-x570
 and worker-02 on pve-b550m, each with the Proxmox USB mapping
 `loockit_bluetooth` passed through.

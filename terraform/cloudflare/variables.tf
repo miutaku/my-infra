@@ -34,8 +34,8 @@ variable "warp_split_tunnel_include_hosts" {
   default = {}
 }
 
-variable "tunnel_secret_rke2" {
-  description = "Base64-encoded 32-byte secret for the RKE2 (home) tunnel. Generate with: openssl rand -base64 32"
+variable "tunnel_secret_home_k8s" {
+  description = "Base64-encoded 32-byte secret for the home Kubernetes tunnel. Generate with: openssl rand -base64 32"
   type        = string
   sensitive   = true
 }

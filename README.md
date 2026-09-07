@@ -68,25 +68,24 @@ flowchart LR
         WorkWin ~~~ BuildSV
       end
 
-      subgraph RKE2VM[RKE2 HA Cluster VM]
+      subgraph HomeK8sVM[home-k8s / Talos HA VMs]
         direction LR
-        LBVMs[[2x LB VMs<br/>HAProxy + Keepalived<br/>VIP 192.168.20.227]]
-        ServerVMs[[3x Server VMs<br/>RKE2 server / etcd<br/>192.168.20.126-128]]
-        WorkerVMs[[2x Worker VMs<br/>RKE2 agent<br/>192.168.20.129-130]]
-        LBVMs ~~~ ServerVMs ~~~ WorkerVMs
+        ControlPlanes[[3x control plane VMs<br/>Talos / etcd<br/>192.168.20.137-139]]
+        Workers[[2x worker VMs<br/>Talos<br/>192.168.20.140-141]]
+        ControlPlanes ~~~ Workers
       end
-      NAS ~~~ WorkEnv ~~~ RKE2VM ~~~ UOS
+      NAS ~~~ WorkEnv ~~~ HomeK8sVM ~~~ UOS
     end
-    subgraph RKE2[RKE2 HA cluster]
+    subgraph HomeK8s[home-k8s HA cluster]
       ArgoCD{{ArgoCD <br/>Sync}}
       subgraph Argo[ArgoCD App-of-Apps]
-        subgraph RKE2_agents[SaaS / OSS agents]
+        subgraph HomeK8s_agents[SaaS / OSS agents]
           CFPod([cloudflared])
           TFCAgent([tfc-agent])
           PDC([PDC agent])
           CFPod ~~~ PDC ~~~ TFCAgent
         end
-        subgraph RKE2_system[RKE2 system]
+        subgraph HomeK8s_system[Kubernetes system]
           ESO([external-secrets<br/>Bitwarden BSM])
           MetalLB([MetalLB])
         end
@@ -107,11 +106,11 @@ flowchart LR
           NextCloud([NextCloud])
           CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror ~~~ NextCloud
         end
-        RKE2_agents ~~~ RKE2_system ~~~ Exporters ~~~ Argo_Apps
+        HomeK8s_agents ~~~ HomeK8s_system ~~~ Exporters ~~~ Argo_Apps
       end
       Argo ~~~ ArgoCD
     end
-     RKE2VM === |Runs on …| RKE2
+     HomeK8sVM === |Runs on …| HomeK8s
   end
 
   OCI ~~~ ExtSvc ~~~ Home
@@ -128,7 +127,7 @@ flowchart LR
 
   UOS --->|management| US8
 
-  LBVMs --> ServerVMs --> WorkerVMs
+  ControlPlanes --> Workers
 
   EPGStation --> Mirakurun
   EPGStation -->|read / ts save| NAS
@@ -159,7 +158,7 @@ flowchart LR
   class ArgoCD_OCI,ArgoCD,OCICert,MetalLB control
   class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,PDC cloud
   class IX,US8,AP nwDevice
-  class NAS,BuildSV,WorkWin,UOS,LBVMs,ServerVMs,WorkerVMs vm
+  class NAS,BuildSV,WorkWin,UOS,ControlPlanes,Workers vm
   class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,NextCloud,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
   class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
   class CF_Application,CF_Tunnel,TFC,GitHub external
@@ -168,8 +167,8 @@ flowchart LR
   class Home zoneHome
   class NW zoneNetwork
   class PVE,WorkEnv zoneVirtual
-  class RKE2,RKE2VM,Argo zoneK8s
-  class RKE2_agents,RKE2_system,Exporters,Argo_Apps zoneApps
+  class HomeK8s,HomeK8sVM,Argo zoneK8s
+  class HomeK8s_agents,HomeK8s_system,Exporters,Argo_Apps zoneApps
 
   linkStyle 33 stroke:#7c3aed,stroke-width:4px
 ```
@@ -177,7 +176,7 @@ flowchart LR
 ## ドメイン
 
 - `miutaku.work` — Cloudflare で管理。
-- `miutaku.internal` — CoreDNS (RKE2 on MetalLB `192.168.20.201`) で内部名前解決。
+- `miutaku.internal` — home-k8sのCoreDNS（MetalLB `192.168.20.201`）で内部名前解決。
 
 ## ネットワーク構成
 
@@ -185,7 +184,7 @@ flowchart LR
 |------|-----------|------|
 | (native) | 192.168.0.0/24 | |
 | VLAN 10 | 192.168.10.0/24 | 管理 (PVE / RPi / nanokvm / スイッチ / AP) |
-| VLAN 20 | 192.168.20.0/24 | サーバ (RKE2 / NAS / MetalLB pool: 192.168.20.200 - .192.168.20.226) |
+| VLAN 20 | 192.168.20.0/24 | サーバ（home-k8s / NAS / MetalLB pool: 192.168.20.200 - .192.168.20.226） |
 | VLAN 30 | 192.168.30.0/24 | クライアント (PC / ゲーム機) |
 | VLAN 31 | 192.168.31.0/24 | 来客用 / 他VLANにアクセス不可 / 公開AFTR を用いたインターネット接続 |
 | VLAN 40 | 192.168.40.0/24 | IoT / スマートホーム |
@@ -211,7 +210,8 @@ my-infra/
 │   ├── monitoring/     既存 VM 向け node_exporter 補助 playbook
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
-│   ├── pve/            宅内 RKE2 (ArgoCD App-of-Apps)
+│   ├── pve/            home-k8s共通アプリ (ArgoCD App-of-Apps)
+│   ├── talos-green/    現行home-k8s固有アプリ
 │   └── oci/            OCI OKE (ArgoCD GitOps)
 └── packer/
     ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)
@@ -222,16 +222,15 @@ my-infra/
 
 ```mermaid
 flowchart LR
-  Packer[packer/ubuntu-26-04<br/>VM template]
-  Terraform[terraform/pve<br/>Proxmox VM作成]
+  Terraform[terraform/talos-green<br/>Talos VM作成]
   IX[ansible/ix2215<br/>DHCP静的リース反映]
-  RKE2[ansible/rke2<br/>RKE2 HA構成]
+  Talos[talos/green<br/>Talos machine config]
   UOS[ansible/uos<br/>UniFi OS Server VM構成]
   Argo[k8s/pve/argocd<br/>ArgoCD Bootstrap]
   Apps[k8s/pve/argocd-apps<br/>App-of-Apps同期]
 
-  Packer --> Terraform --> IX
-  IX --> RKE2 --> Argo --> Apps
+  Terraform --> IX
+  IX --> Talos --> Argo --> Apps
   IX --> UOS
 ```
 
@@ -255,7 +254,7 @@ flowchart LR
 
 | コンテキスト名 | クラスタ | 接続先 |
 |---|---|---|
-| `rke2-pve` | 宅内 RKE2 (Proxmox) | LB VIP `192.168.20.227:6443` |
+| `home-k8s` | 宅内Kubernetes (Proxmox) | Talos VIP `192.168.20.228:6443` |
 | `oke-cloud` | OCI OKE | 以下のセットアップ手順で設定すると構成される |
 
 ### セットアップ手順 (新規マシン)
@@ -278,16 +277,15 @@ OCI 認証情報 (`~/.oci/config`, `~/.oci/oci_api_key.pem`) は BSM の `OCI_*`
 **Step 2: kubeconfig を取得・統合**
 
 ```bash
-bash scripts/setup-kubeconfig   # RKE2 + OKE 両方取得して ~/.kube/config に統合
+bash scripts/setup-kubeconfig   # home-k8s + OKEを ~/.kube/config に統合
 # 個別に設定も可能:
-bash scripts/setup-kubeconfig --rke2-only
+bash scripts/setup-kubeconfig --home-k8s-only
 bash scripts/setup-kubeconfig --oke-only
 ```
 
-> **RKE2 の注意点**
-> - `/etc/rancher/rke2/rke2.yaml` は root 所有のため、スクリプトでは `sudo cat` 経由で取得される
-> - kubeconfig 内の `server` が `127.0.0.1:6443` になっているため、スクリプトで LB VIP (`192.168.20.227`) に自動書き換え
-> - SSH 接続先は `master-01` (IP: `192.168.20.126`)
+> **home-k8sの注意点**
+> - `talos/green/.generated/kubeconfig`をコピーして統合する
+> - 管理APIはTalos VIP `192.168.20.228:6443`を使用する
 
 > **OKE の注意点**
 > - kubeconfig の認証に `oci` コマンドを使う exec plugin が埋め込まれる
@@ -297,7 +295,7 @@ bash scripts/setup-kubeconfig --oke-only
 
 ```bash
 kubectx              # コンテキスト一覧
-kubectx rke2-pve     # 宅内 RKE2 に切り替え
+kubectx home-k8s     # 宅内Kubernetesへ切り替え
 kubectx oke-cloud    # OCI OKE  に切り替え
 kubens               # namespace 一覧
 ```
@@ -317,7 +315,7 @@ kubens               # namespace 一覧
 | IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | VLAN・DHCP 静的リース |
 | UniFi OS Server Ansible | [ansible/uos/README.md](./ansible/uos/README.md) | 専用 VM 上の UniFi OS Server 構成 |
 | PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
-| ArgoCD Bootstrap (RKE2) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSM シークレット一覧, App-of-Apps |
+| ArgoCD Bootstrap (home-k8s) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSMシークレット一覧, App-of-Apps |
 | ArgoCD Bootstrap (OKE) | [k8s/oci/argocd/README.md](./k8s/oci/argocd/README.md) | BSM シークレット一覧, TLS cert 手順, sync-wave 順序 |
 | PDC Agent | [k8s/pve/pdc-agent/README.md](./k8s/pve/pdc-agent/README.md) | Grafana PDC トンネル |
 | Packer Ubuntu | [packer/ubuntu-26-04/README.md](./packer/ubuntu-26-04/README.md) | テンプレートビルド |
@@ -334,7 +332,7 @@ flowchart TB
   PVE[pve-exporter :9221<br/>Proxmox API]
   Blackbox[blackbox-exporter :9115<br/>HTTP / ICMP]
   Agent[vmagent<br/>scrape config: k8s/pve/vmagent/values.yaml]
-  VM[VictoriaMetrics<br/>RKE2内]
+  VM[VictoriaMetrics<br/>home-k8s内]
   PDC[Grafana PDC agent<br/>VictoriaMetrics query tunnel]
 
   Hosts --> Node
@@ -357,7 +355,7 @@ flowchart TB
 | IX2215 | 192.168.0.254 | blackbox HTTP/ICMP | ✅ |
 | pve-x570 | 192.168.0.115 | pve-exporter | BSM 要設定 |
 | pve-b550m | 192.168.0.119 | pve-exporter | BSM 要設定 |
-| RKE2 nodes ×5 | 192.168.20.126-130 | node metrics | scrape 設定要確認 |
+| home-k8s nodes ×5 | 192.168.20.137-141 | node metrics | ✅ |
 | UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
 | LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
 | dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
