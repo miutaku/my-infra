@@ -1018,7 +1018,7 @@ digestを更新する二段階方式とする。公式手順:
 - [x] LXCのPVE hostnameを`<service>-NN-server-ubuntu-26-04-home-lxc-amd64`へ統一した。
 - [x] Kubernetes実測（変更前）はcontrol plane 47–55%、worker-01 82%、worker-02 33%だった。
   control planeは4GiBを維持し、local PVが集中するworker-01を6→8GiB、worker-02を6→4GiBへ変更した。
-  変更後の安定値は監視データが蓄積してから再評価する。
+  全workload復帰後の実測はcontrol plane 44–55%、worker-01 59%、worker-02 62%となった。
 
 公式仕様: [Talos HostnameConfig](https://docs.siderolabs.com/talos/v1.13/networking/configuration/hostname)、
 [Talos system extensions](https://docs.siderolabs.com/talos/v1.13/build-and-extend-talos/custom-images-and-development/system-extensions)。
