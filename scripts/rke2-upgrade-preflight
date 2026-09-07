@@ -7,6 +7,7 @@ version_file="${RKE2_VERSION_FILE:-ansible/rke2/group_vars/rke2-node-all.yml}"
 ssh_user="${RKE2_SSH_USER:-miutaku}"
 ssh_identity_file="${RKE2_SSH_IDENTITY_FILE:-}"
 require_maintenance_window="${RKE2_REQUIRE_MAINTENANCE_WINDOW:-true}"
+tnlastation_endpoint="${TNLASTATION_ENDPOINT:-http://192.168.20.210:8888}"
 readyz_file="$(mktemp)"
 trap 'rm -f "${readyz_file}"' EXIT
 
@@ -76,8 +77,8 @@ unready_workloads="$(kubectl --context "${context}" get deploy,statefulset -A -o
 }
 
 echo '[preflight] recording and reservations'
-recording="$(curl -fsS 'http://192.168.20.202:8888/api/recording?isHalfWidth=true' | jq -r '.total')"
-reserves="$(curl -fsS 'http://192.168.20.202:8888/api/reserves?isHalfWidth=true' | jq -r '.total')"
+recording="$(curl -fsS "${tnlastation_endpoint}/api/recording?isHalfWidth=true" | jq -r '.total')"
+reserves="$(curl -fsS "${tnlastation_endpoint}/api/reserves?isHalfWidth=true" | jq -r '.total')"
 if [[ "${require_maintenance_window}" == true ]]; then
   [[ "${recording}" == 0 && "${reserves}" == 0 ]] || {
     echo "recording=${recording}, reserves=${reserves}; maintenance window is not safe" >&2
