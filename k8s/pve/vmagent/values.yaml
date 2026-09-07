@@ -107,7 +107,11 @@ config:
           target_label: instance
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: instance
-          regex: (.+?-(?:rke2|talos))-(?:server|agent|controlplane)-.*
+          regex: (.+?-rke2)-(?:server|agent)-.*
+          replacement: $1
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: instance
+          regex: ((?:controlplane|worker)-[0-9]+-talos)-.*
           replacement: $1
         # worker-01 keeps its pre-rename Kubernetes Node identity because
         # existing local-path PV nodeAffinity is immutable.

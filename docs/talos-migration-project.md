@@ -1007,15 +1007,15 @@ digestを更新する二段階方式とする。公式手順:
   digestを固定した。
 - [x] ProxmoxのVM 13001–13005でagent channelを有効化し、各VMをローリングで完全停止・起動して
   `qm agent <vmid> ping`を確認した。
-- [x] Talos OS hostnameとPVE VM名をRKE2時代の規則に合わせ、control planeは
-  `master-NN-talos-controlplane-home-pve-amd64`、workerは`worker-NN-talos-agent-home-pve-amd64`とした。
+- [x] Talos OS hostnameとPVE VM名はTalos固有の役割名に合わせ、control planeは
+  `controlplane-NN-talos-home-pve-amd64`、workerは`worker-NN-talos-home-pve-amd64`とした。
 - [x] worker-01のlocal-path PV 6本はnodeAffinityがimmutableであるため、OS hostnameだけ正規化し、
   Kubernetes Node identityは`talos-ayb-pmi`を互換名として維持した。
 - [x] node-exporter discoveryで`instance`へKubernetes Node名を必ず設定し、worker-01は
   `worker-01-talos`へ明示変換した。これにより`192.168.20.140:9101`表示を解消する。
 - [x] LB VM/PVE tag/Ubuntu hostnameから`rke2`を除去した。旧internal DNS名は移行猶予のaliasとして残し、
   新しい`lb-01.miutaku.internal`/`lb-02.miutaku.internal`を正規名とした。
-- [x] LXCのPVE hostnameを`<service>-NN-server-ubuntu-26-04-home-lxc-amd64`へ統一した。
+- [x] LXCのPVE hostnameを`<service>-NN-ubuntu-26-04-home-lxc-amd64`へ統一した。
 - [x] Kubernetes実測（変更前）はcontrol plane 47–55%、worker-01 82%、worker-02 33%だった。
   control planeは4GiBを維持し、local PVが集中するworker-01を6→8GiB、worker-02を6→4GiBへ変更した。
   全workload復帰後の実測はcontrol plane 44–55%、worker-01 59%、worker-02 62%となった。
