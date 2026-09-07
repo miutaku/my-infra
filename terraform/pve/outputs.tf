@@ -1,20 +1,12 @@
-output "rke2_lb_vm_names" {
-  value = [for vm in values(module.rke2_lb.vms) : vm.name]
+output "load_balancer_vm_names" {
+  value = [for vm in values(module.load_balancer.vms) : vm.name]
 }
-output "rke2_lb_vm_ids" {
-  value = [for vm in values(module.rke2_lb.vms) : vm.id]
+output "load_balancer_vm_ids" {
+  value = [for vm in values(module.load_balancer.vms) : vm.id]
 }
-output "rke2_lb_mac_addresses" {
+output "load_balancer_mac_addresses" {
   description = "LB VM の MAC アドレス。ルーターの DHCP 静的リース設定に使用する。"
-  value       = module.rke2_lb.mac_addresses
-}
-output "rke2_server_mac_addresses" {
-  description = "Server VM の MAC アドレス。ルーターの DHCP 静的リース設定に使用する。"
-  value       = module.rke2_server.mac_addresses
-}
-output "rke2_worker_mac_addresses" {
-  description = "Worker VM の MAC アドレス。ルーターの DHCP 静的リース設定に使用する。"
-  value       = module.rke2_worker.mac_addresses
+  value       = module.load_balancer.mac_addresses
 }
 output "unifi_os_server_mac_addresses" {
   description = "Dedicated UniFi OS Server VM の MAC アドレス。main LAN DHCP 静的リース設定に使用する。"
@@ -27,23 +19,6 @@ output "unifi_os_server_vm_names" {
 
 output "unifi_os_server_vm_ids" {
   value = [for vm in values(module.unifi_os_server.vms) : vm.id]
-}
-
-output "rke2_dvb_worker_vm_name" {
-  description = "DVB worker VM 名 (PT3 パススルー付き)"
-  value       = keys(module.rke2_dvb_worker.mac_addresses)[0]
-}
-
-output "rke2_dvb_worker_mac_address" {
-  description = "DVB worker VM の MAC アドレス"
-  value       = values(module.rke2_dvb_worker.mac_addresses)[0]
-}
-
-output "rke2_worker_vm_names" {
-  value = [for vm in values(module.rke2_worker.vms) : vm.name]
-}
-output "rke2_worker_vm_ids" {
-  value = [for vm in values(module.rke2_worker.vms) : vm.id]
 }
 
 output "pbs_mac_address" {

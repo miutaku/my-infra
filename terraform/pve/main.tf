@@ -1,20 +1,10 @@
-moved {
-  from = module.rke2_lb.proxmox_vm_qemu.vm["lb-01-rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"]
-  to   = module.rke2_lb.proxmox_vm_qemu.vm["lb-01-haproxy-keepalived-ubuntu-26-04-home-amd64"]
-}
-
-moved {
-  from = module.rke2_lb.proxmox_vm_qemu.vm["lb-02-rke2-haproxy-keepalived-ubuntu-26-04-home-amd64"]
-  to   = module.rke2_lb.proxmox_vm_qemu.vm["lb-02-haproxy-keepalived-ubuntu-26-04-home-amd64"]
-}
-
-module "rke2_lb" {
+module "load_balancer" {
   source = "./modules/proxmox_vm"
 
-  vm_count          = var.lb_vm_count
+  vm_count          = var.load_balancer_vm_count
   name_prefix       = "lb"
   name_suffix       = "haproxy-keepalived-ubuntu-26-04-home-amd64"
-  base_macaddr      = var.rke2_base_lb_macaddr
+  base_macaddr      = var.load_balancer_base_macaddr
   vmid_start        = 10001
   tags              = ["ubuntu_2604", "lb", "haproxy", "keepalived"]
   cpu_cores         = 1
@@ -23,85 +13,6 @@ module "rke2_lb" {
   proxmox_nodes     = var.proxmox_nodes
   vlan_tag          = 20
   cloudinit_storage = "local-zfs"
-}
-
-module "rke2_server" {
-  source = "./modules/proxmox_vm"
-
-  vm_count          = var.server_vm_count
-  name_prefix       = "master"
-  name_suffix       = "rke2-server-ubuntu-26-04-home-amd64"
-  base_macaddr      = var.rke2_base_server_macaddr
-  vmid_start        = 11001
-  tags              = ["ubuntu_2604", "rke2", "server", "master"]
-  cpu_cores         = 2
-  memory            = 4 * 1024
-  clone_template    = local.ubuntu_template
-  disk_size         = 48
-  proxmox_nodes     = ["pve-x570", "pve-b550m", "pve-b550m"]
-  vlan_tag          = 20
-  cloudinit_storage = "local-zfs"
-}
-
-module "rke2_worker" {
-  source = "./modules/proxmox_vm"
-
-  vm_count     = var.worker_vm_count
-  name_prefix  = "worker"
-  name_suffix  = "rke2-agent-ubuntu-26-04-home-amd64"
-  base_macaddr = var.rke2_base_worker_macaddr
-  vmid_start   = 12001
-  tags         = ["ubuntu_2604", "rke2", "agent", "worker"]
-  # Match the physical core count of each Proxmox host. FFmpeg benefits from
-  # real cores; SMT threads are left as headroom for the host and other VMs.
-  cpu_cores = 6
-  cpu_cores_by_proxmox_node = {
-    pve-x570 = 16
-  }
-  # Both hosts have 64 GiB. 12 GiB removes the Kubernetes scheduling bottleneck
-  # while retaining at least 8 GiB of measured host-side available memory.
-  memory            = 12 * 1024
-  clone_template    = local.ubuntu_template
-  disk_size         = 96
-  proxmox_nodes     = var.proxmox_nodes
-  vlan_tag          = 20
-  cloudinit_storage = "local-zfs"
-  usbs = {
-    usb0 = {
-      mapping = {
-        mapping_id = "loockit_bluetooth"
-      }
-    }
-  }
-}
-
-# DVB 専用 RKE2 worker — PT3 PCI パススルー付き。pve-x570 に固定。
-# Mirakurun Pod がこのノードで動く。
-# terraform apply でこのノードが生成された後、ansible/rke2 で RKE2 agent をインストールすること。
-module "rke2_dvb_worker" {
-  source = "./modules/proxmox_vm"
-
-  vm_count          = 1
-  name_prefix       = "dvb-worker"
-  name_suffix       = "rke2-agent-ubuntu-26-04-home-amd64"
-  macaddrs_override = [var.rke2_dvb_worker_macaddr]
-  vmid_start        = 12900
-  tags              = ["ubuntu_2604", "rke2", "agent", "worker", "dvb"]
-  cpu_cores         = 2
-  memory            = 3 * 1024
-  clone_template    = local.ubuntu_template
-  disk_size         = 32
-  proxmox_nodes     = ["pve-x570"] # PT3 PCI device is on this node
-  vlan_tag          = 20
-  cloudinit_storage = "local-zfs"
-  pcis = {
-    pci0 = {
-      mapping = {
-        mapping_id = "earthsoft_pt3"
-        pcie       = false
-      }
-    }
-  }
 }
 
 module "dev_application_server" {

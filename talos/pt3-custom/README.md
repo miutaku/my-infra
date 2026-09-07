@@ -10,7 +10,7 @@ Building is automatic; deployment is intentionally not automatic.
 
 ## Safety boundary
 
-- The workflow never connects to Proxmox, Blue RKE2, or Green Talos.
+- The workflow never connects to Proxmox or the live home-k8s cluster.
 - It never changes a Talos machine configuration.
 - An installer is identified by OCI digest before it may be tested.
 - PT3 hardware testing uses `talos/green/scripts/test-pt3-passthrough` and its
@@ -24,4 +24,3 @@ Building is automatic; deployment is intentionally not automatic.
 workflow may propose patch releases, but a PR must pass the custom-kernel build.
 Minor and major updates are rejected by policy. Merging an update does not
 deploy it.
-

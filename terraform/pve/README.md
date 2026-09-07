@@ -7,9 +7,7 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 
 | モジュール | 台数 | 役割 | ノード配置 |
 |---|---|---|---|
-| `rke2_lb` | 2 | 退役済みRKE2 LB（削除承認待ち） | 両ノード分散 |
-| `rke2_server` | 3 | 退役済みRKE2 control plane（停止中） | 両ノード分散 |
-| `rke2_worker` | 2 | 退役済みRKE2 worker（停止中） | 両ノード分散 |
+| `load_balancer` | 2 | 汎用HAProxy + Keepalived LB | 両ノード分散 |
 | `prd_rec_server` | 1 | 録画サーバー (pve-x570, PCI passthrough) | pve-x570 固定 |
 | `dev_rec_server` | 1 | 開発用録画サーバー (USB passthrough) | pve-b550m 固定 |
 | `dev_application_server` | 1 | 開発用アプリサーバー | pve-b550m 固定 |
@@ -95,8 +93,8 @@ flowchart LR
   Apply --> Output --> IX --> Reboot
 ```
 
-home-k8s VMのIP/MACは`terraform/talos-green`で管理する。`terraform/pve`に残る`rke2_*`変数は
-削除承認まで旧VMのstate addressとDHCP情報を維持するためのlegacy項目であり、新規用途では使わない。
+home-k8s VMのIP/MACは`terraform/talos-green`で管理する。LB 2台はKubernetes専用ではない
+汎用インフラとして`load_balancer` moduleで管理する。
 
 ## Ansible inventory
 
@@ -104,8 +102,7 @@ home-k8s VMのIP/MACは`terraform/talos-green`で管理する。`terraform/pve`�
 
 | ファイル | 内容 |
 |---|---|
-| `ansible/rke2/hosts/prd` | 退役済みRKE2のlegacy inventory |
-| `ansible/rke2/group_vars/prd-all.yml` | 退役済みLB/HAProxyのlegacy設定 |
+| `ansible/load-balancer/hosts/prd` | 汎用LB 2台のinventory |
 | `ansible/displaylink-kiosk/hosts/prd` | DisplayLink kiosk インベントリ |
 
 VM を追加・変更した場合は `terraform apply` 後に `terraform output` で MAC/IP を確認し、

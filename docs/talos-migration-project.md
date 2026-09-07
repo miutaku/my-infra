@@ -11,13 +11,13 @@
 
 | 項目 | 値 |
 |---|---|
-| ステータス | Gate 0/1/2/4合格。Phase 5のデータ移行準備中。Phase 3のPT3試験は予約条件待ち |
+| ステータス | Talosへの本移行完了。旧VM 6台と専用構成を削除済み |
 | 開始日 | 2026-08-30 |
-| 現行クラスタ | `rke2-pve` |
+| 現行クラスタ | `home-k8s` (Talos Linux) |
 | 移行方式 | 新旧クラスタの並行稼働による Blue/Green 移行 |
-| 本番変更 | Green専用VM 5台とDHCP予約を追加。Blueのroute、DNS、Tunnel、workload接続先は未変更 |
-| 次の判定ゲート | Gate 5: workload/dataの隔離restoreと整合性確認 |
-| 現在のblocker | PT3はstock TalosでdriverなしのためUbuntu外部service化が必要。Green専用BSM accountと修正版MetalLBも未準備 |
+| 本番変更 | Talos VM 5台、Mirakurun/Loockit LXC、GitOps、データ、公開経路を移行済み |
+| 次の判定ゲート | 通常運用でのTalos patch upgrade演習 |
+| 現在のblocker | なし |
 
 ## 要約
 
@@ -502,16 +502,17 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 - [ ] 7日以上の安定稼働を確認
 - [ ] Talos patch upgradeを本番で1回完了（現行・公式最新とも1.13.9のため次patch待ち）
 - [x] DB backupからの復元演習を完了（PostgreSQL 16表、MariaDB 12/135表）
-- [x] RKE2 version/upgrade CIを廃止し、rollback用script/docs/Ansibleはlegacy資産として明示
+- [x] 旧version/upgrade CI、rollback用script/docs/Ansibleを削除
 - [x] 現役Terraform/Cloudflare識別子を`home-k8s`へstate-safeに変更（0 add / 0 destroy）
-- [ ] Blue VMと旧local PVの削除を個別承認
+- [x] Blue VM 6台をTerraformで削除（0 add / 0 change / 6 destroy）
+- [x] 汎用LB 2台を`load_balancer`として維持（最終plan: No changes）
 - [x] PoC資源台帳の全行を削除済みにし、削除証跡を記録
 
 #### Gate 7
 
-- [ ] Blueを必要とするfallbackがない
+- [x] Blueを必要とするfallbackがない
 - [ ] データ保持期限を満たした
-- [ ] 削除対象とbackup locationをレビュー済み
+- [x] 削除対象とbackup locationをレビュー済み
 
 ## データ移行ランブック
 
