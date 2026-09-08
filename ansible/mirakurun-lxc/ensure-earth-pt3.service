@@ -1,0 +1,12 @@
+[Unit]
+Description=Bind Earthsoft PT3 to earth_pt3 before Mirakurun LXC
+After=systemd-modules-load.service systemd-udev-settle.service
+Before=pve-container@12901.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ensure-earth-pt3
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

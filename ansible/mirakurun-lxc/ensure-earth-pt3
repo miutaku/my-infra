@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly pci=0000:05:00.0
+readonly device=/sys/bus/pci/devices/$pci
+
+modprobe earth_pt3
+if [[ ! -e "$device/driver" ]]; then
+  echo "$pci" > /sys/bus/pci/drivers/earth_pt3/bind
+fi
+udevadm settle
+
+driver="$(basename "$(readlink -f "$device/driver")")"
+if [[ "$driver" != earth_pt3 ]]; then
+  echo "PT3 is bound to unexpected driver: $driver" >&2
+  exit 1
+fi
+
+for adapter in 0 1 2 3; do
+  for node in frontend0 demux0 dvr0; do
+    test -c "/dev/dvb/adapter${adapter}/${node}" || {
+      echo "missing PT3 DVB node: /dev/dvb/adapter${adapter}/${node}" >&2
+      exit 1
+    }
+  done
+done
