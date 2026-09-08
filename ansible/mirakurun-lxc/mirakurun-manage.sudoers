@@ -1,0 +1,2 @@
+Defaults:mirakurun-admin env_keep += "SSH_ORIGINAL_COMMAND"
+mirakurun-admin ALL=(root) NOPASSWD: /usr/local/sbin/mirakurun-manage
