@@ -6,6 +6,25 @@
   vars:
     mirakurun_ct_id: 12901
   tasks:
+    - name: Install persistent PT3 bind guard on Proxmox
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {src: ensure-earth-pt3, dest: /usr/local/sbin/ensure-earth-pt3, mode: "0755"}
+        - {src: ensure-earth-pt3.service, dest: /etc/systemd/system/ensure-earth-pt3.service, mode: "0644"}
+      notify: Restart PT3 bind guard
+
+    - name: Enable persistent PT3 bind guard
+      ansible.builtin.systemd_service:
+        name: ensure-earth-pt3.service
+        enabled: true
+        state: started
+        daemon_reload: true
+
     - name: Install restricted-management dependencies in LXC
       ansible.builtin.command:
         argv: [pct, exec, "{{ mirakurun_ct_id | string }}", --, bash, -ec, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl jq openssh-server sudo"]
@@ -55,3 +74,10 @@
       ansible.builtin.command:
         argv: [pct, exec, "{{ mirakurun_ct_id | string }}", --, bash, -ec, "chown -R mirakurun-admin:mirakurun-admin /home/mirakurun-admin/.ssh; systemctl enable --now ssh"]
       changed_when: true
+
+  handlers:
+    - name: Restart PT3 bind guard
+      ansible.builtin.systemd_service:
+        name: ensure-earth-pt3.service
+        state: restarted
+        daemon_reload: true
