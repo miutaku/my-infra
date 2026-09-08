@@ -10,6 +10,10 @@ data:
     path: /var/run/mirakurun.sock
     address: 0.0.0.0
     port: 40772
+    # EPG取得の失敗時に複数チューナーが同時にrespawn loopへ入り、
+    # ライブ視聴用チューナーを全て塞がないよう直列化する。
+    jobMaxRunning: 1
+    jobMaxStandby: 1
 
   tuners.yml: |
     # PT3 実機確認済み (dmesg): adapter0=ISDB-S, adapter1=ISDB-T, adapter2=ISDB-S, adapter3=ISDB-T
