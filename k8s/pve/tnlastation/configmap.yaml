@@ -15,7 +15,9 @@ data:
     epgUpdateIntervalTime: 10
     conflictPriority: 1
     recPriority: 2
-    streamingPriority: 0
+    # 録画(priority 2)は奪わず、EPG取得(priority -1)と切断漏れの旧視聴
+    # (priority 0)は新しい視聴要求でプリエンプトできる値にする。
+    streamingPriority: 1
 
     isEnabledDropCheck: true
     recordedFormat: '%TITLE%-%YEAR%年%MONTH%月%DAY%日%HOUR%時%MIN%分%SEC%秒'
