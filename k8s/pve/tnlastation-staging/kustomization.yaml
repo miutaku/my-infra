@@ -3,6 +3,26 @@ kind: Kustomization
 namespace: app-tnlastation-staging
 resources:
   - ../tnlastation
+configMapGenerator:
+  - name: tnlastation-staging-overrides
+    literals:
+      - "mirakurunPathLine=mirakurunPath: http://mirakurun.app-mirakurun-staging.svc.cluster.local:40772"
+generatorOptions:
+  disableNameSuffixHash: true
+replacements:
+  - source:
+      kind: ConfigMap
+      name: tnlastation-staging-overrides
+      fieldPath: data.mirakurunPathLine
+    targets:
+      - select:
+          kind: ConfigMap
+          name: tnlastation-config
+        fieldPaths:
+          - data.config\.yml
+        options:
+          delimiter: "\n"
+          index: 2
 images:
   - name: ghcr.io/miutaku/tnlastation-backend
     newTag: staging

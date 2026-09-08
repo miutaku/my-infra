@@ -909,6 +909,7 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-05 | Codex | Loockit BlueZ sidecar PoC | USB `0bda:8771`はTalos guestに見えるがstock kernelに`bluetooth`/`btusb`がなくBlueZ management interfaceを作れない | PoC停止、USBをUbuntu 12001へ復帰、RKE2 agentは停止 |
 | 2026-09-08 | Codex | TNLAStationライブ視聴障害を切り分け | TNLA backendまで正常、Mirakurunが503を返却。PT3全adapterの`dvbv5-zap`がexit 255で毎秒respawnし、EPGジョブが全チューナーを占有。Mirakurun再起動で一時解放するが実tuningで再発するため、LXC内DockerへのDVB再割当を根本修復対象と確定 | 録画利用者0件を確認し、EPGジョブ中断とMirakurunサービス再起動のみ実施 |
 | 2026-09-08 | Codex | TNLAStationライブ視聴障害を根本修復 | PVEのPT3 `0000:05:00.0`がdriver未bindで`/dev/dvb`が消失していた。`earth_pt3`へ再bind後、GR 14.4 MB、BS 13.6 MB、TNLA本番経由19.3 MBを受信しrespawn 0を確認。CT起動前bind guardをAnsible管理へ追加 | Mirakurunコンテナのみ再起動。Kubernetes workloadや録画dataへの変更なし |
+| 2026-09-08 | Codex | STG TNLAStation専用Mirakurunを分離 | pve-b550m上のLXC 12904へPX-S1UDを割り当ててGRを受信。BS/CSは本番MirakurunのPT3をTCP参照し、API最小値のpriority 0へ固定。GR 3.75 MB、BS 33.2 MB、CS 33.4 MBの実受信とfaultなしを確認 | 本番TNLA/Mirakurunの設定変更なし。Git反映後にSTGだけ接続先を変更 |
 | 2026-09-06 | Codex | 23:00予約ID 23の本番録画を事後検証 | recorded ID 426、H.265 300,520,785 bytes、23:38更新のNFS実fileをGreen API/Pod双方で確認 | 録画系cutover Gate合格 |
 | 2026-09-06 | Codex | Raspberry Pi worker-11/12をRKE2から退役 | 業務Podなしを確認してcordon/drain、rke2-agent停止・無効化、inventoryを退役groupへ変更 | Ubuntu/BlueZ/SSHと電源はrollback用に維持 |
 | 2026-09-06 | Codex | selectorless ServiceのEndpointSliceをGitOps化 | Argo CD既定除外からEndpointSliceを外し、Mirakurun/Loockitの両資源がSynced/Healthyかつ追跡対象であることを確認 | Greenの管理設定のみ。接続先変更なし |
@@ -1042,6 +1043,22 @@ digestを更新する二段階方式とする。公式手順:
 管理端末は`TALOSCONFIG`と`KUBECONFIG`に`.generated`内のファイルパスだけを設定する。資格情報の
 内容をshell設定へ埋め込まない。`green.env`はSecretを含まず、versionとinstaller digestの固定値は
 追跡済み`green.env.example`を正とする。
+
+### STG TNLAStationチューナー分離（2026-09-08）
+
+- [x] Proxmox USB mapping `plex_s1ud`（`3275:0080`）とPX-S1UD用`pve-firmware`を確認した。
+- [x] pve-b550mへ非特権LXC 12904（`192.168.20.142`）を作成し、Terraform stateへimportした。
+- [x] `smsusb`/`smsdvb`、firmware、DVB nodeを検証してからLXCを起動するsystemd guardをAnsible管理した。
+- [x] STG Mirakurunを「PX-S1UDのGR 1基 + 本番PT3経由のBS/CS 1基」に限定した。
+- [x] Mirakurun 4.1.3は負数priorityをHTTP 400で拒否するため、上流priorityを有効最小値`0`へ固定した。
+- [x] GR/BS/CSの実ストリームと、本番Mirakurun側の`priority: 0`を同時観測した。
+- [x] selectorless Service/EndpointSliceとSTG TNLAStationだけの接続先overrideをKustomize検証した。
+- [ ] Git/Argo CD反映後、STG TNLAStationの番組表・ライブ視聴をend-to-end確認する。
+
+本番TNLAStationは従来どおり本番MirakurunとPT3を使用する。STGのBS/CS要求は常にpriority 0であり、
+より高いpriorityの本番録画に勝たない。Terraform planは0 add / 0 destroyで、import時のprovider既定値だけを
+in-place補完する差分だった。Proxmox APIではdevice passthrough更新が`root@pam`限定のため、LXC初回作成は
+同一宣言内容を`pct`で行いstateへimportした。以後も破壊差分がないことをplanで確認してから変更する。
 
 ### home-k8s名称統一（2026-09-07）
 

@@ -1,0 +1,14 @@
+- name: PX-S1UD-GR
+  types: [GR]
+  dvbDevicePath: /dev/dvb/adapter0/dvr0
+  decoder: arib-b25-stream-test
+  command: >-
+    dvbv5-zap -a 0 -c ./config/dvbconf-for-isdb/conf/dvbv5_channels_isdbt.conf
+    -r -P <channel>
+  isDisabled: false
+
+- name: Production-PT3-BSCS-lowest-priority
+  types: [BS, CS]
+  command: >-
+    node /app-config/remote-tuner.mjs <type> <channel>
+  isDisabled: false

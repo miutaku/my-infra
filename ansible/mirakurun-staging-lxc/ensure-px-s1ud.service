@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize PX-S1UD before staging Mirakurun LXC
+After=systemd-modules-load.service systemd-udev-settle.service
+Before=pve-container@12904.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ensure-px-s1ud
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
