@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+modprobe smsusb
+modprobe smsdvb
+test -r /usr/lib/firmware/isdbt_rio.inp || test -r /lib/firmware/isdbt_rio.inp
+
+usb_device=""
+for vendor_file in /sys/bus/usb/devices/*/idVendor; do
+  [[ "$(<"$vendor_file")" == 3275 ]] || continue
+  candidate="${vendor_file%/idVendor}"
+  [[ "$(<"$candidate/idProduct")" == 0080 ]] || continue
+  usb_device="$candidate"
+  break
+done
+[[ -n "$usb_device" ]] || { echo 'PX-S1UD 3275:0080 not found' >&2; exit 1; }
+
+udevadm settle
+if [[ ! -c /dev/dvb/adapter0/frontend0 ]]; then
+  for interface in "$usb_device":*; do
+    [[ -d "$interface" ]] || continue
+    interface_name="${interface##*/}"
+    if [[ -e "$interface/driver" ]]; then
+      echo "$interface_name" > "$interface/driver/unbind"
+    fi
+    echo "$interface_name" > /sys/bus/usb/drivers_probe
+  done
+  udevadm settle
+fi
+
+for node in frontend0 demux0 dvr0; do
+  test -c "/dev/dvb/adapter0/$node" || {
+    echo "missing PX-S1UD DVB node: /dev/dvb/adapter0/$node" >&2
+    exit 1
+  }
+done
