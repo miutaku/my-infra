@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly container=mirakurun
+readonly rollback_container=mirakurun-rollback
+readonly api=http://127.0.0.1:40772
+
+status() {
+  docker inspect "$container" --format '{{json .HostConfig.Devices}}'
+  curl -fsS --max-time 5 "$api/api/status" |
+    jq '{errorCount,timerAccuracy}'
+  curl -fsS --max-time 5 "$api/api/tuners" |
+    jq '[.[] | {name,isAvailable,isUsing,users:(.users|length)}]'
+}
+
+repair_dvb() {
+  local recording_count image network privileged restart_name
+  local -a run_args env_args bind_args port_args device_args
+
+  recording_count="$(curl -fsS --max-time 5 "$api/api/tuners" |
+    jq '[.[].users[]? | select(.priority >= 2)] | length')"
+  if [[ "$recording_count" != 0 ]]; then
+    echo "refusing repair: ${recording_count} recording tuner user(s) exist" >&2
+    exit 1
+  fi
+
+  for adapter in 0 1 2 3; do
+    for node in demux0 dvr0 frontend0; do
+      test -c "/dev/dvb/adapter${adapter}/${node}" || {
+        echo "missing DVB node: /dev/dvb/adapter${adapter}/${node}" >&2
+        exit 1
+      }
+      device_args+=(--device "/dev/dvb/adapter${adapter}/${node}")
+    done
+  done
+
+  image="$(docker inspect "$container" --format '{{.Config.Image}}')"
+  network="$(docker inspect "$container" --format '{{.HostConfig.NetworkMode}}')"
+  privileged="$(docker inspect "$container" --format '{{.HostConfig.Privileged}}')"
+  restart_name="$(docker inspect "$container" --format '{{.HostConfig.RestartPolicy.Name}}')"
+
+  mapfile -t current_env < <(docker inspect "$container" --format '{{range .Config.Env}}{{println .}}{{end}}')
+  for value in "${current_env[@]}"; do env_args+=(--env "$value"); done
+  mapfile -t current_binds < <(docker inspect "$container" --format '{{range .HostConfig.Binds}}{{println .}}{{end}}')
+  for value in "${current_binds[@]}"; do bind_args+=(--volume "$value"); done
+  mapfile -t current_ports < <(docker inspect "$container" |
+    jq -r '.[0].HostConfig.PortBindings // {} | to_entries[] | .key as $port | .value[] | "\($port) \(.HostIp // ""):\(.HostPort)"')
+  while read -r container_port host_port; do
+    [[ -n "${container_port:-}" ]] || continue
+    port_args+=(--publish "${host_port#:}:${container_port}")
+  done < <(printf '%s\n' "${current_ports[@]:-}")
+
+  run_args=(--detach --name "$container" --network "$network")
+  [[ -n "$restart_name" && "$restart_name" != no ]] && run_args+=(--restart "$restart_name")
+  [[ "$privileged" == true ]] && run_args+=(--privileged)
+
+  docker rm -f "$rollback_container" >/dev/null 2>&1 || true
+  docker stop "$container" >/dev/null
+  docker rename "$container" "$rollback_container"
+  rollback() {
+    docker rm -f "$container" >/dev/null 2>&1 || true
+    docker rename "$rollback_container" "$container"
+    docker start "$container" >/dev/null
+  }
+  trap rollback ERR
+
+  docker run "${run_args[@]}" "${env_args[@]}" "${bind_args[@]}" \
+    "${port_args[@]}" "${device_args[@]}" "$image" >/dev/null
+  for _ in $(seq 1 30); do
+    curl -fsS --max-time 3 "$api/api/version" >/dev/null && break
+    sleep 2
+  done
+  curl -fsS --max-time 3 "$api/api/version" >/dev/null
+  test "$(docker inspect "$container" | jq '.[0].HostConfig.Devices | length')" -ge 12
+  trap - ERR
+  docker rm -f "$rollback_container" >/dev/null
+  status
+}
+
+case "${SSH_ORIGINAL_COMMAND:-status}" in
+  status) status ;;
+  repair-dvb) repair_dvb ;;
+  *) echo 'allowed commands: status, repair-dvb' >&2; exit 64 ;;
+esac

@@ -1,0 +1,57 @@
+---
+- name: Bootstrap restricted Mirakurun management account
+  hosts: mirakurun_pve
+  become: true
+  gather_facts: false
+  vars:
+    mirakurun_ct_id: 12901
+  tasks:
+    - name: Install restricted-management dependencies in LXC
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ mirakurun_ct_id | string }}", --, bash, -ec, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl jq openssh-server sudo"]
+      changed_when: true
+
+    - name: Stage management files on Proxmox
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {src: mirakurun-manage, dest: /run/mirakurun-manage, mode: "0755"}
+        - {src: mirakurun-manage.sudoers, dest: /run/mirakurun-manage.sudoers, mode: "0440"}
+
+    - name: Install management files in LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ mirakurun_ct_id | string }}", "{{ item.src }}", "{{ item.dest }}", --perms, "{{ item.mode }}"]
+      loop:
+        - {src: /run/mirakurun-manage, dest: /usr/local/sbin/mirakurun-manage, mode: "0755"}
+        - {src: /run/mirakurun-manage.sudoers, dest: /etc/sudoers.d/mirakurun-manage, mode: "0440"}
+      changed_when: true
+
+    - name: Create restricted LXC account
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ mirakurun_ct_id | string }}", --, bash, -ec, "id mirakurun-admin >/dev/null 2>&1 || useradd -m -s /bin/bash mirakurun-admin; install -d -o mirakurun-admin -g mirakurun-admin -m 0700 /home/mirakurun-admin/.ssh"]
+      changed_when: true
+
+    - name: Stage forced-command public key
+      ansible.builtin.copy:
+        content: >-
+          command="sudo /usr/local/sbin/mirakurun-manage",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding {{ lookup('env', 'MIRAKURUN_ADMIN_PUBLIC_KEY') }}
+        dest: /run/mirakurun-admin-authorized-key
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Install forced-command public key
+      ansible.builtin.command:
+        argv: [pct, push, "{{ mirakurun_ct_id | string }}", /run/mirakurun-admin-authorized-key, /home/mirakurun-admin/.ssh/authorized_keys, --perms, "0600"]
+      no_log: true
+      changed_when: true
+
+    - name: Fix ownership and enable SSH
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ mirakurun_ct_id | string }}", --, bash, -ec, "chown -R mirakurun-admin:mirakurun-admin /home/mirakurun-admin/.ssh; systemctl enable --now ssh"]
+      changed_when: true

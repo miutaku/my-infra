@@ -19,3 +19,17 @@ OS/CTはTerraform、DHCP予約は`ansible/ix2215/dhcp-only.yml`、Mirakurun imag
 
 ホスト再起動後はCT起動前に `/dev/dvb/adapter{0..3}` が揃っている必要がある。
 旧VM 12900は`onboot=0`、CT 12901は`onboot=1`とする。
+
+LXC内ではMirakurunをDockerで動かすため、ProxmoxからCTへの`device_passthrough`
+だけでなく、Dockerコンテナにも`/dev/dvb`を明示的に渡す。APIの
+`isAvailable`はアイドル時のdevice openを保証しないため、デプロイ後の合格条件は
+GR/BS双方のstream endpointからTS packetを受信できることとする。
+
+初回だけProxmoxホストから次を実行し、強制コマンド付きの専用アカウントをCTへ
+投入する。公開鍵はBWSの`MIRAKURUN_LXC_ADMIN_SSH_PUBLIC_KEY`から渡し、以後の
+状態確認とDVB修復は`Mirakurun LXC manage` workflowを使う。
+
+```bash
+MIRAKURUN_ADMIN_PUBLIC_KEY="$(bws secret list | jq -er '.[] | select(.key == "MIRAKURUN_LXC_ADMIN_SSH_PUBLIC_KEY") | .value')" \
+  ansible-playbook -i ansible/mirakurun-lxc/hosts.yml ansible/mirakurun-lxc/bootstrap.yml
+```
