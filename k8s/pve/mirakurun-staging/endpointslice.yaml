@@ -1,0 +1,17 @@
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: mirakurun-staging-lxc
+  namespace: app-mirakurun-staging
+  labels:
+    kubernetes.io/service-name: mirakurun
+    endpointslice.kubernetes.io/managed-by: my-infra
+addressType: IPv4
+ports:
+  - name: http
+    port: 40772
+    protocol: TCP
+endpoints:
+  - addresses: ["192.168.20.142"]
+    conditions:
+      ready: true

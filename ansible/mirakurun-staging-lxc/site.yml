@@ -1,0 +1,164 @@
+---
+- name: Configure staging Mirakurun LXC
+  hosts: mirakurun_staging_pve
+  become: true
+  gather_facts: false
+  vars:
+    ct_id: 12904
+    image: ghcr.io/miutaku/mirakurun:e47c455
+    channel_config: "{{ (lookup('file', '../../k8s/pve/mirakurun/mirakurun-configmap.yaml') | from_yaml).data['channels.yml'] }}"
+  tasks:
+    - name: Verify PX-S1UD firmware supplied by pve-firmware
+      ansible.builtin.stat:
+        path: /usr/lib/firmware/isdbt_rio.inp
+      register: px_s1ud_firmware
+
+    - name: Refuse deployment without PX-S1UD firmware
+      ansible.builtin.assert:
+        that:
+          - px_s1ud_firmware.stat.exists
+          - px_s1ud_firmware.stat.isreg
+        fail_msg: pve-firmware does not provide /usr/lib/firmware/isdbt_rio.inp
+
+    - name: Install PX-S1UD startup guard
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "{{ item.mode }}"
+      loop:
+        - {src: ensure-px-s1ud, dest: /usr/local/sbin/ensure-px-s1ud, mode: "0755"}
+        - {src: ensure-px-s1ud.service, dest: /etc/systemd/system/ensure-px-s1ud.service, mode: "0644"}
+      notify: Restart PX-S1UD guard
+
+    - name: Enable PX-S1UD startup guard
+      ansible.builtin.systemd_service:
+        name: ensure-px-s1ud.service
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Install LXC runtime dependencies
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ ct_id | string }}", --, bash, -ec, "command -v docker >/dev/null || (apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker.io ca-certificates curl)"]
+      changed_when: true
+
+    - name: Create staging Mirakurun directories
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ ct_id | string }}", --, install, -d, -m, "0755", /etc/mirakurun-staging, /var/lib/mirakurun-staging]
+      changed_when: true
+
+    - name: Stage non-secret Mirakurun configuration
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - {content: "{{ lookup('file', 'server.yml') }}", dest: /run/mirakurun-staging-server.yml}
+        - {content: "{{ lookup('file', 'tuners.yml') }}", dest: /run/mirakurun-staging-tuners.yml}
+        - {content: "{{ channel_config }}", dest: /run/mirakurun-staging-channels.yml}
+        - {content: "{{ lookup('file', 'remote-tuner.mjs') }}", dest: /run/mirakurun-staging-remote-tuner.mjs}
+
+    - name: Copy non-secret configuration into LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ ct_id | string }}", "{{ item.src }}", "{{ item.dest }}", --perms, "0644"]
+      loop:
+        - {src: /run/mirakurun-staging-server.yml, dest: /etc/mirakurun-staging/server.yml}
+        - {src: /run/mirakurun-staging-tuners.yml, dest: /etc/mirakurun-staging/tuners.yml}
+        - {src: /run/mirakurun-staging-channels.yml, dest: /etc/mirakurun-staging/channels.yml}
+        - {src: /run/mirakurun-staging-remote-tuner.mjs, dest: /etc/mirakurun-staging/remote-tuner.mjs}
+      changed_when: true
+
+    - name: Stage B-CAS keys
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'MIRAKURUN_BCAS_KEYS') }}"
+        dest: /run/mirakurun-staging-bcas-keys
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Copy B-CAS keys into LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ ct_id | string }}", /run/mirakurun-staging-bcas-keys, /etc/mirakurun-staging/bcas_keys, --perms, "0600"]
+      no_log: true
+      changed_when: true
+
+    - name: Stage temporary GHCR token
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'GHCR_READ_PAT') }}"
+        dest: /run/mirakurun-staging-ghcr-token
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Copy temporary GHCR token into LXC
+      ansible.builtin.command:
+        argv: [pct, push, "{{ ct_id | string }}", /run/mirakurun-staging-ghcr-token, /run/mirakurun-staging-ghcr-token, --perms, "0600"]
+      no_log: true
+      changed_when: true
+
+    - name: Authenticate LXC Docker to GHCR
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ ct_id | string }}", --, bash, -ec, "docker login ghcr.io -u miutaku --password-stdin < /run/mirakurun-staging-ghcr-token"]
+      no_log: true
+      changed_when: true
+
+    - name: Deploy staging Mirakurun container
+      ansible.builtin.command:
+        argv:
+          - pct
+          - exec
+          - "{{ ct_id | string }}"
+          - --
+          - bash
+          - -ec
+          - >-
+            docker pull {{ image | quote }};
+            docker rm -f mirakurun-staging >/dev/null 2>&1 || true;
+            docker run -d --name mirakurun-staging --restart unless-stopped
+            -p 40772:40772
+            --device /dev/dvb/adapter0/frontend0
+            --device /dev/dvb/adapter0/demux0
+            --device /dev/dvb/adapter0/dvr0
+            -e TZ=Asia/Tokyo -e BCAS_KEYS_FILE=/opt/bin/bcas_keys
+            -v /etc/mirakurun-staging/server.yml:/app-config/server.yml
+            -v /etc/mirakurun-staging/tuners.yml:/app-config/tuners.yml
+            -v /etc/mirakurun-staging/channels.yml:/app-config/channels.yml
+            -v /etc/mirakurun-staging/remote-tuner.mjs:/app-config/remote-tuner.mjs:ro
+            -v /etc/mirakurun-staging/bcas_keys:/opt/bin/bcas_keys:ro
+            -v /var/lib/mirakurun-staging:/app-data
+            {{ image | quote }}
+      changed_when: true
+
+    - name: Wait for staging Mirakurun API
+      ansible.builtin.uri:
+        url: http://192.168.20.142:40772/api/version
+        status_code: 200
+      register: api_health
+      retries: 30
+      delay: 2
+      until: api_health.status == 200
+
+    - name: Remove temporary GHCR token
+      ansible.builtin.command:
+        argv: [pct, exec, "{{ ct_id | string }}", --, rm, -f, /run/mirakurun-staging-ghcr-token]
+      no_log: true
+      changed_when: true
+
+    - name: Remove staged GHCR token from Proxmox
+      ansible.builtin.file:
+        path: /run/mirakurun-staging-ghcr-token
+        state: absent
+      no_log: true
+
+  handlers:
+    - name: Restart PX-S1UD guard
+      ansible.builtin.systemd_service:
+        name: ensure-px-s1ud.service
+        state: restarted
+        daemon_reload: true
