@@ -19,6 +19,8 @@ OS/CTはTerraform、DHCP予約は`ansible/ix2215/dhcp-only.yml`、Mirakurun imag
 
 ホスト再起動後はCT起動前に `/dev/dvb/adapter{0..3}` が揃っている必要がある。
 旧VM 12900は`onboot=0`、CT 12901は`onboot=1`とする。
+`ansible/mirakurun-lxc/bootstrap.yml`がPVEへ`ensure-earth-pt3.service`を
+導入し、CT 12901より前にPCI `0000:05:00.0`を`earth_pt3`へbindして全12 nodeを検証する。
 
 LXC内ではMirakurunをDockerで動かすため、ProxmoxからCTへの`device_passthrough`
 だけでなく、Dockerコンテナにも`/dev/dvb`を明示的に渡す。APIの
