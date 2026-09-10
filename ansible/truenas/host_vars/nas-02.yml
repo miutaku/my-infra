@@ -19,3 +19,20 @@ truenas_datasets:
       comment: drop
       networks:
         - 192.168.20.0/24
+  # home-k8s state: shared by both Talos workers so a worker reboot does not
+  # pin databases or monitoring to a single local-path volume.
+  - name: raid1_case/home-k8s-victoria-metrics
+    nfs:
+      comment: home-k8s-victoria-metrics
+  - name: raid1_case/home-k8s-postgres
+    nfs:
+      comment: home-k8s-postgres
+  - name: raid1_case/home-k8s-postgres-staging
+    nfs:
+      comment: home-k8s-postgres-staging
+  - name: raid1_case/home-k8s-mariadb
+    nfs:
+      comment: home-k8s-mariadb
+  - name: raid1_case/home-k8s-nextcloud-html
+    nfs:
+      comment: home-k8s-nextcloud-html

@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: home-k8s-victoria-metrics-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-victoria-metrics
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: victoria-metrics-data-nfs
+  namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 20Gi}}
+  storageClassName: ""
+  volumeName: home-k8s-victoria-metrics-nfs
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: home-k8s-postgres-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-postgres
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-nfs
+  namespace: infra-db
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 20Gi}}
+  storageClassName: ""
+  volumeName: home-k8s-postgres-nfs
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: home-k8s-postgres-staging-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-postgres-staging
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-nfs
+  namespace: infra-db-staging
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 20Gi}}
+  storageClassName: ""
+  volumeName: home-k8s-postgres-staging-nfs
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: home-k8s-mariadb-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-mariadb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-data-nfs
+  namespace: infra-db
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 10Gi}}
+  storageClassName: ""
+  volumeName: home-k8s-mariadb-nfs
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: home-k8s-nextcloud-html-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-nextcloud-html
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-html-nfs-pvc
+  namespace: app-nextcloud
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 10Gi}}
+  storageClassName: ""
+  volumeName: home-k8s-nextcloud-html-nfs
