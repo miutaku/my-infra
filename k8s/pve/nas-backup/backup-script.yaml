@@ -10,6 +10,8 @@ data:
 
     export RESTIC_REPOSITORY="s3:https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com/db-backup/nas-restic"
     export RESTIC_CACHE_DIR=/cache
+    export AWS_REGION=ap-tokyo-1
+    export AWS_DEFAULT_REGION=ap-tokyo-1
     # DB logical dump用に約1 GBを予約し、20 GB無料枠へ余裕を持たせる。
     warn_bytes=14000000000
     stop_bytes=17000000000
