@@ -1070,7 +1070,9 @@ HAストレージを導入するまで未達とする。
 - [x] BSMへ`NAS_BACKUP_RESTIC_PASSWORD`を生成し、平文をGit/Kubernetes manifestへ保存していない。
 - [x] OCI lifecycleを`*.sql.gz`に加えてPostgreSQL `*.dump`にも適用した。target planは
   0 add / 1 change / 0 destroyで、無関係なOKE/Security List driftは適用しなかった。
-- [ ] 初回snapshot、`restic check`、隔離ディレクトリへのrestore試験を完了する。
+- [x] 初回snapshot `0fe5626a`で26,357 files / 725.904 MiBを処理し、272.614 MiBを実格納した。
+  `restic check`は異常なし、TNLAStation 23 filesを一時`emptyDir`へ内容verify付きで復元した。
+- [x] 初回backup後のOCI `db-backup`全体は104 objects / 536,771,677 bytesで、20 GB無料枠内を確認した。
 
 ### STG TNLAStationチューナー分離（2026-09-08）
 
