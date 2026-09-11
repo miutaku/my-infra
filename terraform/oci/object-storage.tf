@@ -38,7 +38,7 @@ resource "oci_objectstorage_object_lifecycle_policy" "db_backup" {
     time_unit   = "DAYS"
 
     object_name_filter {
-      inclusion_patterns = ["*.sql.gz"]
+      inclusion_patterns = ["*.sql.gz", "*.dump"]
     }
   }
 }

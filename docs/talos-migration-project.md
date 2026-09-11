@@ -1060,6 +1060,18 @@ digestを更新する二段階方式とする。公式手順:
 保存先はnas-02単体であり、今回の保証範囲はworker VM障害である。NAS障害耐性は別途レプリケーションまたは
 HAストレージを導入するまで未達とする。
 
+### nas-02 OCI backup（2026-09-12）
+
+- [x] nas-02の実使用量12.77 GB中、録画実体が11.37 GBを占めることをTrueNAS APIで確認した。
+- [x] OCI `db-backup`は82 objects、249,612,486 bytesであることをS3 APIで確認した。
+- [x] 録画、DB raw data、VictoriaMetricsを除外し、Nextcloud HTML、TNLAStation app data、thumbnail、dropを
+  resticで暗号化・差分backupするCronJobをGitOps化した。
+- [x] 保持を日次7・週次4・月次3、14 GB警告、17 GB停止とした。
+- [x] BSMへ`NAS_BACKUP_RESTIC_PASSWORD`を生成し、平文をGit/Kubernetes manifestへ保存していない。
+- [x] OCI lifecycleを`*.sql.gz`に加えてPostgreSQL `*.dump`にも適用した。target planは
+  0 add / 1 change / 0 destroyで、無関係なOKE/Security List driftは適用しなかった。
+- [ ] 初回snapshot、`restic check`、隔離ディレクトリへのrestore試験を完了する。
+
 ### STG TNLAStationチューナー分離（2026-09-08）
 
 - [x] Proxmox USB mapping `plex_s1ud`（`3275:0080`）とPX-S1UD用`pve-firmware`を確認した。
