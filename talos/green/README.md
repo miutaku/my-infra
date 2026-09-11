@@ -42,5 +42,5 @@ Proxmox側もagent channelを有効にする。schematic IDとamd64 installer di
 kexecだけでなく一度QEMU VMを完全停止・起動する必要がある。
 
 各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01のKubernetes Node名も正規名とし、
-既存local-path PVのimmutableなnodeAffinityとの互換性は、新Nodeの`kubernetes.io/hostname`ラベル値を
-`talos-ayb-pmi`に維持することで確保する。
+状態データは共有NFSへ移行し、Nodeの`kubernetes.io/hostname`はTalosの正式hostnameと一致させる。
+旧local-path PVの`talos-ayb-pmi`互換ラベルへ依存してはならない。

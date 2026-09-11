@@ -26,7 +26,7 @@ locals {
     worker_02 = {
       name        = "worker-02-talos-home-pve-amd64", node_name = "pve-b550m", vm_id = 13005
       mac_address = "02:54:00:13:00:05", ipv4_address = "192.168.20.141"
-      cpu_cores   = 4, memory_mb = 4096, data_disk_size = 64
+      cpu_cores   = 4, memory_mb = 8192, data_disk_size = 64
     }
   }
 }

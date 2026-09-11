@@ -39,11 +39,7 @@ spec:
             limits: {memory: 1Gi}
           volumeMounts:
             - {name: server-volume, mountPath: /storage}
-  volumeClaimTemplates:
-    - metadata:
-        name: server-volume
-      spec:
-        accessModes: [ReadWriteOnce]
-        storageClassName: local-path
-        resources:
-          requests: {storage: 20Gi}
+      volumes:
+        - name: server-volume
+          persistentVolumeClaim:
+            claimName: victoria-metrics-data-nfs
