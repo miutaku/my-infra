@@ -31,5 +31,7 @@ kubectl create job -n infra-backup --from=cronjob/nas-backup nas-backup-manual-$
 kubectl logs -n infra-backup -f job/<job-name>
 ```
 
-復元試験では同じSecretとrepositoryを使う一時Podを作り、空の`emptyDir`へ`restic restore latest --target`を
-実行する。本番NFSへ直接restoreせず、ファイル数・内容を確認してから別手順で戻す。
+復元試験では同じSecretとrepositoryを使う一時Podを作り、空の`emptyDir`へ
+`restic restore latest --verify --exclude-xattr security.selinux --target`を実行する。元のownerとtimestampを
+復元するPodにはrootと`CHOWN`/`FOWNER` capabilityが必要である。本番NFSへ直接restoreせず、ファイル数・
+内容を確認してから別手順で戻す。
