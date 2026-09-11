@@ -140,7 +140,7 @@ spec:
       volumes:
         - name: html
           persistentVolumeClaim:
-            claimName: nextcloud-html-pvc
+            claimName: nextcloud-html-nfs-pvc
         - name: config-extra
           configMap:
             name: nextcloud-config

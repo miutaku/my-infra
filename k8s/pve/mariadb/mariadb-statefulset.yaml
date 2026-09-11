@@ -58,12 +58,7 @@ spec:
               cpu: "500m"
               memory: "512Mi"
       terminationGracePeriodSeconds: 30
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ReadWriteOnce]
-        storageClassName: local-path
-        resources:
-          requests:
-            storage: 10Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mariadb-data-nfs

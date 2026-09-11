@@ -5,9 +5,6 @@ service:
   port: 9116
   type: ClusterIP
 
-nodeSelector:
-  kubernetes.io/hostname: talos-ayb-pmi
-
 resources:
   requests:
     cpu: 10m

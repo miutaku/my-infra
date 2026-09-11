@@ -1013,16 +1013,16 @@ digestを更新する二段階方式とする。公式手順:
   `qm agent <vmid> ping`を確認した。
 - [x] Talos OS hostnameとPVE VM名はTalos固有の役割名に合わせ、control planeは
   `controlplane-NN-talos-home-pve-amd64`、workerは`worker-NN-talos-home-pve-amd64`とした。
-- [x] worker-01のlocal-path PV 6本はnodeAffinityがimmutableであるため、Kubernetes Node名は正規化し、
-  新Nodeの`kubernetes.io/hostname=talos-ayb-pmi`ラベルだけをPV互換値として維持した。
+- [x] worker-01再起動時にTalosが正式hostnameラベルを復元し、旧local-path PVのimmutableな
+  `nodeAffinity=talos-ayb-pmi`へ依存する構成が停止原因になることを確認した。互換ラベル運用は廃止した。
 - [x] node-exporter discoveryで`instance`へKubernetes Node名を必ず設定し、worker-01は
   `worker-01-talos`へ明示変換した。これにより`192.168.20.140:9101`表示を解消する。
 - [x] LB VM/PVE tag/Ubuntu hostnameから`rke2`を除去し、
   `lb-01.miutaku.internal`/`lb-02.miutaku.internal`を正規名とした。移行完了後に旧DNS aliasも削除した。
 - [x] LXCのPVE hostnameを`<service>-NN-ubuntu-26-04-home-lxc-amd64`へ統一した。
 - [x] Kubernetes実測（変更前）はcontrol plane 47–55%、worker-01 82%、worker-02 33%だった。
-  control planeは4GiBを維持し、local PVが集中するworker-01を6→8GiB、worker-02を6→4GiBへ変更した。
-  全workload復帰後の実測はcontrol plane 44–55%、worker-01 59%、worker-02 62%となった。
+  control planeとworker-01は調整後の値を維持した。一度4GiBへ縮小したworker-02は、単一worker障害時に
+  memory requestが収まらないことを実試験で検出したため8GiBへ増強した。
 
 公式仕様: [Talos HostnameConfig](https://docs.siderolabs.com/talos/v1.13/networking/configuration/hostname)、
 [Talos system extensions](https://docs.siderolabs.com/talos/v1.13/build-and-extend-talos/custom-images-and-development/system-extensions)。
@@ -1043,6 +1043,22 @@ digestを更新する二段階方式とする。公式手順:
 管理端末は`TALOSCONFIG`と`KUBECONFIG`に`.generated`内のファイルパスだけを設定する。資格情報の
 内容をshell設定へ埋め込まない。`green.env`はSecretを含まず、versionとinstaller digestの固定値は
 追跡済み`green.env.example`を正とする。
+
+### stateful workloadのworker障害耐性（2026-09-11）
+
+- [x] VictoriaMetrics、prod/staging PostgreSQL、MariaDB、Nextcloud HTMLをnas-02の専用NFS datasetへ移行した。
+- [x] 切替前にDB論理backupをOCIへ保存し、停止中の最終`rsync -aS --delete --checksum`を完了した。
+- [x] 移行元/先のファイル数が順に732、1405、1399、505、26272で一致することを確認した。
+- [x] 各workloadが新しいNFS PVCをmountしてReadyとなり、VictoriaMetrics query、両PostgreSQL、MariaDB、
+  Nextcloudのhealth checkを確認した。
+- [x] worker-01をcordonした状態でVictoriaMetricsとstaging PostgreSQLを再生成し、worker-02上で
+  Ready、履歴metric query成功、`pg_isready`成功を確認した。
+- [x] worker-02を4GiBから8GiBへin-place増強し、再起動後のallocatable `7545220Ki`を確認した。
+- [ ] 旧local-path PVC/dataはrollback観察期間終了後に削除する。通常運用へ再接続してはならない。
+
+これによりKubernetes Nodeの一時ラベル偽装と特定workerのローカルディスク依存を解消した。ただしNFSの
+保存先はnas-02単体であり、今回の保証範囲はworker VM障害である。NAS障害耐性は別途レプリケーションまたは
+HAストレージを導入するまで未達とする。
 
 ### STG TNLAStationチューナー分離（2026-09-08）
 

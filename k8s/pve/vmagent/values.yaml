@@ -113,7 +113,7 @@ config:
         # existing local-path PV nodeAffinity is immutable.
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: instance
-          regex: talos-ayb-pmi
+          regex: worker-01-talos-home-pve-amd64
           replacement: worker-01-talos
 
     - job_name: snmp
