@@ -70,6 +70,7 @@ resource "oci_identity_policy" "db_backup" {
 
   statements = [
     "Allow group id ${oci_identity_group.db_backup.id} to manage objects in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup'",
+    "Allow group id ${oci_identity_group.db_backup.id} to inspect buckets in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup'",
   ]
 }
 
