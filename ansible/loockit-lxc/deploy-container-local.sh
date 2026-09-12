@@ -10,6 +10,7 @@ fi
 name=loockit
 rollback_name=loockit-rollback
 identity="$(cat /etc/loockit/identity)"
+log_level="${LOOCKIT_LOG_LEVEL:-INFO}"
 docker pull "$image"
 docker rm -f "$rollback_name" >/dev/null 2>&1 || true
 
@@ -33,6 +34,7 @@ docker run -d \
   --name "$name" \
   --restart unless-stopped \
   --env-file /etc/loockit/loockit.env \
+  -e LOOCKIT_LOG_LEVEL="$log_level" \
   -e LOOCKIT_LEADER_ELECTION=true \
   -e LOOCKIT_LEADER_LABEL_POD=false \
   -e POD_NAME="$identity" \
