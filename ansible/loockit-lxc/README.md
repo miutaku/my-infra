@@ -26,6 +26,10 @@ materializeする。OCIは同socketを`/run/dbus/system_bus_socket`へread-only 
 `loockit-lxc-deploy.yml`がこのplaybookを実行する。新containerが120秒以内にreadyにならなければ、
 deploy scriptは直前containerへ自動rollbackする。
 
+BLE接続の観測ログは`LOOCKIT_LOG_LEVEL`で制御する。LXCデプロイ時の既定は`INFO`で、
+scan、GATT接続、ログイン待機の開始・終了と経過時間だけを接続試行時に記録する。
+定常時のログ量をさらに抑える場合は`WARNING`、一時的な詳細調査では`DEBUG`を指定する。
+
 CIのSSH accountはshellを公開しない。`authorized_keys`のforced commandとsudoersを組み合わせ、
 root所有の`deploy-loockit-local`だけを実行できる。script自身もimageを
 `ghcr.io/miutaku/loockit:<semver>`へ制限する。accountを`docker` groupへ所属させてはならない。
