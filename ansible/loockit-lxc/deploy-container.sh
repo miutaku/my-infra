@@ -5,6 +5,7 @@ ct_id="${LOOCKIT_CT_ID:-12902}"
 image="${LOOCKIT_IMAGE:?LOOCKIT_IMAGE is required}"
 address="${LOOCKIT_ADDRESS:-192.168.20.133}"
 identity="${LOOCKIT_IDENTITY:-loockit-x570}"
+log_level="${LOOCKIT_LOG_LEVEL:-INFO}"
 name=loockit
 rollback_name=loockit-rollback
 
@@ -31,6 +32,7 @@ pct exec "$ct_id" -- docker run -d \
   --name "$name" \
   --restart unless-stopped \
   --env-file /etc/loockit/loockit.env \
+  -e LOOCKIT_LOG_LEVEL="$log_level" \
   -e LOOCKIT_LEADER_ELECTION=true \
   -e LOOCKIT_LEADER_LABEL_POD=false \
   -e POD_NAME="$identity" \
