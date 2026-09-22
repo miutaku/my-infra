@@ -17,6 +17,10 @@ spec:
     server: https://kubernetes.default.svc
     namespace: local-path-storage
   syncPolicy:
+    managedNamespaceMetadata:
+      labels:
+        # The provisioner helper pods require hostPath access to create volumes.
+        pod-security.kubernetes.io/enforce: privileged
     automated:
       prune: true
       selfHeal: true
