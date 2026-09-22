@@ -30,6 +30,15 @@ spec:
               value: https://coupon-manager.miutaku.work
             - name: Notifications__TimeZone
               value: Asia/Tokyo
+            - name: Ai__BaseUrl
+              value: https://generativelanguage.googleapis.com/v1beta/openai/
+            - name: Ai__Model
+              value: gemini-3.5-flash-lite
+            - name: Ai__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: coupon-manager-secrets
+                  key: AI_API_KEY
           ports:
             - name: http
               containerPort: 8080
