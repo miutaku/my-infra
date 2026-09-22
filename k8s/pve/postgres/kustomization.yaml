@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - secret.yaml
   - postgres.yaml
+  - coupon-manager-db-user.yaml

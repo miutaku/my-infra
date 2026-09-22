@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon-manager-api
+  namespace: app-coupon-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coupon-manager-api
+  template:
+    metadata:
+      labels:
+        app: coupon-manager-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/miutaku/coupon-manager-api:v0.1.0
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coupon-manager-secrets
+                  key: POSTGRES_PASSWORD
+            - name: ConnectionStrings__Coupons
+              value: Host=postgres.infra-db.svc.cluster.local;Port=5432;Database=coupons;Username=coupon_manager;Password=$(POSTGRES_PASSWORD)
+            - name: Database__MigrateOnStartup
+              value: "true"
+            - name: Cors__Origins__0
+              value: https://coupon-manager.miutaku.work
+            - name: Notifications__TimeZone
+              value: Asia/Tokyo
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+          volumeMounts:
+            - name: images
+              mountPath: /app/data/uploads
+      volumes:
+        - name: images
+          persistentVolumeClaim:
+            claimName: coupon-images
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coupon-manager-api
+  namespace: app-coupon-manager
+spec:
+  selector:
+    app: coupon-manager-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

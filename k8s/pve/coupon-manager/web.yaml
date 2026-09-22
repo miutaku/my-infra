@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon-manager-web
+  namespace: app-coupon-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coupon-manager-web
+  template:
+    metadata:
+      labels:
+        app: coupon-manager-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/miutaku/coupon-manager-web:v0.1.0
+          env:
+            - name: ApiBaseUrl
+              value: http://coupon-manager-api:8080
+            - name: DataProtectionKeysPath
+              value: /app/data-protection-keys
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 20
+          volumeMounts:
+            - name: data-protection-keys
+              mountPath: /app/data-protection-keys
+      volumes:
+        - name: data-protection-keys
+          persistentVolumeClaim:
+            claimName: web-data-protection-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coupon-manager-web
+  namespace: app-coupon-manager
+spec:
+  selector:
+    app: coupon-manager-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
