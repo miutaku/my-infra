@@ -33,6 +33,10 @@ locals {
       backend       = "http://nextcloud.app-nextcloud.svc.cluster.local:80"
       no_tls_verify = false
     }
+    "coupon-manager" = {
+      backend       = "http://coupon-manager-web.app-coupon-manager.svc.cluster.local:80"
+      no_tls_verify = false
+    }
     "unifi" = {
       backend       = "https://192.168.0.132:11443"
       no_tls_verify = true
@@ -172,6 +176,7 @@ locals {
   access_protected_subdomains = toset([
     "argocd-home-k8s", "argocd-oke", "wol",
     "epgstation", "tnlastation", "tnlastation-staging", "nextcloud",
+    "coupon-manager",
     "unifi", "wifi-ap",
     "ix2215",
     "nas-01", "nas-02",
