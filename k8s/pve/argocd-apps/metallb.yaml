@@ -24,7 +24,7 @@ spec:
             frr:
               enabled: false
             nodeSelector:
-              node.miutaku/role: agent
+              network.miutaku/l2: vlan20
     # L2Advertisement / IPAddressPool の設定
     - repoURL: https://github.com/miutaku/my-infra.git
       targetRevision: main

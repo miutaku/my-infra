@@ -15,7 +15,10 @@ label_by_ip() {
   node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" get nodes -o json |
     jq -er --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type=="InternalIP" and .address==$ip)) | .metadata.name')"
   KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
-    "topology.miutaku/proxmox-node=${pve_node}" "node.miutaku/role=${role}"
+    "topology.miutaku/proxmox-node=${pve_node}" \
+    "node.miutaku/role=${role}" \
+    "node.miutaku/platform=pve" \
+    "network.miutaku/l2=vlan20"
   if [[ -n "${hostname_compat}" ]]; then
     # local-path PV nodeAffinity is immutable; preserve only the historical
     # hostname label while keeping the Kubernetes Node object correctly named.
@@ -30,8 +33,12 @@ label_rpi_by_ip() {
     jq -er --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type=="InternalIP" and .address==$ip)) | .metadata.name')"
   KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
     "node.miutaku/role=agent" \
+    "node.miutaku/platform=rpi" \
+    "network.miutaku/l2=vlan10" \
     "hardware.miutaku/model=raspberry-pi-4b" \
     "hardware.miutaku/memory=${memory}"
+  KUBECONFIG="${kubeconfig}" kubectl --context "${context}" taint node "${node}" --overwrite \
+    "workload.miutaku/arm64=reviewed:NoSchedule"
 }
 
 label_by_ip 192.168.20.137 pve-x570 controlplane
