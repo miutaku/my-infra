@@ -1,25 +1,75 @@
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: coupon-manager-images-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-coupon-manager-images
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: coupon-images
+  name: coupon-images-nfs
   namespace: app-coupon-manager
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: coupon-manager-images-nfs
   resources:
     requests:
       storage: 2Gi
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: coupon-manager-data-protection-keys-nfs
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+spec:
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=3
+  nfs:
+    server: 192.168.20.192
+    path: /mnt/raid1_case/home-k8s-coupon-manager-data-protection-keys
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: web-data-protection-keys
+  name: web-data-protection-keys-nfs
   namespace: app-coupon-manager
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: coupon-manager-data-protection-keys-nfs
   resources:
     requests:
       storage: 100Mi

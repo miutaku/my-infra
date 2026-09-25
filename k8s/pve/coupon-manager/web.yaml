@@ -12,7 +12,13 @@ spec:
     metadata:
       labels:
         app: coupon-manager-web
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
       containers:
         - name: web
           image: ghcr.io/miutaku/coupon-manager-web:v0.1.1
@@ -53,7 +59,7 @@ spec:
       volumes:
         - name: data-protection-keys
           persistentVolumeClaim:
-            claimName: web-data-protection-keys
+            claimName: web-data-protection-keys-nfs
 ---
 apiVersion: v1
 kind: Service

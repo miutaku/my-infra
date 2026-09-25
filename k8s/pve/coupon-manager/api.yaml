@@ -12,7 +12,13 @@ spec:
     metadata:
       labels:
         app: coupon-manager-api
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
       containers:
         - name: api
           image: ghcr.io/miutaku/coupon-manager-api:v0.1.1
@@ -71,7 +77,7 @@ spec:
       volumes:
         - name: images
           persistentVolumeClaim:
-            claimName: coupon-images
+            claimName: coupon-images-nfs
 ---
 apiVersion: v1
 kind: Service
