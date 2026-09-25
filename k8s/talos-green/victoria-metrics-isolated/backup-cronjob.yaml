@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: victoria-metrics-backup
+spec:
+  # Incremental backup every hour. The latest backup always contains the full
+  # retention window currently held by VictoriaMetrics.
+  schedule: "20 * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          automountServiceAccountToken: false
+          containers:
+            - name: vmbackup
+              image: victoriametrics/vmbackup:v1.113.0
+              args:
+                - -storageDataPath=/storage
+                - -snapshot.createURL=http://victoria-metrics-green:8428/snapshot/create
+                - -dst=s3://db-backup/victoria-metrics/latest
+                - -customS3Endpoint=https://$(OCI_NAMESPACE).compat.objectstorage.ap-tokyo-1.oraclecloud.com
+                - -s3ForcePathStyle=true
+              envFrom:
+                - secretRef:
+                    name: victoria-metrics-backup-credentials
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              volumeMounts:
+                - name: data
+                  mountPath: /storage
+                  readOnly: true
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: victoria-metrics-data-nfs
+                readOnly: true

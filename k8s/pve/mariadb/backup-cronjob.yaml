@@ -21,9 +21,10 @@ spec:
               image: postgres:18-alpine
               command: ["sh", "/scripts/backup.sh"]
               env:
-                # バックアップ対象 "app:database" のスペース区切りリスト
-                - name: APPS
-                  value: "epgstation:epgstation nextcloud:nextcloud"
+                - name: OCI_BACKUP_BUCKET
+                  # Switch to db-backup-immutable after its locked retention
+                  # bucket has been applied and verified in terraform/oci.
+                  value: db-backup
                 - name: MYSQL_ROOT_PASSWORD
                   valueFrom:
                     secretKeyRef:
