@@ -36,3 +36,15 @@ truenas_datasets:
   - name: raid1_case/home-k8s-nextcloud-html
     nfs:
       comment: home-k8s-nextcloud-html
+  - name: raid1_case/home-k8s-coupon-manager-images
+    owner: "1654"
+    group: "1654"
+    mode: "0770"
+    nfs:
+      comment: home-k8s-coupon-manager-images
+  - name: raid1_case/home-k8s-coupon-manager-data-protection-keys
+    owner: "1654"
+    group: "1654"
+    mode: "0770"
+    nfs:
+      comment: home-k8s-coupon-manager-data-protection-keys
