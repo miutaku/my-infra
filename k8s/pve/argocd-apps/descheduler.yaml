@@ -38,6 +38,8 @@ spec:
           node.miutaku/role: agent
 
         deschedulerPolicy:
+          # アプリ配置先であるPVE/RPi worker間だけを比較する。
+          nodeSelector: "node.miutaku/role=agent"
           # 1サイクルで大量にPodを動かさず、5分ごとに徐々に平準化する。
           maxNoOfPodsToEvictPerNode: 1
           maxNoOfPodsToEvictPerNamespace: 1

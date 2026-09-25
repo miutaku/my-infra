@@ -151,6 +151,7 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 `descheduler`は5分ごとにMetrics Serverの実測CPU・メモリ使用率を確認し、
 `descheduler.miutaku/metrics-rebalance: "true"`を持つstateless Podだけを再配置対象にする。
 
+- 負荷を比較するノード: `node.miutaku/role=agent`を持つPVE/RPi worker
 - 退避先候補: CPU 30%未満かつメモリ45%未満
 - 退避元候補: CPU 70%超またはメモリ55%超
 - 1サイクルのEvictionはクラスタ全体で最大1 Pod
