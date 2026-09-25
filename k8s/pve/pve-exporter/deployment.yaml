@@ -14,6 +14,20 @@ spec:
       labels:
         app: pve-exporter
     spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: hardware.miutaku/memory
+                    operator: In
+                    values: [4gb]
       containers:
         - name: pve-exporter
           image: prompve/prometheus-pve-exporter:3.5.3
