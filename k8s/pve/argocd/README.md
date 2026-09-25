@@ -144,7 +144,21 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 | -2 | external-secrets (ESO operator + bitwarden-sdk-server サブチャート) |
 | 0 | external-secrets-config (ClusterSecretStore) |
 | 1 | coredns, metallb, local-path-provisioner, wol |
-| 2 | victoria-metrics, blackbox-exporter, cloudflared, magic-mirror |
+| 2 | victoria-metrics, blackbox-exporter, cloudflared, magic-mirror, descheduler |
+
+## 実測負荷に基づくPod再配置
+
+`descheduler`は5分ごとにMetrics Serverの実測CPU・メモリ使用率を確認し、
+`descheduler.miutaku/metrics-rebalance: "true"`を持つstateless Podだけを再配置対象にする。
+
+- 退避先候補: CPU 20%未満かつメモリ35%未満
+- 退避元候補: CPU 80%超またはメモリ75%超
+- 1サイクルのEvictionはクラスタ全体で最大1 Pod
+- 作成後30分未満のPod、PVC、local storage、DaemonSet、system-critical Podは保護
+- `app-tnlastation`と`app-tnlastation-staging`は常に対象外
+
+DeschedulerはPodを直接配置せず、Eviction後の配置は標準スケジューラへ委ねる。
+そのため実測負荷への追従は5分単位で段階的に行われ、即時・連続的なライブマイグレーションではない。
 
 ## Application の追加・撤去、トラブルシューティング
 
