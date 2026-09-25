@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/miutaku/coupon-manager-web:v0.1.0
+          image: ghcr.io/miutaku/coupon-manager-web:v0.1.1
           env:
             - name: ApiBaseUrl
               value: http://coupon-manager-api:8080
