@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        descheduler.miutaku/metrics-rebalance: "true"
+    spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-desk
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        descheduler.miutaku/metrics-rebalance: "true"
+    spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-refrigerator
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        descheduler.miutaku/metrics-rebalance: "true"
+    spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-washing-machine
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        descheduler.miutaku/metrics-rebalance: "true"
+    spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-bedside
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        descheduler.miutaku/metrics-rebalance: "true"
+    spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinytuya-exporter-entrance
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        descheduler.miutaku/metrics-rebalance: "true"
+    spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
