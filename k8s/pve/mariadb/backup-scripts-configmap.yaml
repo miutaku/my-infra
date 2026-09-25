@@ -10,10 +10,6 @@ data:
 
     apk add --no-cache mariadb-client rclone curl > /dev/null
 
-    # バックアップ対象: "app:database" をスペース区切りで列挙
-    # 共用クラスタにアプリが増えたら、この行を1要素足すだけ
-    APPS="${APPS:-epgstation:epgstation}"
-
     STATUS=failure
     CURRENT=""
     RESULTS=""
@@ -45,48 +41,72 @@ data:
 
     DATE=$(date +%Y%m%d-%H%M%S)
 
-    for ENTRY in ${APPS}; do
-      APP="${ENTRY%%:*}"
-      DB="${ENTRY#*:}"
-      CURRENT="${APP}"
-      FILENAME="${APP}-${DATE}.sql.gz"
+    bucket="${OCI_BACKUP_BUCKET:-db-backup}"
 
-      # MariaDB 12 で mysql* 互換シンボリックリンクが削除されるため mariadb-dump を使う
-      mariadb-dump \
-        -h mariadb.infra-db.svc.cluster.local \
-        -u root -p"${MYSQL_ROOT_PASSWORD}" \
-        --single-transaction \
-        --routines \
-        --triggers \
-        --databases "${DB}" \
-        | gzip > /tmp/dump.sql.gz
-      echo "[${APP}] dump completed: $(du -sh /tmp/dump.sql.gz)"
+    # MariaDBはsystem database、accounts、grantsも含めてserver全体を取得する。
+    CURRENT=mariadb-full
+    mariadb_file="mariadb-full-${DATE}.sql.gz"
+    mariadb-dump \
+      -h mariadb.infra-db.svc.cluster.local \
+      -u root -p"${MYSQL_ROOT_PASSWORD}" \
+      --all-databases \
+      --single-transaction \
+      --routines \
+      --events \
+      --triggers \
+      --hex-blob \
+      | gzip > /tmp/mariadb-full.sql.gz
+    gzip -t /tmp/mariadb-full.sql.gz
+    rclone copyto /tmp/mariadb-full.sql.gz "oci:${bucket}/mariadb/${mariadb_file}"
+    echo "[mariadb-full] uploaded: mariadb/${mariadb_file} ($(du -sh /tmp/mariadb-full.sql.gz | cut -f1))"
+    RESULTS="${RESULTS}mariadb/${mariadb_file} "
 
-      rclone copyto /tmp/dump.sql.gz "oci:db-backup/${APP}/${FILENAME}"
-      echo "[${APP}] upload completed: ${APP}/${FILENAME}"
+    backup_postgres_cluster() {
+      cluster="$1"
+      host="$2"
+      list="/tmp/${cluster}-databases"
 
-      RESULTS="${RESULTS}${APP}/${FILENAME} "
-    done
-
-    for ENTRY in \
-      "tnlastation:postgres.infra-db.svc.cluster.local" \
-      "tnlastation-staging:postgres.infra-db-staging.svc.cluster.local"; do
-      APP="${ENTRY%%:*}"
-      HOST="${ENTRY#*:}"
-      CURRENT="${APP}"
-      FILENAME="${APP}-${DATE}.dump"
-
-      PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
-        --host="${HOST}" \
+      CURRENT="${cluster}-globals"
+      globals_file="${cluster}-globals-${DATE}.sql.gz"
+      PGPASSWORD="${POSTGRES_PASSWORD}" pg_dumpall \
+        --host="${host}" \
         --username=tnlastation \
-        --dbname=tnlastation \
-        --format=custom \
-        --file=/tmp/postgres.dump
-      echo "[${APP}] dump completed: $(du -sh /tmp/postgres.dump)"
+        --globals-only \
+        | gzip > "/tmp/${cluster}-globals.sql.gz"
+      gzip -t "/tmp/${cluster}-globals.sql.gz"
+      rclone copyto "/tmp/${cluster}-globals.sql.gz" \
+        "oci:${bucket}/${cluster}/${globals_file}"
+      RESULTS="${RESULTS}${cluster}/${globals_file} "
 
-      rclone copyto /tmp/postgres.dump "oci:db-backup/${APP}/${FILENAME}"
-      echo "[${APP}] upload completed: ${APP}/${FILENAME}"
-      RESULTS="${RESULTS}${APP}/${FILENAME} "
-    done
+      # 新規DBも自動的に対象になるよう、template以外を毎回serverから列挙する。
+      PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+        --host="${host}" \
+        --username=tnlastation \
+        --dbname=postgres \
+        --no-align --tuples-only \
+        --command="SELECT datname FROM pg_database WHERE NOT datistemplate ORDER BY datname" \
+        > "${list}"
+
+      while IFS= read -r database; do
+        [ -n "${database}" ] || continue
+        safe_database="$(printf '%s' "${database}" | tr -c 'A-Za-z0-9._-' '_')"
+        CURRENT="${cluster}/${database}"
+        dump_file="${safe_database}-${DATE}.dump"
+        PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
+          --host="${host}" \
+          --username=tnlastation \
+          --dbname="${database}" \
+          --format=custom \
+          --file="/tmp/${cluster}-${safe_database}.dump"
+        pg_restore --list "/tmp/${cluster}-${safe_database}.dump" >/dev/null
+        rclone copyto "/tmp/${cluster}-${safe_database}.dump" \
+          "oci:${bucket}/${cluster}/${dump_file}"
+        echo "[${cluster}/${database}] uploaded: ${cluster}/${dump_file}"
+        RESULTS="${RESULTS}${cluster}/${dump_file} "
+      done < "${list}"
+    }
+
+    backup_postgres_cluster postgres-prod postgres.infra-db.svc.cluster.local
+    backup_postgres_cluster postgres-staging postgres.infra-db-staging.svc.cluster.local
 
     STATUS=success
