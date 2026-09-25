@@ -155,7 +155,8 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 - 退避先候補: CPU 30%未満かつメモリ45%未満
 - 退避元候補: CPU 70%超またはメモリ55%超
 - 1サイクルのEvictionはクラスタ全体で最大1 Pod
-- 作成後30分未満のPod、local storage、DaemonSet、system-critical Podは保護
+- 作成後30分未満のPod、DaemonSet、system-critical Podは保護
+- EPGStationはopt-inし、amd64のPVE worker間で再配置する
 - TNLAStationはfrontendとffmpeg-worker-encodeだけを対象にする
 - ffmpeg-worker-encodeはamd64制約を維持し、PVE worker間でのみ移動する
 - backend、streaming、gateway、mediamtxはopt-inしないため対象外
