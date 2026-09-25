@@ -38,12 +38,9 @@ spec:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                    - coredns
-              topologyKey: kubernetes.io/hostname
+                matchLabels:
+                  app: coredns
+              topologyKey: node.miutaku/platform
       containers:
         - name: coredns
           image: coredns/coredns:1.12.4

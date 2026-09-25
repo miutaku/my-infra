@@ -70,13 +70,11 @@ spec:
               app.kubernetes.io/name: loockit-proxy
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: loockit-proxy
-                topologyKey: kubernetes.io/hostname
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: loockit-proxy
+              topologyKey: node.miutaku/platform
       containers:
         - name: haproxy
           image: haproxy:3.2.9-alpine
