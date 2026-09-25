@@ -22,15 +22,6 @@ spec:
           operator: Equal
           value: reviewed
           effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: hardware.miutaku/memory
-                    operator: In
-                    values: [2gb]
       containers:
         - name: nut-exporter
           image: druggeri/nut_exporter:3.3.0

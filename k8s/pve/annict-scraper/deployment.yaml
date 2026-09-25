@@ -18,15 +18,6 @@ spec:
           operator: Equal
           value: reviewed
           effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: hardware.miutaku/memory
-                    operator: In
-                    values: [2gb]
       containers:
         - name: annict-scraper
           image: ghcr.io/miutaku/annict-subscription-scraper:sha-b9568db

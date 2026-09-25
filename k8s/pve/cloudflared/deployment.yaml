@@ -23,22 +23,13 @@ spec:
           operator: Equal
           value: reviewed
           effect: NoSchedule
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: node.miutaku/platform
-          whenUnsatisfiable: DoNotSchedule
-          nodeAffinityPolicy: Honor
-          nodeTaintsPolicy: Honor
-          labelSelector:
-            matchLabels:
-              app: cloudflared
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
                   app: cloudflared
-              topologyKey: node.miutaku/platform
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:latest
