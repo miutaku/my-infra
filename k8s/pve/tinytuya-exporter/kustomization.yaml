@@ -4,3 +4,6 @@ resources:
   - secret.yaml
   - deployment.yaml
   - additional-deployments.yaml
+
+patches:
+  - path: arm64-patches.yaml
