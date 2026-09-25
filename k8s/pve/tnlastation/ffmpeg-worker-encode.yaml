@@ -30,6 +30,7 @@ spec:
     metadata:
       labels:
         app: tnlastation-ffmpeg-worker-encode
+        descheduler.miutaku/metrics-rebalance: "true"
       annotations:
         tnlastation.miutaku.work/config-revision: live-without-re-v2
     spec:

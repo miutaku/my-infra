@@ -151,11 +151,13 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 `descheduler`は5分ごとにMetrics Serverの実測CPU・メモリ使用率を確認し、
 `descheduler.miutaku/metrics-rebalance: "true"`を持つstateless Podだけを再配置対象にする。
 
-- 退避先候補: CPU 20%未満かつメモリ35%未満
-- 退避元候補: CPU 80%超またはメモリ75%超
+- 退避先候補: CPU 30%未満かつメモリ45%未満
+- 退避元候補: CPU 70%超またはメモリ55%超
 - 1サイクルのEvictionはクラスタ全体で最大1 Pod
-- 作成後30分未満のPod、PVC、local storage、DaemonSet、system-critical Podは保護
-- `app-tnlastation`と`app-tnlastation-staging`は常に対象外
+- 作成後30分未満のPod、local storage、DaemonSet、system-critical Podは保護
+- TNLAStationはfrontendとffmpeg-worker-encodeだけを対象にする
+- ffmpeg-worker-encodeはamd64制約を維持し、PVE worker間でのみ移動する
+- backend、streaming、gateway、mediamtxはopt-inしないため対象外
 
 DeschedulerはPodを直接配置せず、Eviction後の配置は標準スケジューラへ委ねる。
 そのため実測負荷への追従は5分単位で段階的に行われ、即時・連続的なライブマイグレーションではない。
