@@ -58,7 +58,6 @@ spec:
                     minPodAge: 30m
                     podProtections:
                       extraEnabled:
-                        - PodsWithPVC
                         - PodsWithResourceClaims
                 - name: LowNodeUtilization
                   args:
@@ -67,19 +66,14 @@ spec:
                       source: KubernetesMetrics
                     # 両方を下回るノードがある場合だけ退避先候補とする。
                     thresholds:
-                      cpu: 20
-                      memory: 35
+                      cpu: 30
+                      memory: 45
                     # どちらかを超えたノードを退避元候補とする。
                     targetThresholds:
-                      cpu: 80
-                      memory: 75
+                      cpu: 70
+                      memory: 55
                     evictionLimits:
                       node: 1
-                    # 録画・配信系はopt-inラベルの有無にかかわらず保護する。
-                    evictableNamespaces:
-                      exclude:
-                        - app-tnlastation
-                        - app-tnlastation-staging
               plugins:
                 balance:
                   enabled:
