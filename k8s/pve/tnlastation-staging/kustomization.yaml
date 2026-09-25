@@ -51,6 +51,24 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: Always
+      # staging encodeは可用性よりPVEのCPU request解放を優先し、RPi 4GBで実行する。
+      - op: replace
+        path: /spec/template/spec/affinity/nodeAffinity
+        value:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: hardware.miutaku/memory
+                    operator: In
+                    values:
+                      - 4gb
+      - op: add
+        path: /spec/template/spec/tolerations
+        value:
+          - key: workload.miutaku/arm64
+            operator: Equal
+            value: reviewed
+            effect: NoSchedule
   - target:
       kind: Deployment
       name: frontend
