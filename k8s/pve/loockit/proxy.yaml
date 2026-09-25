@@ -53,6 +53,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: loockit-proxy
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
       tolerations:
         - key: workload.miutaku/arm64

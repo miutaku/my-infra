@@ -17,6 +17,7 @@ spec:
     metadata:
       labels:
         app: pdc-agent
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
       tolerations:
         - key: workload.miutaku/arm64
