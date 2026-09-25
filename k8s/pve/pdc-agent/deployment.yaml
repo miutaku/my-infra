@@ -24,14 +24,6 @@ spec:
           value: reviewed
           effect: NoSchedule
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node.miutaku/platform
-                    operator: In
-                    values: [rpi]
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:

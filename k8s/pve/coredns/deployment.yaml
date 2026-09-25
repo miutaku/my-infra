@@ -25,22 +25,13 @@ spec:
           operator: Equal
           value: reviewed
           effect: NoSchedule
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: node.miutaku/platform
-          whenUnsatisfiable: DoNotSchedule
-          nodeAffinityPolicy: Honor
-          nodeTaintsPolicy: Honor
-          labelSelector:
-            matchLabels:
-              app: coredns
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
                   app: coredns
-              topologyKey: node.miutaku/platform
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: coredns
           image: coredns/coredns:1.12.4
