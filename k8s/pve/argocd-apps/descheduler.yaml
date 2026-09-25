@@ -43,7 +43,7 @@ spec:
           # 1サイクルで大量にPodを動かさず、5分ごとに徐々に平準化する。
           maxNoOfPodsToEvictPerNode: 1
           maxNoOfPodsToEvictPerNamespace: 1
-          maxNoOfPodsToEvictTotal: 1
+          maxNoOfPodsToEvictTotal: 2
           gracePeriodSeconds: 30
           metricsProviders:
             - source: KubernetesMetrics
