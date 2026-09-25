@@ -54,13 +54,29 @@ spec:
       labels:
         app.kubernetes.io/name: loockit-proxy
     spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
       topologySpreadConstraints:
         - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
+          topologyKey: node.miutaku/platform
           whenUnsatisfiable: DoNotSchedule
+          nodeAffinityPolicy: Honor
+          nodeTaintsPolicy: Honor
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: loockit-proxy
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: loockit-proxy
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: haproxy
           image: haproxy:3.2.9-alpine

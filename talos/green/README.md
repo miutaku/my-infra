@@ -35,6 +35,12 @@ Piは`rpi_generic` schematic `ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a2765
 `scripts/label-nodes`はPiへ`hardware.miutaku/model=raspberry-pi-4b`、RAM容量、agent roleを付ける。
 標準の`kubernetes.io/arch=arm64`と合わせ、arm64対応を確認したworkloadの配置制御に利用する。
 
+RPiには`workload.miutaku/arm64=reviewed:NoSchedule`を付け、arm64 manifestを確認したworkloadだけが
+明示的なtolerationで配置されるようにする。全nodeへ`node.miutaku/platform=pve|rpi`と
+`network.miutaku/l2=vlan20|vlan10`を付ける。VLAN 20のMetalLB speakerはPVE workerだけに限定する。
+HA workloadは`node.miutaku/platform`のtopology spreadでPVE/RPiへ分散し、単体の軽量exporterは
+RPiをpreferred、PVEをfallbackとする。DB、映像処理、GitOps/Secret基盤、local PV利用PodはPVEへ残す。
+
 管理端末では資格情報そのものをshell設定へ埋め込まず、次のパスだけを環境変数に設定する。
 
 ```bash

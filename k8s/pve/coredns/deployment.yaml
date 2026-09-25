@@ -20,6 +20,20 @@ spec:
       labels:
         app: coredns
     spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: node.miutaku/platform
+          whenUnsatisfiable: DoNotSchedule
+          nodeAffinityPolicy: Honor
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: coredns
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

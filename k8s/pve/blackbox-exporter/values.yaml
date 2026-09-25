@@ -37,4 +37,20 @@ resources:
   limits:
     memory: 64Mi
 
+tolerations:
+  - key: workload.miutaku/arm64
+    operator: Equal
+    value: reviewed
+    effect: NoSchedule
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: hardware.miutaku/memory
+              operator: In
+              values: [2gb]
+
 # ターゲット一覧は利用中の scrape 設定側で管理する
