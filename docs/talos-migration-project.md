@@ -15,8 +15,8 @@
 | 開始日 | 2026-08-30 |
 | 現行クラスタ | `home-k8s` (Talos Linux) |
 | 移行方式 | 新旧クラスタの並行稼働による Blue/Green 移行 |
-| 本番変更 | Talos VM 5台、Mirakurun/Loockit LXC、GitOps、データ、公開経路を移行済み |
-| 次の判定ゲート | 通常運用でのTalos patch upgrade演習 |
+| 本番変更 | Talos VM 5台 + Raspberry Pi 4 worker 2台、Mirakurun/Loockit LXC、GitOps、データ、公開経路を移行済み |
+| 次の判定ゲート | arm64 workerへ配置するworkloadの選定 |
 | 現在のblocker | なし |
 
 ## 要約
@@ -26,7 +26,7 @@ Talos への移行は可能だが、既存 RKE2 ノードを Talos で上書き�
 検証に合格したワークロードから Talos へ移し、最後に公開経路、内部 DNS、Kubernetes API の
 接続先を切り替える。
 
-本番GreenはTalos `v1.13.9` / Kubernetes `1.35.7`、3 control plane + 2 workerで構築済みである。
+本番GreenはTalos `v1.14.1` / Kubernetes `1.35.7`、3 control plane + 4 workerで構築済みである。
 API VIPは`192.168.20.228`で、control plane 1台とworker 1台の個別reboot中もAPI連続到達と
 workload復帰を確認した。Argo CDを含む基盤addonはGreenへ直接導入済みだが、root Applicationは
 Blueから切り離してあり、利用者通信と本番データはまだBlueを参照している。
@@ -373,7 +373,7 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 | POC-13 | upgrade | 1 patch upgradeとrollback手順を検証 | **合格**。workerだけで1.13.8→1.13.9→A-B rollback 1.13.8→最終1.13.9。各段階Ready、最終health全項目OK |
 | HW-01 | PT3 | device認識、channel scan、連続受信に成功 | **直接収容は不合格**。PCI認識、earth_pt3なし、DVB adapter 0。Ubuntu分離へ移行 |
 | HW-02 | Bluetooth | 2 adapterでLoockit相当処理を継続実行できる | 未実施 |
-| ARM-01 | Raspberry Pi | boot/reboot、温度、network、taintが正常 | 未実施 |
+| ARM-01 | Raspberry Pi | boot/reboot、温度、network、配置制御が正常 | **合格**。2台をVLAN 10のarm64 workerとして追加し、NVMe再起動、約53℃、全system Pod Runningを確認 |
 
 ## フェーズと合格条件
 
@@ -436,7 +436,7 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 - [x] HW-01 PT3を実施
 - [x] PT3をBlueへ戻し、Mirakurun/TNLAStationの復旧を確認
 - [x] HW-02相当のBluetooth実機検証を実施（stock Talos非対応を確認しLXCへ分離）
-- [x] ARM-01は移行対象外と決定（Raspberry Pi workerを退役、電源停止）
+- [x] ARM-01は一度退役後に方針変更し、Talos v1.14.1 arm64 workerとして再参加
 - [x] custom extension案を評価し、PT3/Bluetoothとも採用しないと決定
 - [x] custom extensionを使わないfallbackを実証（Mirakurun/Loockit LXC）
 
@@ -500,7 +500,7 @@ manifest、試験結果だけをGitへ残し、VMやcredentialなどの実資源
 ### Phase 7: 安定化と廃止
 
 - [ ] 7日以上の安定稼働を確認
-- [ ] Talos patch upgradeを本番で1回完了（現行・公式最新とも1.13.9のため次patch待ち）
+- [x] Talos upgradeを本番で1回完了（2026-09-25、v1.13.9→v1.13.10→v1.14.1、Kubernetes 1.35.7据え置き）
 - [x] DB backupからの復元演習を完了（PostgreSQL 16表、MariaDB 12/135表）
 - [x] 旧version/upgrade CI、rollback用script/docs/Ansibleを削除
 - [x] 現役Terraform/Cloudflare識別子を`home-k8s`へstate-safeに変更（0 add / 0 destroy）
@@ -734,7 +734,7 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | DEC-05 | CNIをFlannel継続かCiliumにするか | Gate 1 | Flannel開始を暫定決定 |
 | DEC-06 | PT3をTalosに載せるかUbuntu分離するか | Gate 3 | stock TalosはPCI認識のみでdriver/deviceなし。Ubuntu外部service分離を採用 |
 | DEC-07 | LoockitをPod内BlueZかUbuntu分離にするか | Gate 3 | 未決定 |
-| DEC-08 | Raspberry Pi 2台をTalos化するか | Gate 3 | 未決定 |
+| DEC-08 | Raspberry Pi 2台をTalos化するか | Gate 3 | Talos v1.14.1化し、VLAN 10のarm64 workerとして採用 |
 | DEC-09 | 既存HAProxy/Keepalivedを初期移行で維持するか | Gate 4 | Green APIはTalos L2 VIP `.228`を採用。Blue `.227`は未変更 |
 | DEC-10 | VictoriaMetricsの30日履歴を移すか | Gate 5 | 移行する。native snapshotのGreen restoreと31日幅query一致を確認済み |
 | DEC-11 | BSM Machine Accountを復旧しlive Terraform planを実行 | Gate 0 | 解決。token再発行、live plan 4/0/0 |
@@ -910,6 +910,8 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 | 2026-09-08 | Codex | TNLAStationライブ視聴障害を切り分け | TNLA backendまで正常、Mirakurunが503を返却。PT3全adapterの`dvbv5-zap`がexit 255で毎秒respawnし、EPGジョブが全チューナーを占有。Mirakurun再起動で一時解放するが実tuningで再発するため、LXC内DockerへのDVB再割当を根本修復対象と確定 | 録画利用者0件を確認し、EPGジョブ中断とMirakurunサービス再起動のみ実施 |
 | 2026-09-08 | Codex | TNLAStationライブ視聴障害を根本修復 | PVEのPT3 `0000:05:00.0`がdriver未bindで`/dev/dvb`が消失していた。`earth_pt3`へ再bind後、GR 14.4 MB、BS 13.6 MB、TNLA本番経由19.3 MBを受信しrespawn 0を確認。CT起動前bind guardをAnsible管理へ追加 | Mirakurunコンテナのみ再起動。Kubernetes workloadや録画dataへの変更なし |
 | 2026-09-08 | Codex | STG TNLAStation専用Mirakurunを分離 | pve-b550m上のLXC 12904へPX-S1UDを割り当ててGRを受信。BS/CSは本番MirakurunのPT3をTCP参照し、API最小値のpriority 0へ固定。GR 3.75 MB、BS 33.2 MB、CS 33.4 MBの実受信とfaultなしを確認 | 本番TNLA/Mirakurunの設定変更なし。Git反映後にSTGだけ接続先を変更 |
+| 2026-09-25 | Codex | 本番Talosをv1.14.1へrolling upgrade | 公式推奨経路でv1.13.9→v1.13.10→v1.14.1。5 node Ready、etcd 3 member、Talos health全項目OK、全Pod復帰、QEMU agent 11.1.1 | Kubernetes v1.35.7据え置き、事前etcd snapshotを取得 |
+| 2026-09-25 | Codex | Raspberry Pi 4 2台をTalos workerとして追加 | `.107`（2GB）と`.109`（4GB）をv1.14.1/arm64で参加。両方NVMe再起動、7 node Ready、全system Pod Running、約53℃を確認 | VLAN 10維持、Kubernetes v1.35.7、taintなし |
 | 2026-09-06 | Codex | 23:00予約ID 23の本番録画を事後検証 | recorded ID 426、H.265 300,520,785 bytes、23:38更新のNFS実fileをGreen API/Pod双方で確認 | 録画系cutover Gate合格 |
 | 2026-09-06 | Codex | Raspberry Pi worker-11/12をRKE2から退役 | 業務Podなしを確認してcordon/drain、rke2-agent停止・無効化、inventoryを退役groupへ変更 | Ubuntu/BlueZ/SSHと電源はrollback用に維持 |
 | 2026-09-06 | Codex | selectorless ServiceのEndpointSliceをGitOps化 | Argo CD既定除外からEndpointSliceを外し、Mirakurun/Loockitの両資源がSynced/Healthyかつ追跡対象であることを確認 | Greenの管理設定のみ。接続先変更なし |
@@ -929,6 +931,10 @@ DBごとにreverse migrationまたは利用者判断が必要になる。
 - Blueはrollback保持期間中、application controllerと書込みworkloadを停止したまま残す。
 
 ### Raspberry Pi worker-11 / worker-12の扱い（2026-09-06）
+
+> 2026-09-25更新: 下記の退役判断を変更し、両機のNVMeをTalos v1.14.1へ入れ替えて
+> `worker-03-talos-home-rpi4-arm64`（`.107`）と`worker-04-talos-home-rpi4-arm64`（`.109`）として
+> Greenへ再参加させた。ネットワークはVLAN 10のままとし、旧RKE2基盤は再利用しない。
 
 両機はbare metal Ubuntu Raspberry Pi 4で、内蔵BluetoothとUSB Bluetoothを各1台持つ。一方、移行時点で
 配置されていたのはCNI、kube-proxy、node-exporter等のcluster system Podだけで、業務Podと
@@ -1113,13 +1119,13 @@ in-place補完する差分だった。Proxmox APIではdevice passthrough更新�
 - [Talos Green PoC Terraform](../terraform/talos-poc/README.md)
 - [Talos production Green](../talos/green/README.md)
 - [Talos production Green Terraform](../terraform/talos-green/README.md)
-- [Talos support matrix](https://docs.siderolabs.com/talos/v1.13/getting-started/support-matrix)
-- [Talos on Proxmox](https://docs.siderolabs.com/talos/v1.13/platform-specific-installations/virtualized-platforms/proxmox)
-- [Talos Raspberry Pi](https://docs.siderolabs.com/talos/v1.13/platform-specific-installations/single-board-computers/rpi_generic)
-- [Talos User Volumes](https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/storage-and-disk-management/disk-management/user)
+- [Talos support matrix](https://docs.siderolabs.com/talos/v1.14/getting-started/support-matrix)
+- [Talos on Proxmox](https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/virtualized-platforms/proxmox)
+- [Talos Raspberry Pi](https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/single-board-computers/rpi_generic)
+- [Talos User Volumes](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-management/user)
 - [Talos Flannel](https://docs.siderolabs.com/kubernetes-guides/cni/flannel)
-- [Talos system extensions](https://docs.siderolabs.com/talos/v1.13/build-and-extend-talos/custom-images-and-development/system-extensions)
-- [Talos machine reset](https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/lifecycle-management/resetting-a-machine)
+- [Talos system extensions](https://docs.siderolabs.com/talos/v1.14/build-and-extend-talos/custom-images-and-development/system-extensions)
+- [Talos machine reset](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/lifecycle-management/resetting-a-machine)
 - [TrueNAS WebSocket API](https://api.truenas.com/)
 - [TrueNAS NFS share API](https://api.truenas.com/v25.10/api_methods_sharing.nfs.create.html)
 - [MetalLB 0.16.1の未修正dependency issue](https://github.com/metallb/metallb/issues/3113)

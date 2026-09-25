@@ -24,8 +24,20 @@ label_by_ip() {
   fi
 }
 
+label_rpi_by_ip() {
+  local ip="$1" memory="$2" node
+  node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" get nodes -o json |
+    jq -er --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type=="InternalIP" and .address==$ip)) | .metadata.name')"
+  KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
+    "node.miutaku/role=agent" \
+    "hardware.miutaku/model=raspberry-pi-4b" \
+    "hardware.miutaku/memory=${memory}"
+}
+
 label_by_ip 192.168.20.137 pve-x570 controlplane
 label_by_ip 192.168.20.138 pve-b550m controlplane
 label_by_ip 192.168.20.139 pve-b550m controlplane
 label_by_ip 192.168.20.140 pve-x570 agent talos-ayb-pmi
 label_by_ip 192.168.20.141 pve-b550m agent
+label_rpi_by_ip 192.168.10.107 2gb
+label_rpi_by_ip 192.168.10.109 4gb

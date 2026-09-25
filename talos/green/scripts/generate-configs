@@ -27,8 +27,9 @@ install -d -m 0700 "${output_dir}"
 talosctl gen config "${TALOS_CLUSTER_NAME}" "${TALOS_ENDPOINT}" \
   --output "${output_dir}" \
   --install-disk "${TALOS_INSTALL_DISK}" \
-  --install-image "factory.talos.dev/installer/${SCHEMATIC_ID}@${INSTALLER_DIGEST}" \
+  --install-image "factory.talos.dev/metal-installer/${SCHEMATIC_ID}@${INSTALLER_DIGEST}" \
   --kubernetes-version "${KUBERNETES_VERSION}" \
+  --talos-version "${TALOS_VERSION}" \
   --config-patch "@${green_dir}/patches/cluster.yaml" \
   --config-patch-control-plane "@${green_dir}/patches/controlplane-vip.yaml" \
   --config-patch-worker "@${green_dir}/patches/worker-storage.yaml"
