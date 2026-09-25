@@ -48,7 +48,8 @@ data:
       /source/tnlastation \
       /source/tnlastation-staging \
       /source/thumbnail \
-      /source/drop
+      /source/drop \
+      /source/coupon-manager-images
 
     restic forget --tag nas-02 --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune
     restic check
