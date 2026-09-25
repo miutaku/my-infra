@@ -1,0 +1,4 @@
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: worker-04-talos-home-rpi4-arm64

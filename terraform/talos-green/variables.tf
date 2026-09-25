@@ -13,11 +13,11 @@ variable "proxmox_api_token" {
 variable "talos_version" {
   description = "Pinned Talos release used by the ISO and installer."
   type        = string
-  default     = "v1.13.9"
+  default     = "v1.14.1"
 
   validation {
-    condition     = can(regex("^v1\\.13\\.[0-9]+$", var.talos_version))
-    error_message = "talos_version must be a stable v1.13.x release."
+    condition     = can(regex("^v1\\.14\\.[0-9]+$", var.talos_version))
+    error_message = "talos_version must be a stable v1.14.x release."
   }
 }
 

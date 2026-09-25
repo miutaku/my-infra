@@ -1,9 +1,10 @@
 # Talos production Green
 
 home-k8sの本番クラスタ。API endpointはTalos内蔵L2 VIP
-`https://192.168.20.228:6443`、nodeは`.137`–`.141`である。machine config、PKI、kubeconfigは
+`https://192.168.20.228:6443`。VLAN 20にVM 5台（`.137`–`.141`）、VLAN 10にRaspberry Pi 4
+worker 2台（`.107`、`.109`）を置く。machine config、PKI、kubeconfigは
 `.generated`だけへ生成し、GitやBSMへ平文保存しない。
-installerはv1.13.9 amd64 manifestのdigestを`green.env.example`で固定し、version更新時は
+installerはv1.14.1 amd64 manifestのdigestを`green.env.example`で固定し、version更新時は
 Image Factory registryから新digestを再取得する。
 
 1. `scripts/preflight-reservations`を実行する。
@@ -16,8 +17,23 @@ Image Factory registryから新digestを再取得する。
    Proxmox VirtIO NICは`ens18`であり、VIP patchのlink名を変更してはならない。
 6. `.137`だけで`bootstrap`を一度実行する。VIPはetcd bootstrap後にだけ有効になるため、Talos APIの
    `talosconfig` endpointには各control plane実IPを使い、VIPを復旧用endpointにしない。
-7. 5 node Ready、etcd 3 member、VIP failoverを確認後にISOよりdiskを優先する。
+7. VM 5 node Ready、etcd 3 member、VIP failoverを確認後にISOよりdiskを優先する。
 8. `scripts/label-nodes`でIPからnodeを解決し、Proxmox failure domainとrole labelを付与する。
+
+## Raspberry Pi 4 worker
+
+| hostname | IP | RAM | architecture | install disk |
+|---|---|---:|---|---|
+| `worker-03-talos-home-rpi4-arm64` | `192.168.10.107` | 2 GB | arm64 | `/dev/sda` |
+| `worker-04-talos-home-rpi4-arm64` | `192.168.10.109` | 4 GB | arm64 | `/dev/sda` |
+
+Piは`rpi_generic` schematic `ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9`
+のTalos v1.14.1 raw imageから起動する。machine configには`patches/worker-rpi4.yaml`と各hostname patchを
+適用し、VM専用`worker-storage.yaml`および`qemu-guest-agent`を含めない。両nodeはVLAN 10のDHCP予約を
+維持し、API VIP `192.168.20.228`へroutingする。
+
+`scripts/label-nodes`はPiへ`hardware.miutaku/model=raspberry-pi-4b`、RAM容量、agent roleを付ける。
+標準の`kubernetes.io/arch=arm64`と合わせ、arm64対応を確認したworkloadの配置制御に利用する。
 
 管理端末では資格情報そのものをshell設定へ埋め込まず、次のパスだけを環境変数に設定する。
 

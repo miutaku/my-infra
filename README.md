@@ -74,7 +74,8 @@ flowchart LR
         Workers[[2x worker VMs<br/>Talos<br/>192.168.20.140-141]]
         ControlPlanes ~~~ Workers
       end
-      NAS ~~~ WorkEnv ~~~ HomeK8sVM ~~~ UOS
+      RPiWorkers[[2x Raspberry Pi 4 workers<br/>Talos / arm64 / VLAN 10<br/>192.168.10.107, 109]]
+      NAS ~~~ WorkEnv ~~~ HomeK8sVM ~~~ RPiWorkers ~~~ UOS
     end
     subgraph HomeK8s[home-k8s HA cluster]
       ArgoCD{{ArgoCD <br/>Sync}}
