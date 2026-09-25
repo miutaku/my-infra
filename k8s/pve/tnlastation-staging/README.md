@@ -6,6 +6,10 @@
 - `ghcr.io/miutaku/tnlastation-ffmpeg-worker:staging`
 - `ghcr.io/miutaku/tnlastation-frontend:staging`
 
+`ffmpeg-worker-encode`は本番encode用のPVE CPU requestを確保するため、
+`hardware.miutaku/memory=4gb`のRPi workerへ固定する。stagingはリリース前確認用途のため、
+このworker停止中の可用性は要求しない。
+
 同時に`staging-<commit SHA先頭12文字>`というimmutable tagも残すため、原因調査とrollbackに
 利用できます。一般releaseのSemVer tagと`latest`は変更しません。
 
