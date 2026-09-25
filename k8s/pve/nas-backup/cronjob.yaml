@@ -48,6 +48,7 @@ spec:
                 - {name: tnlastation-staging, mountPath: /source/tnlastation-staging, readOnly: true}
                 - {name: thumbnail, mountPath: /source/thumbnail, readOnly: true}
                 - {name: drop, mountPath: /source/drop, readOnly: true}
+                - {name: coupon-manager-images, mountPath: /source/coupon-manager-images, readOnly: true}
           volumes:
             - name: scripts
               configMap:
@@ -67,3 +68,5 @@ spec:
               nfs: {server: 192.168.20.192, path: /mnt/raid1_case/thumbnail, readOnly: true}
             - name: drop
               nfs: {server: 192.168.20.192, path: /mnt/raid1_case/drop, readOnly: true}
+            - name: coupon-manager-images
+              nfs: {server: 192.168.20.192, path: /mnt/raid1_case/home-k8s-coupon-manager-images, readOnly: true}
