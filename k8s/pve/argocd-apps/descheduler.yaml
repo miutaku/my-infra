@@ -59,6 +59,9 @@ spec:
                     nodeFit: true
                     minPodAge: 30m
                     podProtections:
+                      # opt-in済みのEPGStationはemptyDirを持つが、PVE worker間で移動可能。
+                      defaultDisabled:
+                        - PodsWithLocalStorage
                       extraEnabled:
                         - PodsWithResourceClaims
                 - name: LowNodeUtilization
