@@ -16,6 +16,7 @@ spec:
     metadata:
       labels:
         app: nut-exporter
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
       tolerations:
         - key: workload.miutaku/arm64

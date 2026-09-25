@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app: annict-scraper
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
       tolerations:
         - key: workload.miutaku/arm64

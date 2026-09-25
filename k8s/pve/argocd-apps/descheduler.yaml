@@ -1,0 +1,95 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: descheduler
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/descheduler/
+    chart: descheduler
+    targetRevision: "0.35.1"
+    helm:
+      releaseName: descheduler
+      values: |
+        kind: CronJob
+        schedule: "*/5 * * * *"
+        timeZone: Asia/Tokyo
+        activeDeadlineSeconds: 120
+        successfulJobsHistoryLimit: 3
+        failedJobsHistoryLimit: 3
+        ttlSecondsAfterFinished: 1800
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+        # Descheduler自体はPVE workerで実行し、RPiの容量を消費しない。
+        nodeSelector:
+          node.miutaku/platform: pve
+          node.miutaku/role: agent
+
+        deschedulerPolicy:
+          # 1サイクルで大量にPodを動かさず、5分ごとに徐々に平準化する。
+          maxNoOfPodsToEvictPerNode: 1
+          maxNoOfPodsToEvictPerNamespace: 1
+          maxNoOfPodsToEvictTotal: 1
+          gracePeriodSeconds: 30
+          metricsProviders:
+            - source: KubernetesMetrics
+          profiles:
+            - name: metrics-rebalance
+              pluginConfig:
+                - name: DefaultEvictor
+                  args:
+                    # 明示的にopt-inしたstateless Podだけを移動対象にする。
+                    labelSelector:
+                      matchLabels:
+                        descheduler.miutaku/metrics-rebalance: "true"
+                    nodeFit: true
+                    minPodAge: 30m
+                    podProtections:
+                      extraEnabled:
+                        - PodsWithPVC
+                        - PodsWithResourceClaims
+                - name: LowNodeUtilization
+                  args:
+                    # Metrics Serverの実測CPU/メモリ値を使う。
+                    metricsUtilization:
+                      source: KubernetesMetrics
+                    # 両方を下回るノードがある場合だけ退避先候補とする。
+                    thresholds:
+                      cpu: 20
+                      memory: 35
+                    # どちらかを超えたノードを退避元候補とする。
+                    targetThresholds:
+                      cpu: 80
+                      memory: 75
+                    evictionLimits:
+                      node: 1
+                    # 録画・配信系はopt-inラベルの有無にかかわらず保護する。
+                    evictableNamespaces:
+                      exclude:
+                        - app-tnlastation
+                        - app-tnlastation-staging
+              plugins:
+                balance:
+                  enabled:
+                    - LowNodeUtilization
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

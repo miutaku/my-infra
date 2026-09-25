@@ -43,4 +43,8 @@ tolerations:
     value: reviewed
     effect: NoSchedule
 
+pod:
+  labels:
+    descheduler.miutaku/metrics-rebalance: "true"
+
 # ターゲット一覧は利用中の scrape 設定側で管理する

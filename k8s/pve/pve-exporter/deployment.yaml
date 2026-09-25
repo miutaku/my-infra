@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         app: pve-exporter
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
       tolerations:
         - key: workload.miutaku/arm64
