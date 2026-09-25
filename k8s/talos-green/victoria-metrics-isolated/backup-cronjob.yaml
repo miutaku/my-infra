@@ -18,18 +18,16 @@ spec:
         spec:
           restartPolicy: OnFailure
           automountServiceAccountToken: false
-          containers:
-            - name: vmbackup
+          # The workspace only holds one internally consistent backup while this
+          # Job runs. OCI is the durable copy, so this volume need not survive a
+          # node failure or the next Job.
+          initContainers:
+            - name: snapshot-backup
               image: victoriametrics/vmbackup:v1.113.0
               args:
                 - -storageDataPath=/storage
                 - -snapshot.createURL=http://victoria-metrics-green:8428/snapshot/create
-                - -dst=s3://db-backup/victoria-metrics/latest
-                - -customS3Endpoint=https://$(OCI_NAMESPACE).compat.objectstorage.ap-tokyo-1.oraclecloud.com
-                - -s3ForcePathStyle=true
-              envFrom:
-                - secretRef:
-                    name: victoria-metrics-backup-credentials
+                - -dst=fs:///workspace/latest
               resources:
                 requests:
                   cpu: 25m
@@ -41,8 +39,61 @@ spec:
                 - name: data
                   mountPath: /storage
                   readOnly: true
+                - name: workspace
+                  mountPath: /workspace
+          containers:
+            # OCI's S3 compatibility endpoint rejects the AWS SDK's streaming
+            # chunked multipart encoding used by vmbackup for large files. Keep
+            # vmbackup for snapshot consistency, then upload its filesystem
+            # output with rclone (also used by the verified database backups).
+            - name: upload
+              image: rclone/rclone:1.75.1
+              args:
+                - sync
+                - /workspace/latest
+                - oci:db-backup/victoria-metrics/latest
+                - --checksum
+                # vmbackup limits backup parts to 1 GiB. A 5 GiB cutoff keeps
+                # them on OCI's non-multipart PutObject path.
+                - --s3-upload-cutoff=5Gi
+                - --transfers=2
+                - --checkers=4
+                - --stats=10s
+              envFrom:
+                - secretRef:
+                    name: victoria-metrics-backup-credentials
+              env:
+                - name: RCLONE_CONFIG_OCI_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_OCI_PROVIDER
+                  value: Other
+                - name: RCLONE_CONFIG_OCI_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: victoria-metrics-backup-credentials
+                      key: AWS_ACCESS_KEY_ID
+                - name: RCLONE_CONFIG_OCI_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: victoria-metrics-backup-credentials
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: RCLONE_CONFIG_OCI_ENDPOINT
+                  value: https://$(OCI_NAMESPACE).compat.objectstorage.ap-tokyo-1.oraclecloud.com
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
           volumes:
             - name: data
               persistentVolumeClaim:
                 claimName: victoria-metrics-data-nfs
                 readOnly: true
+            - name: workspace
+              emptyDir:
+                sizeLimit: 10Gi
