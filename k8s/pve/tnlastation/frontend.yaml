@@ -26,7 +26,13 @@ spec:
     metadata:
       labels:
         app: tnlastation-frontend
+        descheduler.miutaku/metrics-rebalance: "true"
     spec:
+      tolerations:
+        - key: workload.miutaku/arm64
+          operator: Equal
+          value: reviewed
+          effect: NoSchedule
       containers:
         - name: frontend
           image: ghcr.io/miutaku/tnlastation-frontend:1.1.4
