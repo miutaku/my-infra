@@ -27,6 +27,7 @@ resource "oci_identity_policy" "cluster_autoscaler" {
   description    = "Allow my-infra OKE Cluster Autoscaler to resize managed node pools."
 
   statements = [
+    "Allow dynamic-group ${oci_identity_dynamic_group.cluster_autoscaler_nodes.name} to inspect cluster-node-pools in compartment id ${var.compartment_ocid}",
     "Allow dynamic-group ${oci_identity_dynamic_group.cluster_autoscaler_nodes.name} to manage cluster-node-pools in compartment id ${var.compartment_ocid} where target.cluster.id = '${oci_containerengine_cluster.oke_cluster.id}'",
   ]
 }
