@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/miutaku/my-infra.git
     targetRevision: main
-    path: k8s/talos-green/victoria-metrics-isolated
+    path: k8s/pve/victoria-metrics
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
