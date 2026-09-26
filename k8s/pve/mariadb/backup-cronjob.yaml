@@ -22,9 +22,9 @@ spec:
               command: ["sh", "/scripts/backup.sh"]
               env:
                 - name: OCI_BACKUP_BUCKET
-                  # Switch to db-backup-immutable after its locked retention
-                  # bucket has been applied and verified in terraform/oci.
-                  value: db-backup
+                  # Unique logical dumps go to the 30-day retention bucket.
+                  # Its writer credential cannot delete objects or versions.
+                  value: db-backup-immutable
                 - name: MYSQL_ROOT_PASSWORD
                   valueFrom:
                     secretKeyRef:
