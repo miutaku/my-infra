@@ -93,7 +93,7 @@ flowchart LR
   Apply --> Output --> IX --> Reboot
 ```
 
-home-k8s VMのIP/MACは`terraform/talos-green`で管理する。LB 2台はKubernetes専用ではない
+home-k8s VMのIP/MACは`terraform/home-k8s`で管理する。LB 2台はKubernetes専用ではない
 汎用インフラとして`load_balancer` moduleで管理する。
 
 ## Ansible inventory
@@ -146,7 +146,7 @@ flowchart LR
   Terraform[terraform init / plan / apply]
   Outputs[terraform output<br/>MAC確認]
   IX[ansible/ix2215<br/>DHCP静的リース]
-  HomeK8s[terraform/talos-green + talos/green<br/>home-k8s構成]
+  HomeK8s[terraform/home-k8s + talos/home-k8s<br/>home-k8s構成]
   UOS[ansible/uos<br/>UniFi OS Server構成]
 
   Packer --> Vars --> Terraform --> Outputs --> IX
@@ -183,7 +183,7 @@ Terraform適用後に [ansible/displaylink-kiosk/README.md](../../ansible/displa
 ## apply 後: MAC アドレスの確認
 
 ```bash
-terraform -chdir=../talos-green output -json nodes
+terraform -chdir=../home-k8s output -json nodes
 terraform output -json unifi_os_server_mac_addresses
 ```
 

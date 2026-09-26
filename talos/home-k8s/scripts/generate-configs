@@ -2,9 +2,9 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-green_dir="$(cd -- "${script_dir}/.." && pwd)"
-env_file="${green_dir}/green.env"
-output_dir="${green_dir}/.generated"
+cluster_dir="$(cd -- "${script_dir}/.." && pwd)"
+env_file="${cluster_dir}/cluster.env"
+output_dir="${cluster_dir}/.generated"
 
 [[ -f "${env_file}" ]] || { echo "missing ${env_file}" >&2; exit 1; }
 set -a
@@ -30,8 +30,8 @@ talosctl gen config "${TALOS_CLUSTER_NAME}" "${TALOS_ENDPOINT}" \
   --install-image "factory.talos.dev/metal-installer/${SCHEMATIC_ID}@${INSTALLER_DIGEST}" \
   --kubernetes-version "${KUBERNETES_VERSION}" \
   --talos-version "${TALOS_VERSION}" \
-  --config-patch "@${green_dir}/patches/cluster.yaml" \
-  --config-patch-control-plane "@${green_dir}/patches/controlplane-vip.yaml" \
-  --config-patch-worker "@${green_dir}/patches/worker-storage.yaml"
+  --config-patch "@${cluster_dir}/patches/cluster.yaml" \
+  --config-patch-control-plane "@${cluster_dir}/patches/controlplane-vip.yaml" \
+  --config-patch-worker "@${cluster_dir}/patches/worker-storage.yaml"
 chmod 0600 "${output_dir}"/*
 echo "generated production credentials under ${output_dir}; do not commit or print them"

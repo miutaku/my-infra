@@ -28,7 +28,7 @@ variable "schematic_id" {
 }
 
 variable "start_vms" {
-  description = "Start Green VMs only after DHCP reservations and the live plan pass."
+  description = "Start home-k8s VMs only after DHCP reservations and the live plan pass."
   type        = bool
   default     = false
 }
