@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tnlastation-recorded-backup-script
+  namespace: infra-backup
+data:
+  backup.sh: |
+    #!/bin/sh
+    set -eu
+
+    apk add --no-cache rclone curl jq >/dev/null
+
+    STATUS=failure
+    RESULT="initialization failed"
+    notify() {
+      webhook="${CRITICAL_WEBHOOK}"
+      [ "${STATUS}" = success ] && webhook="${NOTIFY_WEBHOOK}"
+      [ -n "${webhook}" ] || return 0
+      curl -fsS -X POST "${webhook}" \
+        -H 'Content-Type: application/json' \
+        -d "$(jq -nc --arg content "${RESULT}" '{content:$content}')" >/dev/null || true
+    }
+    trap notify EXIT
+
+    # EPGStationと同じNFS exportを共有しているため、ディレクトリ全体は
+    # バックアップしない。TNLAStationがDBに登録済みの完成ファイルだけを
+    # rcloneへ渡す。
+    PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+      --host=postgres.infra-db.svc.cluster.local \
+      --username=tnlastation \
+      --dbname=tnlastation \
+      --no-align --tuples-only \
+      --field-separator="$(printf '\t')" \
+      --command="SELECT DISTINCT filename, size FROM video_files WHERE parent_directory_name = '/recorded' ORDER BY filename" \
+      > /tmp/candidates.tsv
+
+    : > /tmp/files.txt
+    skipped=0
+    while IFS="$(printf '\t')" read -r filename expected_size; do
+      [ -n "${filename}" ] || continue
+      # DB値であっても絶対pathやsubdirectoryを許さない。
+      case "${filename}" in
+        /*|*/*)
+          echo "unsafe path skipped: ${filename}" >&2
+          skipped=$((skipped + 1))
+          continue
+          ;;
+      esac
+      if [ ! -f "/recorded/${filename}" ]; then
+        echo "missing local file skipped: ${filename}" >&2
+        skipped=$((skipped + 1))
+        continue
+      fi
+      actual_size="$(stat -c %s "/recorded/${filename}")"
+      if [ "${actual_size}" != "${expected_size}" ]; then
+        echo "size mismatch skipped: ${filename} db=${expected_size} actual=${actual_size}" >&2
+        skipped=$((skipped + 1))
+        continue
+      fi
+      printf '%s\n' "${filename}" >> /tmp/files.txt
+    done < /tmp/candidates.tsv
+
+    count="$(wc -l < /tmp/files.txt | tr -d ' ')"
+    bytes="$(awk -F '\t' 'NR==FNR {wanted[$0]=1; next} ($1 in wanted) {sum += $2} END {printf "%.0f", sum+0}' /tmp/files.txt /tmp/candidates.tsv)"
+
+    export RCLONE_CONFIG_IDRIVE_TYPE=s3
+    export RCLONE_CONFIG_IDRIVE_PROVIDER=Other
+    export RCLONE_CONFIG_IDRIVE_ACCESS_KEY_ID="${IDRIVE_ACCESS_KEY_ID}"
+    export RCLONE_CONFIG_IDRIVE_SECRET_ACCESS_KEY="${IDRIVE_SECRET_ACCESS_KEY}"
+    export RCLONE_CONFIG_IDRIVE_ENDPOINT=https://s3.ap-northeast-1.idrivee2.com
+    export RCLONE_CONFIG_IDRIVE_REGION=ap-northeast-1
+
+    rclone copy /recorded idrive:tv-rec/tnlastation \
+      --files-from-raw /tmp/files.txt \
+      --immutable \
+      --transfers=2 \
+      --checkers=4 \
+      --stats=30s \
+      --log-level=INFO
+    rclone check /recorded idrive:tv-rec/tnlastation \
+      --files-from-raw /tmp/files.txt \
+      --one-way \
+      --size-only
+
+    STATUS=success
+    RESULT="TNLAStation録画バックアップ完了: files=${count}, bytes=${bytes}, skipped=${skipped}, destination=idrive:tv-rec/tnlastation"
+    echo "${RESULT}"
