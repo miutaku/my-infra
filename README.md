@@ -212,7 +212,6 @@ my-infra/
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
 │   ├── pve/            home-k8s共通アプリ (ArgoCD App-of-Apps)
-│   ├── talos-green/    home-k8sのVictoriaMetrics（復元済みPVCを保護する独立ArgoCD app）
 │   └── oci/            OCI OKE (ArgoCD GitOps)
 └── packer/
     ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)

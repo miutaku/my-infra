@@ -17,5 +17,5 @@ terraform plan
 terraform apply
 ```
 
-APIはLANへ無制限公開せず、Green内の2 replica HAProxy Serviceから、`/readyz`が200の
+APIはLANへ無制限公開せず、home-k8s内の2 replica HAProxy Serviceから、`/readyz`が200の
 Lease leaderだけへ転送する。
