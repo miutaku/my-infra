@@ -38,8 +38,8 @@ TrueNAS `192.168.20.192`へ次のdirectoryが必要です。
 backendとFFmpeg Workerは、このdirectoryを`/var/lib/tnlastation`として共有します。
 HLS segment、thumbnail、drop log、upload一時fileが保存されます。
 
-録画先は既存EPGStationと同じ`/mnt/raid1_case/recorded`です。移行確認中に両applicationを
-同時稼働させる場合は、同じ番組の二重録画と容量自動削除の競合に注意してください。
+録画先はEPGStationと同じ`/mnt/raid1_case/recorded`です。両applicationを同時稼働させる場合は、
+同じ番組の二重録画と容量自動削除の競合に注意してください。
 
 ## PostgreSQL
 
