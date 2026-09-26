@@ -212,7 +212,7 @@ my-infra/
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
 │   ├── pve/            home-k8s共通アプリ (ArgoCD App-of-Apps)
-│   ├── talos-green/    現行home-k8s固有アプリ
+│   ├── talos-green/    home-k8sのVictoriaMetrics（復元済みPVCを保護する独立ArgoCD app）
 │   └── oci/            OCI OKE (ArgoCD GitOps)
 └── packer/
     ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)
@@ -419,7 +419,6 @@ push 前に変更があったディレクトリのみ自動で lint が走る:
 
 | ドキュメント | 内容 |
 |---|---|
-| [docs/talos-migration-project.md](docs/talos-migration-project.md) | home-k8sのTalos移行完了記録、検証Gate、データ移行手順 |
 | [docs/ups-shutdown.md](docs/ups-shutdown.md) | UPS(APC×2 / NUT)連動の安全シャットダウン構成。実装は `ansible/nut/` |
 | [docs/truenas-nfs-setup.md](docs/truenas-nfs-setup.md) | TrueNAS NFS セットアップ |
 
