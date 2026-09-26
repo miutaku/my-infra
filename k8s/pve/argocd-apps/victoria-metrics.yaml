@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: victoria-metrics
+  name: victoria-metrics-green
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -9,23 +9,27 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
-  sources:
-    - repoURL: https://victoriametrics.github.io/helm-charts
-      chart: victoria-metrics-single
-      targetRevision: "0.15.0"
-      helm:
-        releaseName: victoria-metrics
-        valueFiles:
-          - $values/k8s/pve/victoria-metrics/values.yaml
-    - repoURL: https://github.com/miutaku/my-infra.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: https://github.com/miutaku/my-infra.git
+    targetRevision: main
+    path: k8s/pve/victoria-metrics
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
+  # The restored StatefulSet already owns a bound local-path claim. Kubernetes
+  # defaults fields inside this immutable template differently from Argo's
+  # normalized manifest; data-bearing claim changes must never be auto-applied.
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: victoria-metrics-green
+      jsonPointers:
+        - /spec/volumeClaimTemplates
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
