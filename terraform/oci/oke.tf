@@ -53,6 +53,15 @@ resource "oci_containerengine_node_pool" "oke_node_pool" {
   }
 
   node_config_details {
+    # Tags in node_config_details are applied to worker Compute instances.
+    # The Dynamic Group intentionally matches this defined tag.
+    defined_tags = {
+      "${oci_identity_tag_namespace.oke.name}.${oci_identity_tag.autoscaler.name}" = "cluster"
+    }
+    freeform_tags = merge(local.common_tags, {
+      autoscaler = "cluster"
+    })
+
     size = var.node_pool_size
 
     # Spread across ADs when region has multiple; fall back to AD-1 for single-AD regions
