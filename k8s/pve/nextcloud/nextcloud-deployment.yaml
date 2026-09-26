@@ -91,7 +91,9 @@ spec:
                 - name: Host
                   value: nextcloud.miutaku.work
             periodSeconds: 10
-            failureThreshold: 60
+            # NFS上のhtmlを更新する際は小さいファイルのrsyncに10分以上かかる。
+            # 起動途中の安全な更新処理をkubeletが強制終了しないよう30分待つ。
+            failureThreshold: 180
           readinessProbe:
             httpGet:
               path: /status.php
