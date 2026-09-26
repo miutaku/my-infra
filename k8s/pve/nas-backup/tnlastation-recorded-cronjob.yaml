@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tnlastation-recorded-backup
+  namespace: infra-backup
+spec:
+  # DB登録済みの完成ファイルを毎時IDrive e2へ追加コピーする。
+  # copyなのでNAS側で削除されてもremote objectは削除しない。
+  schedule: "40 * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          nodeSelector:
+            node.miutaku/platform: pve
+          containers:
+            - name: backup
+              image: postgres:18-alpine
+              command: ["/bin/sh", "/scripts/backup.sh"]
+              envFrom:
+                - secretRef:
+                    name: tnlastation-recorded-backup-credentials
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: recorded
+                  mountPath: /recorded
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: scripts
+              configMap:
+                name: tnlastation-recorded-backup-script
+                defaultMode: 0555
+            - name: recorded
+              nfs:
+                server: 192.168.20.192
+                path: /mnt/raid1_case/recorded
+                readOnly: true
+            - name: tmp
+              emptyDir: {}
