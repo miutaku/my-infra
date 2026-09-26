@@ -26,7 +26,7 @@ jobs:
       - name: Reject legacy platform names in active home-k8s configuration
         run: |
           if git grep -n -i rke2 -- \
-            k8s/pve k8s/oci terraform/cloudflare scripts/setup-kubeconfig talos/green/README.md \
+            k8s/pve k8s/oci terraform/cloudflare scripts/setup-kubeconfig talos/home-k8s/README.md \
             ':!terraform/cloudflare/migrations.tf'; then
             echo 'Legacy RKE2 naming remains in active home-k8s configuration.' >&2
             exit 1
