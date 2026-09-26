@@ -19,7 +19,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: nextcloud-green-recorded-readonly-pv
+  name: nextcloud-recorded-readonly-pv
   annotations:
     # 下の PVC と対で cascade delete から除外する。片方だけ消えると PVC が Lost になり、
     # 再作成時に claimRef の手動クリアが必要になる。
@@ -55,5 +55,5 @@ spec:
   resources:
     requests:
       storage: 200Gi
-  volumeName: nextcloud-green-recorded-readonly-pv
+  volumeName: nextcloud-recorded-readonly-pv
   storageClassName: ""
