@@ -111,7 +111,9 @@ resource "oci_identity_policy" "db_backup" {
   freeform_tags  = local.common_tags
 
   statements = [
-    "Allow group id ${oci_identity_group.db_backup.id} to manage objects in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup'",
+    # Restic/vmbackup may create, overwrite and normally delete current names,
+    # but the service credential must never permanently delete an old version.
+    "Allow group id ${oci_identity_group.db_backup.id} to manage objects in compartment id ${var.compartment_ocid} where all {target.bucket.name='db-backup', request.operation!='DeleteObjectVersion'}",
     "Allow group id ${oci_identity_group.db_backup.id} to inspect buckets in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup'",
     "Allow group id ${oci_identity_group.db_backup.id} to manage objects in compartment id ${var.compartment_ocid} where all {target.bucket.name='db-backup-immutable', request.operation!='DeleteObject', request.operation!='DeleteObjectVersion'}",
     "Allow group id ${oci_identity_group.db_backup.id} to inspect buckets in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup-immutable'",
