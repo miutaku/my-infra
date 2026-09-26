@@ -26,6 +26,7 @@ flowchart LR
     end
   end
 
+
   subgraph ExtSvc[External Services]
     subgraph Cloudflare[Cloudflare]
       direction LR
@@ -211,7 +212,7 @@ my-infra/
 │   └── pbs/            Proxmox Backup Server 構築
 ├── k8s/
 │   ├── pve/            home-k8s共通アプリ (ArgoCD App-of-Apps)
-│   ├── talos-green/    現行home-k8s固有アプリ
+│   ├── talos-green/    home-k8sのVictoriaMetrics（復元済みPVCを保護する独立ArgoCD app）
 │   └── oci/            OCI OKE (ArgoCD GitOps)
 └── packer/
     ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)

@@ -1,4 +1,4 @@
-# Talos production Green
+# Talos home-k8s production
 
 home-k8sの本番クラスタ。API endpointはTalos内蔵L2 VIP
 `https://192.168.20.228:6443`。VLAN 20にVM 5台（`.137`–`.141`）、VLAN 10にRaspberry Pi 4
@@ -66,5 +66,5 @@ Proxmox側もagent channelを有効にする。schematic IDとamd64 installer di
 kexecだけでなく一度QEMU VMを完全停止・起動する必要がある。
 
 各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01のKubernetes Node名も正規名とし、
-状態データは共有NFSへ移行し、Nodeの`kubernetes.io/hostname`はTalosの正式hostnameと一致させる。
-旧local-path PVの`talos-ayb-pmi`互換ラベルへ依存してはならない。
+状態データは共有NFSへ置き、Nodeの`kubernetes.io/hostname`はTalosの正式hostnameと一致させる。
+local-path PVを特定nodeの互換ラベルへ依存させてはならない。

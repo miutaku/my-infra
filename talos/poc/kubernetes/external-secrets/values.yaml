@@ -1,4 +1,0 @@
-installCRDs: true
-replicaCount: 1
-bitwarden-sdk-server:
-  enabled: false

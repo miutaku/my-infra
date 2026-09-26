@@ -35,7 +35,6 @@ go.work.sum
 
 # terraform
 *.terraform*
-!terraform/talos-poc/.terraform.lock.hcl
 !terraform/talos-green/.terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
@@ -46,11 +45,6 @@ ROADMAP.md
 
 
 # Talos machine configs contain cluster PKI and client credentials.
-talos/poc/.generated/
-talos/poc/poc.env
-terraform/talos-poc/.state/
-terraform/talos-poc/*.tfplan
-terraform/talos-poc/terraform.tfvars
 talos/green/.generated/
 talos/green/green.env
 terraform/talos-green/.state/

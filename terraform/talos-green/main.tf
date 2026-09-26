@@ -47,7 +47,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
   for_each = local.nodes
 
   name        = each.value.name
-  description = "Talos production Green; owner=my-infra; see docs/talos-migration-project.md"
+  description = "Talos home-k8s production; owner=my-infra"
   tags        = ["green", "kubernetes", "production", "talos"]
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
