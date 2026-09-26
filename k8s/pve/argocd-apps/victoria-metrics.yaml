@@ -22,7 +22,7 @@ spec:
   ignoreDifferences:
     - group: apps
       kind: StatefulSet
-      name: victoria-metrics-green
+      name: victoria-metrics
       jsonPointers:
         - /spec/volumeClaimTemplates
   syncPolicy:

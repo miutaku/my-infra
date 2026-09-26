@@ -5,4 +5,4 @@ metadata:
   namespace: monitoring
 spec:
   type: ExternalName
-  externalName: victoria-metrics-green.monitoring.svc.cluster.local
+  externalName: victoria-metrics.monitoring.svc.cluster.local

@@ -1,23 +1,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: victoria-metrics-green
+  name: victoria-metrics
 spec:
-  selector: {app: victoria-metrics-green}
+  selector: {app: victoria-metrics}
   ports: [{name: http, port: 8428, targetPort: http}]
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: victoria-metrics-green
+  name: victoria-metrics
 spec:
-  serviceName: victoria-metrics-green
+  serviceName: victoria-metrics
   replicas: 1
   selector:
-    matchLabels: {app: victoria-metrics-green}
+    matchLabels: {app: victoria-metrics}
   template:
     metadata:
-      labels: {app: victoria-metrics-green}
+      labels: {app: victoria-metrics}
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
