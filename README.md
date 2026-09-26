@@ -222,9 +222,9 @@ my-infra/
 
 ```mermaid
 flowchart LR
-  Terraform[terraform/talos-green<br/>Talos VM作成]
+  Terraform[terraform/home-k8s<br/>Talos VM作成]
   IX[ansible/ix2215<br/>DHCP静的リース反映]
-  Talos[talos/green<br/>Talos machine config]
+  Talos[talos/home-k8s<br/>Talos machine config]
   UOS[ansible/uos<br/>UniFi OS Server VM構成]
   Argo[k8s/pve/argocd<br/>ArgoCD Bootstrap]
   Apps[k8s/pve/argocd-apps<br/>App-of-Apps同期]
@@ -284,7 +284,7 @@ bash scripts/setup-kubeconfig --oke-only
 ```
 
 > **home-k8sの注意点**
-> - `talos/green/.generated/kubeconfig`をコピーして統合する
+> - `talos/home-k8s/.generated/kubeconfig`をコピーして統合する
 > - 管理APIはTalos VIP `192.168.20.228:6443`を使用する
 
 > **OKE の注意点**

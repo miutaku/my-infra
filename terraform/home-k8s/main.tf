@@ -1,6 +1,6 @@
 locals {
   iso_url       = "https://factory.talos.dev/image/${var.schematic_id}/${var.talos_version}/metal-amd64.iso"
-  iso_file_name = "talos-green-${var.talos_version}-${substr(var.schematic_id, 0, 12)}-metal-amd64.iso"
+  iso_file_name = "home-k8s-${var.talos_version}-${substr(var.schematic_id, 0, 12)}-metal-amd64.iso"
 
   nodes = {
     controlplane_01 = {
@@ -48,7 +48,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
 
   name        = each.value.name
   description = "Talos home-k8s production; owner=my-infra"
-  tags        = ["green", "kubernetes", "production", "talos"]
+  tags        = ["home-k8s", "kubernetes", "production", "talos"]
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
 

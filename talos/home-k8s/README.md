@@ -4,13 +4,13 @@ home-k8sの本番クラスタ。API endpointはTalos内蔵L2 VIP
 `https://192.168.20.228:6443`。VLAN 20にVM 5台（`.137`–`.141`）、VLAN 10にRaspberry Pi 4
 worker 2台（`.107`、`.109`）を置く。machine config、PKI、kubeconfigは
 `.generated`だけへ生成し、GitやBSMへ平文保存しない。
-installerはv1.14.1 amd64 manifestのdigestを`green.env.example`で固定し、version更新時は
+installerはv1.14.1 amd64 manifestのdigestを`cluster.env`で固定し、version更新時は
 Image Factory registryから新digestを再取得する。
 
 1. `scripts/preflight-reservations`を実行する。
 2. IX2215の固定DHCP 5件を反映する。
-3. `terraform/talos-green`を停止状態で作成する。
-4. `green.env.example`をGit外`green.env`へ複製し、同versionの`talosctl`で
+3. `terraform/home-k8s`を停止状態で作成する。
+4. `cluster.env`のversionとdigestを確認し、同versionの`talosctl`で
    `scripts/generate-configs`を実行する。
 5. 各nodeがmaintenance APIへ応答した後、control plane 3台へ`controlplane.yaml`、worker 2台へ
    `worker.yaml`を`apply-config --insecure`する。
@@ -46,8 +46,8 @@ PVEへ残す。
 管理端末では資格情報そのものをshell設定へ埋め込まず、次のパスだけを環境変数に設定する。
 
 ```bash
-export TALOSCONFIG="$HOME/my-infra/talos/green/.generated/talosconfig"
-export KUBECONFIG="$HOME/my-infra/talos/green/.generated/kubeconfig"
+export TALOSCONFIG="$HOME/my-infra/talos/home-k8s/.generated/talosconfig"
+export KUBECONFIG="$HOME/my-infra/talos/home-k8s/.generated/kubeconfig"
 ```
 
 `.generated`は既存clusterのPKIと管理者資格情報を含むため、GitやSecrets Managerの通常Secretへ
@@ -62,7 +62,7 @@ HA合格条件に含めない。
 
 本番VMは`schematic.yaml`の公式`qemu-guest-agent` extensionを含むImage Factory installerを使い、
 Proxmox側もagent channelを有効にする。schematic IDとamd64 installer digestは
-`green.env.example`およびTerraformで固定する。extension追加後にVirtIO portを生成するには、Talosの
+`cluster.env`およびTerraformで固定する。extension追加後にVirtIO portを生成するには、Talosの
 kexecだけでなく一度QEMU VMを完全停止・起動する必要がある。
 
 各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01のKubernetes Node名も正規名とし、
