@@ -8,7 +8,38 @@ resource "oci_objectstorage_bucket" "db_backup" {
   name           = "db-backup"
   access_type    = "NoPublicAccess"
   storage_tier   = "Standard"
+  versioning     = "Enabled"
   freeform_tags  = local.common_tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# DB logical dumps are immutable, uniquely named objects. A locked time-bound
+# retention rule protects them even if the backup credential is compromised.
+resource "oci_objectstorage_bucket" "db_backup_immutable" {
+  compartment_id = var.compartment_ocid
+  namespace      = data.oci_objectstorage_namespace.this.namespace
+  name           = "db-backup-immutable"
+  access_type    = "NoPublicAccess"
+  storage_tier   = "Standard"
+  versioning     = "Disabled"
+  freeform_tags  = local.common_tags
+
+  retention_rules {
+    display_name = "protect-db-dumps-30-days"
+    duration {
+      time_amount = 30
+      time_unit   = "DAYS"
+    }
+    # OCI requires at least 14 days between rule creation and irreversible lock.
+    time_rule_locked = "2026-10-11T00:00:00Z"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # ライフサイクルポリシーの実行主体は objectstorage サービスプリンシパルのため、
@@ -41,6 +72,17 @@ resource "oci_objectstorage_object_lifecycle_policy" "db_backup" {
       inclusion_patterns = ["*.sql.gz", "*.dump"]
     }
   }
+
+  # Versioning protects restic from an accidental or malicious normal delete.
+  # Permanently remove only non-current versions after the recovery window.
+  rules {
+    name        = "delete-previous-versions-after-30-days"
+    action      = "DELETE"
+    is_enabled  = true
+    target      = "previous-object-versions"
+    time_amount = 30
+    time_unit   = "DAYS"
+  }
 }
 
 resource "oci_identity_group" "db_backup" {
@@ -71,6 +113,8 @@ resource "oci_identity_policy" "db_backup" {
   statements = [
     "Allow group id ${oci_identity_group.db_backup.id} to manage objects in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup'",
     "Allow group id ${oci_identity_group.db_backup.id} to inspect buckets in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup'",
+    "Allow group id ${oci_identity_group.db_backup.id} to manage objects in compartment id ${var.compartment_ocid} where all {target.bucket.name='db-backup-immutable', request.operation!='DeleteObject', request.operation!='DeleteObjectVersion'}",
+    "Allow group id ${oci_identity_group.db_backup.id} to inspect buckets in compartment id ${var.compartment_ocid} where target.bucket.name='db-backup-immutable'",
   ]
 }
 
