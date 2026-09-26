@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-green_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-kubeconfig="${KUBECONFIG:-${green_dir}/.generated/kubeconfig}"
-context="${TALOS_GREEN_KUBE_CONTEXT:-admin@talos-green}"
+cluster_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+kubeconfig="${KUBECONFIG:-${cluster_dir}/.generated/kubeconfig}"
+context="${HOME_K8S_KUBE_CONTEXT:-home-k8s}"
 expected_server="https://192.168.20.228:6443"
 actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
 [[ "${actual_server}" == "${expected_server}" ]] || {

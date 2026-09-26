@@ -35,7 +35,7 @@ go.work.sum
 
 # terraform
 *.terraform*
-!terraform/talos-green/.terraform.lock.hcl
+!terraform/home-k8s/.terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
 terraform/pve/.tmp/
@@ -45,11 +45,10 @@ ROADMAP.md
 
 
 # Talos machine configs contain cluster PKI and client credentials.
-talos/green/.generated/
-talos/green/green.env
-terraform/talos-green/.state/
-terraform/talos-green/*.tfplan
-terraform/talos-green/terraform.tfvars
+talos/home-k8s/.generated/
+terraform/home-k8s/.state/
+terraform/home-k8s/*.tfplan
+terraform/home-k8s/terraform.tfvars
 
 # SNMP MIB files (vendor licensing / NEC terms of use)
 *.mib
