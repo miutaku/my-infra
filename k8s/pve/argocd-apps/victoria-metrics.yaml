@@ -16,9 +16,8 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-  # The restored StatefulSet already owns a bound local-path claim. Kubernetes
-  # defaults fields inside this immutable template differently from Argo's
-  # normalized manifest; data-bearing claim changes must never be auto-applied.
+  # Kubernetes defaults fields inside the restored StatefulSet's immutable
+  # volumeClaimTemplate differently from Argo's normalized manifest.
   ignoreDifferences:
     - group: apps
       kind: StatefulSet
