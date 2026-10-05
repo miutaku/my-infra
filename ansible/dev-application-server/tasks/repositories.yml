@@ -1,0 +1,68 @@
+---
+- name: Create the APT keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install third-party repository signing keys
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "/etc/apt/keyrings/{{ item.name }}.asc"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - name: docker
+      url: https://download.docker.com/linux/ubuntu/gpg
+    - name: kubernetes
+      url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+    - name: microsoft
+      url: https://packages.microsoft.com/keys/microsoft.asc
+    - name: hashicorp
+      url: https://apt.releases.hashicorp.com/gpg
+    - name: google
+      url: https://dl.google.com/linux/linux_signing_key.pub
+    - name: ngrok
+      url: https://ngrok-agent.s3.amazonaws.com/ngrok.asc
+
+- name: Configure third-party APT repositories
+  ansible.builtin.copy:
+    dest: "/etc/apt/sources.list.d/{{ item.filename }}"
+    content: "{{ item.repository }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - name: docker
+      filename: docker.list
+      repository: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu resolute stable"
+    - name: kubernetes
+      filename: kubernetes.list
+      repository: "deb [signed-by=/etc/apt/keyrings/kubernetes.asc] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /"
+    - name: azure-cli
+      filename: azure-cli.sources
+      repository: |
+        Types: deb
+        URIs: https://packages.microsoft.com/repos/azure-cli/
+        Suites: jammy
+        Components: main
+        Architectures: amd64
+        Signed-By: /etc/apt/keyrings/microsoft.asc
+    - name: hashicorp
+      filename: hashicorp.list
+      repository: "deb [arch=amd64 signed-by=/etc/apt/keyrings/hashicorp.asc] https://apt.releases.hashicorp.com noble main"
+    - name: google-chrome
+      filename: google-chrome.sources
+      repository: |
+        Types: deb
+        URIs: https://dl.google.com/linux/chrome/deb/
+        Suites: stable
+        Components: main
+        Architectures: amd64
+        Signed-By: /etc/apt/keyrings/google.asc
+    - name: ngrok
+      filename: ngrok.list
+      repository: "deb [signed-by=/etc/apt/keyrings/ngrok.asc] https://ngrok-agent.s3.amazonaws.com buster main"

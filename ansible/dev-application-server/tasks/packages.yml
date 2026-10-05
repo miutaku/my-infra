@@ -1,0 +1,38 @@
+---
+- name: Install development packages
+  ansible.builtin.apt:
+    name: "{{ dev_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Remove the conflicting distribution node exporter
+  ansible.builtin.apt:
+    name: prometheus-node-exporter
+    state: absent
+    purge: true
+
+- name: Allow the development user to access Docker
+  ansible.builtin.user:
+    name: "{{ dev_user }}"
+    groups: docker
+    append: true
+
+- name: Enable Docker
+  ansible.builtin.systemd_service:
+    name: docker.service
+    enabled: true
+    state: started
+
+- name: Enable the image-provided node exporter
+  ansible.builtin.systemd_service:
+    name: node_exporter.service
+    enabled: true
+    state: started
+
+- name: Install the pinned Helm snap
+  community.general.snap:
+    name: helm
+    classic: true
+    state: present
+    channel: stable
