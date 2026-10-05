@@ -4,19 +4,58 @@
   become: true
   gather_facts: true
 
-  tasks:
-    - name: Validate talosctl architecture support
+  pre_tasks:
+    - name: Validate the supported host architecture
       ansible.builtin.assert:
         that:
-          - ansible_facts['architecture'] in talosctl_release_arch
-          - ansible_facts['architecture'] in talosctl_sha256
-        fail_msg: "Unsupported talosctl architecture: {{ ansible_facts['architecture'] }}"
+          - ansible_facts.architecture == "x86_64"
+        fail_msg: "Unsupported architecture: {{ ansible_facts.architecture }}"
 
-    - name: Install pinned talosctl
-      ansible.builtin.get_url:
-        url: "https://github.com/siderolabs/talos/releases/download/v{{ talosctl_version }}/talosctl-linux-{{ talosctl_release_arch[ansible_facts['architecture']] }}"
-        dest: /usr/local/bin/talosctl
-        owner: root
-        group: root
-        mode: "0755"
-        checksum: "sha256:{{ talosctl_sha256[ansible_facts['architecture']] }}"
+    - name: Require the Bitwarden Secrets Manager access token
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'BWS_ACCESS_TOKEN') | length > 0
+        fail_msg: "Set BWS_ACCESS_TOKEN on the Ansible controller."
+      no_log: true
+
+    - name: Read infrastructure secrets from Bitwarden Secrets Manager
+      ansible.builtin.command:
+        argv:
+          - bws
+          - secret
+          - list
+          - --output
+          - json
+      delegate_to: localhost
+      become: false
+      check_mode: false
+      changed_when: false
+      register: bws_secret_list
+      no_log: true
+
+    - name: Index infrastructure secrets by key
+      ansible.builtin.set_fact:
+        bws_secrets: "{{ bws_secret_list.stdout | from_json | items2dict(key_name='key', value_name='value') }}"
+      no_log: true
+
+    - name: Validate required infrastructure secrets
+      ansible.builtin.assert:
+        that:
+          - item in bws_secrets
+          - bws_secrets[item] | length > 0
+        fail_msg: "Required BSM secret is missing: {{ item }}"
+      loop: "{{ required_bsm_secrets }}"
+      no_log: true
+
+  tasks:
+    - name: Configure package repositories
+      ansible.builtin.import_tasks: tasks/repositories.yml
+
+    - name: Install operating-system packages
+      ansible.builtin.import_tasks: tasks/packages.yml
+
+    - name: Install standalone command-line tools
+      ansible.builtin.import_tasks: tasks/cli.yml
+
+    - name: Configure the development environment
+      ansible.builtin.import_tasks: tasks/config.yml

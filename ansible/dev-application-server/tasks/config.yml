@@ -1,0 +1,107 @@
+---
+- name: Configure automatic security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Create managed user configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0700"
+  loop:
+    - "{{ dev_home }}/.config/bws"
+    - "{{ dev_home }}/.config/ngrok"
+    - "{{ dev_home }}/.oci"
+
+- name: Store the BSM access token outside shell startup files
+  ansible.builtin.copy:
+    dest: "{{ dev_home }}/.config/bws/environment"
+    content: "export BWS_ACCESS_TOKEN={{ lookup('ansible.builtin.env', 'BWS_ACCESS_TOKEN') | quote }}\n"
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0600"
+  no_log: true
+
+- name: Configure OCI CLI profiles
+  ansible.builtin.template:
+    src: oci-config.j2
+    dest: "{{ dev_home }}/.oci/config"
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0600"
+  no_log: true
+
+- name: Install OCI API private keys
+  ansible.builtin.copy:
+    dest: "{{ dev_home }}/.oci/{{ item.dest }}"
+    content: "{{ bws_secrets[item.secret] | trim }}\n"
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0600"
+  loop:
+    - dest: oci_stg_api_key.pem
+      secret: OCI_PRIVATE_KEY
+    - dest: oci_prd_api_key.pem
+      secret: PRD_OCI_API_KEY_PEM
+  no_log: true
+
+- name: Configure ngrok when its token exists in BSM
+  ansible.builtin.template:
+    src: ngrok.yml.j2
+    dest: "{{ dev_home }}/.config/ngrok/ngrok.yml"
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0600"
+  when: "'DEV_APP_NGROK_AUTHTOKEN' in bws_secrets"
+  no_log: true
+
+- name: Remove plaintext BSM token exports from bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ dev_home }}/.bashrc"
+    regexp: '^\s*export\s+BWS_ACCESS_TOKEN='
+    state: absent
+  no_log: true
+
+- name: Configure the managed shell environment
+  ansible.builtin.blockinfile:
+    path: "{{ dev_home }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED DEV APP ENVIRONMENT"
+    block: |
+      [[ ":$PATH:" != *":$HOME/bin:"* ]] && export PATH="$HOME/bin:$PATH"
+      [[ ":$PATH:" != *":$HOME/.local/bin:"* ]] && export PATH="$HOME/.local/bin:$PATH"
+      [[ -r "$HOME/.config/bws/environment" ]] && source "$HOME/.config/bws/environment"
+      command -v kubectl >/dev/null && source <(kubectl completion bash)
+      [[ -r "$HOME/lib/oracle-cli/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages/oci_cli/bin/oci_autocomplete.sh" ]] && source "$HOME/lib/oracle-cli/lib/python{{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}/site-packages/oci_cli/bin/oci_autocomplete.sh"
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0644"
+
+- name: Install the repository kubeconfig helper
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../scripts/setup-kubeconfig"
+    dest: "{{ dev_home }}/bin/setup-kubeconfig"
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0755"
+
+- name: Remove the superseded imperative installer
+  ansible.builtin.file:
+    path: "{{ dev_home }}/bin/setup-k8s-tools"
+    state: absent
+
+- name: Remove redundant system-wide Python wrappers
+  ansible.builtin.file:
+    path: "/usr/local/bin/{{ item }}"
+    state: absent
+  loop:
+    - pipenv
+    - pipenv-resolver
+    - virtualenv

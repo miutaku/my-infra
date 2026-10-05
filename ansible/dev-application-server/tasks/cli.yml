@@ -1,0 +1,145 @@
+---
+- name: Create user command directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0755"
+  loop:
+    - "{{ dev_home }}/bin"
+    - "{{ dev_home }}/.local/bin"
+
+- name: Install archived command-line tools
+  ansible.builtin.include_tasks: standalone-cli.yml
+  loop_control:
+    loop_var: cli
+    label: "{{ cli.name }} {{ cli.version }}"
+  loop:
+    - name: packer
+      version: "{{ packer_version }}"
+      url: "https://releases.hashicorp.com/packer/{{ packer_version }}/packer_{{ packer_version }}_linux_amd64.zip"
+      archive_sha256: "{{ packer_archive_sha256 }}"
+      source: packer
+      dest: /usr/local/bin/packer
+      binary_sha256: 43f203af70cc7d8bc8eb4a84a435d3281197574f0040b778c85b26d81b1ed5f3
+      owner: root
+      group: root
+    - name: d2
+      version: "{{ d2_version }}"
+      url: "https://github.com/d2lang/d2/releases/download/v{{ d2_version }}/d2-v{{ d2_version }}-linux-amd64.tar.gz"
+      archive_sha256: "{{ d2_archive_sha256 }}"
+      source: "d2-v{{ d2_version }}/bin/d2"
+      dest: "{{ dev_home }}/.local/bin/d2"
+      binary_sha256: 48db68dfb42b76970a6769f038ec60da932adbb058257e07c50f5baaa3046016
+      owner: "{{ dev_user }}"
+      group: "{{ dev_group }}"
+    - name: uv
+      version: "{{ uv_version }}"
+      url: "https://github.com/astral-sh/uv/releases/download/{{ uv_version }}/uv-x86_64-unknown-linux-gnu.tar.gz"
+      archive_sha256: "{{ uv_archive_sha256 }}"
+      source: uv-x86_64-unknown-linux-gnu/uv
+      dest: "{{ dev_home }}/.local/bin/uv"
+      binary_sha256: 4f26786f798cce6e9f467fe917d4305b9600ef8bf14994aa016fbb32523e5ca5
+      owner: "{{ dev_user }}"
+      group: "{{ dev_group }}"
+    - name: uvx
+      version: "{{ uv_version }}"
+      url: "https://github.com/astral-sh/uv/releases/download/{{ uv_version }}/uv-x86_64-unknown-linux-gnu.tar.gz"
+      archive_sha256: "{{ uv_archive_sha256 }}"
+      source: uv-x86_64-unknown-linux-gnu/uvx
+      dest: "{{ dev_home }}/.local/bin/uvx"
+      binary_sha256: 0d4e81be77e8729cb0f83833172525b1c47f53f3000cb5725a6ead60b6d68b10
+      owner: "{{ dev_user }}"
+      group: "{{ dev_group }}"
+    - name: bws
+      version: "{{ bws_version }}"
+      url: "https://github.com/bitwarden/sdk-sm/releases/download/bws-v{{ bws_version }}/bws-x86_64-unknown-linux-gnu-{{ bws_version }}.zip"
+      archive_sha256: "{{ bws_archive_sha256 }}"
+      source: bws
+      dest: "{{ dev_home }}/bin/bws"
+      binary_sha256: f7ee1128ded0120df6f9906ffe068c44d9969b40b33af3d9b4823943a7ce6b05
+      owner: "{{ dev_user }}"
+      group: "{{ dev_group }}"
+    - name: kubectx
+      version: "{{ kubectx_version }}"
+      url: "https://github.com/ahmetb/kubectx/releases/download/v{{ kubectx_version }}/kubectx_v{{ kubectx_version }}_linux_x86_64.tar.gz"
+      archive_sha256: "{{ kubectx_archive_sha256 }}"
+      source: kubectx
+      dest: "{{ dev_home }}/bin/kubectx"
+      binary_sha256: "{{ kubectx_binary_sha256 }}"
+      owner: "{{ dev_user }}"
+      group: "{{ dev_group }}"
+    - name: kubens
+      version: "{{ kubectx_version }}"
+      url: "https://github.com/ahmetb/kubectx/releases/download/v{{ kubectx_version }}/kubens_v{{ kubectx_version }}_linux_x86_64.tar.gz"
+      archive_sha256: "{{ kubens_archive_sha256 }}"
+      source: kubens
+      dest: "{{ dev_home }}/bin/kubens"
+      binary_sha256: "{{ kubens_binary_sha256 }}"
+      owner: "{{ dev_user }}"
+      group: "{{ dev_group }}"
+
+- name: Install pinned talosctl
+  ansible.builtin.get_url:
+    url: "https://github.com/siderolabs/talos/releases/download/v{{ talosctl_version }}/talosctl-linux-amd64"
+    dest: /usr/local/bin/talosctl
+    owner: root
+    group: root
+    mode: "0755"
+    checksum: "sha256:{{ talosctl_sha256 }}"
+
+- name: Install user Python tools
+  ansible.builtin.pip:
+    name:
+      - "pipenv=={{ pipenv_version }}"
+      - "virtualenv=={{ virtualenv_version }}"
+    executable: pip3
+    extra_args: --user --break-system-packages
+  become: true
+  become_user: "{{ dev_user }}"
+
+- name: Install the pinned OCI CLI into its virtual environment
+  ansible.builtin.pip:
+    name: "oci-cli=={{ oci_cli_version }}"
+    virtualenv: "{{ dev_home }}/lib/oracle-cli"
+    virtualenv_command: /usr/bin/python3 -m venv
+  become: true
+  become_user: "{{ dev_user }}"
+
+- name: Publish the OCI CLI into the user command directory
+  ansible.builtin.copy:
+    src: "{{ dev_home }}/lib/oracle-cli/bin/oci"
+    dest: "{{ dev_home }}/bin/oci"
+    remote_src: true
+    owner: "{{ dev_user }}"
+    group: "{{ dev_group }}"
+    mode: "0755"
+
+- name: Read the globally installed npm packages
+  ansible.builtin.command: npm list --global --depth=0 --json
+  check_mode: false
+  changed_when: false
+  register: global_npm_packages
+
+- name: Install the pinned Mermaid CLI
+  ansible.builtin.command: "npm install --global @mermaid-js/mermaid-cli@{{ mermaid_cli_version }}"
+  when: ((global_npm_packages.stdout | from_json).dependencies | default({})).get('@mermaid-js/mermaid-cli', {}).get('version', '') != mermaid_cli_version
+
+- name: Read the user npm packages
+  ansible.builtin.command: npm list --global --depth=0 --json
+  check_mode: false
+  environment:
+    npm_config_prefix: "{{ dev_home }}/.local"
+  become: true
+  become_user: "{{ dev_user }}"
+  changed_when: false
+  register: user_npm_packages
+
+- name: Install the pinned Bitwarden CLI
+  ansible.builtin.command: "npm install --global @bitwarden/cli@{{ bitwarden_cli_version }}"
+  environment:
+    npm_config_prefix: "{{ dev_home }}/.local"
+  become: true
+  become_user: "{{ dev_user }}"
+  when: ((user_npm_packages.stdout | from_json).dependencies | default({})).get('@bitwarden/cli', {}).get('version', '') != bitwarden_cli_version
