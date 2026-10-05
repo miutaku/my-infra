@@ -25,8 +25,6 @@
       url: https://apt.releases.hashicorp.com/gpg
     - name: google
       url: https://dl.google.com/linux/linux_signing_key.pub
-    - name: ngrok
-      url: https://ngrok-agent.s3.amazonaws.com/ngrok.asc
 
 - name: Configure third-party APT repositories
   ansible.builtin.copy:
@@ -63,6 +61,11 @@
         Components: main
         Architectures: amd64
         Signed-By: /etc/apt/keyrings/google.asc
-    - name: ngrok
-      filename: ngrok.list
-      repository: "deb [signed-by=/etc/apt/keyrings/ngrok.asc] https://ngrok-agent.s3.amazonaws.com buster main"
+
+- name: Remove the unused ngrok APT repository
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/ngrok.list
+    - /etc/apt/keyrings/ngrok.asc

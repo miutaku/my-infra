@@ -6,9 +6,11 @@
     update_cache: true
     cache_valid_time: 3600
 
-- name: Remove the conflicting distribution node exporter
+- name: Remove unwanted or conflicting packages
   ansible.builtin.apt:
-    name: prometheus-node-exporter
+    name:
+      - ngrok
+      - prometheus-node-exporter
     state: absent
     purge: true
 

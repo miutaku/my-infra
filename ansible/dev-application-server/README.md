@@ -5,7 +5,7 @@ Ansible playbook。
 
 管理対象は次のとおり。
 
-- Docker、Kubernetes、Azure、HashiCorp、Chrome、ngrokのAPTリポジトリ
+- Docker、Kubernetes、Azure、HashiCorp、ChromeのAPTリポジトリ
 - 開発・ブラウザ・動画・Kubernetes関連のAPTパッケージ
 - Helm snap
 - Packer、D2、uv/uvx、BWS、kubectx/kubens、talosctl（バージョンとSHA-256を固定）
@@ -24,9 +24,6 @@ ansible-playbook site.yml
 ```
 
 OCIの2プロファイルは既存の`OCI_*`、`PRD_OCI_*` BSM secretsを使う。
-`DEV_APP_NGROK_AUTHTOKEN`が存在する場合はngrok設定も管理する。存在しない場合は
-既存設定を変更しない。
-
 個人・セッション単位の認証キャッシュ（Azure、GitHub、Docker registry、
 Cloudflare、Terraform）、kubeconfig、各プロジェクトの`.env`は再生成できないため
 管理対象外。`talosconfig`もこのplaybookでは配布しない。

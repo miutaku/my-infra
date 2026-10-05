@@ -18,7 +18,6 @@
     mode: "0700"
   loop:
     - "{{ dev_home }}/.config/bws"
-    - "{{ dev_home }}/.config/ngrok"
     - "{{ dev_home }}/.oci"
 
 - name: Store the BSM access token outside shell startup files
@@ -53,15 +52,10 @@
       secret: PRD_OCI_API_KEY_PEM
   no_log: true
 
-- name: Configure ngrok when its token exists in BSM
-  ansible.builtin.template:
-    src: ngrok.yml.j2
-    dest: "{{ dev_home }}/.config/ngrok/ngrok.yml"
-    owner: "{{ dev_user }}"
-    group: "{{ dev_group }}"
-    mode: "0600"
-  when: "'DEV_APP_NGROK_AUTHTOKEN' in bws_secrets"
-  no_log: true
+- name: Remove the unused ngrok configuration
+  ansible.builtin.file:
+    path: "{{ dev_home }}/.config/ngrok"
+    state: absent
 
 - name: Remove plaintext BSM token exports from bashrc
   ansible.builtin.lineinfile:
