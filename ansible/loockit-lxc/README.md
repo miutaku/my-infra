@@ -33,3 +33,9 @@ scan、GATT接続、ログイン待機の開始・終了と経過時間だけを
 CIのSSH accountはshellを公開しない。`authorized_keys`のforced commandとsudoersを組み合わせ、
 root所有の`deploy-loockit-local`だけを実行できる。script自身もimageを
 `ghcr.io/miutaku/loockit:<semver>`へ制限する。accountを`docker` groupへ所属させてはならない。
+
+公開APIはintercom-botのclickだけを公開するため、productionは
+`LOOCKIT_REQUIRED_DEVICES=intercom-bot`を指定する。この機器がofflineなら
+`/readyz`を503にし、leaderは接続回復を待った後に待機系へ譲る。玄関錠だけが
+onlineの状態で、インターホンAPIを使えないleaderが残り続けることを防ぐ。
+BLE接続・login・切断とactivationはそれぞれ時間制限を持つ。
