@@ -58,7 +58,6 @@ dev_apt_packages:
   - libxkbcommon0
   - libxrandr2
   - lsb-release
-  - ngrok
   - nodejs
   - npm
   - openssh-server
