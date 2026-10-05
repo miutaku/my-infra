@@ -1,0 +1,50 @@
+---
+- name: "Inspect {{ cli.name }}"
+  ansible.builtin.stat:
+    path: "{{ cli.dest }}"
+    checksum_algorithm: sha256
+  register: cli_binary
+
+- name: "Install {{ cli.name }} {{ cli.version }}"
+  when: not cli_binary.stat.exists or cli_binary.stat.checksum != cli.binary_sha256
+  block:
+    - name: "Reset the {{ cli.name }} staging directory"
+      ansible.builtin.file:
+        path: "/var/tmp/dev-app-cli/{{ cli.name }}"
+        state: absent
+      check_mode: false
+
+    - name: "Create the {{ cli.name }} staging directory"
+      ansible.builtin.file:
+        path: "/var/tmp/dev-app-cli/{{ cli.name }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      check_mode: false
+
+    - name: "Download {{ cli.name }}"
+      ansible.builtin.get_url:
+        url: "{{ cli.url }}"
+        dest: "/var/tmp/dev-app-cli/{{ cli.name }}/archive"
+        checksum: "sha256:{{ cli.archive_sha256 }}"
+        owner: root
+        group: root
+        mode: "0644"
+      check_mode: false
+
+    - name: "Extract {{ cli.name }}"
+      ansible.builtin.unarchive:
+        src: "/var/tmp/dev-app-cli/{{ cli.name }}/archive"
+        dest: "/var/tmp/dev-app-cli/{{ cli.name }}"
+        remote_src: true
+      check_mode: false
+
+    - name: "Publish {{ cli.name }}"
+      ansible.builtin.copy:
+        src: "/var/tmp/dev-app-cli/{{ cli.name }}/{{ cli.source }}"
+        dest: "{{ cli.dest }}"
+        remote_src: true
+        owner: "{{ cli.owner }}"
+        group: "{{ cli.group }}"
+        mode: "0755"
