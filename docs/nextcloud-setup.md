@@ -11,13 +11,13 @@ home-k8s上で動かすNextcloudの初期セットアップ手順。
 | URL | `https://nextcloud.miutaku.work` (Cloudflare Access 必須) |
 | Namespace | `app-nextcloud` |
 | DB | `infra-db` の共有 MariaDB (`mariadb.infra-db.svc.cluster.local`) / DB名・ユーザー名 `nextcloud` |
-| 本体 (`/var/www/html`, データディレクトリ含む) | `local-path` PVC |
+| 本体 (`/var/www/html`, データディレクトリ含む) | nas-02上のNFS PVC |
 | 共有ストレージ | 既存 NAS export を External Storage として提供 (下記) |
 | キャッシュ / file locking | 同 namespace の Redis (非永続) |
 
-NextCloud 専用の NAS 領域は**作らない**。NextCloud が自前で必要とするのは
-設定・アプリ・メタデータ用の小さな領域だけで、これは local-path PVC で足りる。
-共有したいデータ (現状は EPGStation の録画) は、既存の NFS export を pod に
+NextCloud本体は、Worker障害時にも別Workerで再起動できるよう、専用のNFS領域
+`/mnt/raid1_case/home-k8s-nextcloud-html`に置く。
+共有したいデータ（現状はEPGStationの録画）は、既存のNFS exportをpodに
 マウントして NextCloud の **External Storage** 機能で見せる。
 
 | External Storage | NFS export | pod 内マウント先 |
@@ -131,7 +131,7 @@ kubectl exec -n app-nextcloud deploy/nextcloud -c nextcloud -- \
   su -s /bin/sh www-data -c "php occ maintenance:mimetype:update-db --repair-filecache && php occ maintenance:mimetype:update-js"
 ```
 
-- プレビュー画像は local-path PVC 側 (`appdata_*/preview/`) に生成され、NAS には書き込まない
+- プレビュー画像はNextCloud本体のNFS PVC側（`appdata_*/preview/`）に生成される
 - サムネイルは初回表示時にオンデマンド生成される。録画が大量で重い場合は
   Preview Generator アプリ + cron での事前生成を検討
 

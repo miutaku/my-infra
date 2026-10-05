@@ -31,7 +31,6 @@ talosctl gen config "${TALOS_CLUSTER_NAME}" "${TALOS_ENDPOINT}" \
   --kubernetes-version "${KUBERNETES_VERSION}" \
   --talos-version "${TALOS_VERSION}" \
   --config-patch "@${cluster_dir}/patches/cluster.yaml" \
-  --config-patch-control-plane "@${cluster_dir}/patches/controlplane-vip.yaml" \
-  --config-patch-worker "@${cluster_dir}/patches/worker-storage.yaml"
+  --config-patch-control-plane "@${cluster_dir}/patches/controlplane-vip.yaml"
 chmod 0600 "${output_dir}"/*
 echo "generated production credentials under ${output_dir}; do not commit or print them"

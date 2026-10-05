@@ -19,17 +19,7 @@ kubectl apply -k k8s/pve/argocd/
 kubectl wait -n argocd deploy/argocd-server --for=condition=Available --timeout=300s
 ```
 
-## Step 2: local-path-provisioner の手動インストール
-
-StorageClass `local-path`が必要なため、ArgoCDの同期前にlocal-path-provisionerを手動で
-インストールする（1回のみ）。
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
-kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-```
-
-## Step 3: Bitwarden Secrets Manager の準備
+## Step 2: Bitwarden Secrets Manager の準備
 
 Bitwarden Secrets Manager (https://bitwarden.com/products/secrets-manager/) でセットアップ:
 
@@ -48,7 +38,7 @@ Bitwarden Secrets Manager (https://bitwarden.com/products/secrets-manager/) で�
 3. **Machine Account 作成** → Access Token を発行 (一度しか表示されない)
 4. BSM Organization ID を控えておく (Settings → Organization → ID)
 
-## Step 4: ESO Bootstrap Secret の手動投入
+## Step 3: ESO Bootstrap Secret の手動投入
 
 ESO が BSM にアクセスするための Secret だけ手動で作成する (1回のみ)。
 この Secret 自体は ExternalSecret で管理できないため、直接投入する。
@@ -63,7 +53,7 @@ kubectl create secret generic bitwarden-access-token \
   --from-literal=token=<bws_machine_account_access_token>
 ```
 
-## Step 5: bitwarden-sdk-server の TLS Secret 手動作成
+## Step 4: bitwarden-sdk-server の TLS Secret 手動作成
 
 ESO の cert-controller は `bitwarden-sdk-server` の TLS 証明書を自動生成しない。
 手動で自己署名証明書を作成して Secret に投入する (1回のみ)。
@@ -95,12 +85,12 @@ kubectl create secret generic bitwarden-tls-certs \
   --from-file=ca.crt=/tmp/bitwarden-ca.crt
 ```
 
-## Step 6: ClusterSecretStore の Organization ID 設定
+## Step 5: ClusterSecretStore の Organization ID 設定
 
 [k8s/pve/external-secrets/cluster-secret-store.yaml](../external-secrets/cluster-secret-store.yaml) の
 `organizationID` を BSM の Organization ID に更新してから、git push → main へマージする。
 
-## Step 7: Root Application の適用
+## Step 6: Root Application の適用
 
 ```bash
 # main ブランチにマージ済みであることを確認してから実行
@@ -143,7 +133,7 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 |------|--------|
 | -2 | external-secrets (ESO operator + bitwarden-sdk-server サブチャート) |
 | 0 | external-secrets-config (ClusterSecretStore) |
-| 1 | coredns, metallb, local-path-provisioner, wol |
+| 1 | coredns, metallb, wol |
 | 2 | victoria-metrics, blackbox-exporter, cloudflared, magic-mirror, descheduler |
 
 ## 実測負荷に基づくPod再配置

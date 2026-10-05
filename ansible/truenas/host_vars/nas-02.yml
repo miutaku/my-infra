@@ -20,7 +20,7 @@ truenas_datasets:
       networks:
         - 192.168.20.0/24
   # home-k8s state: shared by both Talos workers so a worker reboot does not
-  # pin databases or monitoring to a single local-path volume.
+  # pin databases or monitoring to a single worker.
   - name: raid1_case/home-k8s-victoria-metrics
     nfs:
       comment: home-k8s-victoria-metrics
