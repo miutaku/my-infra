@@ -29,7 +29,7 @@ Image Factory registryから新digestを再取得する。
 
 Piは`rpi_generic` schematic `ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a276591eedb638ea1f9`
 のTalos v1.14.1 raw imageから起動する。machine configには`patches/worker-rpi4.yaml`と各hostname patchを
-適用し、VM専用`worker-storage.yaml`および`qemu-guest-agent`を含めない。両nodeはVLAN 10のDHCP予約を
+適用し、`qemu-guest-agent`を含めない。両nodeはVLAN 10のDHCP予約を
 維持し、API VIP `192.168.20.228`へroutingする。
 
 `scripts/label-nodes`はPiへ`hardware.miutaku/model=raspberry-pi-4b`、RAM容量、agent roleを付ける。
@@ -40,7 +40,7 @@ RPiには`workload.miutaku/arm64=reviewed:NoSchedule`を付け、arm64 manifest�
 `network.miutaku/l2=vlan20|vlan10`を付ける。VLAN 20のMetalLB speakerはPVE workerだけに限定する。
 複数replicaのworkloadはhostname単位のanti-affinityで分散する。tolerationはRPiを配置候補へ加えるだけで
 architectureを固定せず、
-schedulerがresource requestを基にPVE/RPiから選択する。DB、映像処理、GitOps/Secret基盤、local PV利用Podは
+schedulerがresource requestを基にPVE/RPiから選択する。DB、映像処理、GitOps/Secret基盤は
 PVEへ残す。
 
 管理端末では資格情報そのものをshell設定へ埋め込まず、次のパスだけを環境変数に設定する。
@@ -67,4 +67,3 @@ kexecだけでなく一度QEMU VMを完全停止・起動する必要がある�
 
 各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01のKubernetes Node名も正規名とし、
 状態データは共有NFSへ置き、Nodeの`kubernetes.io/hostname`はTalosの正式hostnameと一致させる。
-local-path PVを特定nodeの互換ラベルへ依存させてはならない。
