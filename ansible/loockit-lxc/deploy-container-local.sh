@@ -36,6 +36,7 @@ docker run -d \
   --env-file /etc/loockit/loockit.env \
   -e LOOCKIT_LOG_LEVEL="$log_level" \
   -e LOOCKIT_LEADER_ELECTION=true \
+  -e LOOCKIT_REQUIRED_DEVICES=intercom-bot \
   -e LOOCKIT_LEADER_LABEL_POD=false \
   -e POD_NAME="$identity" \
   -e KUBERNETES_SERVICE_HOST=192.168.20.228 \
