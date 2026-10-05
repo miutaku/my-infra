@@ -11,20 +11,15 @@ actual_server="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" confi
 }
 
 label_by_ip() {
-  local ip="$1" pve_node="$2" role="$3" hostname_compat="${4:-}" node
+  local ip="$1" pve_node="$2" role="$3" node
   node="$(KUBECONFIG="${kubeconfig}" kubectl --context "${context}" get nodes -o json |
     jq -er --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type=="InternalIP" and .address==$ip)) | .metadata.name')"
   KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
     "topology.miutaku/proxmox-node=${pve_node}" \
     "node.miutaku/role=${role}" \
     "node.miutaku/platform=pve" \
-    "network.miutaku/l2=vlan20"
-  if [[ -n "${hostname_compat}" ]]; then
-    # local-path PV nodeAffinity is immutable; preserve only the historical
-    # hostname label while keeping the Kubernetes Node object correctly named.
-    KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
-      "kubernetes.io/hostname=${hostname_compat}"
-  fi
+    "network.miutaku/l2=vlan20" \
+    "kubernetes.io/hostname=${node}"
 }
 
 label_rpi_by_ip() {
@@ -44,7 +39,7 @@ label_rpi_by_ip() {
 label_by_ip 192.168.20.137 pve-x570 controlplane
 label_by_ip 192.168.20.138 pve-b550m controlplane
 label_by_ip 192.168.20.139 pve-b550m controlplane
-label_by_ip 192.168.20.140 pve-x570 agent talos-ayb-pmi
+label_by_ip 192.168.20.140 pve-x570 agent
 label_by_ip 192.168.20.141 pve-b550m agent
 label_rpi_by_ip 192.168.10.107 2gb
 label_rpi_by_ip 192.168.10.109 4gb
