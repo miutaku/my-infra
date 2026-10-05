@@ -1,0 +1,7 @@
+talosctl_version: "1.14.1"
+
+talosctl_release_arch:
+  x86_64: amd64
+
+talosctl_sha256:
+  x86_64: 7233ece94c94296a033a6ddb5efe0baf508a94c71de7e6c7b286500705924208

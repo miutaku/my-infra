@@ -1,0 +1,22 @@
+---
+- name: Configure the development application server
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Validate talosctl architecture support
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['architecture'] in talosctl_release_arch
+          - ansible_facts['architecture'] in talosctl_sha256
+        fail_msg: "Unsupported talosctl architecture: {{ ansible_facts['architecture'] }}"
+
+    - name: Install pinned talosctl
+      ansible.builtin.get_url:
+        url: "https://github.com/siderolabs/talos/releases/download/v{{ talosctl_version }}/talosctl-linux-{{ talosctl_release_arch[ansible_facts['architecture']] }}"
+        dest: /usr/local/bin/talosctl
+        owner: root
+        group: root
+        mode: "0755"
+        checksum: "sha256:{{ talosctl_sha256[ansible_facts['architecture']] }}"
