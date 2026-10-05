@@ -109,8 +109,6 @@ config:
           target_label: instance
           regex: (.+-talos)-home-pve-amd64
           replacement: $1
-        # worker-01 keeps its pre-rename Kubernetes Node identity because
-        # existing local-path PV nodeAffinity is immutable.
         - source_labels: [__meta_kubernetes_pod_node_name]
           target_label: instance
           regex: worker-01-talos-home-pve-amd64

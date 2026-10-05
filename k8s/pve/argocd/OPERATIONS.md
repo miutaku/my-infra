@@ -44,8 +44,7 @@ metadata:
     argocd.argoproj.io/sync-options: Delete=false
 ```
 
-`local-path` は `reclaimPolicy: Delete` なので、Application 削除で PVC が消えると
-中身も失われる。静的 NFS PV とそれを掴む PVC は対で付ける。片方だけ残ると PVC が
+静的NFS PVとそれを掴むPVCは対で付ける。片方だけ残るとPVCが
 `Lost` になり、`kubectl patch pv <name> -p '{"spec":{"claimRef":null}}'` が必要になる。
 
 ### 補足: resource tracking
