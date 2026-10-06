@@ -2,9 +2,10 @@
 
 Status (2026-10-06): Talos handover completed. Both VMs and authenticated endpoints
 provisioned. Historical seeding, dual ingestion, checksum/parity checks and
-both process/Tunnel failover tests are complete. Grafana PDC cutover is pending
-confirmation of the current datasource URLs. See [RUNBOOK.md](RUNBOOK.md) for
-validation evidence, operational limits and the remaining cutover steps.
+both process/Tunnel failover tests are complete. The user confirmed Grafana access
+through the unchanged datasource URLs. Retired Kubernetes stores, PVCs and their
+two OCI block volumes have been deleted. See [RUNBOOK.md](RUNBOOK.md) for
+validation evidence and operational limits.
 
 ## Placement and storage
 
@@ -16,8 +17,8 @@ Recheck all active and detached volumes across compartments immediately before
 creation. Do not launch if the total would exceed 200GB, if two E2 micro slots
 are unavailable, or if only paid shapes are available. Capacity is not reserved.
 
-Existing STG volumes total 300GB. This design adds no STG volumes. It does not
-resolve that pre-existing excess. A later OKE node replacement or burst scale-up
+After confirmed Grafana cutover and removal of the two retired 50GB stores,
+STG volumes total 200GB. The pre-existing storage excess has been resolved. A later OKE node replacement or burst scale-up
 can consume the remaining PRD capacity; reserve the new boot volumes in the
 storage budget before changing OKE node pools.
 
@@ -64,7 +65,8 @@ listeners use separate loopback ports 18428/19428.
 Do not expose deletion, reload, import or write APIs through Grafana query proxies.
 Each VM reaches the peer independently of STG. Disable the original Kubernetes
 PDC agent at cutover so the same logical URL cannot return inconsistent old and
-new stores. Keep original stores and PVCs for rollback.
+new stores. The original stores and PVCs were retained until the user confirmed
+Grafana access and explicitly authorized deletion; they have now been removed.
 
 Two PDC agents meet the single-VM failure objective, although Grafana recommends
 at least three agents for production.
@@ -90,8 +92,9 @@ at least three agents for production.
    clearly measure RPO/RTO; buffering and PDC reconnects are not zero-loss or
    zero-time guarantees.
 6. After validation, remove old STG storage from the active data path. Take
-   restorable backups before deleting old PVCs/volumes; deletion is a separate
-   destructive step. Retention CronJob must use the new logical Logs endpoint.
+   restorable backups before deleting old PVCs/volumes; the user has authorized
+   this step and deletion is complete. Retention CronJob queries the HA Logs
+   replicas and writes through vmagent to both HA Metrics replicas.
 
 Recovery after a VM's disk is destroyed requires reseeding its historical data
 from a surviving replica or backup; ingestion queues alone cannot restore older

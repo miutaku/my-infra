@@ -66,7 +66,7 @@ variable "node_pool_memory_gbs" {
 }
 
 variable "node_pool_boot_volume_gbs" {
-  description = "Boot volume size per worker node. Free tier caps total block storage at 200GB/tenancy: 100 (boot) + 50GB x2 (VictoriaMetrics/Logs PVC) = 200GB. NOTE: node replacement must be destroy-first; create-first would temporarily need +100GB and exceed the cap."
+  description = "Boot volume size per worker node. Free tier caps total block storage at 200GB/tenancy. The two current 100GB worker boot volumes consume that allocation; retired VictoriaMetrics/Logs PVC volumes have been removed. A replacement may temporarily exceed 200GB; temporary recovery/scaling charges are authorized, and retired boot volumes must be reclaimed after validation."
   default     = 100
 }
 
