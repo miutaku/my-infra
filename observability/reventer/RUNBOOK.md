@@ -125,3 +125,9 @@ CIのmonitoring overlay対象追加はGitHub OAuthのworkflow scope不足で公�
 パッチを`reventer-ci-workflow.patch`に保存した。適用にはworkflow変更権限を持つ
 通常の認証を使う。今回のrender、API dry-run、稼働バイナリでの構文検証、実データ
 比較、障害試験は実施済み。
+
+## OS更新
+
+日次の順次更新、実収集canary、boot backupによるrollbackは
+[os-update/README.md](os-update/README.md)を参照。復旧volumeの課金方針の回答前は
+自動更新timerを有効化しない。既存のsecurity update設定は有効化時に協調制御へ移す。

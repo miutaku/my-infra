@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily peer observability OS update (one replica at a time)
+
+[Timer]
+OnCalendar=*-*-* 19:00:00 UTC
+RandomizedDelaySec=5m
+Persistent=false
+Unit=reventer-os-update.service
+
+[Install]
+WantedBy=timers.target

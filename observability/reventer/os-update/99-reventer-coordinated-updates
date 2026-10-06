@@ -1,0 +1,5 @@
+// Package updates are applied by the peer controller after a boot snapshot.
+// apt-daily download/update remains enabled; the independent upgrade timer is
+// disabled only when the coordinated maintenance timer is explicitly enabled.
+APT::Periodic::Unattended-Upgrade "0";
+Unattended-Upgrade::Automatic-Reboot "false";
