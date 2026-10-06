@@ -2,7 +2,7 @@
 package_update: true
 packages:
   - docker.io
-  - docker-compose
+  - docker-compose-v2
   - unattended-upgrades
 ssh_pwauth: false
 disable_root: true

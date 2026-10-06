@@ -108,7 +108,12 @@ resource "oci_core_instance" "monitoring" {
     ssh_authorized_keys = var.ssh_public_key
     user_data           = base64encode(file("${path.module}/cloud-init.yaml"))
   }
-  lifecycle { prevent_destroy = true }
+  lifecycle {
+    prevent_destroy = true
+    # OCI user_data changes force replacement. Roll out live configuration with
+    # the deployment script; updated bootstrap recipes apply only to new VMs.
+    ignore_changes = [metadata["user_data"]]
+  }
 }
 
 output "instances" {
