@@ -79,6 +79,8 @@ RPO/RTOをゼロと保証するものではない。
 6. 利用者のGrafana切替確認と削除指示を受け、PodによるPVC参照がないこと、
    両VMのSTG/PRD Metrics・Logs canaryと送信queueを確認後、旧Deployment・Service・
    PVC2本を削除。CSIのDelete reclaim policyによってOCIの50GB volume2本も削除済み。
+   旧取り込み専用のCloudflare DNS2件・Access application2件・service token・
+   Tunnel/configもTerraformで撤去済み（追加0・変更0・削除7）。
    旧保存先へ切り戻す手順は使えない。復旧は生存VMまたは検証済みbackupから行う。
 
 ## バックアップ・復元
