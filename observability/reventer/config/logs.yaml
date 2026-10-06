@@ -1,0 +1,11 @@
+unauthorized_user:
+  url_map:
+    - src_paths: ['/select/.*']
+      url_prefix:
+        - 'http://127.0.0.1:19428/'
+        - '%{PEER_LOGS_URL}'
+      load_balancing_policy: first_available
+      retry_status_codes: [500, 502, 503, 504]
+      headers:
+        - 'CF-Access-Client-Id: %{CF_ACCESS_CLIENT_ID}'
+        - 'CF-Access-Client-Secret: %{CF_ACCESS_CLIENT_SECRET}'

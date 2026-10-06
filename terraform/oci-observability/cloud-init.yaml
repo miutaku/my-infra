@@ -1,0 +1,25 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose
+  - unattended-upgrades
+ssh_pwauth: false
+disable_root: true
+swap:
+  filename: /swapfile
+  size: 2G
+  maxsize: 2G
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: '0644'
+    content: |
+      {"log-driver":"json-file","log-opts":{"max-size":"10m","max-file":"3"},"live-restore":true}
+  - path: /etc/sysctl.d/90-reventer-monitoring.conf
+    permissions: '0644'
+    content: |
+      vm.swappiness=10
+runcmd:
+  - [systemctl, enable, --now, docker]
+  - [sysctl, --system]
+  - [install, -d, -m, '0700', /opt/reventer-observability]

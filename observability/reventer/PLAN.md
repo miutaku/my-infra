@@ -1,6 +1,8 @@
 # Re:Venter monitoring HA on two OCI AMD micro VMs
 
-Status: design prepared; not provisioned. Execute after the Talos Argo CD handover.
+Status (2026-10-06): Talos handover completed. Both VMs and authenticated endpoints
+provisioned. Historical seeding, dual ingestion and failover validation are in
+progress; Grafana PDC cutover has not been performed.
 
 ## Placement and storage
 
@@ -30,9 +32,9 @@ endpoints (two remoteWrite URLs, no sharding). STG currently scrapes within the
 VictoriaMetrics server, so move that scrape configuration into vmagent first.
 Keep SQL exporter jobs, labels, and retention CronJob connectivity intact.
 
-Logs: STG/PRD collectors send into vlagent with two independent remoteWrite URLs.
-Preserve the existing structured log fields and stream labels. Give each remote
-URL a persistent, bounded disk queue; size it from log rate and the tolerated
+Logs: STG/PRD Fluent Bit collectors use two independent Loki output destinations.
+Preserve the existing structured log fields and stream labels. Give each output
+a persistent, bounded filesystem queue; size it from log rate and the tolerated
 outage period. A shared ingress URL that randomly chooses one VM is insufficient:
 it would distribute records instead of producing two complete copies.
 
@@ -48,20 +50,20 @@ Each VM runs vmauth and an identically configured Grafana PDC agent for the
 Re:Venter PDC network. The agents connect independently. Grafana PDC balances
 across connected agents and reroutes traffic when an agent disconnects.
 
-Use the same read endpoint address as resolved by each PDC agent, for example:
+Preserve existing datasource UIDs and the Kubernetes service URLs when those are
+the configured Grafana endpoints. Each VM PDC container maps
+`victoria-metrics.reventer-monitoring.svc.cluster.local:8428` and
+`victoria-logs.reventer-monitoring.svc.cluster.local:9428` (also `.svc`) to loopback.
+Confirm actual datasource URLs before the PDC cutover. vmauth listens on those
+loopback ports and routes query APIs to local storage first and the authenticated
+peer endpoint second (`first_available`, retries on 500/502/503/504). Storage
+listeners use separate loopback ports 18428/19428.
 
-- Metrics datasource: http://127.0.0.1:8427/metrics/
-- Logs datasource: http://127.0.0.1:8427/logs/
+Do not expose deletion, reload, import or write APIs through Grafana query proxies.
+Each VM reaches the peer independently of STG. Disable the original Kubernetes
+PDC agent at cutover so the same logical URL cannot return inconsistent old and
+new stores. Keep original stores and PVCs for rollback.
 
-The vmauth route strips the first path component and forwards to the corresponding
-service. Its backend list contains the local service first and the authenticated
-peer endpoint second. Use first_available and retries on 500/502/503/504. Restrict
-Grafana routes to read/query APIs; do not expose deletion, reload, import, or
-write endpoints through the datasource proxy. Each VM must be able to reach the
-peer's endpoint without relying on the STG cluster.
-
-This keeps one datasource UID for Metrics and one for Logs. Existing dashboards
-and alerts keep those UIDs; update their URLs/PDC selection once at cutover.
 Two PDC agents meet the single-VM failure objective, although Grafana recommends
 at least three agents for production.
 
@@ -102,3 +104,18 @@ replica merely because its health endpoint responds.
 - Logs replication: https://docs.victoriametrics.com/victorialogs/vlagent/#replication-and-high-availability
 - Read proxy/failover: https://docs.victoriametrics.com/victoriametrics/vmauth/
 - PDC HA: https://grafana.com/docs/grafana-cloud/observe-and-act/connect-externally-hosted/private-data-source-connect/configure-pdc/#high-availability
+
+## Credential ownership and deployment
+
+HCP Terraform encrypted remote state owns Cloudflare Tunnel and Access
+credentials. Terraform provisions `monitoring-ha-access-token` directly in both
+collector namespaces; it does not reuse or alter the old Access token. Local
+tfvars, plans and deployment `.env` files are ignored and private. Existing
+Bitwarden PDC credentials are read through the authorized CLI and transmitted
+over SSH; no controller credential is extracted. Provider lockfile is tracked.
+
+Deploy with `scripts/deploy-reventer-observability.py`; PDC is withheld by default.
+`scripts/snapshot-reventer-observability.py` streams immutable original snapshots
+over TLS and verified SSH directly to root-private staging on the two new VMs'
+OCI-encrypted boot volumes. No local payload archive is created. Snapshot names
+and archive hashes must be retained for verification and cleanup.
