@@ -4,6 +4,9 @@ Independent my-infra Terraform root. The PRD OKE VCN and public route table are
 referenced by ID; this root neither imports nor changes the OKE resources.
 
 - Two `VM.Standard.E2.1.Micro` instances, separate fault domains, 50GB boot each.
+- Instances and boot/recovery assets use the dedicated `reventer-observability`
+  compartment; shared OKE network assets stay in the original compartment.
+  `tenancy_id` is required even before OS maintenance IAM is prepared.
 - No extra block volumes; the previous PRD total of 94GB becomes 194GB.
 - Dedicated subnet/security list with outbound traffic, SSH restricted to one /32.
 - Monitoring APIs bind to loopback, with outbound Cloudflare Tunnel and PDC.
@@ -32,3 +35,7 @@ excluded. Provider-managed credentials live in encrypted remote state and are
 installed as collector Secrets in STG/PRD. The deployment script reads sensitive
 outputs without printing them. Reconcile Secrets here; do not create a competing
 ExternalSecret for the same name.
+
+After initial deployment, install the coordinated peer OS updater described in
+`../../observability/reventer/os-update/README.md`. It replaces independent
+unattended upgrades with staggered full-LTS updates and boot-volume rollback.

@@ -80,7 +80,7 @@ resource "oci_core_network_security_group_security_rule" "ssh" {
 
 resource "oci_core_instance" "monitoring" {
   count                = 2
-  compartment_id       = var.compartment_id
+  compartment_id       = oci_identity_compartment.os_recovery[0].id
   availability_domain  = var.availability_domain
   fault_domain         = "FAULT-DOMAIN-${count.index + 1}"
   display_name         = "reventer-observability-${format("%02d", count.index + 1)}"

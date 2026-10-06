@@ -23,7 +23,7 @@ def main():
  else:
   if not output.get('os_update',{}).get('value'):raise RuntimeError('Maintenance IAM must be prepared first')
   for name,node in output['instances']['value'].items():
-   attached=compute.list_boot_volume_attachments(settings['availability_domain'],settings['compartment_id'],instance_id=node['id']).data
+   attached=compute.list_boot_volume_attachments(settings['availability_domain'],output['os_update']['value']['compartment_id'],instance_id=node['id']).data
    attached=[v for v in attached if v.lifecycle_state=='ATTACHED']
    if len(attached)!=1:raise RuntimeError('Ambiguous attachment; stop')
    volume=block.get_boot_volume(attached[0].boot_volume_id).data
