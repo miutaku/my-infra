@@ -34,17 +34,6 @@ Cloudflare Accessのservice tokenで認証する。共有Tunnelでランダム�
    同じPDC networkでGrafanaの既存datasource・dashboard・alertを確認する。
 4. 実Grafanaから片側停止と復帰を再確認する。停止側の復帰前にqueue/freshnessを
    確認し、必要ならPDCを一時的に除外してcatch-upを待つ。
-5. 旧保存先を停止する前にSTG vmagentの必須podAffinityを変更する。
-   現在は旧VictoriaMetricsと同じRWO PVCをqueueに使うため同一nodeへ配置する。
-   旧Pod停止後も必須affinityを残すとvmagentを再スケジュールできない。
-   PVCはqueue用として維持し、旧保存データを誤ってpruneしない。
-6. 旧保存先へのPRD remoteWrite / STG・PRD Loki outputを取り除く。
-   日次集計はVM_URLをvmagentへ変更し、HA_VM_URLの重複を取り除く。
-   現在は移行中の旧Grafanaも更新するため既存とHAの両方へ記録している。
-   旧STG VictoriaMetrics/Logsは停止するが、PVC/namespace/secretを削除しない。
-
-旧PDCを復帰するときは新PDCを止め、旧保存先の時間範囲とfreshnessを確認する。
-異なる履歴を持つbackendを同じPDC networkへ混在させない。
 
 ## バックアップ・復元
 
@@ -67,7 +56,10 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 
 ## 容量・認証・監視
 
-- PRD割当194GB、200GB無料枠との差は6GB。STGにはVM/volumeを追加していない。
+- STG割当200GB（100GB boot × 2）、PRD割当194GB（47GB boot × 2 + 50GB boot × 2）。
+  両環境ともvolumeは10 VPU/GB、OKEはBasic。PRD volume backupは2個/無料5個枠。
+  公式文書のA1無料条件と既存契約の適用は
+  区別し、明細を監視する。共有バックアップのObject Storageリクエスト課金は別途確認。
   OKE node交換・burst・残ったboot volumeも全て集計してから変更する。
 - 各VMは1GB RAM / 50GB boot。query concurrency=2とメモリ上限を使い、
   Docker log rotation / swap / security updatesを設定。swapを常用してよい
@@ -75,7 +67,8 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 - Always Freeのidle reclamationや同一tenancy/ADの障害は、この2 VMの片側障害
   対策だけでは保証できない。人工的な負荷で回収判定を回避せず、状態を監視し
   復旧可能なbackupを持つ。
-- Metrics queueは各URL 2GiB。STGは既存PVC、PRDはbase nodeのhostPathに保持する。
+- Metrics queueは各URL 2GiB。STG/PRDとも専用hostPath `/var/lib/reventer/vmagent` に保持する。
+  node disk消失ではqueueも失われるため、失われた期間は生存replicaから復旧する。
   hostPathはPod再起動には残るが、node/disk消失には残らない。
 - Logsは各output 256MBのfilesystem queue、無制限retry、jitter付き3〜30秒の
   再試行。deliveryはat least onceであり、再送時に重複logが生じ得る。
