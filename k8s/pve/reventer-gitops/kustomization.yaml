@@ -12,3 +12,4 @@ resources:
 - external-secret-image-updater-ghcr.yaml
 - external-secret-notifications-discord.yaml
 - notifications.yaml
+- image-updater.yaml
