@@ -32,7 +32,12 @@ def main():
  assert line.endswith(b'\n'),'request is too large'
  request=json.loads(line);action=request['action']
  if action=='status':
-  rows=[json.loads(x) for x in compose('ps','--all','--format','json').splitlines() if x]
+  raw=compose('--profile','grafana','ps','--all','--format','json')
+  try:
+   rows=json.loads(raw) if raw.strip() else []
+   if isinstance(rows,dict):rows=[rows]
+  except json.JSONDecodeError:
+   rows=[json.loads(x) for x in raw.splitlines() if x]
   result={'boot_id':Path('/proc/sys/kernel/random/boot_id').read_text().strip(),'kernel':run(['uname','-r']).strip(),'pdc_running':any(x['Service']=='pdc' and x['State']=='running' for x in rows),'upgrade':json.loads(MARKER.read_text()) if MARKER.exists() else {},'services':{x['Service']:x['State'] for x in rows}}
  elif action=='prepare':
   # Disable boot activation before snapshot. Both normal and restored boots

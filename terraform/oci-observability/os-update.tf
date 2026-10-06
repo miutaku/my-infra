@@ -39,7 +39,7 @@ resource "oci_identity_dynamic_group" "os_update" {
   matching_rule  = "ANY {${join(", ", [for vm in oci_core_instance.monitoring : "instance.id = '${vm.id}'"])}}"
 }
 locals {
-  maintenance_principal = var.os_update_prepared ? "Allow dynamic-group ${oci_identity_dynamic_group.os_update[0].name}" : ""
+  maintenance_principal = var.os_update_prepared ? "Allow dynamic-group ${oci_identity_dynamic_group.os_update[0].name} to" : ""
   maintenance_tag       = "where target.resource.tag.ReVenterMaintenance.Role='observability'"
 }
 resource "oci_identity_policy" "os_update" {

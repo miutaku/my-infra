@@ -107,4 +107,20 @@ class SafetyGateTests(unittest.TestCase):
   self.assertEqual(called[0][1]['if_match'],'post-reboot')
   self.assertEqual(called[0][0][1].extended_metadata['unrelated'],'keep')
 
+class GuestStatusTests(unittest.TestCase):
+ def check_format(self,array):
+  spec=importlib.util.spec_from_file_location('guest',Path(__file__).resolve().parents[1]/'observability/reventer/os-update/guest.py')
+  guest=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest)
+  rows=[{'Service':'metrics','State':'running','Command':'metrics'},{'Service':'pdc','State':'running','Command':'test-pdc-credential'}]
+  raw=json.dumps(rows) if array else '\n'.join(json.dumps(x) for x in rows)
+  calls=[];output=io.StringIO()
+  with patch.object(guest.os,'geteuid',return_value=0),patch.object(guest,'compose',side_effect=lambda *a:(calls.append(a) or raw)),patch.object(guest,'run',return_value='kernel'),patch.object(guest,'MARKER',types.SimpleNamespace(exists=lambda:False)),patch.object(guest.sys,'stdin',types.SimpleNamespace(buffer=io.BytesIO(b'{"action":"status"}\n'))),patch.object(guest.sys,'stdout',output):
+   guest.main()
+  value=json.loads(output.getvalue())
+  self.assertTrue(value['pdc_running'])
+  self.assertEqual(calls[0][:2],('--profile','grafana'))
+  self.assertNotIn('test-pdc-credential',output.getvalue())
+ def test_array_ps_keeps_pdc_state_and_filters_credentials(self):self.check_format(True)
+ def test_jsonlines_ps_keeps_pdc_state_and_filters_credentials(self):self.check_format(False)
+
 if __name__=='__main__':unittest.main()
