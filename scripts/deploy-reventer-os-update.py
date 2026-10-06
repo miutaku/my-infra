@@ -61,11 +61,22 @@ sudo install -m 644 /tmp/reventer-os-update-stage/reventer-os-update.timer /etc/
 sudo python3 - <<'INSTALL'
 from pathlib import Path
 import zipfile
-root=Path('/opt/reventer-os-update/deps');root.mkdir(mode=0o700,exist_ok=True)
-for wheel in Path('/tmp/reventer-os-update-stage/wheels').glob('*.whl'):
- with zipfile.ZipFile(wheel) as z:
-  assert all(not n.startswith('/') and '..' not in Path(n).parts for n in z.namelist())
-  z.extractall(root)
+import shutil
+import tempfile
+root=Path('/opt/reventer-os-update/deps')
+stage=Path(tempfile.mkdtemp(prefix='.deps-',dir=root.parent))
+try:
+ for wheel in Path('/tmp/reventer-os-update-stage/wheels').glob('*.whl'):
+  with zipfile.ZipFile(wheel) as z:
+   assert all(not n.startswith('/') and '..' not in Path(n).parts for n in z.namelist())
+   z.extractall(stage)
+ # Never truncate a shared library already mapped by an OCI read/check process.
+ previous=root.with_name('deps-previous')
+ if previous.exists():shutil.rmtree(previous)
+ if root.exists():root.rename(previous)
+ stage.rename(root)
+finally:
+ if stage.exists():shutil.rmtree(stage)
 INSTALL
 sudo sh -c 'test -f /etc/reventer-os-update/peer-key || ssh-keygen -q -t ed25519 -N "" -C reventer-peer-os-update -f /etc/reventer-os-update/peer-key'
 sudo env PYTHONPATH=/opt/reventer-os-update/deps python3 -c 'import oci; print("SDK",oci.__version__)'

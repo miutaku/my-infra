@@ -95,5 +95,5 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 ## OS更新
 
 日次の順次更新、実収集canary、boot backupによるrollbackは
-[os-update/README.md](os-update/README.md)を参照。実機でOS復旧と履歴補完を検証してから日次timerを有効化する。
+[os-update/README.md](os-update/README.md)を参照。
 独立したsecurity updateは協調制御へ移し、両VMの同時更新を防ぐ。

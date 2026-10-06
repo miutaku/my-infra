@@ -62,6 +62,8 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
   実行できるforced commandにする。host keyも固定し、未知のkeyを自動受け入れしない。
 - OCI SDKと全依存はPython 3.10 amd64用のversion / SHA256を固定する。
   package managerと分離した`/opt/reventer-os-update/deps`を使う。
+  SDK再配置は別directoryへ展開して切り替え、使用中のnative libraryを
+  truncateしない。既存mappingを保持する回帰テストも実施する。
 
 ## 準備と有効化
 
