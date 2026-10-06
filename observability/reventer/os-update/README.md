@@ -77,6 +77,7 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 `journalctl -u reventer-os-update.service -u reventer-os-upgrade.service`とOCI journalを確認。
 `blocked`を解放する前に、両VMの履歴・freshness・queueと失敗原因を確認する。
 Terraformからjournalを上書きしない。故障volumeの整理とbackup数も確認する。
+bundle / credentialsの変更はjournalがidleの間に行い、更新との重複を避ける。
 
 公式仕様:
 - [Ubuntu automatic updates](https://documentation.ubuntu.com/security/security-updates/)
