@@ -31,11 +31,16 @@ spec:
           httpd -f -p 9090 -h /tmp &
           while true; do
             now=$(date +%s)
-            printf 'reventer_observability_canary_timestamp_seconds %s\n' "$now" > /tmp/metrics.new
+            printf 'reventer_observability_canary_timestamp_seconds{env="%s"} %s\n' "${POD_NAMESPACE##app-reventer-}" "$now" > /tmp/metrics.new
             mv /tmp/metrics.new /tmp/metrics
             printf '{"message":"reventer-observability-canary","canary_timestamp":"%s"}\n' "$now"
             sleep 30
           done
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         ports:
         - name: metrics
           containerPort: 9090
