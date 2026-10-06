@@ -16,7 +16,7 @@ index 57f23ee..cbfb411 100644
        - 'infrastructure/k8s/argocd-reventer-prd-apps/**'
 +      - 'infrastructure/k8s/monitoring/**'
 +      - 'infrastructure/k8s/monitoring-prd/**'
- 
+
  jobs:
    kustomize-build:
 @@ -26,7 +30,7 @@ jobs:
