@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-rollouts-prd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  project: reventer
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-rollouts
+    targetRevision: 2.41.1
+    helm:
+      releaseName: argo-rollouts
+      valuesObject:
+        controller:
+          replicas: 1
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                  - key: reventer.io/capacity
+                    operator: In
+                    values:
+                    - base
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+        dashboard:
+          enabled: false
+        notifications:
+          secret:
+            create: false
+  destination:
+    name: oke-prd
+    namespace: argo-rollouts
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      enabled: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true

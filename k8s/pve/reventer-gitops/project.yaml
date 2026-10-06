@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: reventer
+  namespace: argocd
+spec:
+  description: Re:Venter STG/PRD managed by the Talos Argo CD
+  sourceRepos:
+  - git@github.com:miutaku/reventer.git
+  - https://argoproj.github.io/argo-helm
+  destinations:
+  - name: oke-stg
+    namespace: app-reventer-stg
+  - name: oke-stg
+    namespace: app-reventer-prd
+  - name: oke-stg
+    namespace: reventer-monitoring
+  - name: oke-stg
+    namespace: kube-system
+  - name: oke-prd
+    namespace: app-reventer-prd
+  - name: oke-prd
+    namespace: reventer-monitoring
+  - name: oke-prd
+    namespace: argo-rollouts
+  - name: oke-prd
+    namespace: kube-system
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
