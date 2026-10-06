@@ -1,0 +1,122 @@
+version: '3.8'
+services:
+  metrics:
+    image: victoriametrics/victoria-metrics:v1.111.0
+    restart: unless-stopped
+    mem_limit: 448m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -storageDataPath=/storage
+    - -retentionPeriod=3
+    - -httpListenAddr=:8428
+    - -memory.allowedBytes=335544320
+    - -search.maxConcurrentRequests=2
+    ports:
+    - 127.0.0.1:18428:8428
+    volumes:
+    - ./data/metrics:/storage
+    user: 1000:1000
+  logs:
+    image: victoriametrics/victoria-logs:v1.50.0
+    restart: unless-stopped
+    mem_limit: 192m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -storageDataPath=/vlogs
+    - -retentionPeriod=30d
+    - -httpListenAddr=:9428
+    - -memory.allowedBytes=134217728
+    - -search.maxConcurrentRequests=2
+    ports:
+    - 127.0.0.1:19428:9428
+    volumes:
+    - ./data/logs:/vlogs
+    user: 1000:1000
+  metrics-query:
+    image: victoriametrics/vmauth:v1.111.0
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 32m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -auth.config=/config/metrics.yaml
+    - -httpListenAddr=127.0.0.1:8428
+    volumes:
+    - ./config:/config:ro
+    environment:
+      PEER_METRICS_URL: ${PEER_METRICS_URL:?required}
+      CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID:?required}
+      CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET:?required}
+    user: 1000:1000
+  logs-query:
+    image: victoriametrics/vmauth:v1.111.0
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 32m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -auth.config=/config/logs.yaml
+    - -httpListenAddr=127.0.0.1:9428
+    volumes:
+    - ./config:/config:ro
+    environment:
+      PEER_LOGS_URL: ${PEER_LOGS_URL:?required}
+      CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID:?required}
+      CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET:?required}
+    user: 1000:1000
+  tunnel:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:?required}
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 64m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - tunnel
+    - --no-autoupdate
+    - run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?required}
+  pdc:
+    image: grafana/pdc-agent:${PDC_VERSION:?required}
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 64m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    extra_hosts:
+    - victoria-metrics.reventer-monitoring.svc.cluster.local:127.0.0.1
+    - victoria-metrics.reventer-monitoring.svc:127.0.0.1
+    - victoria-logs.reventer-monitoring.svc.cluster.local:127.0.0.1
+    - victoria-logs.reventer-monitoring.svc:127.0.0.1
+    command:
+    - -token
+    - ${PDC_TOKEN:?required}
+    - -cluster
+    - ${PDC_CLUSTER:?required}
+    - -gcloud-hosted-grafana-id
+    - ${PDC_HOSTED_GRAFANA_ID:?required}
+    - -ssh-flag=-o PermitRemoteOpen=victoria-metrics.reventer-monitoring.svc.cluster.local:8428
+      victoria-metrics.reventer-monitoring.svc:8428 victoria-logs.reventer-monitoring.svc.cluster.local:9428
+      victoria-logs.reventer-monitoring.svc:9428 127.0.0.1:8428 127.0.0.1:9428
