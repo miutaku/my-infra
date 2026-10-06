@@ -67,3 +67,7 @@ bootstrap token can read that project before the controller handover.
 
 Rollback: disable Talos automatic sync and ImageUpdater first, then restore old
 controllers and Application specs. Never run both ImageUpdaters concurrently.
+
+Monitoring agents in both environments follow Re:Venter `main`, independently
+of PRD application release tags, so monitoring migrations do not require an
+application release.
