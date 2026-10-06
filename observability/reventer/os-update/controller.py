@@ -23,6 +23,7 @@ STATE_KEY='reventer_os_maintenance'
 TAG={'ReVenterMaintenance':{'Role':'observability'}}
 SERVICES={'metrics','logs','metrics-query','logs-query','tunnel'}
 class Unsafe(RuntimeError):pass
+class FailedUpdate(Unsafe):pass
 
 def utc():return datetime.now(timezone.utc)
 def stamp(t):return t.isoformat(timespec='microseconds').replace('+00:00','Z')
@@ -32,6 +33,7 @@ def poll(fn,timeout=900):
   try:
    value=fn()
    if value:return value
+  except FailedUpdate:raise
   except Exception:pass
   time.sleep(10)
  raise Unsafe('readiness deadline exceeded')
@@ -41,6 +43,7 @@ def prepare_log(row):
  label=re.compile(r'([A-Za-z_][A-Za-z0-9_]*)=("(?:[^"\\]|\\.)*")')
  if not stream.startswith('{') or not stream.endswith('}') or label.sub('',stream[1:-1]).replace(',','').strip():raise Unsafe('unknown stream label syntax')
  labels={k:json.loads(v) for k,v in label.findall(stream)}
+ if any(k in row and row[k]!=v for k,v in labels.items()):raise Unsafe('stream label conflicts with log field')
  row.update(labels);return row,set(labels)
 def record_key(row):return json.dumps({k:v for k,v in row.items() if k!='_stream_id'},sort_keys=True,separators=(',',':'))
 
@@ -51,6 +54,22 @@ def missing_logs(source,destination):
   if counts[key]:counts[key]-=1
   else:missing.append(row)
  return missing
+
+def log_batches(rows,max_bytes=1024*1024):
+ # Different Loki streams may share ordinary fields that must not be promoted
+ # into stream labels. Batch only records with identical stream-field names.
+ groups=collections.defaultdict(list)
+ for original in rows:
+  row,fields=prepare_log(original);groups[tuple(sorted(fields))].append(row)
+ for fields,records in groups.items():
+  batch=[];size=0
+  for row in records:
+   n=len(json.dumps(row))+1
+   if n>max_bytes:raise Unsafe('individual log exceeds import memory budget')
+   if batch and (size+n>max_bytes or len(batch)>=10000):
+    yield batch,list(fields);batch=[];size=0
+   batch.append(row);size+=n
+  if batch:yield batch,list(fields)
 
 class Controller:
  def __init__(self,cfg):
@@ -88,11 +107,20 @@ class Controller:
 
  def guest(self,action,**kw):
   args=['ssh','-T','-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','-o','ConnectTimeout=15','-o','UserKnownHostsFile=/etc/reventer-os-update/known_hosts','-i','/etc/reventer-os-update/peer-key','ubuntu@'+self.cfg['nodes'][self.peer]['private_ip'],'maintenance']
-  r=subprocess.run(args,input=json.dumps({'action':action,**kw})+'\n',text=True,capture_output=True,timeout=210)
-  if r.returncode:raise Unsafe('peer maintenance request failed; sensitive response omitted')
+  request=json.dumps({'action':action,**kw})+'\n'
   if action=='export-logs':
-   if len(r.stdout)>10*1024*1024:raise Unsafe('logs window exceeds memory budget')
-   return [json.loads(x) for x in r.stdout.splitlines() if x.strip()]
+   # Enforce the limit while receiving, before allocating an unbounded reply.
+   p=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+   try:
+    p.stdin.write(request.encode());p.stdin.close()
+    data=p.stdout.read(10*1024*1024+1)
+    if len(data)>10*1024*1024:raise Unsafe('logs window exceeds memory budget')
+    if p.wait(timeout=210):raise Unsafe('peer logs export failed')
+    return [json.loads(x) for x in data.splitlines() if x.strip()]
+   finally:
+    if p.poll() is None:p.kill();p.wait()
+  r=subprocess.run(args,input=request,text=True,capture_output=True,timeout=210)
+  if r.returncode:raise Unsafe('peer maintenance request failed; sensitive response omitted')
   return json.loads(r.stdout)
 
  def load(self):
@@ -150,7 +178,7 @@ class Controller:
   self.ensure_backup_budget();volume=self.boot()
   self.save(phase='backup',boot_volume_id=volume,gap_start=stamp(utc()-timedelta(seconds=5)))
   self.guest('prepare')
-  b=self.block.create_boot_volume_backup(oci.core.models.CreateBootVolumeBackupDetails(boot_volume_id=volume,type='INCREMENTAL',display_name='reventer-os-'+self.peer+'-'+utc().strftime('%Y%m%dT%H%M%S'),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer})).data
+  b=self.block.create_boot_volume_backup(oci.core.models.CreateBootVolumeBackupDetails(boot_volume_id=volume,type='INCREMENTAL',display_name='reventer-os-'+self.peer+'-'+utc().strftime('%Y%m%dT%H%M%S'),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer}),opc_retry_token=self.state['owner']).data
   self.save(backup_id=b.id)
   def ready():
    self.health(self.me)
@@ -180,14 +208,9 @@ class Controller:
    if len(data)>10*1024*1024:raise Unsafe('log catch-up window exceeds memory budget')
    source=[json.loads(x) for x in data.splitlines() if x.strip()]
    missing=missing_logs(source,self.guest('export-logs',start=a,end=z))
-   fields=set();batch=[];size=0
-   for row in missing:
-    row,labels=prepare_log(row);fields.update(labels);n=len(json.dumps(row))
-    if size+n>1024*1024 and batch:
-     self.guest('import-logs',records=batch,fields=sorted(fields));batch=[];size=0
-    batch.append(row);size+=n
-   if batch:self.guest('import-logs',records=batch,fields=sorted(fields))
-   if missing_logs(source,self.guest('export-logs',start=a,end=z)):raise Unsafe('log catch-up parity failed')
+   for batch,fields in log_batches(missing):self.guest('import-logs',records=batch,fields=fields)
+   # Ingestion returns before newly buffered rows become visible to queries.
+   poll(lambda:not missing_logs(source,self.guest('export-logs',start=a,end=z)),180)
    duration=(stop-start).total_seconds()
    params=urllib.parse.urlencode({'query':f'sum by (env) (count_over_time({{__name__!=""}}[{duration}s]))','time':z})
    def metrics_match():
@@ -198,8 +221,13 @@ class Controller:
     return values[0]==values[1]
    poll(metrics_match,180)
    self.health(self.me);start=stop
+   print("Metrics/Logs history parity verified through",z,flush=True)
 
  def validate(self):
+  # Compute RUNNING precedes SSH/Docker readiness after a restored boot.
+  def guest_ready():
+   self.health(self.me);return self.guest('status')
+  poll(guest_ready,600)
   self.guest('start-storage')
   poll(lambda:self.health(self.peer),600)
   self.catch_up()
@@ -222,15 +250,18 @@ class Controller:
   # failed boot volume until restoration/parity has been independently verified.
   volume_id=self.state.get('recovery_volume_id')
   if not volume_id:
-   v=self.block.create_boot_volume(oci.core.models.CreateBootVolumeDetails(compartment_id=self.cfg['recovery_compartment_id'],availability_domain=self.cfg['availability_domain'],display_name='reventer-os-rollback-'+self.peer,source_details=oci.core.models.BootVolumeSourceFromBootVolumeBackupDetails(id=self.state['backup_id']),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer})).data
+   v=self.block.create_boot_volume(oci.core.models.CreateBootVolumeDetails(compartment_id=self.cfg['recovery_compartment_id'],availability_domain=self.cfg['availability_domain'],display_name='reventer-os-rollback-'+self.peer,source_details=oci.core.models.BootVolumeSourceFromBootVolumeBackupDetails(id=self.state['backup_id']),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer}),opc_retry_token=str(uuid.uuid5(uuid.NAMESPACE_URL,self.state['owner']+'/recovery'))).data
    volume_id=v.id;self.save(recovery_volume_id=volume_id)
   poll(lambda:self.block.get_boot_volume(volume_id).data.lifecycle_state=='AVAILABLE',3600)
+  poll(lambda:self.compute.get_instance(node['id']).data.lifecycle_state in ['RUNNING','STOPPED'],1800)
   if self.boot()!=volume_id:
    self.compute.update_instance(node['id'],oci.core.models.UpdateInstanceDetails(source_details=oci.core.models.UpdateInstanceSourceViaBootVolumeDetails(boot_volume_id=volume_id,is_preserve_boot_volume_enabled=True),update_operation_constraint='ALLOW_DOWNTIME'))
   poll(lambda:self.boot()==volume_id and self.compute.get_instance(node['id']).data.lifecycle_state=='RUNNING',1800)
   expected=dict(self.state);self.load()
   if self.state!=expected:raise Unsafe('rollback journal changed')
   self.save(phase='rollback-validation');self.validate()
+  backup=self.block.get_boot_volume_backup(self.state['backup_id']).data
+  self.block.update_boot_volume_backup(backup.id,oci.core.models.UpdateBootVolumeBackupDetails(freeform_tags={**backup.freeform_tags,'verified':'true'}))
   self.save(phase='blocked',result='rolled-back',reason='operator must review failed updates and retained volume before resuming')
 
  def run(self):
@@ -258,7 +289,7 @@ class Controller:
    self.guest('upgrade')
    def rebooted():
     self.health(self.me);status=self.guest('status')
-    if status['upgrade'].get('state')=='failed':raise Unsafe('package update failed')
+    if status['upgrade'].get('state')=='failed':raise FailedUpdate('package update failed')
     return status['boot_id']!=before['boot_id'] and status['upgrade'].get('state')=='succeeded'
    poll(rebooted,1800);self.save(phase='validating');self.validate()
    backup=self.block.get_boot_volume_backup(self.state['backup_id']).data

@@ -1,5 +1,9 @@
 # Re:Venter 監視の移行と運用
 
+既存URL:
+- `http://victoria-metrics.reventer-monitoring.svc.cluster.local:8428`
+- `http://victoria-logs.reventer-monitoring.svc.cluster.local:9428`
+
 ```mermaid
 flowchart LR
   A[STG / PRD vmagent・Fluent Bit] -->|各宛先に同じデータ| V1[PRD OCI VM01 Metrics / Logs]
@@ -12,7 +16,7 @@ flowchart LR
   P2 -. local失敗時 .-> V1
 ```
 
-上図のGrafana経路は切り替え後の構成。ingest endpointはVMごとに分け、
+上図は現在のGrafana経路。ingest endpointはVMごとに分け、
 Cloudflare Accessのservice tokenで認証する。共有Tunnelでランダムに片側へ
 書き込む構成にはしない。read proxyにはquery APIだけを許可している。
 
@@ -91,5 +95,5 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 ## OS更新
 
 日次の順次更新、実収集canary、boot backupによるrollbackは
-[os-update/README.md](os-update/README.md)を参照。復旧volumeの課金方針の回答前は
-自動更新timerを有効化しない。既存のsecurity update設定は有効化時に協調制御へ移す。
+[os-update/README.md](os-update/README.md)を参照。実機でOS復旧と履歴補完を検証してから日次timerを有効化する。
+独立したsecurity updateは協調制御へ移し、両VMの同時更新を防ぐ。

@@ -48,9 +48,12 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 
 - OCIは2 instance OCIDだけのdynamic group / instance principalを使う。
   管理者のOCI API keyやSSH秘密鍵をVMへ配らない。
-- 変更権限はdefined tagで監視instance / boot / backupへ限定する。
-  `VOLUME_CREATE/DELETE`は独立した復旧compartmentだけに付与する。
-  OKE volumeの変更やinstanceの作成・削除権限を与えない。
+- 2 VMとboot / backup / 復旧volumeは専用`reventer-observability` compartmentに置く。
+  instanceの変更・boot replacement・power操作・volume接続/切断とvolume-family管理をそこで許可する。
+  instanceの作成・削除、OKE volumeの書き込みは許可しない。
+  networkは共有compartmentに残し、guest controllerへnetwork変更権限を渡さない。
+  dynamic groupはOCIDで指定し、元Ubuntu image 1個のREADと既存の2 tag namespaceの
+  useだけを許可する。tag定義やimageを管理する権限は渡さない。
 - backup / volume / compartmentの一覧は、tenancy全体の無料backup枠確認のため
   read-onlyで確認する。検証済みbackupを各VMで最新1個ずつ残し、controllerが
   作成した古い検証済みbackupだけを整理する。手動backupは触らない。
@@ -68,7 +71,7 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 2. 同scriptの`--tag-boot-volumes`で、対象2 boot volumeの既存tagを保持してRoleを追加。
 3. `requirements.lock`に従いPython 3.10 amd64のwheelsを取得する。
    `deploy-reventer-os-update.py`はデフォルトではinstall / read-only checkだけを行う。
-4. 課金方針の承認後、実backupからのboot replacement・catch-up・実収集の復旧を
+4. 課金方針を確認し、実backupからのboot replacement・catch-up・実収集の復旧を
    片側で検証し、他方を稼働させたまま動くことを確認する。
 5. `deploy-reventer-os-update.py --enable --allow-paid-recovery`で有効化する。
    独立したUbuntu unattended upgradeは、この段階で初めて無効化し、同時更新を防ぐ。

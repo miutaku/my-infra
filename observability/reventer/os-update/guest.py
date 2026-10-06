@@ -24,7 +24,7 @@ def stream(path,port=18428):
 def upload(path):
  c=http.client.HTTPConnection('127.0.0.1',18428,timeout=180)
  c.request('POST',path,body=sys.stdin.buffer,headers={'Content-Type':'application/json'},encode_chunked=True)
- r=c.getresponse();r.read();assert r.status==200,'metrics import failed'
+ r=c.getresponse();r.read();assert r.status in (200,204),'metrics import failed'
 
 def main():
  assert os.geteuid()==0
@@ -60,7 +60,8 @@ def main():
   data=request['records'];assert len(data)<=10000
   path='/insert/jsonline?'+urllib.parse.urlencode({'_stream_fields':','.join(request['fields'])})
   payload=b''.join((json.dumps(x,separators=(',',':'))+'\n').encode() for x in data)
-  with urllib.request.urlopen('http://127.0.0.1:19428'+path,data=payload,timeout=180) as r:assert r.status==200
+  request=urllib.request.Request('http://127.0.0.1:19428'+path,data=payload,headers={'Content-Type':'application/stream+json'})
+  with urllib.request.urlopen(request,timeout=180) as r:assert r.status in (200,204)
   result={'imported':len(data)}
  elif action=='import-metrics':upload('/api/v1/import');result={'imported':True}
  else:raise ValueError('unsupported maintenance verb')
