@@ -1,6 +1,8 @@
 # Re:Venter GitOps on Talos
 
-Prepared migration, not yet activated. The existing Talos Argo CD
+Activated on 2026-10-06 (JST). All six Applications are automated and
+Synced/Healthy; the old Re:Venter application controllers, ImageUpdaters and
+notification controllers are scaled to zero for rollback. The existing Talos Argo CD
 (`argocd-home-k8s.miutaku.work`) will manage Re:Venter STG and PRD. Applications
 and ImageUpdater configuration belong to my-infra; application manifests and
 image digest write-back remain in miutaku/reventer.
