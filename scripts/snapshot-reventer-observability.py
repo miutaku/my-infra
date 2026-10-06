@@ -39,6 +39,7 @@ def main():
         return subprocess.Popen(['ssh',*SSH,host,command],stdin=subprocess.PIPE)
     for name,instance in sorted(instances.items()):
         host='ubuntu@'+instance['public_ip']
+        subprocess.run(['ssh',*SSH,host,"sudo sh -ec 'umask 077; mkdir -p "+REMOTE+"; cat > "+REMOTE+"/snapshot-metadata.json'"],input=json.dumps(metadata),text=True,check=True)
         target=receive(host,'metrics-full.tar')
         source=subprocess.Popen([*KUBE,'deployment/victoria-metrics','--','tar','-C','/storage/snapshots/'+snapshot,'-hcf','-','.'],stdout=target.stdin)
         target.stdin.close()
