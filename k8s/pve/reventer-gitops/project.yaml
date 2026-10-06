@@ -6,6 +6,7 @@ metadata:
 spec:
   description: Re:Venter STG/PRD managed by the Talos Argo CD
   sourceRepos:
+  - https://github.com/miutaku/my-infra.git
   - git@github.com:miutaku/reventer.git
   - https://argoproj.github.io/argo-helm
   destinations:

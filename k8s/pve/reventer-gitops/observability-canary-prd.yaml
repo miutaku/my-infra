@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reventer-observability-canary-prd
+  namespace: argocd
+spec:
+  project: reventer
+  source:
+    repoURL: https://github.com/miutaku/my-infra.git
+    targetRevision: main
+    path: k8s/pve/reventer-observability-canary/prd
+  destination:
+    name: oke-prd
+    namespace: app-reventer-prd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - ServerSideApply=true
