@@ -1,0 +1,21 @@
+[Unit]
+Description=Update the peer observability VM with backup and health gates
+Wants=network-online.target
+After=network-online.target docker.service
+StartLimitIntervalSec=6h
+StartLimitBurst=3
+ConditionPathExists=/etc/reventer-os-update/enabled
+
+[Service]
+Type=oneshot
+Environment=PYTHONPATH=/opt/reventer-os-update/deps
+ExecStart=/usr/bin/python3 /opt/reventer-os-update/controller.py
+TimeoutStartSec=6h
+Restart=on-failure
+RestartSec=5m
+Nice=10
+IOSchedulingClass=idle
+PrivateTmp=true
+UMask=0077
+StandardOutput=journal
+StandardError=journal
