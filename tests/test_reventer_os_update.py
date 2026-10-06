@@ -1,3 +1,5 @@
+import mmap
+import zipfile
 import ast
 import tempfile
 import importlib.util
@@ -163,6 +165,20 @@ class BootRecoveryTests(unittest.TestCase):
   self.assertEqual(c.block.update_boot_volume_backup.call_args.args[1].freeform_tags['verified'],'true')
 
 class InstallerTests(unittest.TestCase):
+ def test_sdk_redeployment_keeps_existing_native_mapping_intact(self):
+  source=Path(__file__).resolve().parents[1]/'scripts/deploy-reventer-os-update.py'
+  tree=ast.parse(source.read_text())
+  node=next(n for n in ast.walk(tree) if isinstance(n,ast.Assign) and any(isinstance(x,ast.Name) and x.id=='installer' for x in n.targets))
+  code=ast.literal_eval(node.value).split("<<'INSTALL'\n",1)[1].split("\nINSTALL",1)[0]
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp)/'deps';root.mkdir();native=root/'native.so';native.write_bytes(b'old library bytes')
+   wheels=Path(tmp)/'wheels';wheels.mkdir()
+   with zipfile.ZipFile(wheels/'test.whl','w') as z:z.writestr('native.so',b'new library bytes')
+   with native.open('rb') as f,mmap.mmap(f.fileno(),0,access=mmap.ACCESS_READ) as mapped:
+    exec(compile(code.replace('/opt/reventer-os-update/deps',str(root)).replace('/tmp/reventer-os-update-stage/wheels',str(wheels)),'sdk-install.py','exec'),{})
+    self.assertEqual(mapped[:],b'old library bytes')
+    self.assertEqual(native.read_bytes(),b'new library bytes')
+
  def test_generated_authorization_helper_preserves_real_newlines(self):
   source=Path(__file__).resolve().parents[1]/'scripts/deploy-reventer-os-update.py'
   tree=ast.parse(source.read_text())

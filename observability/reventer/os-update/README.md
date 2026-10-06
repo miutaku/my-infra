@@ -5,7 +5,8 @@ Re:Venterでは復旧やscale時の無視できる程度の一時費用を許容
 通常194GB、復旧volumeを追加する間は244GBになるため、検証後に故障した
 元volumeを整理する。課金を恒常化させず、無料枠・backup枠を維持する。
 instance principalによる実backup・OS更新・boot復旧・データ補完を検証済み。
-日次有効化前に、両VMを片側ずつ正常更新する。
+両VMの正常更新も順番に完了し、日次timerを有効化した。
+現在のkernelは両VMとも6.8.0-1062-oracle。
 
 ## 更新と判定
 
@@ -69,6 +70,8 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
   実行できるforced commandにする。host keyも固定し、未知のkeyを自動受け入れしない。
 - OCI SDKと全依存はPython 3.10 amd64用のversion / SHA256を固定する。
   package managerと分離した`/opt/reventer-os-update/deps`を使う。
+  SDK再配置は別directoryへ展開して切り替え、使用中のnative libraryを
+  truncateしない。既存mappingを保持する回帰テストも実施する。
 
 ## 準備と有効化
 
@@ -92,7 +95,7 @@ bundle / credentialsの変更はjournalがidleの間に行い、更新との重�
 ## 今回の検証範囲
 
 実STG/PRD collector経由で、両VMのcanary Metrics / Logsが新着になることを確認。
-制御の23テスト（収集停止、backup失敗、rollback後の次系抑止、中断再開、排他、
+制御・再配置の24テスト（収集停止、backup失敗、rollback後の次系抑止、中断再開、排他、
 未来時刻の拒否など）とTerraform validationを実施した。
 両VMで実収集・forced SSH・OCI readの`--check`も成功。controllerの最大RSSは
 約70MiB（read-only check時）。VM02をkernel 6.8.0-1062へ実更新した後、
@@ -100,6 +103,8 @@ bundle / credentialsの変更はjournalがidleの間に行い、更新との重�
 OCI IAMの不足を修正後、管理者キーを使わずinstance principalでvolume作成・
 boot交換・履歴補完・両環境の実収集復帰を確認。journalからの復旧再開と、
 rollback後の他方更新の抑止も検証した。
+その後、VM01 / VM02を順番に正常更新し、履歴parity・継続収集・PDC復帰を確認。
+各timerはenabled / active、独立したapt-daily-upgrade.timerはdisabled。
 独立したUbuntu security update timerは実機検証の開始時に協調制御へ移した。
 
 公式仕様:

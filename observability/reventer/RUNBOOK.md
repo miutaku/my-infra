@@ -55,7 +55,7 @@ Cloudflare Accessのservice tokenで認証する。共有Tunnelでランダム�
 - 認証済みの4 endpointはhealth 200、認証なしは403。管理APIは公開しない。
 
 プロセス/Tunnel停止に加えて、実OS更新とboot交換を伴う復旧を検証した。
-PDCの切り替えは完了し、OS更新時の片側PDC切断と復帰も確認する。
+PDCの切り替えと、両方向のOS更新時の片側PDC切断・正常側のquery・復帰を確認した。
 RPO/RTOをゼロと保証するものではない。
 
 ## Grafana切り替え
@@ -140,5 +140,5 @@ CIのmonitoring overlay対象追加はGitHub OAuthのworkflow scope不足で公�
 
 日次の順次更新、実収集canary、boot backupによるrollbackは
 [os-update/README.md](os-update/README.md)を参照。復旧時の小額の一時課金は
-承認済み。実機でOS復旧と履歴補完を検証してから日次timerを有効化する。
+承認済み。実機でOS復旧・履歴補完・両VMの正常更新を検証し、日次timerを有効化済み。
 独立したsecurity updateは協調制御へ移し、両VMの同時更新を防ぐ。
