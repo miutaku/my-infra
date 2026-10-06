@@ -1,0 +1,30 @@
+diff --git a/.github/workflows/ci-k8s-manifests.yml b/.github/workflows/ci-k8s-manifests.yml
+index 57f23ee..cbfb411 100644
+--- a/.github/workflows/ci-k8s-manifests.yml
++++ b/.github/workflows/ci-k8s-manifests.yml
+@@ -7,12 +7,16 @@ on:
+       - 'infrastructure/k8s/stg/**'
+       - 'infrastructure/k8s/prd/**'
+       - 'infrastructure/k8s/argocd-reventer-prd-apps/**'
++      - 'infrastructure/k8s/monitoring/**'
++      - 'infrastructure/k8s/monitoring-prd/**'
+   pull_request:
+     branches: [main]
+     paths:
+       - 'infrastructure/k8s/stg/**'
+       - 'infrastructure/k8s/prd/**'
+       - 'infrastructure/k8s/argocd-reventer-prd-apps/**'
++      - 'infrastructure/k8s/monitoring/**'
++      - 'infrastructure/k8s/monitoring-prd/**'
+ 
+ jobs:
+   kustomize-build:
+@@ -26,7 +30,7 @@ jobs:
+       - name: kustomize build all overlays
+         run: |
+           # argocd/ は upstream URL を参照するため除外
+-          find infrastructure/k8s/stg infrastructure/k8s/prd infrastructure/k8s/argocd-reventer-prd-apps -name kustomization.yaml \
++          find infrastructure/k8s/stg infrastructure/k8s/prd infrastructure/k8s/argocd-reventer-prd-apps infrastructure/k8s/monitoring infrastructure/k8s/monitoring-prd -name kustomization.yaml \
+             -not -path '*/argocd/*' \
+             -printf '%h\n' | sort -u | while read dir; do
+               echo "::group::$dir"

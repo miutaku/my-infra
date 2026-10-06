@@ -10,27 +10,36 @@ import subprocess
 ROOT=Path(__file__).resolve().parents[1]
 SSH=['-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','-o','UserKnownHostsFile=/tmp/reventer-observability-known-hosts','-i',str(Path.home()/'.ssh/id_ed25519')]
 REMOTE=r'''
-import os, subprocess, tarfile
+import os, subprocess, tarfile, hashlib, json
 from pathlib import Path
 root=Path('/opt/reventer-observability');os.chdir(root)
 assert not (root/'migration/restored').exists(), 'Already restored; refusing to overwrite live data'
-for service,name in [('metrics','metrics-full.tar'),('logs','logs.tar')]:
-    archive=root/'migration'/name
-    assert archive.stat().st_size>1000000,'Incomplete archive'
-    status=subprocess.check_output(['docker-compose','ps','-q',service],text=True).strip()
+seed=root/'migration/metrics-seed'
+assert (root/'migration/metrics-seed-verified').exists(), 'Metrics source checksum verification missing'
+manifest=json.loads((root/'migration/metrics-manifest.json').read_text())
+for name,expected in manifest.items():
+    h=hashlib.sha256()
+    with (seed/name).open('rb') as f:
+        while block:=f.read(1024*1024):h.update(block)
+    assert h.hexdigest()==expected,'Metrics checksum changed before restore'
+for service in ['metrics','logs']:
+    status=subprocess.check_output(['docker','compose','ps','-q',service],text=True).strip()
     if status:
         assert subprocess.check_output(['docker','inspect','--format','{{.State.Running}}',status],text=True).strip()=='false','Destination still running'
-    with tarfile.open(archive) as tar:
-        for entry in tar:
-            assert not entry.name.startswith('/') and '..' not in Path(entry.name).parts,'Unsafe archive path'
-            assert not entry.issym(),'Unexpected symbolic link'
-            if entry.islnk():assert not entry.linkname.startswith('/') and '..' not in Path(entry.linkname).parts
     current=root/'data'/service;backup=root/'data'/(service+'-bootstrap')
     assert not backup.exists(), 'Bootstrap backup exists'
-    current.rename(backup);current.mkdir()
-    subprocess.run(['tar','--no-same-owner','-xf',str(archive),'-C',str(current)],check=True)
+    current.rename(backup)
+    if service=='metrics':seed.rename(current)
+    else:
+        current.mkdir();archive=root/'migration/logs.tar'
+        with tarfile.open(archive) as tar:
+            for entry in tar:
+                assert not entry.name.startswith('/') and '..' not in Path(entry.name).parts,'Unsafe archive path'
+                assert not entry.issym(),'Unexpected symbolic link'
+                if entry.islnk():assert not entry.linkname.startswith('/') and '..' not in Path(entry.linkname).parts
+        subprocess.run(['tar','--no-same-owner','-xf',str(archive),'-C',str(current)],check=True)
     subprocess.run(['chown','-R','1000:1000',str(current)],check=True)
-subprocess.run(['docker-compose','up','-d','metrics','logs'],check=True)
+subprocess.run(['docker','compose','up','-d','metrics','logs'],check=True)
 (root/'migration/restored').write_text('Snapshot restore completed; source preserved\n')
 subprocess.run(['du','-sh',str(root/'data/metrics'),str(root/'data/logs')],check=True)
 '''

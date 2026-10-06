@@ -23,7 +23,7 @@ The two boot volumes leave only 6GB under the 200GB free allocation. OKE node
 replacement/burst activity can exceed it. Resizing a volume down is unsupported;
 restructuring the existing storage requires a separate migration.
 
-Cloud-init installs Docker/Compose and enables security updates, bounded Docker
+Cloud-init installs Docker/Compose v2 and enables security updates, bounded Docker
 logs, and a 2GB swap file to absorb transient initialization memory pressure.
 Swap does not make a workload requiring more than 1GB RAM suitable for a micro VM.
 
