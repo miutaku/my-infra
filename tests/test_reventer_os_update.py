@@ -1,10 +1,12 @@
+import ast
+import tempfile
 import importlib.util
 import io
 import json
 from pathlib import Path
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 spec=importlib.util.spec_from_file_location('updater',Path(__file__).resolve().parents[1]/'observability/reventer/os-update/controller.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
@@ -78,10 +80,22 @@ class UpdateTests(unittest.TestCase):
   prepared,fields=m.prepare_log(row)
   self.assertEqual(fields,{'env','pod'});self.assertNotIn('_stream_id',prepared)
   self.assertEqual(prepared['env'],'prd')
+ def test_log_batches_keep_distinct_stream_schemas(self):
+  rows=[{"_stream":"{env=\"prd\"}","_time":"x","_msg":"a","pod":"ordinary"},{"_stream":"{env=\"prd\",pod=\"backend\"}","_time":"x","_msg":"b"}]
+  batches=list(m.log_batches(rows));self.assertEqual([fields for _,fields in batches],[["env"],["env","pod"]])
+  self.assertEqual(batches[0][0][0]["pod"],"ordinary")
+ def test_stream_label_conflict_refused(self):
+  with self.assertRaises(m.Unsafe):m.prepare_log({"_stream":"{env=\"prd\"}","env":"stg"})
  def test_invalid_log_stream_refused(self):
   with self.assertRaises(m.Unsafe):m.prepare_log({'_stream':'{env="prd",bad}','_time':'x'})
 
 class SafetyGateTests(unittest.TestCase):
+ def test_failed_apt_marker_does_not_wait_for_reboot_deadline(self):
+  def failed():raise m.FailedUpdate('package update failed')
+  with patch.object(m.time,'sleep') as sleep:
+   with self.assertRaises(m.FailedUpdate):m.poll(failed,1800)
+  sleep.assert_not_called()
+
  def test_health_200_without_collector_canaries_is_failure(self):
   c=m.Controller.__new__(m.Controller)
   class Response(io.BytesIO):status=200
@@ -107,7 +121,83 @@ class SafetyGateTests(unittest.TestCase):
   self.assertEqual(called[0][1]['if_match'],'post-reboot')
   self.assertEqual(called[0][0][1].extended_metadata['unrelated'],'keep')
 
+class BootRecoveryTests(unittest.TestCase):
+ def test_restored_boot_waits_for_guest_before_restarting_storage(self):
+  c=m.Controller.__new__(m.Controller);c.me='01';c.peer='02';c.state={}
+  c.health=Mock(return_value=True);c.catch_up=Mock()
+  ready=[False];events=[]
+  def guest(action,**kw):
+   events.append(action)
+   if action=='status':
+    if not ready[0]:ready[0]=True;raise m.Unsafe('SSH is still starting')
+    return {'services':{x:'running' for x in m.SERVICES}}
+   if action=='start-storage':self.assertTrue(ready[0])
+   return {}
+  c.guest=guest
+  with patch.object(m.time,'sleep'):c.validate()
+  self.assertEqual(events[:3],['status','status','start-storage'])
+  self.assertEqual(events[-1],'activate');c.catch_up.assert_called_once()
+
+ def test_restart_reuses_recorded_volume_and_preserves_failed_boot(self):
+  c=m.Controller.__new__(m.Controller)
+  c.me='01';c.peer='02'
+  c.cfg={'allow_paid_recovery':True,'nodes':{'02':{'id':'target'}}}
+  c.state={'phase':'restoring','backup_id':'backup','recovery_volume_id':'restored'}
+  c.health=Mock(return_value=True);c.validate=Mock()
+  c.save=lambda **changes:c.state.update(changes)
+  c.load=lambda:c.state
+  attached=['failed']
+  c.boot=lambda:attached[0]
+  def replace(instance,details):
+   self.assertEqual(instance,'target')
+   self.assertEqual(details.source_details.boot_volume_id,'restored')
+   self.assertTrue(details.source_details.is_preserve_boot_volume_enabled)
+   attached[0]='restored'
+  c.compute=types.SimpleNamespace(get_instance=lambda _:types.SimpleNamespace(data=types.SimpleNamespace(lifecycle_state='RUNNING')),update_instance=Mock(side_effect=replace))
+  c.block=types.SimpleNamespace(get_boot_volume=lambda _:types.SimpleNamespace(data=types.SimpleNamespace(lifecycle_state='AVAILABLE')),create_boot_volume=Mock(),get_boot_volume_backup=lambda _:types.SimpleNamespace(data=types.SimpleNamespace(id='backup',freeform_tags={})),update_boot_volume_backup=Mock())
+  with patch.object(m,'poll',side_effect=lambda fn,timeout=0:self.assertTrue(fn())):c.rollback()
+  c.block.create_boot_volume.assert_not_called()
+  c.health.assert_called_once_with('01');c.validate.assert_called_once()
+  self.assertEqual(c.state['result'],'rolled-back')
+  c.compute.update_instance.assert_called_once()
+  self.assertEqual(c.block.update_boot_volume_backup.call_args.args[1].freeform_tags['verified'],'true')
+
+class InstallerTests(unittest.TestCase):
+ def test_generated_authorization_helper_preserves_real_newlines(self):
+  source=Path(__file__).resolve().parents[1]/'scripts/deploy-reventer-os-update.py'
+  tree=ast.parse(source.read_text())
+  node=next(n for n in ast.walk(tree) if isinstance(n,ast.Assign) and any(isinstance(x,ast.Name) and x.id=='code' for x in n.targets))
+  code=ast.literal_eval(node.value)
+  with tempfile.TemporaryDirectory() as tmp:
+   path=Path(tmp)/'keys';path.write_text('admin-key\nold reventer-peer-os-update\n')
+   with patch('sys.stdin',io.StringIO('new reventer-peer-os-update\n')):exec(compile(code.replace('/home/ubuntu/.ssh/authorized_keys',str(path)),'authorize.py','exec'),{})
+   self.assertEqual(path.read_text(),'admin-key\nnew reventer-peer-os-update\n')
+
 class GuestStatusTests(unittest.TestCase):
+ def test_metrics_stream_accepts_no_content_and_rejects_errors(self):
+  spec=importlib.util.spec_from_file_location('guest',Path(__file__).resolve().parents[1]/'observability/reventer/os-update/guest.py')
+  guest=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest)
+  for status in [200,204,500]:
+   with self.subTest(status=status):
+    connection=Mock();connection.getresponse.return_value=types.SimpleNamespace(status=status,read=lambda:b'')
+    source=io.BytesIO(b'{}\n')
+    with patch.object(guest.http.client,'HTTPConnection',return_value=connection),patch.object(guest.sys,'stdin',types.SimpleNamespace(buffer=source)):
+     if status==500:
+      with self.assertRaises(AssertionError):guest.upload('/api/v1/import')
+     else:guest.upload('/api/v1/import')
+    self.assertIs(connection.request.call_args.kwargs['body'],source)
+    self.assertTrue(connection.request.call_args.kwargs['encode_chunked'])
+
+ def test_logs_import_uses_ndjson_content_type(self):
+  spec=importlib.util.spec_from_file_location("guest",Path(__file__).resolve().parents[1]/"observability/reventer/os-update/guest.py")
+  guest=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest)
+  response=Mock();response.__enter__=Mock(return_value=types.SimpleNamespace(status=200));response.__exit__=Mock(return_value=False)
+  request={"action":"import-logs","records":[{"_time":"x","_msg":"message","env":"prd"}],"fields":["env"]}
+  with patch.object(guest.os,"geteuid",return_value=0),patch.object(guest.sys,"stdin",types.SimpleNamespace(buffer=io.BytesIO((json.dumps(request)+"\n").encode()))),patch.object(guest.sys,"stdout",io.StringIO()),patch.object(guest.urllib.request,"urlopen",return_value=response) as opening:
+   guest.main()
+  sent=opening.call_args.args[0];self.assertEqual(sent.get_header("Content-type"),"application/stream+json")
+  self.assertEqual(json.loads(sent.data),request["records"][0])
+
  def check_format(self,array):
   spec=importlib.util.spec_from_file_location('guest',Path(__file__).resolve().parents[1]/'observability/reventer/os-update/guest.py')
   guest=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest)

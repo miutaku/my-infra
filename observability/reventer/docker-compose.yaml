@@ -112,6 +112,7 @@ services:
     - victoria-logs.reventer-monitoring.svc.cluster.local:127.0.0.1
     - victoria-logs.reventer-monitoring.svc:127.0.0.1
     command:
+    - -metrics-addr=127.0.0.1:8090
     - -token
     - ${PDC_TOKEN:?required}
     - -cluster

@@ -1,10 +1,11 @@
 # 監視VMのOS自動更新
 
-2026-10-06: 実収集canary・限定IAM・両VMの制御配置と読み取り確認まで完了。
-更新タイマーはまだ有効化していない。
-完全なOS復旧用50GB volumeの一時課金について、ユーザー回答を待つ。
-現在194GBのため、復旧volumeを追加すると244GBになる。故障volumeは検証・
-調査が終わるまで残すので、削除までの期間は超過料金が発生し得る。
+2026-10-06: 復旧時の一時課金はユーザー承認済み。
+Re:Venterでは復旧やscale時の無視できる程度の一時費用を許容する。
+通常194GB、復旧volumeを追加する間は244GBになるため、検証後に故障した
+元volumeを整理する。課金を恒常化させず、無料枠・backup枠を維持する。
+instance principalによる実backup・OS更新・boot復旧・データ補完を検証済み。
+日次有効化前に、両VMを片側ずつ正常更新する。
 
 ## 更新と判定
 
@@ -54,9 +55,12 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 
 - OCIは2 instance OCIDだけのdynamic group / instance principalを使う。
   管理者のOCI API keyやSSH秘密鍵をVMへ配らない。
-- 変更権限はdefined tagで監視instance / boot / backupへ限定する。
-  `VOLUME_CREATE/DELETE`は独立した復旧compartmentだけに付与する。
-  OKE volumeの変更やinstanceの作成・削除権限を与えない。
+- 2 VMとboot / backup / 復旧volumeは専用`reventer-observability` compartmentに置く。
+  instanceの変更・boot replacement・power操作・volume接続/切断とvolume-family管理をそこで許可する。
+  instanceの作成・削除、OKE volumeの書き込みは許可しない。
+  networkは共有compartmentに残し、guest controllerへnetwork変更権限を渡さない。
+  dynamic groupはOCIDで指定し、元Ubuntu image 1個のREADと既存の2 tag namespaceの
+  useだけを許可する。tag定義やimageを管理する権限は渡さない。
 - backup / volume / compartmentの一覧は、tenancy全体の無料backup枠確認のため
   read-onlyで確認する。検証済みbackupを各VMで最新1個ずつ残し、今回のcontrollerが
   作成した古い検証済みbackupだけを整理する。手動backupは触らない。
@@ -74,7 +78,7 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 2. 同scriptの`--tag-boot-volumes`で、対象2 boot volumeの既存tagを保持してRoleを追加。
 3. `requirements.lock`に従いPython 3.10 amd64のwheelsを取得する。
    `deploy-reventer-os-update.py`はデフォルトではinstall / read-only checkだけを行う。
-4. 課金方針の承認後、実backupからのboot replacement・catch-up・実収集の復旧を
+4. 承認済みの課金方針に従い、実backupからのboot replacement・catch-up・実収集の復旧を
    片側で検証し、他方を稼働させたまま動くことを確認する。
 5. `deploy-reventer-os-update.py --enable --allow-paid-recovery`で有効化する。
    独立したUbuntu unattended upgradeは、この段階で初めて無効化し、同時更新を防ぐ。
@@ -88,11 +92,15 @@ bundle / credentialsの変更はjournalがidleの間に行い、更新との重�
 ## 今回の検証範囲
 
 実STG/PRD collector経由で、両VMのcanary Metrics / Logsが新着になることを確認。
-制御の15テスト（収集停止、backup失敗、rollback後の次系抑止、中断再開、排他、
+制御の23テスト（収集停止、backup失敗、rollback後の次系抑止、中断再開、排他、
 未来時刻の拒否など）とTerraform validationを実施した。
 両VMで実収集・forced SSH・OCI readの`--check`も成功。controllerの最大RSSは
-約70MiB（read-only check時）。既存のUbuntu security update timerは維持した。
-実OS更新・課金volumeからのboot復旧・タイマー有効化は、課金方針の回答後に実施する。
+約70MiB（read-only check時）。VM02をkernel 6.8.0-1062へ実更新した後、
+保存サービス停止を注入し、更新前の6.8.0-1060へboot復旧した。
+OCI IAMの不足を修正後、管理者キーを使わずinstance principalでvolume作成・
+boot交換・履歴補完・両環境の実収集復帰を確認。journalからの復旧再開と、
+rollback後の他方更新の抑止も検証した。
+独立したUbuntu security update timerは実機検証の開始時に協調制御へ移した。
 
 公式仕様:
 - [Ubuntu automatic updates](https://documentation.ubuntu.com/security/security-updates/)

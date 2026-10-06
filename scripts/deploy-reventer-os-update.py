@@ -44,6 +44,7 @@ def main():
  public={};hostkeys={}
  for replica,node in nodes.items():
   host=node['public_ip']
+  ssh(host,'sudo flock --nonblock /run/reventer-os-update.lock true')
   ssh(host,"state=$(systemctl show -p ActiveState --value reventer-os-update.service 2>/dev/null || true); case \"$state\" in activating|active|reloading) exit 42;; esac")
   if not args.enable:
    ssh(host,'test ! -e /etc/reventer-os-update/enabled')
@@ -84,11 +85,11 @@ sudo systemctl daemon-reload
   line='restrict,from="'+nodes[peer]['private_ip']+'",command="sudo -n /usr/local/sbin/reventer-update-guest" '+public[peer]
   # Idempotent replacement of only the tagged maintenance key; retain all
   # existing administrator keys. The private key never leaves its own VM.
-  code='''from pathlib import Path
+  code=r'''from pathlib import Path
 import sys
 p=Path('/home/ubuntu/.ssh/authorized_keys')
 lines=[x for x in p.read_text().splitlines() if not x.endswith(' reventer-peer-os-update')]
-p.write_text('\\n'.join(lines+[sys.stdin.read().strip()])+'\\n');p.chmod(0o600)
+p.write_text('\n'.join(lines+[sys.stdin.read().strip()])+'\n');p.chmod(0o600)
 '''
   # Send key as data, not shell interpolation.
   with tempfile.TemporaryDirectory() as tmp:
@@ -101,6 +102,9 @@ p.write_text('\\n'.join(lines+[sys.stdin.read().strip()])+'\\n');p.chmod(0o600)
  for replica,node in nodes.items():
   host=node['public_ip']
   ssh(host,'sudo env PYTHONPATH=/opt/reventer-os-update/deps python3 /opt/reventer-os-update/controller.py --check')
+ # Check both peers before enabling either scheduled updater.
+ for replica,node in nodes.items():
+  host=node['public_ip']
   if args.enable:
    # Only disable Ubuntu's uncoordinated updates when the coordinated path is
    # fully installed and both collection canaries/readiness checks have passed.
