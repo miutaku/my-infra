@@ -1,15 +1,17 @@
 # Re:Venter monitoring HA on two OCI AMD micro VMs
 
 Status (2026-10-06): Talos handover completed. Both VMs and authenticated endpoints
-provisioned. Historical seeding, dual ingestion and failover validation are in
-progress; Grafana PDC cutover has not been performed.
+provisioned. Historical seeding, dual ingestion, checksum/parity checks and
+both process/Tunnel failover tests are complete. Grafana PDC cutover is pending
+confirmation of the current datasource URLs. See [RUNBOOK.md](RUNBOOK.md) for
+validation evidence, operational limits and the remaining cutover steps.
 
 ## Placement and storage
 
 Use two VM.Standard.E2.1.Micro instances in the PRD tenancy's home region,
 ap-tokyo-1. Place them in different fault domains if available. Each has a 50GB
 boot volume; store monitoring data on that volume, with no additional block
-volume. The last OCI inventory was 94GB in PRD, so the projected total is 194GB.
+volume. The post-deployment OCI inventory is 194GB in PRD (94GB OKE + 100GB monitoring).
 Recheck all active and detached volumes across compartments immediately before
 creation. Do not launch if the total would exceed 200GB, if two E2 micro slots
 are unavailable, or if only paid shapes are available. Capacity is not reserved.

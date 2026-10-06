@@ -1,7 +1,6 @@
-version: '3.8'
 services:
   metrics:
-    image: victoriametrics/victoria-metrics:v1.111.0
+    image: victoriametrics/victoria-metrics:v1.111.0@sha256:1676d73b39297a938eb60f0894b44b264152a6a38074fa5de99d9bdc425deb65
     restart: unless-stopped
     mem_limit: 448m
     security_opt:
@@ -15,13 +14,14 @@ services:
     - -httpListenAddr=:8428
     - -memory.allowedBytes=335544320
     - -search.maxConcurrentRequests=2
+    - -dedup.minScrapeInterval=1ms
     ports:
     - 127.0.0.1:18428:8428
     volumes:
     - ./data/metrics:/storage
     user: 1000:1000
   logs:
-    image: victoriametrics/victoria-logs:v1.50.0
+    image: victoriametrics/victoria-logs:v1.50.0@sha256:ae9bea8d8a3b0fc47c7f0058bcca410e79c84b4a0acd12d4dac71b9302526590
     restart: unless-stopped
     mem_limit: 192m
     security_opt:
@@ -41,7 +41,7 @@ services:
     - ./data/logs:/vlogs
     user: 1000:1000
   metrics-query:
-    image: victoriametrics/vmauth:v1.111.0
+    image: victoriametrics/vmauth:v1.111.0@sha256:c2ba0e4a5d8e7b30b6edffa5ec05dac2032ee72bde52e7ea37f6e9ab1cbc7223
     restart: unless-stopped
     network_mode: host
     mem_limit: 32m
@@ -61,7 +61,7 @@ services:
       CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET:?required}
     user: 1000:1000
   logs-query:
-    image: victoriametrics/vmauth:v1.111.0
+    image: victoriametrics/vmauth:v1.111.0@sha256:c2ba0e4a5d8e7b30b6edffa5ec05dac2032ee72bde52e7ea37f6e9ab1cbc7223
     restart: unless-stopped
     network_mode: host
     mem_limit: 32m
@@ -97,6 +97,7 @@ services:
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?required}
   pdc:
+    profiles: [grafana]
     image: grafana/pdc-agent:${PDC_VERSION:?required}
     restart: unless-stopped
     network_mode: host

@@ -49,9 +49,13 @@ def main():
             run(['ssh', *SSH, host, 'mkdir -p -m 700 /tmp/reventer-observability-stage/config'])
             run(['scp', *SSH, str(env), str(BUNDLE/'docker-compose.yaml'), str(BUNDLE/'reventer-observability.service'), host+':/tmp/reventer-observability-stage/'])
             run(['scp', *SSH, str(BUNDLE/'config/metrics.yaml'), str(BUNDLE/'config/logs.yaml'), host+':/tmp/reventer-observability-stage/config/'])
-        run(['ssh', *SSH, host, 'sudo install -d -m 700 /opt/reventer-observability /opt/reventer-observability/config /opt/reventer-observability/data/metrics /opt/reventer-observability/data/logs && sudo cp /tmp/reventer-observability-stage/docker-compose.yaml /opt/reventer-observability/ && sudo install -m 600 /tmp/reventer-observability-stage/.env /opt/reventer-observability/.env && sudo cp /tmp/reventer-observability-stage/config/*.yaml /opt/reventer-observability/config/ && sudo install -m 644 /tmp/reventer-observability-stage/reventer-observability.service /etc/systemd/system/ && rm -rf /tmp/reventer-observability-stage && sudo chown -R 1000:1000 /opt/reventer-observability/config /opt/reventer-observability/data && sudo systemctl daemon-reload && sudo sh -c \'cd /opt/reventer-observability && docker-compose config --quiet && docker-compose pull\''])
+        run(['ssh', *SSH, host, 'sudo install -d -m 700 /opt/reventer-observability /opt/reventer-observability/config /opt/reventer-observability/data/metrics /opt/reventer-observability/data/logs && sudo cp /tmp/reventer-observability-stage/docker-compose.yaml /opt/reventer-observability/ && sudo install -m 600 /tmp/reventer-observability-stage/.env /opt/reventer-observability/.env && sudo cp /tmp/reventer-observability-stage/config/*.yaml /opt/reventer-observability/config/ && sudo install -m 644 /tmp/reventer-observability-stage/reventer-observability.service /etc/systemd/system/ && rm -rf /tmp/reventer-observability-stage && sudo chown -R 1000:1000 /opt/reventer-observability/config /opt/reventer-observability/data && sudo systemctl daemon-reload && sudo sh -c \'cd /opt/reventer-observability && docker compose config --quiet && docker compose pull\''])
         services = 'metrics logs metrics-query logs-query tunnel' + (' pdc' if args.enable_pdc else '')
-        run(['ssh', *SSH, host, "sudo sh -c 'cd /opt/reventer-observability && docker-compose up -d "+services+"'"])
+        run(['ssh', *SSH, host, "sudo sh -c 'cd /opt/reventer-observability && docker compose up -d "+services+"'"])
+        if args.enable_pdc:
+            dropin="[Service]\nExecStart=\nExecStart=/usr/bin/docker compose --profile grafana up -d\n"
+            run(['ssh',*SSH,host,"sudo mkdir -p /etc/systemd/system/reventer-observability.service.d && sudo tee /etc/systemd/system/reventer-observability.service.d/grafana.conf >/dev/null"],input=dropin)
+        run(['ssh',*SSH,host,'sudo systemctl daemon-reload && sudo systemctl enable reventer-observability.service'])
         print(name+': storage, query gateways and authenticated Tunnel deployed'+('; PDC enabled' if args.enable_pdc else '; PDC withheld pending validation'),flush=True)
 
 if __name__ == '__main__':
