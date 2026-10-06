@@ -2,8 +2,9 @@
 
 2026-10-06、TalosへのGitOps移行とVM側PDCへの切り替えを完了。
 PRD OCIの別Fault Domainにある2台へSTG/PRDの監視データを複製する。
-既存GrafanaのMetrics / Logs URLとPDC認証は維持し、旧PDCはreplicas=0。
-旧保存先とPVCは、ダッシュボード確認後の撤去まで切り戻し用に維持する。
+既存GrafanaのMetrics / Logs URLとPDC認証は維持する。
+利用者が既存URLでのGrafanaアクセスを確認した後、旧保存先・PVC・OCIボリュームを撤去済み。
+STGの割当は300GBから200GB、PRDは194GB。旧PDCと旧取り込みPodも撤去した。
 
 既存URL:
 - `http://victoria-metrics.reventer-monitoring.svc.cluster.local:8428`
@@ -72,17 +73,13 @@ RPO/RTOをゼロと保証するものではない。
    同じPDC networkでGrafanaの既存datasource・dashboard・alertを確認する。
 4. 実Grafanaから片側停止と復帰を再確認する。停止側の復帰前にqueue/freshnessを
    確認し、必要ならPDCを一時的に除外してcatch-upを待つ。
-5. 旧保存先を停止する前にSTG vmagentの必須podAffinityを変更する。
-   現在は旧VictoriaMetricsと同じRWO PVCをqueueに使うため同一nodeへ配置する。
-   旧Pod停止後も必須affinityを残すとvmagentを再スケジュールできない。
-   PVCはqueue用として維持し、旧保存データを誤ってpruneしない。
-6. 旧保存先へのPRD remoteWrite / STG・PRD Loki outputを取り除く。
-   日次集計はVM_URLをvmagentへ変更し、HA_VM_URLの重複を取り除く。
-   現在は移行中の旧Grafanaも更新するため既存とHAの両方へ記録している。
-   旧STG VictoriaMetrics/Logsは停止するが、PVC/namespace/secretを削除しない。
-
-旧PDCを復帰するときは新PDCを止め、旧保存先の時間範囲とfreshnessを確認する。
-異なる履歴を持つbackendを同じPDC networkへ混在させない。
+5. 撤去完了: STG vmagentのqueueを専用hostPathへ移し、旧VictoriaMetricsへの
+   必須podAffinityを除去。STG/PRDとも各2つのHA remoteWrite先だけを使う。
+   Fluent Bitの旧Loki outputも除去し、retention-jobはvmagentへ一度だけ記録する。
+6. 利用者のGrafana切替確認と削除指示を受け、PodによるPVC参照がないこと、
+   両VMのSTG/PRD Metrics・Logs canaryと送信queueを確認後、旧Deployment・Service・
+   PVC2本を削除。CSIのDelete reclaim policyによってOCIの50GB volume2本も削除済み。
+   旧保存先へ切り戻す手順は使えない。復旧は生存VMまたは検証済みbackupから行う。
 
 ## バックアップ・復元
 
@@ -106,7 +103,10 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 
 ## 容量・認証・監視
 
-- PRD割当194GB、200GB無料枠との差は6GB。STGにはVM/volumeを追加していない。
+- STG割当200GB（100GB boot × 2）、PRD割当194GB（47GB boot × 2 + 50GB boot × 2）。
+  両環境ともvolumeは10 VPU/GB、OKEはBasic。PRD volume backupは2個/無料5個枠。
+  直近3日間の利用明細でCompute課金は0。公式文書のA1無料条件と既存契約の適用は
+  区別し、明細を監視する。共有バックアップのObject Storageリクエスト課金は別途確認。
   OKE node交換・burst・残ったboot volumeも全て集計してから変更する。
 - 各VMは1GB RAM / 50GB boot。query concurrency=2とメモリ上限を使い、
   Docker log rotation / swap / security updatesを設定。swapを常用してよい
@@ -114,7 +114,8 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 - Always Freeのidle reclamationや同一tenancy/ADの障害は、この2 VMの片側障害
   対策だけでは保証できない。人工的な負荷で回収判定を回避せず、状態を監視し
   復旧可能なbackupを持つ。
-- Metrics queueは各URL 2GiB。STGは既存PVC、PRDはbase nodeのhostPathに保持する。
+- Metrics queueは各URL 2GiB。STG/PRDとも専用hostPath `/var/lib/reventer/vmagent` に保持する。
+  node disk消失ではqueueも失われるため、失われた期間は生存replicaから復旧する。
   hostPathはPod再起動には残るが、node/disk消失には残らない。
 - Logsは各output 256MBのfilesystem queue、無制限retry、jitter付き3〜30秒の
   再試行。deliveryはat least onceであり、再送時に重複logが生じ得る。
