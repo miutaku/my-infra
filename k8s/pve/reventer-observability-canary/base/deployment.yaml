@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observability-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: observability-canary
+  template:
+    metadata:
+      labels:
+        app: observability-canary
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: /metrics
+        prometheus.io/port: '9090'
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: canary
+        image: busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+        command: [/bin/sh, -ec]
+        args:
+        - |
+          httpd -f -p 9090 -h /tmp &
+          while true; do
+            now=$(date +%s)
+            printf 'reventer_observability_canary_timestamp_seconds %s\n' "$now" > /tmp/metrics.new
+            mv /tmp/metrics.new /tmp/metrics
+            printf '{"message":"reventer-observability-canary","canary_timestamp":"%s"}\n' "$now"
+            sleep 30
+          done
+        ports:
+        - name: metrics
+          containerPort: 9090
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: metrics
+        resources:
+          requests:
+            cpu: 1m
+            memory: 4Mi
+          limits:
+            cpu: 50m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 1Mi

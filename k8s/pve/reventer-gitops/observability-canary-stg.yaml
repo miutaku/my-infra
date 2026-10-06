@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reventer-observability-canary-stg
+  namespace: argocd
+spec:
+  project: reventer
+  source:
+    repoURL: https://github.com/miutaku/my-infra.git
+    targetRevision: main
+    path: k8s/pve/reventer-observability-canary/stg
+  destination:
+    name: oke-stg
+    namespace: app-reventer-stg
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - ServerSideApply=true

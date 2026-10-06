@@ -13,3 +13,5 @@ resources:
 - external-secret-notifications-discord.yaml
 - notifications.yaml
 - image-updater.yaml
+- observability-canary-stg.yaml
+- observability-canary-prd.yaml
