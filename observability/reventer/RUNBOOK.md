@@ -87,3 +87,9 @@ snapshotで履歴を再seedする。queueだけでは古い履歴は復元でき
 - Bootstrap `user_data`変更はOCIでVM再作成を要求する。既存VMは`prevent_destroy`
   と`ignore_changes`で保護し、Docker Compose v2やbundleの更新はguest内で行う。
   boot volumeの保持も有効。日常の設定更新でVMを作り直さない。
+
+## OS更新
+
+日次の順次更新、実収集canary、boot backupによるrollbackは
+[os-update/README.md](os-update/README.md)を参照。復旧volumeの課金方針の回答前は
+自動更新timerを有効化しない。既存のsecurity update設定は有効化時に協調制御へ移す。

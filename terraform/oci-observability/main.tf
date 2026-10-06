@@ -87,6 +87,9 @@ resource "oci_core_instance" "monitoring" {
   shape                = "VM.Standard.E2.1.Micro"
   freeform_tags        = local.tags
   preserve_boot_volume = true
+  defined_tags = var.os_update_prepared ? merge(lookup(var.monitoring_defined_tags, format("%02d", count.index + 1), {}), {
+    "${oci_identity_tag_namespace.os_update[0].name}.${oci_identity_tag.os_update_role[0].name}" = "observability"
+  }) : null
   create_vnic_details {
     subnet_id        = oci_core_subnet.monitoring.id
     assign_public_ip = true
@@ -110,9 +113,15 @@ resource "oci_core_instance" "monitoring" {
   }
   lifecycle {
     prevent_destroy = true
+    precondition {
+      condition     = !var.os_update_prepared || length(var.monitoring_defined_tags) == 2
+      error_message = "Preserve both VMs existing defined tags before preparing maintenance."
+    }
     # OCI user_data changes force replacement. Roll out live configuration with
     # the deployment script; updated bootstrap recipes apply only to new VMs.
-    ignore_changes = [metadata["user_data"]]
+    # The updater owns its journal and boot source after a full OS restore.
+    # Boot-source/size changes require an explicit capacity migration.
+    ignore_changes = [metadata["user_data"], extended_metadata, source_details]
   }
 }
 
