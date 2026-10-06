@@ -39,8 +39,9 @@ Cloudflare Accessのservice tokenで認証する。共有Tunnelでランダム�
 - 片側の保存プロセス停止時、同じ側のquery gatewayからpeerへ切り替わった。
   全監視プロセスとTunnelの停止時も、生存側のqueryは約0.4〜1.8秒で成功。
   停止側への書き込みのみ永続キューへ保持され、Metrics破棄カウンタは0。
-  VM01停止中に実際の日次継続率jobも成功した。両側を復帰済み。
-- 履歴・実ingest・query後のメモリ使用量は約420MB、availableは約370MB。
+  VM01停止中に実際の日次継続率jobも成功した。両側を復帰済み。最終確認で全Metrics queueと全Fluent Bit backlogが0、
+  両collectorの破棄カウンタ0、各VMのOOM / restartも0。systemd起動経路を確認。
+- 履歴・実ingest・query後のメモリ使用量は約420〜454MB、availableは約341〜381MB。
   PDCを含む実Grafanaダッシュボード全体の負荷は切り替え時に確認する。
 - 認証済みの4 endpointはhealth 200、認証なしは403。管理APIは公開しない。
 
