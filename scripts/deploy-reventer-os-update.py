@@ -44,6 +44,9 @@ def main():
  public={};hostkeys={}
  for replica,node in nodes.items():
   host=node['public_ip']
+  ssh(host,"state=$(systemctl show -p ActiveState --value reventer-os-update.service 2>/dev/null || true); case \"$state\" in activating|active|reloading) exit 42;; esac")
+  if not args.enable:
+   ssh(host,'test ! -e /etc/reventer-os-update/enabled')
   ssh(host,'install -d -m 700 /tmp/reventer-os-update-stage/wheels')
   run(['scp',*SSH,*map(str,[BUNDLE/'controller.py',BUNDLE/'guest.py',BUNDLE/'upgrade.sh',BUNDLE/'reventer-os-update.service',BUNDLE/'reventer-os-update.timer',BUNDLE/'99-reventer-coordinated-updates']), 'ubuntu@'+host+':/tmp/reventer-os-update-stage/'])
   run(['scp',*SSH,*map(str,wheels),'ubuntu@'+host+':/tmp/reventer-os-update-stage/wheels/'])

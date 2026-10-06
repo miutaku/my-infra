@@ -1,6 +1,7 @@
 # 監視VMのOS自動更新
 
-2026-10-06: 実収集canaryと制御実装を追加。更新タイマーはまだ有効化していない。
+2026-10-06: 実収集canary・限定IAM・両VMの制御配置と読み取り確認まで完了。
+更新タイマーはまだ有効化していない。
 完全なOS復旧用50GB volumeの一時課金について、ユーザー回答を待つ。
 現在194GBのため、復旧volumeを追加すると244GBになる。故障volumeは検証・
 調査が終わるまで残すので、削除までの期間は超過料金が発生し得る。
@@ -82,12 +83,15 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 `journalctl -u reventer-os-update.service -u reventer-os-upgrade.service`とOCI journalを確認。
 `blocked`を解放する前に、両VMの履歴・freshness・queueと失敗原因を確認する。
 Terraformからjournalを上書きしない。故障volumeの整理とbackup数も確認する。
+bundle / credentialsの変更はjournalがidleの間に行い、更新との重複を避ける。
 
 ## 今回の検証範囲
 
 実STG/PRD collector経由で、両VMのcanary Metrics / Logsが新着になることを確認。
-制御の13テスト（収集停止、backup失敗、rollback後の次系抑止、中断再開、排他、
+制御の15テスト（収集停止、backup失敗、rollback後の次系抑止、中断再開、排他、
 未来時刻の拒否など）とTerraform validationを実施した。
+両VMで実収集・forced SSH・OCI readの`--check`も成功。controllerの最大RSSは
+約70MiB（read-only check時）。既存のUbuntu security update timerは維持した。
 実OS更新・課金volumeからのboot復旧・タイマー有効化は、課金方針の回答後に実施する。
 
 公式仕様:
