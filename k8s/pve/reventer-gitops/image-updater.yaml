@@ -1,0 +1,32 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: reventer-image-updater
+  namespace: argocd
+spec:
+  commonUpdateSettings:
+    updateStrategy: digest
+    pullSecret: pullsecret:argocd/ghcr-image-updater-secret
+  writeBackConfig:
+    method: git
+    gitConfig:
+      writeBackTarget: kustomization
+  applicationRefs:
+  - namePattern: reventer-stg
+    images:
+    - alias: backend
+      imageName: ghcr.io/miutaku/reventer/backend:latest
+    - alias: frontend
+      imageName: ghcr.io/miutaku/reventer/frontend:latest
+    - alias: admin
+      imageName: ghcr.io/miutaku/reventer/admin:latest
+  - namePattern: reventer-admin-prd
+    images:
+    - alias: admin
+      imageName: ghcr.io/miutaku/reventer/admin-prd:latest
+  - namePattern: reventer-prd
+    images:
+    - alias: backend
+      imageName: ghcr.io/miutaku/reventer/backend-prd:latest
+    - alias: frontend
+      imageName: ghcr.io/miutaku/reventer/frontend-prd:latest

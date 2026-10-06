@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reventer-stg
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-deployed.discord: ''
+spec:
+  project: reventer
+  source:
+    repoURL: git@github.com:miutaku/reventer.git
+    targetRevision: main
+    path: infrastructure/k8s/stg
+  destination:
+    namespace: app-reventer-stg
+    name: oke-stg
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      enabled: false
+    syncOptions:
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    name: backend
+    jsonPointers:
+    - /spec/replicas
+  - group: apps
+    kind: Deployment
+    name: frontend
+    jsonPointers:
+    - /spec/replicas
+  - group: apps
+    kind: Deployment
+    name: admin
+    jsonPointers:
+    - /spec/replicas

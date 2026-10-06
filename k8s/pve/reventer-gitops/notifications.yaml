@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  context: 'argocdUrl: https://argocd-home-k8s.miutaku.work
+
+    '
+  service.webhook.discord: "url: $discord-webhook-url\nheaders:\n  - name: Content-Type\n\
+    \    value: application/json\n"
+  template.image-deployed: "webhook:\n  discord:\n    method: POST\n    body: |\n\
+    \      {\n        \"embeds\": [{\n          \"title\": \"\U0001F680 {{.app.metadata.name}}\
+    \ deployed\",\n          \"url\": \"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}\"\
+    ,\n          \"color\": 3066993,\n          \"fields\": [\n            {\"name\"\
+    : \"Revision\", \"value\": \"{{.app.status.sync.revision}}\", \"inline\": true}\n\
+    \          ]\n        }]\n      }\n"
+  trigger.on-deployed: "- description: Application is synced and healthy. Triggered\
+    \ once per commit.\n  oncePer: app.status.operationState?.syncResult?.revision\n\
+    \  send: [image-deployed]\n  when: app.status.operationState != nil and app.status.operationState.phase\
+    \ in ['Succeeded']\n    and app.status.health.status == 'Healthy' and (!time.Parse(app.status.health.lastTransitionTime).Add(1\n\
+    \    * time.Minute).Before(time.Parse(app.status.operationState.finishedAt)) or\
+    \ time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))\n"
