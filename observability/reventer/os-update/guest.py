@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 ROOT=Path('/opt/reventer-observability')
 MARKER=Path('/var/lib/reventer-os-update/upgrade.json')
-SERVICES=['metrics','logs','metrics-query','logs-query','tunnel']
+SERVICES=['metrics','logs','metrics-query','logs-query','metrics-remote-query','logs-remote-query','tunnel']
 def run(argv):
  r=subprocess.run(argv,cwd=ROOT,capture_output=True,text=True,timeout=180)
  if r.returncode:raise RuntimeError('maintenance command failed; inspect local journal')

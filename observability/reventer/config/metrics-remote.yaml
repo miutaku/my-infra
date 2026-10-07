@@ -1,0 +1,12 @@
+unauthorized_user:
+  url_map:
+    - src_paths:
+        - '/(prometheus/)?api/v1/(query|query_range|labels|label/[^/]+/values|series|metadata|status/(buildinfo|tsdb)|format_query)'
+      url_prefix:
+        - '%{REMOTE_METRICS_URL_1}'
+        - '%{REMOTE_METRICS_URL_2}'
+      load_balancing_policy: first_available
+      retry_status_codes: [500, 502, 503, 504]
+      headers:
+        - 'CF-Access-Client-Id: %{REMOTE_CF_ACCESS_CLIENT_ID}'
+        - 'CF-Access-Client-Secret: %{REMOTE_CF_ACCESS_CLIENT_SECRET}'

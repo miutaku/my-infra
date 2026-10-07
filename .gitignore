@@ -53,3 +53,7 @@ terraform/home-k8s/terraform.tfvars
 # SNMP MIB files (vendor licensing / NEC terms of use)
 *.mib
 k8s/pve/snmp-exporter/generator/snmp.yml
+
+# STG observability private deployment inputs and generated Python caches
+terraform/oci-observability-stg/*.auto.tfvars.json
+__pycache__/
