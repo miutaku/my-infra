@@ -5,7 +5,8 @@ unauthorized_user:
         - '%{REMOTE_LOGS_URL_1}'
         - '%{REMOTE_LOGS_URL_2}'
       load_balancing_policy: first_available
-      retry_status_codes: [500, 502, 503, 504]
+      retry_status_codes: [500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530]
       headers:
         - 'CF-Access-Client-Id: %{REMOTE_CF_ACCESS_CLIENT_ID}'
         - 'CF-Access-Client-Secret: %{REMOTE_CF_ACCESS_CLIENT_SECRET}'
+        - 'User-Agent: ReVenter-Observability/1.0'
