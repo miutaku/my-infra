@@ -20,7 +20,7 @@ spec:
           restartPolicy: OnFailure
           automountServiceAccountToken: false
           # The workspace only holds one internally consistent backup while this
-          # Job runs. OCI is the durable copy, so this volume need not survive a
+          # Job runs. IDrive is the durable copy, so this volume need not survive a
           # node failure or the next Job.
           initContainers:
             - name: snapshot-backup
@@ -43,43 +43,45 @@ spec:
                 - name: workspace
                   mountPath: /workspace
           containers:
-            # OCI's S3 compatibility endpoint rejects the AWS SDK's streaming
-            # chunked multipart encoding used by vmbackup for large files. Keep
-            # vmbackup for snapshot consistency, then upload its filesystem
-            # output with rclone (also used by the verified database backups).
+            # Keep vmbackup for snapshot consistency; upload its filesystem
+            # output with rclone to the versioned IDrive e2 backup bucket.
             - name: upload
               image: rclone/rclone:1.75.1
+              command: ["sh", "-c"]
               args:
-                - sync
-                - /workspace/latest
-                - oci:db-backup/victoria-metrics/latest
-                - --checksum
-                # vmbackup limits backup parts to 1 GiB. A 5 GiB cutoff keeps
-                # them on OCI's non-multipart PutObject path.
-                - --s3-upload-cutoff=5Gi
-                - --transfers=2
-                - --checkers=4
-                - --stats=10s
+                - |
+                  set -eu
+                  destination=idrive:miutaku-my-infra-backup/victoria-metrics/latest
+                  rclone sync /workspace/latest "$destination" --checksum --fast-list \
+                    --s3-upload-cutoff=5Gi --transfers=2 --checkers=4 --stats=10s
+                  rclone check /workspace/latest "$destination" --download --one-way \
+                    --checkers=4
               envFrom:
                 - secretRef:
                     name: victoria-metrics-backup-credentials
               env:
-                - name: RCLONE_CONFIG_OCI_TYPE
+                - name: RCLONE_CONFIG_IDRIVE_TYPE
                   value: s3
-                - name: RCLONE_CONFIG_OCI_PROVIDER
-                  value: Other
-                - name: RCLONE_CONFIG_OCI_ACCESS_KEY_ID
+                - name: RCLONE_CONFIG_IDRIVE_PROVIDER
+                  value: IDrive
+                - name: RCLONE_CONFIG_IDRIVE_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
                       name: victoria-metrics-backup-credentials
                       key: AWS_ACCESS_KEY_ID
-                - name: RCLONE_CONFIG_OCI_SECRET_ACCESS_KEY
+                - name: RCLONE_CONFIG_IDRIVE_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
                       name: victoria-metrics-backup-credentials
                       key: AWS_SECRET_ACCESS_KEY
-                - name: RCLONE_CONFIG_OCI_ENDPOINT
-                  value: https://$(OCI_NAMESPACE).compat.objectstorage.ap-tokyo-1.oraclecloud.com
+                - name: RCLONE_CONFIG_IDRIVE_ENDPOINT
+                  value: https://s3.ap-northeast-1.idrivee2.com
+                - name: RCLONE_CONFIG_IDRIVE_NO_CHECK_BUCKET
+                  value: "true"
+                - name: RCLONE_CONFIG_IDRIVE_SERVER_SIDE_ENCRYPTION
+                  value: aws:kms
+                - name: RCLONE_CONFIG_IDRIVE_REGION
+                  value: ap-northeast-1
               resources:
                 requests:
                   cpu: 25m

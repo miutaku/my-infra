@@ -8,11 +8,11 @@ data:
     #!/bin/sh
     set -eu
 
-    export RESTIC_REPOSITORY="s3:https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com/db-backup/nas-restic"
+    export RESTIC_REPOSITORY="s3:https://s3.ap-northeast-1.idrivee2.com/miutaku-my-infra-backup/nas-restic"
     export RESTIC_CACHE_DIR=/cache
-    export AWS_REGION=ap-tokyo-1
-    export AWS_DEFAULT_REGION=ap-tokyo-1
-    # DB logical dump用に約1 GBを予約し、20 GB無料枠へ余裕を持たせる。
+    export AWS_REGION=ap-northeast-1
+    export AWS_DEFAULT_REGION=ap-northeast-1
+    # NAS repositoryの既存の容量予算を維持する（IDriveの無料枠ではない）。
     warn_bytes=14000000000
     stop_bytes=17000000000
 
@@ -24,22 +24,21 @@ data:
         --post-data="$(jq -nc --arg content "${content}" '{content:$content}')" "${webhook}" >/dev/null
     }
 
-    if ! restic snapshots >/dev/null 2>&1; then
-      restic init
-    fi
+    # 移行済みrepositoryが消失・認証失敗しても空repoを自動作成しない。
+    restic snapshots >/dev/null
 
     before_bytes="$(restic stats --mode raw-data --json latest 2>/dev/null | jq -r '.total_size // 0')"
 
     if [ "${before_bytes}" -ge "${stop_bytes}" ]; then
-      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ停止: OCI Object Storage使用量 ${before_bytes} bytes (停止閾値 ${stop_bytes})"
+      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ停止: IDrive e2使用量 ${before_bytes} bytes (停止閾値 ${stop_bytes})"
       exit 1
     fi
     if [ "${before_bytes}" -ge "${warn_bytes}" ]; then
-      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ容量警告: OCI Object Storage使用量 ${before_bytes} bytes (警告閾値 ${warn_bytes})"
+      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ容量警告: IDrive e2使用量 ${before_bytes} bytes (警告閾値 ${warn_bytes})"
     fi
 
     # DBのraw data directoryは稼働中には整合したfile backupにならないため対象外。
-    # PostgreSQL/MariaDBは既存の日次logical dumpで保護する。録画実体も無料枠保護のため対象外。
+    # PostgreSQL/MariaDBは既存の日次logical dumpで保護する。録画実体は既存の録画専用IDrive jobが保護する。
     restic backup \
       --tag nas-02 \
       --host home-k8s \
@@ -59,7 +58,7 @@ data:
     notify "${NOTIFY_WEBHOOK}" "NASバックアップ完了: snapshot=${snapshot}, restic=${after_bytes} bytes"
 
     if [ "${after_bytes}" -ge "${stop_bytes}" ]; then
-      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ後にOCI停止閾値へ到達: ${after_bytes} bytes"
+      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ後にIDrive停止閾値へ到達: ${after_bytes} bytes"
     elif [ "${after_bytes}" -ge "${warn_bytes}" ]; then
-      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ後にOCI警告閾値へ到達: ${after_bytes} bytes"
+      notify "${CRITICAL_WEBHOOK}" "@here NASバックアップ後にIDrive警告閾値へ到達: ${after_bytes} bytes"
     fi
