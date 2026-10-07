@@ -66,8 +66,8 @@ variable "node_pool_memory_gbs" {
 }
 
 variable "node_pool_boot_volume_gbs" {
-  description = "47GB per OKE worker leaves capacity for two 50GB STG monitoring VMs: 2*47+2*50=194GB under the 200GB tenancy allowance. Existing 100GB boots require sequential worker replacement; reclaim only detached retired boots after validation. Temporary migration/recovery charges are authorized."
-  default     = 47
+  description = "50GB per OKE worker (the OKE API minimum) leaves capacity for two 50GB STG monitoring VMs: 2*50+2*50=200GB within the tenancy allowance. Existing 100GB boots require sequential worker replacement; reclaim only detached retired boots after validation. Temporary migration/recovery charges are authorized."
+  default     = 50
 }
 
 variable "node_pool_size" {
