@@ -1,3 +1,8 @@
+> Current placement changed on 2026-10-07: STG storage is replicated inside
+> the STG OCI tenancy; PRD storage remains inside PRD. Grafana datasources
+> are separate per environment. This file records the original migration plan.
+> See RUNBOOK.md and terraform/oci-observability-stg/README.md for current routing.
+
 # Re:Venter monitoring HA on two OCI AMD micro VMs
 
 Status (2026-10-06): Talos handover completed. Both VMs and authenticated endpoints
