@@ -54,6 +54,11 @@ spec:
                   destination=idrive:miutaku-my-infra-backup/victoria-metrics/latest
                   rclone sync /workspace/latest "$destination" --checksum --fast-list \
                     --s3-upload-cutoff=5Gi --transfers=2 --checkers=4 --stats=10s
+                  # vmbackup control markers change even when their size is unchanged.
+                  # Encrypted S3 objects may lack a usable ETag hash, so force these
+                  # tiny files to be refreshed while keeping data parts incremental.
+                  rclone copy /workspace/latest "$destination" --include '*.ignore' \
+                    --ignore-times --s3-upload-cutoff=5Gi --transfers=2 --checkers=4
                   rclone check /workspace/latest "$destination" --download --one-way \
                     --checkers=4
               envFrom:
