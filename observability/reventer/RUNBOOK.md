@@ -169,3 +169,57 @@ PRD SQL exporter / shared metrics用に引き続き必要。
 OS deployには `--environment stg` / `--environment prd`、通常bundleの逐次deployには
 `--replica 01` / `--replica 02`を使う。各環境のcanaryのみで更新を判定し、他環境の
 正常canaryで更新を許可しない。自動更新の有効化前に両peerの実収集を確認する。
+
+
+Query gatewayはCloudflareの520〜526/530もpeerへの再試行対象にする。
+Tunnelが停止した際のHTTP 530/1033が、1台目で検索を止めないようにする。
+上流へのUser-Agentは固定し、Grafanaやローカル確認ツールによる差をなくす。
+根拠: [Cloudflare Error 530](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-530/) / [vmauth retry](https://docs.victoriametrics.com/victoriametrics/vmauth/)。
+
+履歴移行はPRD元データを停止整合性のある一時cloneに保持したまま実施。
+移行用STG VMだけMetricsを4か月/Logsを33日にし、元保存先に残る月・日partitionの
+先頭データが取り込み時の保持期限で捨てられないようにする。恒常VMは3か月/30日のまま。
+100日分のMetricsを日ごとに比較し、2,984,306 vectorのlabelとquery timestampが一致。
+native再取り込みによる微小な数値丸めは相対1.1e-12・絶対1e-12以内で検証。
+Logsは元保存先の116,282件で本文・時刻・stream・重複件数の一致を確認。
+公式Metrics snapshotは子snapshotへのsymlinkを展開してコピーし、停止済みLogsとともに
+1,906ファイルのSHA256を両STG VMで照合してから1台ずつ切り替える。
+切り替え後はpeerからSTGの現在データを補い、実collector canaryの復旧を確認する。
+
+Metrics補完の受信件数は `/metrics` の `vm_rows_inserted_total{type="vmimport"}` で確認。
+v1.111.0の内部metricsは1秒cacheされるため、取り込み前後の読取りはcache更新を
+待って比較する。JSON exportは5分単位・現在の`env="stg"`・`reduce_mem_usage=1`。
+JSONlineには明示的なContent-Typeを付け、Logsはstream labelを維持してmissing分だけ入れる。
+
+障害試験ではSTG 01のstorage停止とOCI VM自体の停止を順に実施し、STG 02の
+実collector canaryとPRD側のSTG read-only gatewayで継続参照を確認した。
+復旧後に欠けた履歴をpeerから補完し、障害時間帯のLogs 53件の本文・時刻・stream・
+重複件数が両STG VMで一致することを確認。稼働containerのmount inodeを照合してから
+旧STG seed前データを削除し、両STG VMの日次OS更新timerを再有効化した。
+
+PRDから旧STG Metricsだけを削除するselectorは `env="stg"` と、PRD/sharedを
+明示的に除外した旧STG cluster/namespaceを使う。保持期間全体のnative exportで
+16-byteの期間headerだけが返ることを確認する（空exportは0 byteではない）。
+PRD/sharedの固定日のseries label setと複数月の代表query値が削除前後で一致。
+Logsは一時的にloopbackの削除APIを有効にし、`{env="stg"}` streamを削除する。
+PRDの前日全Logsの件数・内容hashが一致し、STG streamが0件になった後、削除APIを
+無効化する。Metricsの全保持partitionをforce mergeして物理領域を回収し、稼働中の
+`data/metrics` / `data/logs`と別の旧`migration` archive / bootstrap dataも削除する。
+
+GrafanaのSTG datasource追加にはGrafana URLとdatasource編集権限を持つサービス
+アカウントtokenが必要。PDC tokenやMetrics ingest credentialでは代用できない。
+バックエンドの確認と、Grafana UI上の設定完了は別々に記録する。
+
+PRDの混在データを含む旧OS復旧backup 3個は、領域回収済みの各VMを1台ずつ
+停止整合性のある状態でsnapshotし、AVAILABLEになったPRD専用backup 2個へ置換した。
+新backupからの実boot restoreは今回追加実施していない。既存のPRD実rollback試験と、
+STG instance principalによるbackup/restore-volume API検証は成功済み。
+両PRD VMの環境専用canaryを確認して日次OS更新timerを再開した。
+全4 VMの環境別query gateway / PDC alias、8個の実collector canaryが正常。
+両クラスタのMetrics pending queue / dropped packet、Logs retries_failed / dropped_recordsは0。
+
+移行用STG/PRD E4 VMと各50GB bootはTERMINATEDを確認し削除済み。
+最終全compartment監査: STG volume合計200GB / backup 0、PRD 194GB / backup 2。
+各アカウントの恒常監視VMはE2 Micro 2台、OKEはA1 2台で合計4 OCPU / 24GB。
+全volumeは10 VPU/GB、OKEはBasic。移行中の少額の一時課金と過去の超過分は
+消えないため、これからの恒常構成の無料枠内確認と過去の請求を区別する。
