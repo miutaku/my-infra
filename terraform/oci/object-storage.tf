@@ -16,8 +16,9 @@ resource "oci_objectstorage_bucket" "db_backup" {
   }
 }
 
-# DB logical dumps are immutable, uniquely named objects. A locked time-bound
-# retention rule protects them even if the backup credential is compromised.
+# Retired OCI backup buckets are kept private and empty after the IDrive cutover.
+# The user authorized removal of all old data on 2026-10-07. DB retention is now
+# enforced by COMPLIANCE Object Lock on the dedicated IDrive DB backup bucket.
 resource "oci_objectstorage_bucket" "db_backup_immutable" {
   compartment_id = var.compartment_ocid
   namespace      = data.oci_objectstorage_namespace.this.namespace
@@ -26,16 +27,6 @@ resource "oci_objectstorage_bucket" "db_backup_immutable" {
   storage_tier   = "Standard"
   versioning     = "Disabled"
   freeform_tags  = local.common_tags
-
-  retention_rules {
-    display_name = "protect-db-dumps-30-days"
-    duration {
-      time_amount = 30
-      time_unit   = "DAYS"
-    }
-    # OCI requires at least 14 days between rule creation and irreversible lock.
-    time_rule_locked = "2026-10-11T00:00:00Z"
-  }
 
   lifecycle {
     prevent_destroy = true
