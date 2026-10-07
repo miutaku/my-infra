@@ -12,7 +12,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 TF = ROOT / 'terraform/oci-observability'
 BUNDLE = ROOT / 'observability/reventer'
-SSH = ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'UserKnownHostsFile=/tmp/reventer-observability-known-hosts', '-o', 'ConnectTimeout=15', '-i', str(Path.home()/'.ssh/id_ed25519')]
+SSH = ['-c', 'aes128-gcm@openssh.com', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'UserKnownHostsFile=/tmp/reventer-observability-known-hosts', '-o', 'ConnectTimeout=15', '-i', str(Path.home()/'.ssh/id_ed25519')]
 
 def run(args, **kwargs):
     result = subprocess.run(args, capture_output=True, text=True, **kwargs)
@@ -23,15 +23,34 @@ def run(args, **kwargs):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--enable-pdc', action='store_true', help='Enable only after history backfill and dual ingestion are validated')
+    parser.add_argument('--environment', choices=['stg', 'prd'], default='prd')
+    parser.add_argument('--replica', choices=['01', '02'])
     args = parser.parse_args()
-    outputs = json.loads(run(['terraform', 'output', '-json'], cwd=TF))
+    tf = ROOT / ('terraform/oci-observability-stg' if args.environment == 'stg' else 'terraform/oci-observability')
+    suffix = '-stg' if args.environment == 'stg' else ''
+    outputs = json.loads(run(['terraform', 'output', '-json'], cwd=tf))
     credentials = outputs['monitoring_credentials']['value']
+    remote_tf = ROOT / ('terraform/oci-observability' if args.environment == 'stg' else 'terraform/oci-observability-stg')
+    remote_credentials = json.loads(run(['terraform', 'output', '-json'], cwd=remote_tf))['monitoring_credentials']['value']
+    remote_suffix = '' if args.environment == 'stg' else '-stg'
     secrets = {x['key']: x['value'] for x in json.loads(run(['bws', 'secret', 'list']))}
     for name, instance in sorted(outputs['instances']['value'].items()):
+        if args.replica and name[-2:] != args.replica:
+            continue
         replica = name[-2:]; peer = '02' if replica == '01' else '01';host = 'ubuntu@'+instance['public_ip']
+        run(['ssh', *SSH, host, 'sudo flock --nonblock /run/reventer-os-update.lock true'])
+        run(['ssh', *SSH, host, 'test "$(systemctl show -p ActiveState --value reventer-os-update.service 2>/dev/null)" != activating && test "$(systemctl show -p ActiveState --value reventer-os-update.service 2>/dev/null)" != active'])
         settings = {
-            'PEER_METRICS_URL': f'https://metrics-ha-{peer}.re-venter.com/',
-            'PEER_LOGS_URL': f'https://logs-ha-{peer}.re-venter.com/',
+            'LOCAL_QUERY_BIND': '127.0.0.2' if args.environment == 'stg' else '127.0.0.1',
+            'REMOTE_QUERY_BIND': '127.0.0.1' if args.environment == 'stg' else '127.0.0.2',
+            'REMOTE_METRICS_URL_1': f'https://metrics{remote_suffix}-ha-01.re-venter.com/',
+            'REMOTE_METRICS_URL_2': f'https://metrics{remote_suffix}-ha-02.re-venter.com/',
+            'REMOTE_LOGS_URL_1': f'https://logs{remote_suffix}-ha-01.re-venter.com/',
+            'REMOTE_LOGS_URL_2': f'https://logs{remote_suffix}-ha-02.re-venter.com/',
+            'REMOTE_CF_ACCESS_CLIENT_ID': remote_credentials['client_id'],
+            'REMOTE_CF_ACCESS_CLIENT_SECRET': remote_credentials['client_secret'],
+            'PEER_METRICS_URL': f'https://metrics{suffix}-ha-{peer}.re-venter.com/',
+            'PEER_LOGS_URL': f'https://logs{suffix}-ha-{peer}.re-venter.com/',
             'CF_ACCESS_CLIENT_ID': credentials['client_id'],
             'CF_ACCESS_CLIENT_SECRET': credentials['client_secret'],
             'TUNNEL_TOKEN': credentials['tunnel_tokens'][replica],
@@ -48,9 +67,9 @@ def main():
             env.write_text(''.join(k+"='"+v+"'\n" for k,v in settings.items()));env.chmod(0o600)
             run(['ssh', *SSH, host, 'mkdir -p -m 700 /tmp/reventer-observability-stage/config'])
             run(['scp', *SSH, str(env), str(BUNDLE/'docker-compose.yaml'), str(BUNDLE/'reventer-observability.service'), host+':/tmp/reventer-observability-stage/'])
-            run(['scp', *SSH, str(BUNDLE/'config/metrics.yaml'), str(BUNDLE/'config/logs.yaml'), host+':/tmp/reventer-observability-stage/config/'])
+            run(['scp', *SSH, str(BUNDLE/'config/metrics.yaml'), str(BUNDLE/'config/logs.yaml'), str(BUNDLE/'config/metrics-remote.yaml'), str(BUNDLE/'config/logs-remote.yaml'), host+':/tmp/reventer-observability-stage/config/'])
         run(['ssh', *SSH, host, 'sudo install -d -m 700 /opt/reventer-observability /opt/reventer-observability/config /opt/reventer-observability/data/metrics /opt/reventer-observability/data/logs && sudo cp /tmp/reventer-observability-stage/docker-compose.yaml /opt/reventer-observability/ && sudo install -m 600 /tmp/reventer-observability-stage/.env /opt/reventer-observability/.env && sudo cp /tmp/reventer-observability-stage/config/*.yaml /opt/reventer-observability/config/ && sudo install -m 644 /tmp/reventer-observability-stage/reventer-observability.service /etc/systemd/system/ && rm -rf /tmp/reventer-observability-stage && sudo chown -R 1000:1000 /opt/reventer-observability/config /opt/reventer-observability/data && sudo systemctl daemon-reload && sudo sh -c \'cd /opt/reventer-observability && docker compose config --quiet && docker compose pull\''])
-        services = 'metrics logs metrics-query logs-query tunnel' + (' pdc' if args.enable_pdc else '')
+        services = 'metrics logs metrics-query logs-query metrics-remote-query logs-remote-query tunnel' + (' pdc' if args.enable_pdc else '')
         run(['ssh', *SSH, host, "sudo sh -c 'cd /opt/reventer-observability && docker compose up -d "+services+"'"])
         if args.enable_pdc:
             dropin="[Service]\nExecStart=\nExecStart=/usr/bin/docker compose --profile grafana up -d\n"

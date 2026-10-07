@@ -21,7 +21,7 @@ import uuid
 import oci
 STATE_KEY='reventer_os_maintenance'
 TAG={'ReVenterMaintenance':{'Role':'observability'}}
-SERVICES={'metrics','logs','metrics-query','logs-query','tunnel'}
+SERVICES={'metrics','logs','metrics-query','logs-query','metrics-remote-query','logs-remote-query','tunnel'}
 class Unsafe(RuntimeError):pass
 class FailedUpdate(Unsafe):pass
 
@@ -88,21 +88,21 @@ class Controller:
 
  def http(self,replica,service,path):
   port=18428 if service=='metrics' else 19428
-  url=f'http://127.0.0.1:{port}' if replica==self.me else f'https://{service}-ha-{replica}.re-venter.com'
+  url=f'http://127.0.0.1:{port}' if replica==self.me else f'https://{service}{self.cfg.get("endpoint_suffix", "")}-ha-{replica}.re-venter.com'
   return urllib.request.urlopen(urllib.request.Request(url+path,headers=self.headers),timeout=90)
 
  def health(self,replica):
   for service in ['metrics','logs']:
    with self.http(replica,service,'/health') as r:
     if r.status!=200:raise Unsafe('storage is unhealthy')
-  # Both canaries traverse the real STG/PRD collectors, persistence and query.
+  # Require real collector freshness only for this account's environment.
   q='/api/v1/query?'+urllib.parse.urlencode({'query':'max by (env) (reventer_observability_canary_timestamp_seconds)'})
   with self.http(replica,'metrics',q) as r:d=json.load(r)
   fresh={x['metric'].get('env'):float(x['value'][1]) for x in d['data']['result']}
-  if any(not math.isfinite(fresh.get(env,0)) or not -30<=utc().timestamp()-fresh.get(env,0)<=180 for env in ['stg','prd']):raise Unsafe('metrics collector canary is stale')
+  if any(not math.isfinite(fresh.get(env,0)) or not -30<=utc().timestamp()-fresh.get(env,0)<=180 for env in self.cfg.get('environments', ['stg','prd'])):raise Unsafe('metrics collector canary is stale')
   q='/select/logsql/query?'+urllib.parse.urlencode({'query':'_msg:="reventer-observability-canary" _time:3m | stats by (env) count() as logs'})
   with self.http(replica,'logs',q) as r:rows=[json.loads(x) for x in r if x.strip()]
-  if not {'stg','prd'}.issubset({x.get('env') for x in rows if int(x['logs'])>0}):raise Unsafe('logs collector canary is stale')
+  if not set(self.cfg.get('environments', ['stg','prd'])).issubset({x.get('env') for x in rows if int(x['logs'])>0}):raise Unsafe('logs collector canary is stale')
   return True
 
  def guest(self,action,**kw):

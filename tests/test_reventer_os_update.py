@@ -41,6 +41,20 @@ class Fake(m.Controller):
 class UpdateTests(unittest.TestCase):
  def run_now(self,c):
   with patch.object(m,'poll',lambda fn,timeout=0:fn()):c.run()
+ def environment_health(self,expected,metrics_env,logs_env):
+  c=m.Controller.__new__(m.Controller);c.cfg={'environments':[expected]};c.me='01'
+  def response(data):
+   r=io.BytesIO(data);r.status=200;return r
+  metrics={'data':{'result':[{'metric':{'env':metrics_env},'value':[0,str(m.utc().timestamp())]}]}}
+  logs={'env':logs_env,'logs':'1'}
+  c.http=Mock(side_effect=[response(b'OK'),response(b'OK'),response(json.dumps(metrics).encode()),response(json.dumps(logs).encode()+b'\n')])
+  return c
+ def test_stg_health_does_not_require_prd_data(self):
+  self.assertTrue(self.environment_health('stg','stg','stg').health('01'))
+ def test_foreign_metrics_canary_does_not_authorize_update(self):
+  with self.assertRaises(m.Unsafe):self.environment_health('stg','prd','stg').health('01')
+ def test_foreign_logs_canary_does_not_authorize_update(self):
+  with self.assertRaises(m.Unsafe):self.environment_health('prd','prd','stg').health('01')
  def test_success_backs_up_before_upgrade(self):
   c=Fake();self.run_now(c)
   self.assertLess(c.events.index('backup'),c.events.index('upgrade'))
@@ -99,12 +113,12 @@ class SafetyGateTests(unittest.TestCase):
   sleep.assert_not_called()
 
  def test_health_200_without_collector_canaries_is_failure(self):
-  c=m.Controller.__new__(m.Controller)
+  c=m.Controller.__new__(m.Controller);c.cfg={}
   class Response(io.BytesIO):status=200
   c.http=lambda replica,service,path:Response(json.dumps({'data':{'result':[]}}).encode())
   with self.assertRaises(m.Unsafe):c.health('01')
  def test_future_canary_timestamp_is_failure(self):
-  c=m.Controller.__new__(m.Controller)
+  c=m.Controller.__new__(m.Controller);c.cfg={}
   class Response(io.BytesIO):status=200
   result=[{'metric':{'env':env},'value':[0,'999999999999']} for env in ['stg','prd']]
   c.http=lambda replica,service,path:Response(json.dumps({'data':{'result':result}}).encode())
@@ -125,7 +139,7 @@ class SafetyGateTests(unittest.TestCase):
 
 class BootRecoveryTests(unittest.TestCase):
  def test_restored_boot_waits_for_guest_before_restarting_storage(self):
-  c=m.Controller.__new__(m.Controller);c.me='01';c.peer='02';c.state={}
+  c=m.Controller.__new__(m.Controller);c.cfg={};c.me='01';c.peer='02';c.state={}
   c.health=Mock(return_value=True);c.catch_up=Mock()
   ready=[False];events=[]
   def guest(action,**kw):
@@ -141,7 +155,7 @@ class BootRecoveryTests(unittest.TestCase):
   self.assertEqual(events[-1],'activate');c.catch_up.assert_called_once()
 
  def test_restart_reuses_recorded_volume_and_preserves_failed_boot(self):
-  c=m.Controller.__new__(m.Controller)
+  c=m.Controller.__new__(m.Controller);c.cfg={}
   c.me='01';c.peer='02'
   c.cfg={'allow_paid_recovery':True,'nodes':{'02':{'id':'target'}}}
   c.state={'phase':'restoring','backup_id':'backup','recovery_volume_id':'restored'}
