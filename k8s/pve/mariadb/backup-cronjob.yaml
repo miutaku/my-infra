@@ -4,6 +4,7 @@ metadata:
   name: mariadb-backup
   namespace: infra-db
 spec:
+  suspend: true
   schedule: "0 18 * * *"  # 03:00 JST
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3

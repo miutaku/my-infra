@@ -4,6 +4,7 @@ metadata:
   name: nas-backup
   namespace: infra-backup
 spec:
+  suspend: true
   schedule: "0 19 * * *" # 04:00 JST; DB logical backupの1時間後
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid
