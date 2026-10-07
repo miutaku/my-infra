@@ -13,7 +13,7 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[1]
 BUNDLE=ROOT/'observability/reventer/os-update'
 TF=ROOT/'terraform/oci-observability'
-SSH=['-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','-o','ConnectTimeout=15','-o','UserKnownHostsFile=/tmp/reventer-observability-known-hosts','-i',str(Path.home()/'.ssh/id_ed25519')]
+SSH=['-c','aes128-gcm@openssh.com','-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','-o','ConnectTimeout=15','-o','UserKnownHostsFile=/tmp/reventer-observability-known-hosts','-i',str(Path.home()/'.ssh/id_ed25519')]
 def run(args,**kw):
  p=subprocess.run(args,text=True,capture_output=True,**kw)
  if p.returncode:raise RuntimeError(f'{args[0]} failed; sensitive output omitted')
@@ -25,9 +25,11 @@ def main():
  p.add_argument('--enable',action='store_true')
  p.add_argument('--allow-paid-recovery',action='store_true')
  p.add_argument('--wheels',type=Path,default=Path('/tmp/reventer-os-update-wheels'))
+ p.add_argument('--environment',choices=['stg','prd'],default='prd')
  args=p.parse_args()
+ tf=ROOT/('terraform/oci-observability-stg' if args.environment=='stg' else 'terraform/oci-observability')
  if args.enable and not args.allow_paid_recovery:p.error('activation requires authorized recovery storage')
- outputs=json.loads(run(['terraform','output','-json'],cwd=TF))
+ outputs=json.loads(run(['terraform','output','-json'],cwd=tf))
  settings=outputs.get('os_update',{}).get('value')
  if not settings:raise RuntimeError('Prepare and validate the Terraform OS-update resources first')
  nodes={name[-2:]:v for name,v in outputs['instances']['value'].items()}
@@ -87,7 +89,7 @@ sudo systemctl daemon-reload
   hostkeys[replica]=ssh(host,'cat /etc/ssh/ssh_host_ed25519_key.pub').split()[:2]
  for replica,node in nodes.items():
   peer='02' if replica=='01' else '01';host=node['public_ip']
-  config={**settings,'self':replica,'peer':peer,'nodes':nodes,'lock_instance_id':nodes['01']['id'],'allow_paid_recovery':args.allow_paid_recovery}
+  config={**settings,'environments':[args.environment],'endpoint_suffix':'-stg' if args.environment=='stg' else '', 'self':replica,'peer':peer,'nodes':nodes,'lock_instance_id':nodes['01']['id'],'allow_paid_recovery':args.allow_paid_recovery}
   with tempfile.TemporaryDirectory(prefix='reventer-os-config-') as tmp:
    path=Path(tmp)/'config.json';path.write_text(json.dumps(config));path.chmod(0o600)
    known=Path(tmp)/'known_hosts';known.write_text(nodes[peer]['private_ip']+' '+' '.join(hostkeys[peer])+'\n')

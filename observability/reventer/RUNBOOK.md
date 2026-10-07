@@ -1,7 +1,9 @@
 # Re:Venter 監視の移行と運用
 
 2026-10-06、TalosへのGitOps移行とVM側PDCへの切り替えを完了。
-PRD OCIの別Fault Domainにある2台へSTG/PRDの監視データを複製する。
+2026-10-07の利用者指示により、STGデータはSTG OCIの2台、PRDデータはPRD OCIの2台へ分離する。
+各環境は別Fault Domainに複製し、OS更新・rollbackもその環境内のpeerで行う。
+以下の2026-10-06検証記録は当時の共有構成を記した履歴であり、現在の配置は末尾を参照。
 既存GrafanaのMetrics / Logs URLとPDC認証は維持する。
 利用者が既存URLでのGrafanaアクセスを確認した後、旧保存先・PVC・OCIボリュームを撤去済み。
 STGの割当は300GBから200GB、PRDは194GB。旧PDCと旧取り込みPodも撤去した。
@@ -145,3 +147,25 @@ CIのmonitoring overlay対象追加はGitHub OAuthのworkflow scope不足で公�
 [os-update/README.md](os-update/README.md)を参照。復旧時の小額の一時課金は
 承認済み。実機でOS復旧・履歴補完・両VMの正常更新を検証し、日次timerを有効化済み。
 独立したsecurity updateは協調制御へ移し、両VMの同時更新を防ぐ。
+
+## STG / PRD分離（2026-10-07）
+
+利用者はGrafana datasourceを環境別にする方針を選択。
+STGは `terraform/oci-observability-stg`、PRDは既存 `terraform/oci-observability`。
+STG workerの100GB bootを50GBへ1台ずつ置換し、両旧bootのTERMINATEDを確認。
+STGはOKE 50GB×2＋監視50GB×2=200GB、PRDは既存194GB。
+
+STG URLs:
+- `http://victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428`
+- `http://victoria-logs-stg.reventer-monitoring.svc.cluster.local:9428`
+
+PRDは既存2 URLを維持。各PDCは両環境のaliasを解決し、環境別のquery gatewayを
+使用。異なる環境のgatewayはread-only proxyであり、データを保存しない。
+STG collectorはper-URL relabelでenv=prd/sharedをPRDへ、STG/未分類のSTGクラスタ
+メトリクスをSTGへ送る。STG LogsはSTGにだけ複製する。
+新しいSTG Access tokenはPRDとは別。旧STG collector Secretは、STGで収集する
+PRD SQL exporter / shared metrics用に引き続き必要。
+
+OS deployには `--environment stg` / `--environment prd`、通常bundleの逐次deployには
+`--replica 01` / `--replica 02`を使う。各環境のcanaryのみで更新を判定し、他環境の
+正常canaryで更新を許可しない。自動更新の有効化前に両peerの実収集を確認する。

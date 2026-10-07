@@ -52,7 +52,7 @@ services:
     read_only: true
     command:
     - -auth.config=/config/metrics.yaml
-    - -httpListenAddr=127.0.0.1:8428
+    - -httpListenAddr=${LOCAL_QUERY_BIND:-127.0.0.1}:8428
     volumes:
     - ./config:/config:ro
     environment:
@@ -72,7 +72,7 @@ services:
     read_only: true
     command:
     - -auth.config=/config/logs.yaml
-    - -httpListenAddr=127.0.0.1:9428
+    - -httpListenAddr=${LOCAL_QUERY_BIND:-127.0.0.1}:9428
     volumes:
     - ./config:/config:ro
     environment:
@@ -80,6 +80,26 @@ services:
       CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID:?required}
       CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET:?required}
     user: 1000:1000
+  metrics-remote-query:
+    extends: metrics-query
+    command:
+    - -auth.config=/config/metrics-remote.yaml
+    - -httpListenAddr=${REMOTE_QUERY_BIND:-127.0.0.2}:8428
+    environment:
+      REMOTE_METRICS_URL_1: ${REMOTE_METRICS_URL_1:?required}
+      REMOTE_METRICS_URL_2: ${REMOTE_METRICS_URL_2:?required}
+      REMOTE_CF_ACCESS_CLIENT_ID: ${REMOTE_CF_ACCESS_CLIENT_ID:?required}
+      REMOTE_CF_ACCESS_CLIENT_SECRET: ${REMOTE_CF_ACCESS_CLIENT_SECRET:?required}
+  logs-remote-query:
+    extends: logs-query
+    command:
+    - -auth.config=/config/logs-remote.yaml
+    - -httpListenAddr=${REMOTE_QUERY_BIND:-127.0.0.2}:9428
+    environment:
+      REMOTE_LOGS_URL_1: ${REMOTE_LOGS_URL_1:?required}
+      REMOTE_LOGS_URL_2: ${REMOTE_LOGS_URL_2:?required}
+      REMOTE_CF_ACCESS_CLIENT_ID: ${REMOTE_CF_ACCESS_CLIENT_ID:?required}
+      REMOTE_CF_ACCESS_CLIENT_SECRET: ${REMOTE_CF_ACCESS_CLIENT_SECRET:?required}
   tunnel:
     image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:?required}
     restart: unless-stopped
@@ -107,6 +127,8 @@ services:
     cap_drop:
     - ALL
     extra_hosts:
+    - victoria-metrics-stg.reventer-monitoring.svc.cluster.local:127.0.0.2
+    - victoria-logs-stg.reventer-monitoring.svc.cluster.local:127.0.0.2
     - victoria-metrics.reventer-monitoring.svc.cluster.local:127.0.0.1
     - victoria-metrics.reventer-monitoring.svc:127.0.0.1
     - victoria-logs.reventer-monitoring.svc.cluster.local:127.0.0.1
@@ -121,4 +143,6 @@ services:
     - ${PDC_HOSTED_GRAFANA_ID:?required}
     - -ssh-flag=-o PermitRemoteOpen=victoria-metrics.reventer-monitoring.svc.cluster.local:8428
       victoria-metrics.reventer-monitoring.svc:8428 victoria-logs.reventer-monitoring.svc.cluster.local:9428
-      victoria-logs.reventer-monitoring.svc:9428 127.0.0.1:8428 127.0.0.1:9428
+      victoria-logs.reventer-monitoring.svc:9428 victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428
+      victoria-logs-stg.reventer-monitoring.svc.cluster.local:9428 127.0.0.1:8428 127.0.0.1:9428
+      127.0.0.2:8428 127.0.0.2:9428

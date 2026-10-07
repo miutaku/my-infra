@@ -8,10 +8,11 @@ import oci
 ROOT=Path(__file__).resolve().parents[1]/'terraform/oci-observability'
 TAG={'ReVenterMaintenance':{'Role':'observability'}}
 def main():
- p=argparse.ArgumentParser();p.add_argument('--tag-boot-volumes',action='store_true');args=p.parse_args()
- cfg=oci.config.from_file(profile_name='PRD');compute=oci.core.ComputeClient(cfg);block=oci.core.BlockstorageClient(cfg)
- output=json.loads(subprocess.check_output(['terraform','output','-json'],cwd=ROOT))
- inputs=ROOT/'deployment.auto.tfvars.json';settings=json.loads(inputs.read_text())
+ p=argparse.ArgumentParser();p.add_argument('--tag-boot-volumes',action='store_true');p.add_argument('--environment',choices=['stg','prd'],default='prd');args=p.parse_args()
+ root=Path(__file__).resolve().parents[1]/('terraform/oci-observability-stg' if args.environment=='stg' else 'terraform/oci-observability')
+ cfg=oci.config.from_file(profile_name=args.environment.upper());compute=oci.core.ComputeClient(cfg);block=oci.core.BlockstorageClient(cfg)
+ output=json.loads(subprocess.check_output(['terraform','output','-json'],cwd=root))
+ inputs=root/'deployment.auto.tfvars.json';settings=json.loads(inputs.read_text())
  if not args.tag_boot_volumes:
   tags={}
   for name,node in output['instances']['value'].items():
@@ -28,6 +29,7 @@ def main():
    if len(attached)!=1:raise RuntimeError('Ambiguous attachment; stop')
    volume=block.get_boot_volume(attached[0].boot_volume_id).data
    tags={**(volume.defined_tags or {}),**TAG}
-   block.update_boot_volume(volume.id,oci.core.models.UpdateBootVolumeDetails(defined_tags=tags))
+   if tags != (volume.defined_tags or {}):
+    block.update_boot_volume(volume.id,oci.core.models.UpdateBootVolumeDetails(defined_tags=tags))
    print(name+': boot-volume maintenance tag applied; existing tags retained')
 if __name__=='__main__':main()
