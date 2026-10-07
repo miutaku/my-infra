@@ -66,8 +66,8 @@ variable "node_pool_memory_gbs" {
 }
 
 variable "node_pool_boot_volume_gbs" {
-  description = "Boot volume size per worker node. Free tier caps total block storage at 200GB/tenancy. The two current 100GB worker boot volumes consume that allocation; retired VictoriaMetrics/Logs PVC volumes have been removed. A replacement may temporarily exceed 200GB; temporary recovery/scaling charges are authorized, and retired boot volumes must be reclaimed after validation."
-  default     = 100
+  description = "47GB per OKE worker leaves capacity for two 50GB STG monitoring VMs: 2*47+2*50=194GB under the 200GB tenancy allowance. Existing 100GB boots require sequential worker replacement; reclaim only detached retired boots after validation. Temporary migration/recovery charges are authorized."
+  default     = 47
 }
 
 variable "node_pool_size" {
