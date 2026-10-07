@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: victoria-metrics-backup
 spec:
-  suspend: true
+  suspend: false
   # Incremental backup every hour. The latest backup always contains the full
   # retention window currently held by VictoriaMetrics.
   schedule: "20 * * * *"

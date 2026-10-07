@@ -74,8 +74,21 @@ def configure(target):
             target.put_object_lock_configuration(Bucket=bucket, ObjectLockConfiguration={
                 'ObjectLockEnabled': 'Enabled',
                 'Rule': {'DefaultRetention': {'Mode': 'COMPLIANCE', 'Days': 30}}})
-        # NAS/VM lifecycle was separately approved and installed during migration.
-        # Leave all existing lifecycle and NAS Object Lock settings unchanged.
+        else:
+            # Explicitly approved: only noncurrent versions expire after 30 days.
+            # Preserve unrelated rules and the user-created NAS Object Lock.
+            try:
+                rules = target.get_bucket_lifecycle_configuration(Bucket=bucket)['Rules']
+            except target.exceptions.ClientError as exc:
+                if exc.response['Error']['Code'] != 'NoSuchLifecycleConfiguration':
+                    raise
+                rules = []
+            identifier = 'retain-previous-versions-30-days-as-in-oci'
+            rules = [r for r in rules if r.get('ID') != identifier]
+            rules.append({'ID': identifier, 'Status': 'Enabled', 'Prefix': '',
+                          'NoncurrentVersionExpiration': {'NoncurrentDays': 30}})
+            target.put_bucket_lifecycle_configuration(Bucket=bucket,
+                                                      LifecycleConfiguration={'Rules': rules})
     validate_settings(target)
 
 
