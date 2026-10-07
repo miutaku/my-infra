@@ -7,6 +7,7 @@ data:
   backup.sh: |
     #!/bin/sh
     set -eu
+    umask 077
 
     apk add --no-cache mariadb-client rclone curl > /dev/null
 
@@ -31,17 +32,29 @@ data:
 
     mkdir -p /root/.config/rclone
     cat > /root/.config/rclone/rclone.conf << EOF
-    [oci]
+    [idrive]
     type = s3
-    provider = Other
-    access_key_id = ${OCI_S3_ACCESS_KEY}
-    secret_access_key = ${OCI_S3_SECRET_KEY}
-    endpoint = https://${OCI_NAMESPACE}.compat.objectstorage.ap-tokyo-1.oraclecloud.com
+    provider = IDrive
+    access_key_id = ${IDRIVE_ACCESS_KEY_ID}
+    secret_access_key = ${IDRIVE_SECRET_ACCESS_KEY}
+    endpoint = https://s3.ap-northeast-1.idrivee2.com
+    region = ap-northeast-1
+    no_check_bucket = true
+    server_side_encryption = aws:kms
     EOF
 
     DATE=$(date +%Y%m%d-%H%M%S)
 
-    bucket="${OCI_BACKUP_BUCKET:-db-backup}"
+    bucket="${IDRIVE_BACKUP_BUCKET:-miutaku-my-infra-db-backup}"
+
+    upload_verified() {
+      source="$1"
+      destination="idrive:${bucket}/$2"
+      rclone copyto "${source}" "${destination}"
+      expected=$(sha256sum "${source}" | cut -d ' ' -f1)
+      actual=$(rclone cat "${destination}" | sha256sum | cut -d ' ' -f1)
+      [ "${expected}" = "${actual}" ] || { echo "downloaded backup checksum differs" >&2; return 1; }
+    }
 
     # MariaDBはsystem database、accounts、grantsも含めてserver全体を取得する。
     CURRENT=mariadb-full
@@ -55,9 +68,11 @@ data:
       --events \
       --triggers \
       --hex-blob \
-      | gzip > /tmp/mariadb-full.sql.gz
+      > /tmp/mariadb-full.sql
+    gzip -c /tmp/mariadb-full.sql > /tmp/mariadb-full.sql.gz
+    rm /tmp/mariadb-full.sql
     gzip -t /tmp/mariadb-full.sql.gz
-    rclone copyto /tmp/mariadb-full.sql.gz "oci:${bucket}/mariadb/${mariadb_file}"
+    upload_verified /tmp/mariadb-full.sql.gz "mariadb/${mariadb_file}"
     echo "[mariadb-full] uploaded: mariadb/${mariadb_file} ($(du -sh /tmp/mariadb-full.sql.gz | cut -f1))"
     RESULTS="${RESULTS}mariadb/${mariadb_file} "
 
@@ -72,10 +87,11 @@ data:
         --host="${host}" \
         --username=tnlastation \
         --globals-only \
-        | gzip > "/tmp/${cluster}-globals.sql.gz"
+        > "/tmp/${cluster}-globals.sql"
+      gzip -c "/tmp/${cluster}-globals.sql" > "/tmp/${cluster}-globals.sql.gz"
+      rm "/tmp/${cluster}-globals.sql"
       gzip -t "/tmp/${cluster}-globals.sql.gz"
-      rclone copyto "/tmp/${cluster}-globals.sql.gz" \
-        "oci:${bucket}/${cluster}/${globals_file}"
+      upload_verified "/tmp/${cluster}-globals.sql.gz" "${cluster}/${globals_file}"
       RESULTS="${RESULTS}${cluster}/${globals_file} "
 
       # 新規DBも自動的に対象になるよう、template以外を毎回serverから列挙する。
@@ -99,8 +115,7 @@ data:
           --format=custom \
           --file="/tmp/${cluster}-${safe_database}.dump"
         pg_restore --list "/tmp/${cluster}-${safe_database}.dump" >/dev/null
-        rclone copyto "/tmp/${cluster}-${safe_database}.dump" \
-          "oci:${bucket}/${cluster}/${dump_file}"
+        upload_verified "/tmp/${cluster}-${safe_database}.dump" "${cluster}/${dump_file}"
         echo "[${cluster}/${database}] uploaded: ${cluster}/${dump_file}"
         RESULTS="${RESULTS}${cluster}/${dump_file} "
       done < "${list}"

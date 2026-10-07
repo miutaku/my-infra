@@ -22,10 +22,10 @@ spec:
               image: postgres:18-alpine
               command: ["sh", "/scripts/backup.sh"]
               env:
-                - name: OCI_BACKUP_BUCKET
+                - name: IDRIVE_BACKUP_BUCKET
                   # Unique logical dumps go to the 30-day retention bucket.
                   # Its writer credential cannot delete objects or versions.
-                  value: db-backup-immutable
+                  value: miutaku-my-infra-db-backup
                 - name: MYSQL_ROOT_PASSWORD
                   valueFrom:
                     secretKeyRef:
@@ -36,21 +36,16 @@ spec:
                     secretKeyRef:
                       name: db-backup-credentials
                       key: POSTGRES_PASSWORD
-                - name: OCI_NAMESPACE
+                - name: IDRIVE_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
                       name: db-backup-credentials
-                      key: OCI_NAMESPACE
-                - name: OCI_S3_ACCESS_KEY
+                      key: IDRIVE_ACCESS_KEY_ID
+                - name: IDRIVE_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
                       name: db-backup-credentials
-                      key: OCI_S3_ACCESS_KEY
-                - name: OCI_S3_SECRET_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: db-backup-credentials
-                      key: OCI_S3_SECRET_KEY
+                      key: IDRIVE_SECRET_ACCESS_KEY
                 - name: NOTIFY_WEBHOOK
                   valueFrom:
                     secretKeyRef:
