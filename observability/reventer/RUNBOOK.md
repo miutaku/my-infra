@@ -4,13 +4,13 @@
 2026-10-07の利用者指示により、STGデータはSTG OCIの2台、PRDデータはPRD OCIの2台へ分離する。
 各環境は別Fault Domainに複製し、OS更新・rollbackもその環境内のpeerで行う。
 以下の2026-10-06検証記録は当時の共有構成を記した履歴であり、現在の配置は末尾を参照。
-既存GrafanaのMetrics / Logs URLとPDC認証は維持する。
+2026-10-08の指示でPRDのGrafana URLも `-prd` 付きに統一。PDC認証は維持する。旧PRD aliasと接続許可は残さない。
 利用者が既存URLでのGrafanaアクセスを確認した後、旧保存先・PVC・OCIボリュームを撤去済み。
 STGの割当は300GBから200GB、PRDは194GB。旧PDCと旧取り込みPodも撤去した。
 
-既存URL:
-- `http://victoria-metrics.reventer-monitoring.svc.cluster.local:8428`
-- `http://victoria-logs.reventer-monitoring.svc.cluster.local:9428`
+現在のPRD URL:
+- `http://victoria-metrics-prd.reventer-monitoring.svc.cluster.local:8428`
+- `http://victoria-logs-prd.reventer-monitoring.svc.cluster.local:9428`
 
 両PDCは同じ既存networkへ接続済み。agentの認証・SSH接続各1本、
 名前解決・query gateway経由の実queryを確認。Grafana画面とalertルール自体の
@@ -159,7 +159,7 @@ STG URLs:
 - `http://victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428`
 - `http://victoria-logs-stg.reventer-monitoring.svc.cluster.local:9428`
 
-PRDは既存2 URLを維持。各PDCは両環境のaliasを解決し、環境別のquery gatewayを
+PRDは上記の `-prd` 付き2 URLを使用。各PDCは両環境のaliasを解決し、環境別のquery gatewayを
 使用。異なる環境のgatewayはread-only proxyであり、データを保存しない。
 STG collectorはper-URL relabelでenv=prd/sharedをPRDへ、STG/未分類のSTGクラスタ
 メトリクスをSTGへ送る。STG LogsはSTGにだけ複製する。
