@@ -129,10 +129,10 @@ services:
     extra_hosts:
     - victoria-metrics-stg.reventer-monitoring.svc.cluster.local:127.0.0.2
     - victoria-logs-stg.reventer-monitoring.svc.cluster.local:127.0.0.2
-    - victoria-metrics.reventer-monitoring.svc.cluster.local:127.0.0.1
-    - victoria-metrics.reventer-monitoring.svc:127.0.0.1
-    - victoria-logs.reventer-monitoring.svc.cluster.local:127.0.0.1
-    - victoria-logs.reventer-monitoring.svc:127.0.0.1
+    - victoria-metrics-prd.reventer-monitoring.svc.cluster.local:127.0.0.1
+    - victoria-metrics-prd.reventer-monitoring.svc:127.0.0.1
+    - victoria-logs-prd.reventer-monitoring.svc.cluster.local:127.0.0.1
+    - victoria-logs-prd.reventer-monitoring.svc:127.0.0.1
     command:
     - -metrics-addr=127.0.0.1:8090
     - -token
@@ -141,8 +141,8 @@ services:
     - ${PDC_CLUSTER:?required}
     - -gcloud-hosted-grafana-id
     - ${PDC_HOSTED_GRAFANA_ID:?required}
-    - -ssh-flag=-o PermitRemoteOpen=victoria-metrics.reventer-monitoring.svc.cluster.local:8428
-      victoria-metrics.reventer-monitoring.svc:8428 victoria-logs.reventer-monitoring.svc.cluster.local:9428
-      victoria-logs.reventer-monitoring.svc:9428 victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428
+    - -ssh-flag=-o PermitRemoteOpen=victoria-metrics-prd.reventer-monitoring.svc.cluster.local:8428
+      victoria-metrics-prd.reventer-monitoring.svc:8428 victoria-logs-prd.reventer-monitoring.svc.cluster.local:9428
+      victoria-logs-prd.reventer-monitoring.svc:9428 victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428
       victoria-logs-stg.reventer-monitoring.svc.cluster.local:9428 127.0.0.1:8428 127.0.0.1:9428
       127.0.0.2:8428 127.0.0.2:9428

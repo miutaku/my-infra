@@ -1,8 +1,8 @@
 # Re:Venter 監視の移行と運用
 
-既存URL:
-- `http://victoria-metrics.reventer-monitoring.svc.cluster.local:8428`
-- `http://victoria-logs.reventer-monitoring.svc.cluster.local:9428`
+現在のPRD URL:
+- `http://victoria-metrics-prd.reventer-monitoring.svc.cluster.local:8428`
+- `http://victoria-logs-prd.reventer-monitoring.svc.cluster.local:9428`
 
 ```mermaid
 flowchart LR
