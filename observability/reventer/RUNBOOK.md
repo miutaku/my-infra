@@ -223,3 +223,16 @@ STG instance principalによるbackup/restore-volume API検証は成功済み。
 各アカウントの恒常監視VMはE2 Micro 2台、OKEはA1 2台で合計4 OCPU / 24GB。
 全volumeは10 VPU/GB、OKEはBasic。移行中の少額の一時課金と過去の超過分は
 消えないため、これからの恒常構成の無料枠内確認と過去の請求を区別する。
+
+## PRD URL統一（2026-10-08）
+
+PRD用PDC aliasとPermitRemoteOpenを `victoria-metrics-prd` / `victoria-logs-prd`
+へ置換し、旧PRD名の互換設定は廃止。全4 VMで新alias・許可設定・旧alias不在と
+PRDの実collector canary queryを確認。Grafana datasource URLの編集は未実施。
+
+作業時、STG 02の全storage/query/tunnelが停止していたことを検出。
+STG更新journalは2026-10-07T19:33:58Zから blocked / recovery-failed / target=02。
+更新markerはsucceeded、recovery volumeは未作成で、peer maintenance SSHは正常。
+更新処理が実行中でないことを確認し、全composeサービスを起動してboot activationも
+再有効化。停止期間のMetricsはcollector disk queueから再送されていることを確認。
+STG 01は正常。自動更新journalのblocked解除は原因・履歴補完の検証前に行わない。
