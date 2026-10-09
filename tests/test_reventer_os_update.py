@@ -244,3 +244,96 @@ class GuestStatusTests(unittest.TestCase):
  def test_jsonlines_ps_keeps_pdc_state_and_filters_credentials(self):self.check_format(False)
 
 if __name__=='__main__':unittest.main()
+
+class FailureDiagnosticTests(unittest.TestCase):
+ def test_provider_diagnostic_drops_sensitive_messages(self):
+  exc=RuntimeError('Authorization: bearer secret');exc.status=401;exc.code='NotAuthenticated';exc.headers={'Authorization':'secret'}
+  self.assertEqual(m.error_summary(exc),{'type':'RuntimeError','status':401,'code':'NotAuthenticated'})
+ def test_failed_update_records_safe_invariant(self):
+  c=Fake(fail='collection')
+  with patch.object(m,'poll',lambda fn,timeout=0:fn()):
+   with self.assertRaises(m.Unsafe):c.run()
+  self.assertEqual(c.state['failure']['invariant'],'logs stopped collecting')
+ def test_poll_records_failure_without_provider_payload(self):
+  exc=RuntimeError('signed request');fn=Mock(side_effect=[exc,True])
+  with patch.object(m.time,'sleep'),patch('builtins.print') as output:self.assertTrue(m.poll(fn))
+  self.assertNotIn('signed request',str(output.call_args))
+
+class FailedRestoreAvailabilityTests(unittest.TestCase):
+ def controller(self,boot):
+  c=Fake(fail='collection');c.boot=Mock(return_value=boot)
+  def backup():c.save(phase='backup',backup_id='backup',boot_volume_id='original')
+  c.backup=backup;c.rollback=Mock(side_effect=m.Unsafe('restore API unavailable'))
+  return c
+ def test_failed_restore_restarts_unchanged_boot_without_pdc(self):
+  c=self.controller('original')
+  with patch.object(m,'poll',lambda fn,timeout=0:fn()):
+   with self.assertRaises(m.Unsafe):c.run()
+  self.assertIn('start-storage',c.events);self.assertNotIn('activate',c.events)
+  self.assertEqual(c.state['phase'],'blocked');self.assertEqual(c.state['recovery_failure']['invariant'],'restore API unavailable')
+ def test_changed_boot_is_not_activated_after_failed_restore(self):
+  c=self.controller('replacement')
+  with patch.object(m,'poll',lambda fn,timeout=0:fn()):
+   with self.assertRaises(m.Unsafe):c.run()
+  self.assertNotIn('start-storage',c.events);self.assertNotIn('activate',c.events)
+
+class DiagnosticPersistenceTests(unittest.TestCase):
+ def test_failed_diagnostic_write_does_not_skip_rollback(self):
+  c=Fake(fail='collection');save=c.save
+  def fail_diagnostic(**changes):
+   if 'failure' in changes:raise RuntimeError('journal temporarily unavailable')
+   save(**changes)
+  c.save=fail_diagnostic
+  with patch.object(m,'poll',lambda fn,timeout=0:fn()):
+   with self.assertRaises(m.Unsafe):c.run()
+  self.assertIn('restore-boot-volume',c.events)
+
+class ReadinessDeadlineTests(unittest.TestCase):
+ def test_timeout_retains_safe_last_cause(self):
+  exc=RuntimeError('private signed payload');exc.status=503;exc.code='Unavailable'
+  with patch.object(m.time,'monotonic',side_effect=[0,0,2]),patch.object(m.time,'sleep'),patch('builtins.print'):
+   with self.assertRaises(m.Unsafe) as result:m.poll(Mock(side_effect=exc),1)
+  self.assertIn('503',str(result.exception));self.assertIn('Unavailable',str(result.exception))
+  self.assertNotIn('private signed payload',str(result.exception))
+
+class JournalRetryTests(unittest.TestCase):
+ def controller(self,observations,errors):
+  c=m.Controller.__new__(m.Controller);c.cfg={'lock_instance_id':'lock'};c.state={'phase':'checking','owner':'mine'}
+  responses=[types.SimpleNamespace(data=types.SimpleNamespace(extended_metadata={m.STATE_KEY:x,'other':'preserve'}),headers={'etag':str(n)}) for n,x in enumerate(observations)]
+  c.compute=types.SimpleNamespace(get_instance=Mock(side_effect=responses),update_instance=Mock(side_effect=errors))
+  return c
+ def test_conflict_and_throttle_retry_with_fresh_etag(self):
+  state={'phase':'checking','owner':'mine'}
+  c=self.controller([state,state,state],[m.oci.exceptions.ServiceError(409,'Conflict',{},'sensitive'),m.oci.exceptions.ServiceError(429,'TooManyRequests',{},'sensitive'),None])
+  with patch.object(m.time,'sleep'):c.save(phase='backup')
+  self.assertEqual([x.kwargs['if_match'] for x in c.compute.update_instance.call_args_list],['0','1','2'])
+  self.assertEqual(c.state['phase'],'backup');self.assertEqual(c.metadata['other'],'preserve')
+ def test_other_owner_acquiring_during_retry_is_never_overwritten(self):
+  c=self.controller([{'phase':'checking','owner':'mine'},{'phase':'checking','owner':'other'}],[m.oci.exceptions.ServiceError(412,'NoEtagMatch',{},'sensitive')])
+  with patch.object(m.time,'sleep'):
+   with self.assertRaises(m.Unsafe):c.save(phase='backup')
+  self.assertEqual(c.compute.update_instance.call_count,1)
+ def test_authorization_error_is_not_retried(self):
+  c=self.controller([{'phase':'checking','owner':'mine'}],[m.oci.exceptions.ServiceError(403,'NotAuthorizedOrNotFound',{},'sensitive')])
+  with patch.object(m.time,'sleep') as sleep:
+   with self.assertRaises(m.oci.exceptions.ServiceError):c.save(phase='backup')
+  sleep.assert_not_called()
+ def test_committed_write_with_lost_response_is_recognized(self):
+  state={'phase':'checking','owner':'mine'};updated={**state,'phase':'backup','updated_at':'fixed'}
+  c=self.controller([state,updated],[m.oci.exceptions.ServiceError(503,'Unavailable',{},'sensitive')])
+  with patch.object(m,'stamp',return_value='fixed'),patch.object(m.time,'sleep'):c.save(phase='backup')
+  self.assertEqual(c.compute.update_instance.call_count,1);self.assertEqual(c.state,updated)
+
+class FailedRestoreJournalTests(unittest.TestCase):
+ def test_unavailable_journal_does_not_skip_original_storage_restart(self):
+  c=Fake(fail='collection');c.boot=Mock(return_value='original')
+  c.backup=lambda:c.save(phase='backup',backup_id='backup',boot_volume_id='original')
+  c.rollback=Mock(side_effect=m.Unsafe('restore unavailable'));save=c.save
+  def unavailable(**changes):
+   if changes.get('result')=='recovery-failed':raise RuntimeError('metadata unavailable')
+   save(**changes)
+  c.save=unavailable
+  with patch.object(m,'poll',lambda fn,timeout=0:fn()):
+   with self.assertRaises(RuntimeError):c.run()
+  self.assertIn('start-storage',c.events);self.assertNotIn('activate',c.events)
+  self.assertNotEqual(c.state['phase'],'idle')

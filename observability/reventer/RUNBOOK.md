@@ -236,3 +236,36 @@ STG更新journalは2026-10-07T19:33:58Zから blocked / recovery-failed / target
 更新処理が実行中でないことを確認し、全composeサービスを起動してboot activationも
 再有効化。停止期間のMetricsはcollector disk queueから再送されていることを確認。
 STG 01は正常。自動更新journalのblocked解除は原因・履歴補完の検証前に行わない。
+
+## STG更新停止の調査・対処（2026-10-09）
+
+元の更新は2026-10-07T19:03:54Zに開始、package更新が19:19:30Zに成功して
+19:19:54Zにboot。制御journalは19:33:58Zにblocked / recovery-failedとなった。
+元コードはreadinessの例外と復旧失敗の詳細を記録しておらず、最初の再起動判定
+タイムアウトの直接原因は旧記録だけでは断定できない。監査の全関連compartmentに
+対応するrestore API失敗イベントは見つからず、現在のinstance principalで同じ
+restore-volume作成APIは成功。診断用未接続50GB volumeは削除済み。
+
+停止期間のSTG Logs 7,437件の本文・時刻・stream・重複件数が両VMで一致し、
+複数時刻の代表Metricsも一致。両クラスタのMetrics pending queue / dropped packets、
+Logs retries_failed / dropped_recordsは0（過去のretry回数は別）。
+
+制御下でSTG02の正常OS更新・再起動・履歴parity・PDC復帰を確認。その後、
+STG02を実際にboot backupからvolume交換して復元し、実collector canaryと
+履歴parityを検証。元の未接続50GB bootと不要な旧事故backupは削除済み。
+
+通常systemd serviceでSTG02からSTG01の更新を試したところ、2026-10-09T07:28:37Zに
+OCI 409 Conflict、診断journalの保存でも429 TooManyRequestsを再現した。
+更新記録のCASを最新ETag / ownerを確認しながら再試行し、書込みのburstを抑える修正と、
+復旧失敗時にboot未交換ならstorageを再開する修正を適用。readiness・更新・復旧の
+失敗記録はprovider payloadを含めず保存する。関連39テスト成功。
+
+修正後の同じsystemd serviceは2026-10-09T07:37:02Zに開始、STG01のOS更新・
+再起動・履歴parity・PDC復帰を完了して07:51:36Zに正常終了した。
+全4 VMのjournalはidle、kernelは6.8.0-1062-oracle、全8 collector canaryがfresh。
+再試験後の両クラスタの送信待ち / dropped packet / retries_failed / dropped_recordsは0。
+全compartment監査でSTG 200GB / backup 2、PRD 194GB / backup 3。
+全volumeは10 VPU/GB、一時VM / 未接続の復旧用volumeは残っていない。
+PRDの3 backupは5個の無料枠内であり、通常のverified backup整理に従う。
+
+STG両timerはenabled / activeに再開、PRD両timerもactive。全4 journalはidle。
