@@ -19,7 +19,8 @@ validation evidence and operational limits.
 Use two VM.Standard.E2.1.Micro instances in the PRD tenancy's home region,
 ap-tokyo-1. Place them in different fault domains if available. Each has a 50GB
 boot volume; store monitoring data on that volume, with no additional block
-volume. The post-deployment OCI inventory is 194GB in PRD (94GB OKE + 100GB monitoring).
+volume. The current OCI inventory is 200GB in each tenancy (100GB OKE + 100GB monitoring).
+On 2026-10-10, the existing PRD worker boot volumes were resized online from 47GB to 50GB each to match STG.
 Recheck all active and detached volumes across compartments immediately before
 creation. Do not launch if the total would exceed 200GB, if two E2 micro slots
 are unavailable, or if only paid shapes are available. Capacity is not reserved.

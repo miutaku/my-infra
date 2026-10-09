@@ -269,3 +269,9 @@ OCI 409 Conflict、診断journalの保存でも429 TooManyRequestsを再現し�
 PRDの3 backupは5個の無料枠内であり、通常のverified backup整理に従う。
 
 STG両timerはenabled / activeに再開、PRD両timerもactive。全4 journalはidle。
+
+## 2026-10-10: STG / PRDの容量統一
+
+PRDの既存OKE worker boot volume 2台をオンラインで47GBから50GBへ拡張。
+両アカウントともOKE 50GB×2＋監視50GB×2＝200GB、全volumeは10 VPU/GB。
+上記の194GBは変更前の監査記録。新規VMや追加volumeは作成しない。
