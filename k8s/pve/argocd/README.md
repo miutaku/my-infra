@@ -165,3 +165,48 @@ DeschedulerはPodを直接配置せず、Eviction後の配置は標準スケジ�
   `external-secrets` の values に `bitwarden-sdk-server.enabled: true` を設定して有効化すること。
 - `ClusterSecretStore` の provider フィールド名は `bitwarden` ではなく `bitwardensecretsmanager`。
   `bitwardenServerSDKURL` は `https://` が必須 (bitwarden-sdk-server は TLS のみ)。
+
+## Talos Argo CD availability (2026-10-10)
+
+The installation is pinned to Argo CD v3.3.10 and uses the upstream HA manifest.
+Apply this bootstrap directory with `kubectl --context home-k8s apply --server-side -k k8s/pve/argocd`.
+It is not reconciled by an Argo CD Application; a Git push alone does not install it.
+
+- API, repo-server and Redis HAProxy: two replicas, required anti-affinity on
+  `topology.miutaku/proxmox-node`, one per PVE physical host. PDBs preserve one
+  available replica during voluntary eviction. Rolling updates use no surge and
+  at most one unavailable replica so strict anti-affinity on two hosts cannot
+  deadlock an update. Loss of one host leaves one serving replica; the replacement
+  waits for a second eligible host.
+- Redis/Sentinel: three ephemeral replicas, one each on the two PVE workers and
+  worker-04 (4GB RPi). The RPi toleration is limited to this Redis workload after
+  verifying the upstream Redis image supports arm64. Required hostname
+  anti-affinity and an explicit three-node allowlist prevent placing quorum
+  members together. The PDB preserves two members. Redis is a reconstructible
+  cache, not a persistent application database.
+- Resource requests reserve capacity; memory limits bound cache/controller use.
+  The management PriorityClass never preempts application Pods.
+- Application controller, Dex and notifications remain singletons on PVE workers.
+  They can be recreated on the other worker, but this is not uninterrupted HA.
+  Do not duplicate Dex's in-memory session store or run competing ImageUpdaters.
+  Controller sharding is capacity distribution, not active/standby failover;
+  dynamic cluster distribution is alpha in v3.3.10 and is not enabled.
+- The old standalone Redis Deployment is retained at zero replicas for recovery.
+  No remote-cluster accounts, repository keys, Application objects or app PVCs
+  are removed by this change.
+
+Limits: controlplane-02 and controlplane-03 share pve-b550m. Losing that physical
+host removes two of three etcd members and prevents normal Kubernetes management.
+Argo CD Pod HA cannot fix etcd quorum. Control-plane relocation is outside this
+change. Site-wide power/network failure also remains a shared failure domain.
+PDBs protect voluntary evictions, not sudden node/host failure.
+
+Before upgrading or changing placement, check the three Redis nodes are Ready,
+PVE capacity, `kubectl -n argocd get pdb`, and the physical-host labels. Back up
+cluster/repository credentials separately from Git; never commit their values.
+
+Recovery: keep remote OKE Applications untouched. To revert the HA cache, restore
+v3.3.10's standard install URL, remove HA-specific patches/PDB resources from the
+local overlay, apply the standard install and verify the controller/API/repo
+server. Then remove only the obsolete Redis HA resources. Do not delete the
+argocd namespace, CRDs, root-app, cluster credentials or managed Applications.
