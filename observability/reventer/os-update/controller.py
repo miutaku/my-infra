@@ -27,16 +27,27 @@ class FailedUpdate(Unsafe):pass
 
 def utc():return datetime.now(timezone.utc)
 def stamp(t):return t.isoformat(timespec='microseconds').replace('+00:00','Z')
+def error_summary(exc):
+ # Never serialize provider messages, requests, responses or SSH output.
+ result={'type':type(exc).__name__}
+ for key in ['status','code','operation_name']:
+  value=getattr(exc,key,None)
+  if isinstance(value,int) or isinstance(value,str) and re.fullmatch(r'[A-Za-z0-9_-]{1,80}',value):result[key]=value
+ if isinstance(exc,Unsafe):result['invariant']=str(exc)[:200]
+ return result
+
 def poll(fn,timeout=900):
- end=time.monotonic()+timeout
+ end=time.monotonic()+timeout;last_error=None
  while time.monotonic()<end:
   try:
    value=fn()
    if value:return value
   except FailedUpdate:raise
-  except Exception:pass
+  except Exception as exc:
+   summary=error_summary(exc)
+   if summary!=last_error:print('Readiness retry:',json.dumps(summary,sort_keys=True),flush=True);last_error=summary
   time.sleep(10)
- raise Unsafe('readiness deadline exceeded')
+ raise Unsafe('readiness deadline exceeded; last failure: '+json.dumps(last_error,sort_keys=True))
 
 def prepare_log(row):
  row=dict(row);stream=row.pop('_stream');row.pop('_stream_id',None)
@@ -130,15 +141,30 @@ class Controller:
   return self.state
 
  def save(self,**changes):
-  # Reboots and unrelated instance changes also advance OCI's ETag. Refresh it
-  # only if the persistent maintenance journal still matches our last write.
-  r=self.compute.get_instance(self.cfg['lock_instance_id'])
-  metadata=dict(r.data.extended_metadata or {})
-  if metadata.get(STATE_KEY,{'phase':'idle'})!=self.state:raise Unsafe('maintenance journal ownership changed')
+  # An instance metadata update can overlap OCI's previous asynchronous update.
+  # Retry the compare-and-set with a fresh ETag; never replay a stale owner.
+  last=getattr(self,'_last_journal_write',None)
+  if last is not None:time.sleep(max(0,10-(time.monotonic()-last)))
+  deadline=time.monotonic()+300;delay=5
   updated={**self.state,**changes,'updated_at':stamp(utc())}
-  metadata[STATE_KEY]=updated
-  self.compute.update_instance(self.cfg['lock_instance_id'],oci.core.models.UpdateInstanceDetails(extended_metadata=metadata),if_match=r.headers['etag'])
-  self.state=updated;self.metadata=metadata
+  while True:
+   try:
+    r=self.compute.get_instance(self.cfg['lock_instance_id'])
+    metadata=dict(r.data.extended_metadata or {})
+    observed=metadata.get(STATE_KEY,{'phase':'idle'})
+    # The provider may commit a request whose response failed. Recognize only
+    # this exact write, including its owner and timestamp, as already complete.
+    if observed==updated:
+     self.state=updated;self.metadata=metadata;self._last_journal_write=time.monotonic();return
+    if observed!=self.state:raise Unsafe('maintenance journal ownership changed')
+    metadata[STATE_KEY]=updated
+    self.compute.update_instance(self.cfg['lock_instance_id'],oci.core.models.UpdateInstanceDetails(extended_metadata=metadata),if_match=r.headers['etag'],retry_strategy=oci.retry.NoneRetryStrategy())
+    self.state=updated;self.metadata=metadata;self._last_journal_write=time.monotonic();return
+   except oci.exceptions.ServiceError as exc:
+    transient=exc.status in [412,429] or exc.status==409 and exc.code in ['Conflict','IncorrectState','LockConflict'] or 500<=exc.status<=599 and exc.status!=501
+    if not transient or time.monotonic()+delay>=deadline:raise
+    print('Journal retry:',json.dumps(error_summary(exc),sort_keys=True),flush=True)
+    time.sleep(delay);delay=min(delay*2,30)
 
  def acquire(self):
   if self.load()['phase']!='idle':raise Unsafe('unfinished or failed maintenance blocks updates')
@@ -178,7 +204,7 @@ class Controller:
   self.ensure_backup_budget();volume=self.boot()
   self.save(phase='backup',boot_volume_id=volume,gap_start=stamp(utc()-timedelta(seconds=5)))
   self.guest('prepare')
-  b=self.block.create_boot_volume_backup(oci.core.models.CreateBootVolumeBackupDetails(boot_volume_id=volume,type='INCREMENTAL',display_name='reventer-os-'+self.peer+'-'+utc().strftime('%Y%m%dT%H%M%S'),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer}),opc_retry_token=self.state['owner']).data
+  b=self.block.create_boot_volume_backup(oci.core.models.CreateBootVolumeBackupDetails(boot_volume_id=volume,type='INCREMENTAL',display_name='reventer-os-'+self.peer+'-'+utc().strftime('%Y%m%dT%H%M%S'),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer}),opc_retry_token=self.state['owner'],retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY).data
   self.save(backup_id=b.id)
   def ready():
    self.health(self.me)
@@ -250,7 +276,7 @@ class Controller:
   # failed boot volume until restoration/parity has been independently verified.
   volume_id=self.state.get('recovery_volume_id')
   if not volume_id:
-   v=self.block.create_boot_volume(oci.core.models.CreateBootVolumeDetails(compartment_id=self.cfg['recovery_compartment_id'],availability_domain=self.cfg['availability_domain'],display_name='reventer-os-rollback-'+self.peer,source_details=oci.core.models.BootVolumeSourceFromBootVolumeBackupDetails(id=self.state['backup_id']),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer}),opc_retry_token=str(uuid.uuid5(uuid.NAMESPACE_URL,self.state['owner']+'/recovery'))).data
+   v=self.block.create_boot_volume(oci.core.models.CreateBootVolumeDetails(compartment_id=self.cfg['recovery_compartment_id'],availability_domain=self.cfg['availability_domain'],display_name='reventer-os-rollback-'+self.peer,source_details=oci.core.models.BootVolumeSourceFromBootVolumeBackupDetails(id=self.state['backup_id']),defined_tags=TAG,freeform_tags={'managed_by':'reventer-os-update','target':self.peer}),opc_retry_token=str(uuid.uuid5(uuid.NAMESPACE_URL,self.state['owner']+'/recovery')),retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY).data
    volume_id=v.id;self.save(recovery_volume_id=volume_id)
   poll(lambda:self.block.get_boot_volume(volume_id).data.lifecycle_state=='AVAILABLE',3600)
   poll(lambda:self.compute.get_instance(node['id']).data.lifecycle_state in ['RUNNING','STOPPED'],1800)
@@ -296,12 +322,31 @@ class Controller:
    self.block.update_boot_volume_backup(backup.id,oci.core.models.UpdateBootVolumeBackupDetails(freeform_tags={**backup.freeform_tags,'verified':'true'}))
    self.save(phase='idle',result='updated',owner='',target='')
    print('Peer OS updated, rebooted and collection/catch-up verified',flush=True)
-  except Exception:
+  except Exception as exc:
+   print('Update failed:',json.dumps(error_summary(exc),sort_keys=True),flush=True)
+   try:self.save(failure=error_summary(exc))
+   except Exception as journal:
+    print('Failure journal unavailable:',json.dumps(error_summary(journal),sort_keys=True),flush=True)
    # Recovery never updates the healthy side. A pre-backup failure only restarts
    # the original target; post-backup failures restore the OS, not apt downgrades.
    if self.state.get('backup_id') and self.state['phase'] not in ['checking','backup']:
     try:self.rollback()
-    except Exception:self.save(phase='blocked',result='recovery-failed')
+    except Exception as recovery:
+     print('Recovery failed:',json.dumps(error_summary(recovery),sort_keys=True),flush=True)
+     try:self.save(phase='blocked',result='recovery-failed',recovery_failure=error_summary(recovery))
+     finally:
+      # Even a journal write failure must not bypass availability recovery.
+      # Keep PDC withheld and the maintenance owner held for operator review.
+      try:
+       if self.boot()==self.state.get('boot_volume_id'):
+        self.guest('start-storage')
+        print('Original boot storage restarted; maintenance remains held',flush=True)
+      except Exception as restart:
+       print('Storage restart failed:',json.dumps(error_summary(restart),sort_keys=True),flush=True)
+       try:self.save(storage_restart_failure=error_summary(restart))
+       except Exception as journal:
+        print('Failure journal unavailable:',json.dumps(error_summary(journal),sort_keys=True),flush=True)
+
    else:
     try:
      self.guest('start-storage')

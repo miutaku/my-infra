@@ -84,6 +84,29 @@ operatorが生存replicaから再seedする。staleな保存先をPDCへ戻さ�
 Terraformからjournalを上書きしない。故障volumeの整理とbackup数も確認する。
 bundle / credentialsの変更はjournalがidleの間に行い、更新との重複を避ける。
 
+## 更新失敗の診断と収集再開
+
+Readiness待機の例外は、安全なtype / HTTP status / provider codeまたは内部invariantを
+journalへ記録する。同じ待機エラーの連続出力は抑え、更新失敗と復旧失敗は別々に記録。
+認証header・署名request・provider message・生SSH応答・ログ本文は記録しない。
+診断用journalの保存失敗によってrollbackを省略しない。
+
+復旧処理が失敗した場合、対象のbootが更新前に記録した元volumeのままであることを
+確認できたときだけstorage/query/tunnelを再開する。PDCは有効化せず、更新journalは
+blockedのまま維持する。journal書込み自体が失敗しても元bootの収集再開を省略せず、
+既存のowner / 非idle phaseを保持する。bootが交換済みの場合は未検証の保存先を有効化しない。
+これによりrestore API等の失敗が元VMの収集を停止したままにすることを防ぐ。
+履歴・freshness・復旧volumeを確認してからoperatorがblockedを解除する。
+
+更新記録のCAS書込みには10秒以上の間隔を設ける。OCIの409 Conflict /
+IncorrectState / LockConflict、429、412、再試行可能な5xxは最長5分、5〜30秒の
+backoffで再確認する。毎回最新のETagとjournalの所有権を照合し、他ownerへ
+変わった場合は停止する。応答が失われた書込みはowner・timestampを含む完全一致で
+成功済みと判定し、重複書込みを避ける。CASはSDKの盲目的な同一ETag再試行を使わない。
+backup / restore-volume作成には既存の冪等tokenとSDK標準retryを併用する。
+根拠: [OCI API errors](https://docs.oracle.com/en-us/iaas/Content/API/References/apierrors.htm) /
+[OCI Python SDK retries](https://docs.oracle.com/en-us/iaas/tools/python/latest/api/retry.html)。
+
 公式仕様:
 - [Ubuntu automatic updates](https://documentation.ubuntu.com/security/security-updates/)
 - [OCI boot replacement](https://docs.oracle.com/en-us/iaas/Content/Compute/Tasks/replacingbootvolume.htm)
