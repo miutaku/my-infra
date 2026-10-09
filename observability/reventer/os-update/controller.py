@@ -166,6 +166,11 @@ class Controller:
     print('Journal retry:',json.dumps(error_summary(exc),sort_keys=True),flush=True)
     time.sleep(delay);delay=min(delay*2,30)
 
+ def assert_ownership(self):
+  # Inspect without adopting another writer's state into this controller.
+  metadata=self.compute.get_instance(self.cfg['lock_instance_id']).data.extended_metadata or {}
+  if metadata.get(STATE_KEY,{'phase':'idle'})!=self.state:raise Unsafe('maintenance journal ownership changed')
+
  def acquire(self):
   if self.load()['phase']!='idle':raise Unsafe('unfinished or failed maintenance blocks updates')
   self.save(phase='checking',owner=self.run_id,target=self.peer,backup_id=None,recovery_volume_id=None,boot_volume_id=None,gap_start=None,pdc=False)
@@ -338,6 +343,7 @@ class Controller:
       # Even a journal write failure must not bypass availability recovery.
       # Keep PDC withheld and the maintenance owner held for operator review.
       try:
+       self.assert_ownership()
        if self.boot()==self.state.get('boot_volume_id'):
         self.guest('start-storage')
         print('Original boot storage restarted; maintenance remains held',flush=True)
