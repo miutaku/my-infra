@@ -121,7 +121,7 @@ journalへ記録する。同じ待機エラーの連続出力は抑え、更新�
 診断用journalの保存失敗によってrollbackを省略しない。
 
 復旧処理が失敗した場合、対象のbootが更新前に記録した元volumeのままであることを
-確認できたときだけstorage/query/tunnelを再開する。PDCは有効化せず、更新journalは
+確認でき、journalの所有権も変わっていないときだけstorage/query/tunnelを再開する。PDCは有効化せず、更新journalは
 blockedのまま維持する。journal書込み自体が失敗しても元bootの収集再開を省略せず、
 既存のowner / 非idle phaseを保持する。bootが交換済みの場合は未検証の保存先を有効化しない。
 これによりrestore API等の失敗が元VMの収集を停止したままにすることを防ぐ。

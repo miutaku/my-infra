@@ -258,7 +258,7 @@ STG02を実際にboot backupからvolume交換して復元し、実collector can
 OCI 409 Conflict、診断journalの保存でも429 TooManyRequestsを再現した。
 更新記録のCASを最新ETag / ownerを確認しながら再試行し、書込みのburstを抑える修正と、
 復旧失敗時にboot未交換ならstorageを再開する修正を適用。readiness・更新・復旧の
-失敗記録はprovider payloadを含めず保存する。関連39テスト成功。
+失敗記録はprovider payloadを含めず保存する。関連41テスト成功。
 
 修正後の同じsystemd serviceは2026-10-09T07:37:02Zに開始、STG01のOS更新・
 再起動・履歴parity・PDC復帰を完了して07:51:36Zに正常終了した。
