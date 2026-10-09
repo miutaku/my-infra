@@ -16,6 +16,7 @@ class Fake(m.Controller):
  def __init__(self,phase='idle',fail=None):
   self.cfg={'allow_paid_recovery':True};self.me='01';self.peer='02';self.run_id='test';self.state={'phase':phase};self.events=[];self.fail=fail
   self.block=types.SimpleNamespace(get_boot_volume_backup=lambda _:types.SimpleNamespace(data=types.SimpleNamespace(id='backup',freeform_tags={})),update_boot_volume_backup=lambda *_:None)
+ def assert_ownership(self):pass
  def load(self):return self.state
  def save(self,**changes):self.state.update(changes)
  def acquire(self):self.events.append('lock');self.save(phase='checking',target=self.peer)
@@ -337,3 +338,17 @@ class FailedRestoreJournalTests(unittest.TestCase):
    with self.assertRaises(RuntimeError):c.run()
   self.assertIn('start-storage',c.events);self.assertNotIn('activate',c.events)
   self.assertNotEqual(c.state['phase'],'idle')
+
+class StorageRestartOwnershipTests(unittest.TestCase):
+ def test_foreign_journal_does_not_get_adopted_for_diagnostic_writes(self):
+  c=m.Controller.__new__(m.Controller);c.cfg={'lock_instance_id':'lock'};original={'phase':'upgrading','owner':'mine'};c.state=dict(original)
+  c.compute=types.SimpleNamespace(get_instance=lambda _:types.SimpleNamespace(data=types.SimpleNamespace(extended_metadata={m.STATE_KEY:{'phase':'upgrading','owner':'other'}})))
+  with self.assertRaises(m.Unsafe):c.assert_ownership()
+  self.assertEqual(c.state,original)
+ def test_lost_ownership_never_restarts_foreign_target(self):
+  c=Fake(fail='collection');c.boot=Mock(return_value='original')
+  c.backup=lambda:c.save(phase='backup',backup_id='backup',boot_volume_id='original')
+  c.rollback=Mock(side_effect=m.Unsafe('restore unavailable'));c.assert_ownership=Mock(side_effect=m.Unsafe('maintenance journal ownership changed'))
+  with patch.object(m,'poll',lambda fn,timeout=0:fn()):
+   with self.assertRaises(m.Unsafe):c.run()
+  self.assertNotIn('start-storage',c.events);self.assertNotIn('activate',c.events);c.boot.assert_not_called()
