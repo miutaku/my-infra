@@ -1,13 +1,12 @@
 ---
-# PVEがある自宅はOCIと拠点間接続しているため、tfc-agentはOCIで動かす。
-# PVEでtfc-agentを動かすと、宅内Kubernetes VMを変更するapplyと実行基盤が競合するため。
+# Home workspace agent has moved to Talos; the home-to-OCI VPN is retired.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tfc-agent
   namespace: tfc-agent
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: tfc-agent
