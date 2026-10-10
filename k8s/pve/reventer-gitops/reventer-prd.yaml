@@ -12,6 +12,45 @@ spec:
     repoURL: git@github.com:miutaku/reventer.git
     targetRevision: main
     path: infrastructure/k8s/prd
+    kustomize:
+      patches:
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: cluster-autoscaler
+          namespace: kube-system
+        patch: |-
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: cluster-autoscaler
+            namespace: kube-system
+          spec:
+            template:
+              spec:
+                nodeSelector:
+                  reventer.io/capacity: base
+                  node.info/compartment.id: aaaaaaaagv44lra2xieodrt75xzwqyvfrk35lpuon5fyxk4zzr52tqli3j5a
+                containers:
+                - name: cluster-autoscaler
+                  command:
+                  - ./cluster-autoscaler
+                  - --v=4
+                  - --stderrthreshold=info
+                  - --cloud-provider=oci
+                  - --cloud-config=/etc/cluster-autoscaler/cloud-config/oci.conf
+                  - --max-node-provision-time=25m
+                  - --node-group-auto-discovery=clusterId:ocid1.cluster.oc1.ap-tokyo-1.aaaaaaaasfbghj4c5sthm6guye2oc357lsynagvxdpb3cp4yxcsbgvnaxtha,compartmentId:ocid1.compartment.oc1..aaaaaaaaobcmiwlshvyofhlpbjo3ccuxjxoto7wfthnskyaaxbxqr5qpagtq,nodepoolTags:managed-by=terraform&environment=prd&capacity=burst,min:0,max:1
+                  - --scale-down-delay-after-add=10m
+                  - --scale-down-unneeded-time=10m
+                  - --skip-nodes-with-system-pods=false
+                  - --unremovable-node-recheck-timeout=5m
+                  - --balance-similar-node-groups
+                  - --balancing-ignore-label=displayName
+                  - --balancing-ignore-label=hostname
+                  - --balancing-ignore-label=internal_addr
+                  - --balancing-ignore-label=oci.oraclecloud.com/fault-domain
   destination:
     name: oke-prd
     namespace: app-reventer-prd
