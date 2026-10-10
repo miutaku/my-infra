@@ -39,9 +39,8 @@ spec:
           name: valkey
           namespace: app-reventer-prd
         patch: "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: valkey\n\
-          \  namespace: app-reventer-prd\nspec:\n  updateStrategy:\n    type: OnDelete\n\
-          \    rollingUpdate: null\n  template:\n    spec:\n      containers:\n  \
-          \    - name: valkey\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507"
+          \  namespace: app-reventer-prd\nspec:\n  template:\n    spec:\n      containers:\n\
+          \      - name: valkey\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507\n"
       - target:
           group: apps
           version: v1
@@ -49,9 +48,8 @@ spec:
           name: valkey-sentinel
           namespace: app-reventer-prd
         patch: "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: valkey-sentinel\n\
-          \  namespace: app-reventer-prd\nspec:\n  updateStrategy:\n    type: OnDelete\n\
-          \    rollingUpdate: null\n  template:\n    spec:\n      containers:\n  \
-          \    - name: sentinel\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507"
+          \  namespace: app-reventer-prd\nspec:\n  template:\n    spec:\n      containers:\n\
+          \      - name: sentinel\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507\n"
       - target:
           version: v1
           kind: ConfigMap
