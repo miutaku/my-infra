@@ -4,143 +4,124 @@ metadata:
   name: oci-prd-nginx-gateway-fabric
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: '2'
 spec:
   project: default
   source:
     repoURL: oci://ghcr.io/nginx/charts/nginx-gateway-fabric
     chart: nginx-gateway-fabric
-    targetRevision: "2.6.7"
+    targetRevision: 2.6.7
     helm:
       releaseName: nginx-gateway-fabric
-      # crds/内のCRDが262144バイト超でArgoCDのapplyが毎回失敗するため除外。
-      # `kubectl apply --server-side --force-conflicts` で別途投入済み。
       skipCrds: true
       valuesObject:
         nginxGateway:
-          # PRDの定常base node poolは1台。GatewayはBlue/Greenの切替対象外なので、
-          # control-plane/data-planeとも定常1 replicaとし、burst nodeを0台へ戻せるようにする。
-          replicas: 1
+          replicas: 2
           nodeSelector:
             kubernetes.io/arch: arm64
           resources:
             requests:
-              cpu: "100m"
-              memory: "90Mi"
+              cpu: 100m
+              memory: 90Mi
           affinity:
             podAntiAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
-                - topologyKey: kubernetes.io/hostname
-                  labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: nginx-gateway-fabric
-                      app.kubernetes.io/instance: nginx-gateway-fabric
+              - topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: nginx-gateway-fabric
+                    app.kubernetes.io/instance: nginx-gateway-fabric
         nginx:
-          replicas: 1
+          replicas: 2
           container:
             resources:
               requests:
-                cpu: "100m"
-                memory: "90Mi"
+                cpu: 100m
+                memory: 90Mi
           pod:
             affinity:
               podAntiAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
-                  - topologyKey: kubernetes.io/hostname
-                    labelSelector:
-                      matchExpressions:
-                        - key: gateway.networking.k8s.io/gateway-name
-                          operator: Exists
-          # 単一baseノードでも更新時に余分なPodを要求しないよう、surgeせず入れ替える
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchExpressions:
+                    - key: gateway.networking.k8s.io/gateway-name
+                      operator: Exists
           patches:
-            - type: StrategicMerge
-              value:
-                spec:
-                  strategy:
-                    rollingUpdate:
-                      maxSurge: 0
-                      maxUnavailable: 1
+          - type: StrategicMerge
+            value:
+              spec:
+                strategy:
+                  rollingUpdate:
+                    maxSurge: 1
+                    maxUnavailable: 0
           service:
             type: LoadBalancer
-            # service.annotationsはこのCRDに存在しないフィールド
             patches:
-              - type: StrategicMerge
-                value:
-                  metadata:
-                    annotations:
-                      # OCI Always Free: 10Mbps flexible shape (旧ingress-nginxと同条件)
-                      service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
-                      service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
-                      service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
+            - type: StrategicMerge
+              value:
+                metadata:
+                  annotations:
+                    service.beta.kubernetes.io/oci-load-balancer-shape: flexible
+                    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: '10'
+                    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: '10'
           config:
-            # 旧ingress-nginxの use-forwarded-headers + proxy-real-ip-cidr 相当
             rewriteClientIP:
               mode: XForwardedFor
               setIPRecursively: true
               trustedAddresses:
-                - type: CIDR
-                  value: "173.245.48.0/20"
-                - type: CIDR
-                  value: "103.21.244.0/22"
-                - type: CIDR
-                  value: "103.22.200.0/22"
-                - type: CIDR
-                  value: "103.31.4.0/22"
-                - type: CIDR
-                  value: "141.101.64.0/18"
-                - type: CIDR
-                  value: "108.162.192.0/18"
-                - type: CIDR
-                  value: "190.93.240.0/20"
-                - type: CIDR
-                  value: "188.114.96.0/20"
-                - type: CIDR
-                  value: "197.234.240.0/22"
-                - type: CIDR
-                  value: "198.41.128.0/17"
-                - type: CIDR
-                  value: "162.158.0.0/15"
-                - type: CIDR
-                  value: "104.16.0.0/13"
-                - type: CIDR
-                  value: "104.24.0.0/14"
-                - type: CIDR
-                  value: "172.64.0.0/13"
-                - type: CIDR
-                  value: "131.0.72.0/22"
+              - type: CIDR
+                value: 173.245.48.0/20
+              - type: CIDR
+                value: 103.21.244.0/22
+              - type: CIDR
+                value: 103.22.200.0/22
+              - type: CIDR
+                value: 103.31.4.0/22
+              - type: CIDR
+                value: 141.101.64.0/18
+              - type: CIDR
+                value: 108.162.192.0/18
+              - type: CIDR
+                value: 190.93.240.0/20
+              - type: CIDR
+                value: 188.114.96.0/20
+              - type: CIDR
+                value: 197.234.240.0/22
+              - type: CIDR
+                value: 198.41.128.0/17
+              - type: CIDR
+                value: 162.158.0.0/15
+              - type: CIDR
+                value: 104.16.0.0/13
+              - type: CIDR
+                value: 104.24.0.0/14
+              - type: CIDR
+                value: 172.64.0.0/13
+              - type: CIDR
+                value: 131.0.72.0/22
         extraObjects:
-          # chartにnginx用PDBのvaluesが無いため生マニフェストで追加
-          - |
-            apiVersion: policy/v1
-            kind: PodDisruptionBudget
-            metadata:
-              name: nginx-gateway-fabric
-              namespace: nginx-gateway
-            spec:
-              minAvailable: 1
-              selector:
-                matchLabels:
-                  app.kubernetes.io/name: nginx-gateway-fabric
-                  app.kubernetes.io/instance: nginx-gateway-fabric
+        - "apiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n  name: nginx-gateway-fabric\n\
+          \  namespace: nginx-gateway\nspec:\n  minAvailable: 1\n  selector:\n   \
+          \ matchLabels:\n      app.kubernetes.io/name: nginx-gateway-fabric\n   \
+          \   app.kubernetes.io/instance: nginx-gateway-fabric\n"
   destination:
     name: oke-prd
     namespace: nginx-gateway
   ignoreDifferences:
-    # control-planeにはchart側のpatches機構が無いため直接kubectl patchする。
-    # selfHealで打ち消されないようdiff計算から除外。
-    - group: apps
-      kind: Deployment
-      name: nginx-gateway-fabric
-      namespace: nginx-gateway
-      jsonPointers:
-        - /spec/strategy
+  - group: apps
+    kind: Deployment
+    name: nginx-gateway-fabric
+    namespace: nginx-gateway
+    jsonPointers:
+    - /spec/strategy
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-      - Replace=true
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - Replace=true
