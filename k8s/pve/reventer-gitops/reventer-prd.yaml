@@ -20,37 +20,38 @@ spec:
           kind: Deployment
           name: cluster-autoscaler
           namespace: kube-system
-        patch: |-
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: cluster-autoscaler
-            namespace: kube-system
-          spec:
-            template:
-              spec:
-                nodeSelector:
-                  reventer.io/capacity: base
-                  node.info/compartment.id: aaaaaaaagv44lra2xieodrt75xzwqyvfrk35lpuon5fyxk4zzr52tqli3j5a
-                containers:
-                - name: cluster-autoscaler
-                  command:
-                  - ./cluster-autoscaler
-                  - --v=4
-                  - --stderrthreshold=info
-                  - --cloud-provider=oci
-                  - --cloud-config=/etc/cluster-autoscaler/cloud-config/oci.conf
-                  - --max-node-provision-time=25m
-                  - --node-group-auto-discovery=clusterId:ocid1.cluster.oc1.ap-tokyo-1.aaaaaaaasfbghj4c5sthm6guye2oc357lsynagvxdpb3cp4yxcsbgvnaxtha,compartmentId:ocid1.compartment.oc1..aaaaaaaaobcmiwlshvyofhlpbjo3ccuxjxoto7wfthnskyaaxbxqr5qpagtq,nodepoolTags:managed-by=terraform&environment=prd&capacity=burst,min:0,max:1
-                  - --scale-down-delay-after-add=10m
-                  - --scale-down-unneeded-time=10m
-                  - --skip-nodes-with-system-pods=false
-                  - --unremovable-node-recheck-timeout=5m
-                  - --balance-similar-node-groups
-                  - --balancing-ignore-label=displayName
-                  - --balancing-ignore-label=hostname
-                  - --balancing-ignore-label=internal_addr
-                  - --balancing-ignore-label=oci.oraclecloud.com/fault-domain
+        patch: "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: cluster-autoscaler\n\
+          \  namespace: kube-system\nspec:\n  template:\n    spec:\n      nodeSelector:\n\
+          \        reventer.io/capacity: base\n        node.info/compartment.id: aaaaaaaagv44lra2xieodrt75xzwqyvfrk35lpuon5fyxk4zzr52tqli3j5a\n\
+          \      containers:\n      - name: cluster-autoscaler\n        command:\n\
+          \        - ./cluster-autoscaler\n        - --v=4\n        - --stderrthreshold=info\n\
+          \        - --cloud-provider=oci\n        - --cloud-config=/etc/cluster-autoscaler/cloud-config/oci.conf\n\
+          \        - --max-node-provision-time=25m\n        - --node-group-auto-discovery=clusterId:ocid1.cluster.oc1.ap-tokyo-1.aaaaaaaasfbghj4c5sthm6guye2oc357lsynagvxdpb3cp4yxcsbgvnaxtha,compartmentId:ocid1.compartment.oc1..aaaaaaaaobcmiwlshvyofhlpbjo3ccuxjxoto7wfthnskyaaxbxqr5qpagtq,nodepoolTags:managed-by=terraform&environment=prd&capacity=burst,min:0,max:1\n\
+          \        - --scale-down-delay-after-add=10m\n        - --scale-down-unneeded-time=10m\n\
+          \        - --skip-nodes-with-system-pods=false\n        - --unremovable-node-recheck-timeout=5m\n\
+          \        - --balance-similar-node-groups\n        - --balancing-ignore-label=displayName\n\
+          \        - --balancing-ignore-label=hostname\n        - --balancing-ignore-label=internal_addr\n\
+          \        - --balancing-ignore-label=oci.oraclecloud.com/fault-domain"
+      - target:
+          group: apps
+          version: v1
+          kind: StatefulSet
+          name: valkey
+          namespace: app-reventer-prd
+        patch: "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: valkey\n\
+          \  namespace: app-reventer-prd\nspec:\n  updateStrategy:\n    type: OnDelete\n\
+          \    rollingUpdate: null\n  template:\n    spec:\n      containers:\n  \
+          \    - name: valkey\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507"
+      - target:
+          group: apps
+          version: v1
+          kind: StatefulSet
+          name: valkey-sentinel
+          namespace: app-reventer-prd
+        patch: "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: valkey-sentinel\n\
+          \  namespace: app-reventer-prd\nspec:\n  updateStrategy:\n    type: OnDelete\n\
+          \    rollingUpdate: null\n  template:\n    spec:\n      containers:\n  \
+          \    - name: sentinel\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507"
   destination:
     name: oke-prd
     namespace: app-reventer-prd
