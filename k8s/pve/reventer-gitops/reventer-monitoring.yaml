@@ -9,6 +9,26 @@ spec:
     repoURL: git@github.com:miutaku/reventer.git
     targetRevision: main
     path: infrastructure/k8s/monitoring
+    kustomize:
+      patches:
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: vmagent
+          namespace: reventer-monitoring
+        patch: |-
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: vmagent
+            namespace: reventer-monitoring
+          spec:
+            template:
+              spec:
+                nodeSelector:
+                  reventer.io/capacity: base
+                  node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq
   destination:
     namespace: reventer-monitoring
     name: oke-stg
