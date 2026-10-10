@@ -75,6 +75,11 @@ resource "oci_core_route_table" "private_rt" {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_nat_gateway.oke_ngw.id
   }
+  route_rules {
+    destination       = data.oci_core_services.all_oci_services.services[0].cidr_block
+    destination_type  = "SERVICE_CIDR_BLOCK"
+    network_entity_id = oci_core_service_gateway.oke_sgw.id
+  }
 }
 
 # Security List for public subnet (API endpoint + Flex LB)
