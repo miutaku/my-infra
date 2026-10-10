@@ -69,12 +69,29 @@ resource "oci_core_security_list" "workers" {
   }
 }
 
+# Keep DHCP within the same IAM boundary as the worker subnet.
+resource "oci_core_dhcp_options" "workers" {
+  compartment_id = oci_identity_compartment.workers.id
+  vcn_id         = var.vcn_id
+  display_name   = "reventer-oke-worker-dhcp"
+  freeform_tags  = local.tags
+  options {
+    type        = "DomainNameServer"
+    server_type = "VcnLocalPlusInternet"
+  }
+  options {
+    type                = "SearchDomain"
+    search_domain_names = [var.vcn_dns_domain]
+  }
+}
+
 resource "oci_core_subnet" "workers" {
   compartment_id             = oci_identity_compartment.workers.id
   vcn_id                     = var.vcn_id
   cidr_block                 = var.worker_subnet_cidr
   display_name               = "reventer-oke-worker-subnet"
   dns_label                  = "okeworkerv2"
+  dhcp_options_id            = oci_core_dhcp_options.workers.id
   prohibit_public_ip_on_vnic = true
   route_table_id             = oci_core_route_table.workers.id
   security_list_ids          = [oci_core_security_list.workers.id]

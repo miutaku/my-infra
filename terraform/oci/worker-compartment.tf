@@ -22,6 +22,7 @@ module "oke_workers_v2" {
   cluster_id                    = oci_containerengine_cluster.oke_cluster.id
   vcn_id                        = oci_core_vcn.oke_vcn.id
   vcn_cidr                      = var.vcn_cidr
+  vcn_dns_domain                = oci_core_vcn.oke_vcn.vcn_domain_name
   shared_network_compartment_id = var.compartment_ocid
   nat_gateway_id                = oci_core_nat_gateway.oke_ngw.id
   service_gateway_id            = oci_core_service_gateway.oke_sgw.id
