@@ -4,7 +4,7 @@ metadata:
   name: tfc-agent
   namespace: tfc-agent
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -21,9 +21,7 @@ spec:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
-                    operator: In
-                    values:
-                      - "true"
+                    operator: Exists
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
@@ -47,7 +45,7 @@ spec:
           tolerationSeconds: 30
       containers:
         - name: tfc-agent
-          image: hashicorp/tfc-agent:1.17.4
+          image: docker.io/hashicorp/tfc-agent:1.28.8
           imagePullPolicy: Always
           env:
             - name: TFC_AGENT_TOKEN
