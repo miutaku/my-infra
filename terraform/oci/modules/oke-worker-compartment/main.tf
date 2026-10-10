@@ -25,6 +25,17 @@ resource "oci_identity_compartment" "workers" {
   lifecycle { prevent_destroy = true }
 }
 
+# This compartment contains only the Autoscaler-managed burst pool.
+# OKE nodeConfigDetails authorization does not accept target.nodepool.id here.
+resource "oci_identity_compartment" "burst" {
+  compartment_id = oci_identity_compartment.workers.id
+  name           = "reventer-oke-burst"
+  description    = "Exclusive IAM boundary for the Autoscaler-managed burst pool"
+  enable_delete  = false
+  freeform_tags  = local.tags
+  lifecycle { prevent_destroy = true }
+}
+
 resource "oci_core_route_table" "workers" {
   compartment_id = oci_identity_compartment.workers.id
   vcn_id         = var.vcn_id
@@ -140,24 +151,68 @@ resource "oci_containerengine_node_pool" "workers" {
   }
 }
 
+# Preserve the existing zero-sized v2 burst pool during preparation.
+# Retire it separately after successful authorization and migration.
+resource "oci_containerengine_node_pool" "autoscaled" {
+  for_each           = toset(["burst"])
+  cluster_id         = var.cluster_id
+  compartment_id     = oci_identity_compartment.burst.id
+  kubernetes_version = var.kubernetes_version
+  name               = "oke-${var.environment}-${each.key}-v3"
+  node_shape         = "VM.Standard.A1.Flex"
+  freeform_tags      = merge(local.tags, { "capacity" = each.key })
+  defined_tags       = local.worker_tags
+  node_shape_config {
+    ocpus         = 2
+    memory_in_gbs = 12
+  }
+  node_source_details {
+    image_id                = var.image_id
+    source_type             = "image"
+    boot_volume_size_in_gbs = 50
+  }
+  node_config_details {
+    # Provisioning phase creates no worker VMs in either pool.
+    size          = 0
+    defined_tags  = local.worker_tags
+    freeform_tags = merge(local.tags, { "capacity" = each.key })
+    dynamic "placement_configs" {
+      for_each = var.availability_domains
+      content {
+        availability_domain = placement_configs.value
+        subnet_id           = oci_core_subnet.workers.id
+      }
+    }
+  }
+  initial_node_labels {
+    key   = "reventer.io/capacity"
+    value = each.key
+  }
+  ssh_public_key = var.ssh_public_key
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [node_config_details[0].size, defined_tags["Oracle-Tags.CreatedBy"], defined_tags["Oracle-Tags.CreatedOn"]]
+  }
+}
+
 # New group and policy coexist with the legacy group during migration.
 # Base workers also need membership: Autoscaler normally runs on a base node.
 resource "oci_identity_dynamic_group" "autoscaler" {
   compartment_id = var.tenancy_ocid
   name           = "reventer-oke-autoscaler-v2"
   description    = "Tagged OKE workers in the dedicated worker compartment"
-  matching_rule  = "ALL {instance.compartment.id='${oci_identity_compartment.workers.id}', tag.oke.autoscaler.value='cluster'}"
+  matching_rule  = "ALL {tag.oke.autoscaler.value='cluster', ANY {instance.compartment.id='${oci_identity_compartment.workers.id}', instance.compartment.id='${oci_identity_compartment.burst.id}'}}"
   freeform_tags  = local.tags
 }
 
 resource "oci_identity_policy" "autoscaler" {
   compartment_id = var.tenancy_ocid
   name           = "reventer-oke-autoscaler-v2"
-  description    = "Restricted OKE worker compartment Autoscaler policy draft"
+  description    = "Autoscaler writes limited to the exclusive burst compartment"
   freeform_tags  = local.tags
   statements = concat([
     "Allow ${local.subject} to read cluster-node-pools in ${local.scope}",
-    "Allow ${local.subject} to manage cluster-node-pools in ${local.scope} where all {target.nodepool.id = '${oci_containerengine_node_pool.workers["burst"].id}', any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}}",
+    "Allow ${local.subject} to manage cluster-node-pools in compartment id ${oci_identity_compartment.burst.id} where any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}",
     "Allow ${local.subject} to manage instance-family in ${local.scope}",
     "Allow ${local.subject} to use subnets in ${local.scope}",
     "Allow ${local.subject} to read virtual-network-family in ${local.scope}",
@@ -172,5 +227,12 @@ resource "oci_identity_policy" "autoscaler" {
 }
 
 output "worker_compartment_id" { value = oci_identity_compartment.workers.id }
-output "node_pool_ids" { value = { for k, pool in oci_containerengine_node_pool.workers : k => pool.id } }
+output "node_pool_ids" {
+  value = {
+    base  = oci_containerengine_node_pool.workers["base"].id
+    burst = oci_containerengine_node_pool.autoscaled["burst"].id
+  }
+}
+output "burst_compartment_id" { value = oci_identity_compartment.burst.id }
+output "legacy_zero_burst_pool_id" { value = oci_containerengine_node_pool.workers["burst"].id }
 output "policy_statements" { value = oci_identity_policy.autoscaler.statements }
