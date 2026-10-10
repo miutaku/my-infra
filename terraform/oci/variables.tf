@@ -106,3 +106,16 @@ variable "backup_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "api_management_ipv4_cidrs" {
+  description = "Trusted public IPv4 /32 sources for Kubernetes API management: fixed home IPv4 and STG NAT IPv4. Configure identically in both TFC workspaces."
+  type        = set(string)
+  sensitive   = true
+
+  validation {
+    condition = length(var.api_management_ipv4_cidrs) > 0 && alltrue([
+      for cidr in var.api_management_ipv4_cidrs : can(cidrnetmask(cidr)) && endswith(cidr, "/32")
+    ])
+    error_message = "Kubernetes API management sources must be individual IPv4 /32 CIDRs."
+  }
+}

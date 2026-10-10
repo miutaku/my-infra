@@ -89,14 +89,17 @@ resource "oci_core_security_list" "lb_sl" {
   display_name   = "oke-lb-sl"
   freeform_tags  = local.common_tags
 
-  # OKE API server (kubectl) — 家の固定 IPv4 のみ許可
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "${var.ix_public_ipv4}/32"
-    stateless = false
-    tcp_options {
-      min = 6443
-      max = 6443
+  # OKE API server — identical trusted management sources in STG and PRD
+  dynamic "ingress_security_rules" {
+    for_each = nonsensitive(var.api_management_ipv4_cidrs)
+    content {
+      protocol  = "6"
+      source    = ingress_security_rules.value
+      stateless = false
+      tcp_options {
+        min = 6443
+        max = 6443
+      }
     }
   }
 
