@@ -161,10 +161,29 @@ resource "oci_core_security_list" "worker_sl" {
     stateless = false
   }
 
+  # ICMP path discovery, matching PRD.
+  ingress_security_rules {
+    protocol  = "1"
+    source    = "0.0.0.0/0"
+    stateless = false
+    icmp_options {
+      type = 3
+      code = 4
+    }
+  }
+
   egress_security_rules {
     protocol    = "all"
     destination = "0.0.0.0/0"
     stateless   = false
+  }
+
+  # Oracle Services Network via the existing Service Gateway, matching PRD.
+  egress_security_rules {
+    protocol         = "all"
+    destination_type = "SERVICE_CIDR_BLOCK"
+    destination      = data.oci_core_services.all_oci_services.services[0].cidr_block
+    stateless        = false
   }
 
   # OCI CCM owns dynamic LoadBalancer health-check and NodePort rules.
