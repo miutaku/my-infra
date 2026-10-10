@@ -47,6 +47,24 @@ spec:
                     periodSeconds: 5
                     timeoutSeconds: 2
                     failureThreshold: 6
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: admin
+          namespace: app-reventer-prd
+        patch: |-
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: admin
+            namespace: app-reventer-prd
+          spec:
+            template:
+              spec:
+                nodeSelector:
+                  reventer.io/capacity: base
+                  node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq
   destination:
     namespace: app-reventer-prd
     name: oke-stg
