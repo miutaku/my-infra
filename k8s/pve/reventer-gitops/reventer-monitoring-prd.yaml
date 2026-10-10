@@ -9,6 +9,22 @@ spec:
     repoURL: git@github.com:miutaku/reventer.git
     targetRevision: main
     path: infrastructure/k8s/monitoring-prd
+    kustomize:
+      patches:
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: vmagent
+          namespace: reventer-monitoring
+        patch: "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vmagent\n\
+          \  namespace: reventer-monitoring\nspec:\n  template:\n    spec:\n     \
+          \ nodeSelector:\n        reventer.io/capacity: base\n        node.info/compartment.id:\
+          \ aaaaaaaagv44lra2xieodrt75xzwqyvfrk35lpuon5fyxk4zzr52tqli3j5a\n      containers:\n\
+          \      - name: vmagent\n        readinessProbe:\n          httpGet:\n  \
+          \          path: /health\n            port: 8429\n          initialDelaySeconds:\
+          \ 5\n          periodSeconds: 5\n          timeoutSeconds: 2\n         \
+          \ failureThreshold: 6"
   destination:
     name: oke-prd
     namespace: reventer-monitoring
