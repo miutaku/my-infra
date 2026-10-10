@@ -18,7 +18,7 @@ spec:
       skipCrds: true
       valuesObject:
         nginxGateway:
-          replicas: 2
+          replicas: 1
           nodeSelector:
             kubernetes.io/arch: arm64
           resources:
@@ -34,7 +34,7 @@ spec:
                     app.kubernetes.io/name: nginx-gateway-fabric
                     app.kubernetes.io/instance: nginx-gateway-fabric
         nginx:
-          replicas: 2
+          replicas: 1
           container:
             resources:
               requests:
@@ -55,8 +55,8 @@ spec:
               spec:
                 strategy:
                   rollingUpdate:
-                    maxSurge: 1
-                    maxUnavailable: 0
+                    maxSurge: 0
+                    maxUnavailable: 1
           service:
             type: LoadBalancer
             patches:
