@@ -31,6 +31,9 @@ spec:
                     app: tfc-agent
                 topologyKey: kubernetes.io/hostname
       tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
         - key: CriticalAddonsOnly
           operator: Equal
           value: "true"
