@@ -50,6 +50,40 @@ spec:
                   - --balancing-ignore-label=hostname
                   - --balancing-ignore-label=internal_addr
                   - --balancing-ignore-label=oci.oraclecloud.com/fault-domain
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: admin-tunnel
+          namespace: app-reventer-stg
+        patch: |-
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: admin-tunnel
+            namespace: app-reventer-stg
+          spec:
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 1
+                maxUnavailable: 0
+            template:
+              spec:
+                nodeSelector:
+                  reventer.io/capacity: base
+                  node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq
+                containers:
+                - name: cloudflared
+                  image: docker.io/cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+                  readinessProbe:
+                    httpGet:
+                      path: /ready
+                      port: 2000
+                    initialDelaySeconds: 10
+                    periodSeconds: 5
+                    timeoutSeconds: 2
+                    failureThreshold: 6
   destination:
     namespace: app-reventer-stg
     name: oke-stg
