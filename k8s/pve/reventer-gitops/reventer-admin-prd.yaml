@@ -11,6 +11,42 @@ spec:
     repoURL: git@github.com:miutaku/reventer.git
     targetRevision: main
     path: infrastructure/k8s/admin-prd
+    kustomize:
+      patches:
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: admin-tunnel
+          namespace: app-reventer-prd
+        patch: |-
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: admin-tunnel
+            namespace: app-reventer-prd
+          spec:
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 1
+                maxUnavailable: 0
+            template:
+              spec:
+                nodeSelector:
+                  reventer.io/capacity: base
+                  node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq
+                containers:
+                - name: cloudflared
+                  image: docker.io/cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+                  readinessProbe:
+                    httpGet:
+                      path: /ready
+                      port: 2000
+                    initialDelaySeconds: 10
+                    periodSeconds: 5
+                    timeoutSeconds: 2
+                    failureThreshold: 6
   destination:
     namespace: app-reventer-prd
     name: oke-stg
