@@ -69,6 +69,62 @@ spec:
         patch: "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n\
           \  name: frontend\n  namespace: app-reventer-prd\nspec:\n  minReplicas:\
           \ 2\n"
+      - target:
+          version: v1
+          kind: ConfigMap
+          name: valkey-scripts
+          namespace: app-reventer-prd
+        patch: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: valkey-scripts\n\
+          \  namespace: app-reventer-prd\ndata:\n  entrypoint.sh: \"#!/bin/sh\\nset\
+          \ -e\\n\\nMASTER_NAME=\\\"mymaster\\\"\\nSENTINEL_HOSTS=\\\"\\\n    valkey-sentinel-0.valkey-sentinel-headless\
+          \ valkey-sentinel-1.valkey-sentinel-headless\\\n    \\ valkey-sentinel-2.valkey-sentinel-headless\\\
+          \"\\nMASTER_HOST=\\\"\\\"\\n\\n# Sentinel\\u306B\\\n    \\u73FE\\u5728\\\
+          u306Emaster\\u3092\\u554F\\u3044\\u5408\\u308F\\u305B\\u308B\\u3002\\u307E\\\
+          \n    \\u3060\\u9078\\u51FA\\u3055\\u308C\\u3066\\u3044\\u306A\\u3044\\\
+          u5834\\u5408\\u306F\\u6570\\\n    \\u79D2\\u304A\\u304D\\u306B\\u518D\\\
+          u8A66\\u884C\\u3059\\u308B\\u3002\\nattempt=0\\nwhile\\\n    \\ [ \\\"$attempt\\\
+          \" -lt 5 ]; do\\n  for s in $SENTINEL_HOSTS; do\\n    REPLY=$(valkey-cli\\\
+          \n    \\ -h \\\"$s\\\" -p 26379 sentinel get-master-addr-by-name \\\"$MASTER_NAME\\\
+          \" 2>/dev/null\\\n    \\ || true)\\n    if [ -n \\\"$REPLY\\\" ]; then\\\
+          n      MASTER_HOST=$(echo \\\"$REPLY\\\"\\\n    \\ | head -1)\\n      break\
+          \ 2\\n    fi\\n  done\\n  attempt=$((attempt + 1))\\n  sleep\\\n    \\ 2\\\
+          ndone\\n\\nMY_HOST=\\\"$(hostname).valkey-headless\\\"\\n\\n# \\u3069\\\
+          u306ESentinel\\u304B\\\n    \\u3089\\u3082\\u5FDC\\u7B54\\u304C\\u7121\\\
+          u3044\\u5834\\u5408(\\u30AF\\u30E9\\u30B9\\u30BF\\\n    \\u521D\\u56DE\\\
+          u8D77\\u52D5)\\u306Fvalkey-0\\u3092master\\u3068\\u307F\\u306A\\u3059\\\
+          n\\\n    if [ -z \\\"$MASTER_HOST\\\" ]; then\\n  case \\\"$(hostname)\\\
+          \" in\\n    valkey-0) MASTER_HOST=\\\"\\\n    $MY_HOST\\\" ;;\\n    *) MASTER_HOST=\\\
+          \"valkey-0.valkey-headless\\\" ;;\\n  esac\\nfi\\n\\\n    \\nset -- valkey-server\
+          \ \\\\\\n  --requirepass \\\"$REDIS_PASSWORD\\\" \\\\\\n  --masterauth\\\
+          \n    \\ \\\"$REDIS_PASSWORD\\\" \\\\\\n  --replica-announce-ip \\\"$MY_HOST\\\
+          \" \\\\\\n  --save \\\"\\\n    \\\" \\\\\\n  --appendonly no \\\\\\n  --maxmemory\
+          \ 200mb \\\\\\n  --maxmemory-policy allkeys-lru\\\n    \\ \\\\\\n  --repl-diskless-sync\
+          \ yes \\\\\\n  --repl-diskless-sync-delay 0\\n\\nMY_IP=\\\"\\\n    $(hostname\
+          \ -i | awk '{print $1}')\\\"\\nif [ \\\"$MASTER_HOST\\\" != \\\"$MY_HOST\\\
+          \" ] &&\\\n    \\ [ \\\"$MASTER_HOST\\\" != \\\"$MY_IP\\\" ]; then\\n  set\
+          \ -- \\\"$@\\\" --replicaof \\\"$MASTER_HOST\\\"\\\n    \\ 6379\\nfi\\n\\\
+          nexec \\\"$@\\\"\\n\"\n  sentinel-entrypoint.sh: \"#!/bin/sh\\nset -e\\\
+          n\\n# Sentinel\\u306F\\u7A3C\\u50CD\\u4E2D\\\n    \\u306B\\u81EA\\u5206\\\
+          u306Econfig\\u3092\\u66F8\\u304D\\u63DB\\u3048\\u308B\\u305F\\u3081\\\n\
+          \    \\u3001read-only\\u306AConfigMap\\u304B\\u3089\\n# \\u66F8\\u304D\\\
+          u8FBC\\u307F\\u53EF\\u80FD\\\n    \\u306A\\u5834\\u6240\\u3078\\u521D\\\
+          u56DE\\u306E\\u307F\\u30B3\\u30D4\\u30FC\\u3057\\u3066\\\n    \\u304B\\\
+          u3089\\u8D77\\u52D5\\u3059\\u308B\\u3002\\nif [ ! -f /data/sentinel.conf\
+          \ ]; then\\n\\\n    \\  cp /etc/valkey-sentinel/sentinel.conf.template /data/sentinel.conf\\\
+          n  # Join\\\n    \\ the current primary known by an existing Sentinel after\
+          \ Pod recreation.\\n  for\\\n    \\ peer in valkey-sentinel-0.valkey-sentinel-headless\
+          \ valkey-sentinel-1.valkey-sentinel-headless\\\n    \\ valkey-sentinel-2.valkey-sentinel-headless;\
+          \ do\\n    if [ \\\"$peer\\\" = \\\"$(hostname).valkey-sentinel-headless\\\
+          \"\\\n    \\ ]; then continue; fi\\n    PRIMARY=$(timeout 3 valkey-cli -h\
+          \ \\\"$peer\\\" -p 26379\\\n    \\ sentinel get-master-addr-by-name mymaster\
+          \ 2>/dev/null | head -1 || true)\\n \\\n    \\   case \\\"$PRIMARY\\\" in\
+          \ \\\"\\\"|*[!a-zA-Z0-9.:-]*) continue ;; esac\\n    sed -i\\\n    \\ \\\
+          \"s/^sentinel monitor mymaster .*/sentinel monitor mymaster $PRIMARY 6379\
+          \ 2/\\\"\\\n    \\ /data/sentinel.conf\\n    break\\n  done\\n  printf '\\\
+          \\nsentinel announce-ip %s\\\\\\\n    n' \\\"$(hostname).valkey-sentinel-headless\\\
+          \" >> /data/sentinel.conf\\n  sed -i \\\"\\\n    s/__REDIS_PASSWORD__/${REDIS_PASSWORD}/g\\\
+          \" /data/sentinel.conf\\nfi\\n\\nexec valkey-sentinel\\\n    \\ /data/sentinel.conf\\\
+          n\"\n"
   destination:
     name: oke-prd
     namespace: app-reventer-prd
