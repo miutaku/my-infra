@@ -19,3 +19,14 @@ VCNのDNSドメインを入力し、DHCP設定もworker compartment内に作る�
 - STG既存2worker、PRD2workerともv1.36.4 Ready。STG新baseはReady/cordon、burst0。新CA切替・既存worker移行は未実施。
 - PRD最新plan-only run-XC73thxZZbUsoS9Hは専用DHCPを含む新規11件だけ。既存資源変更・削除なし。実適用なし。
 - 次の比較候補はプールID条件。新worker1台・固定最大5分・新worker compartment内UpdateNodePoolだけの一時検証をユーザーに確認中。承認前には実行しない。
+
+
+### burst専用IAM境界（2026-10-10）
+
+固定最大5分・新base worker 1台限定で、CLUSTER_NODE_POOL_UPDATE / UpdateNodePoolだけの一時statementを追加した。target.nodepool.id条件を外すと同じnodeConfigDetails.size=0・不正ETagリクエストは412 NoEtagMatchとなった。全追加は復元済み。内部認可の変数伝播そのものは未観測だが、プールID条件の有無による認可の差は確認できた。
+
+恒久設計ではworker compartment配下にburst専用子compartmentを追加し、0台の新burst-v3プールだけを配置する。主権限はこの子compartmentのUpdateNodePool/DeleteNodeへ限定し、baseプールには与えない。プール作成・削除APIは許可しない。VM/VNICの補助権限は元のworker compartment内（子を含む）のままで、rootのVM操作権限を追加しない。今後もこの子compartmentには別プールや下位compartmentを追加しないこと。
+
+既存base-v2と0台のburst-v2は準備時に維持する。旧burst-v2はreadのみとなり、移行成功後に別planで撤去する。Dynamic Groupはokeタグがある親worker compartmentとburst子compartmentのinstanceだけを対象にする。node_pool_ids出力のburstは新v3を指す。
+
+STG run-kwqu3YD74UHikQAZのplanはcompartment/pool各1追加、DG/policy各1更新。新pool size0、既存worker/network/LB等は全てno-op。まだ実スケール/DeleteNodeの成功は証明していない。
