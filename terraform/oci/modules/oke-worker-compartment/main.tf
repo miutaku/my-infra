@@ -110,7 +110,7 @@ resource "oci_core_subnet" "workers" {
 }
 
 resource "oci_containerengine_node_pool" "workers" {
-  for_each           = toset(["base", "burst"])
+  for_each           = toset(["base"])
   cluster_id         = var.cluster_id
   compartment_id     = oci_identity_compartment.workers.id
   kubernetes_version = var.kubernetes_version
@@ -146,7 +146,7 @@ resource "oci_containerengine_node_pool" "workers" {
   }
   ssh_public_key = var.ssh_public_key
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false # Temporary: permit removal of the empty legacy burst-v2 pool only.
     ignore_changes  = [node_config_details[0].size, defined_tags["Oracle-Tags.CreatedBy"], defined_tags["Oracle-Tags.CreatedOn"]]
   }
 }
@@ -234,5 +234,4 @@ output "node_pool_ids" {
   }
 }
 output "burst_compartment_id" { value = oci_identity_compartment.burst.id }
-output "legacy_zero_burst_pool_id" { value = oci_containerengine_node_pool.workers["burst"].id }
 output "policy_statements" { value = oci_identity_policy.autoscaler.statements }

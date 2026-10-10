@@ -1,32 +1,17 @@
 # OKE worker compartment module
 
-STG/PRD共通のworker専用compartment、private subnet、DHCP、route table、security list、base/burst poolとAutoscaler IAMを管理する。既存cluster/VCN/NAT/Service Gatewayを入力として維持する。
+STG/PRD共通のworker専用compartment、private subnet、DHCP、route table、security list、base/burst poolとAutoscaler IAMを管理する。既存cluster/VCN/NAT/Service Gatewayを維持する。
 
-初回poolは両方0台。稼働VMの追加と旧poolからの移行は別途行い、sizeはTerraformのignore_changesで維持する。base定常1台、burstはAutoscaler 0〜1台を想定。instance principalの対象は専用compartmentのoke.autoscaler=clusterタグ付きworker。Compute/VNIC/subnetの管理範囲は専用compartment内、pool UpdateNodePool/DeleteNodeはburstだけ。
+base poolは親worker compartment、burst poolはその配下の専用子compartmentに配置する。子compartmentにはburst pool以外のpoolや下位compartmentを追加しない。初回は両poolとも0台で、VM追加と旧poolからの移行を段階的に実施する。sizeはignore_changesで保持する。通常はbase 1台、burst 0〜1台（各2 OCPU/12 GB/boot 50 GB）。
 
-VCNのDNSドメインを入力し、DHCP設定もworker compartment内に作る。NAT/Service Gatewayは既存VCNのものを参照する。OCIが自動付与するOracle-Tags.CreatedBy/CreatedOnはTerraformが除去しない。
+Dynamic Groupはoke.autoscaler=clusterタグ付きの親worker/子burst compartmentのinstanceだけ。UpdateNodePool/DeleteNodeはburst子compartmentだけに許可し、pool作成・削除とbase pool更新は許可しない。補助Compute/VNIC/subnet権限はworker compartment内（子を含む）。rootにはVM操作を付与せず、共有VCN/NAT/Service Gatewayの指定された読み取りAPIだけを許可する。IAM権限は加算なので、移行後は旧root workerのDynamic Group/policyも明示的に撤去する。
 
-既存のroot nodepoolや旧Autoscaler IAMは、このmoduleを作成しただけでは撤去されない。移行成功後に明示的に撤去する。IAM権限は加算なので旧主体の広いgrantを残した状態を権限限定の完了とは扱わない。
+VCNのDNSドメインを入力し、DHCPもworker compartment内に作る。CCMが管理するNodePort/healthCheckルールとOCI標準Oracle-Tags.CreatedBy/CreatedOnはTerraformが除去しない。
 
-2026-10-10時点：STGの新base作成とネットワークは成功。Instance PrincipalでnodeConfigDetailsを含むUpdateNodePoolは認可エラーが残っており、実スケールは未検証。既存workerの移行は認可・実スケール確認後に行う。
+## 認可・実動作の検証（2026-10-10）
 
+固定最大5分・STG新worker 1台限定の比較で、target.nodepool.idを外したUpdateNodePoolは不正ETagに対して412 NoEtagMatchとなった。追加はすべて復元済み。内部のIAM変数伝播自体は未観測なので、条件依存の差として扱う。
 
-### 追加診断（2026-10-10）
+恒久対応はID条件を広げず、burst専用子compartmentをIAM境界とする。STGでは実際のAutoscaler 0→1増設、Pod Ready、1→0縮小・DeleteNode成功、Compute/boot volumeのTERMINATEDを確認済み。baseと親compartmentの旧0台poolへの更新は拒否される。shape参照・Oracle-Tags使用・親cluster読み取り等の診断追加は採用していない。
 
-- 承認済みshape参照＋共有VCN/NAT/SG参照＋Oracle-Tags使用の比較は2回とも400。全追加を現行9statementへ復元。
-- 管理者の同一burst size0・不正ETagリクエストは412。新workerでは参照元image/subnet/VCN/DHCP/route/SLは取得可能、親clusterは404。
-- 親cluster 1件のCLUSTER_READ単独・上記メタデータとの組み合わせでも400。いずれも全追加を復元。検証用Podは削除。
-- STG既存2worker、PRD2workerともv1.36.4 Ready。STG新baseはReady/cordon、burst0。新CA切替・既存worker移行は未実施。
-- PRD最新plan-only run-XC73thxZZbUsoS9Hは専用DHCPを含む新規11件だけ。既存資源変更・削除なし。実適用なし。
-- 次の比較候補はプールID条件。新worker1台・固定最大5分・新worker compartment内UpdateNodePoolだけの一時検証をユーザーに確認中。承認前には実行しない。
-
-
-### burst専用IAM境界（2026-10-10）
-
-固定最大5分・新base worker 1台限定で、CLUSTER_NODE_POOL_UPDATE / UpdateNodePoolだけの一時statementを追加した。target.nodepool.id条件を外すと同じnodeConfigDetails.size=0・不正ETagリクエストは412 NoEtagMatchとなった。全追加は復元済み。内部認可の変数伝播そのものは未観測だが、プールID条件の有無による認可の差は確認できた。
-
-恒久設計ではworker compartment配下にburst専用子compartmentを追加し、0台の新burst-v3プールだけを配置する。主権限はこの子compartmentのUpdateNodePool/DeleteNodeへ限定し、baseプールには与えない。プール作成・削除APIは許可しない。VM/VNICの補助権限は元のworker compartment内（子を含む）のままで、rootのVM操作権限を追加しない。今後もこの子compartmentには別プールや下位compartmentを追加しないこと。
-
-既存base-v2と0台のburst-v2は準備時に維持する。旧burst-v2はreadのみとなり、移行成功後に別planで撤去する。Dynamic Groupはokeタグがある親worker compartmentとburst子compartmentのinstanceだけを対象にする。node_pool_ids出力のburstは新v3を指す。
-
-STG run-kwqu3YD74UHikQAZのplanはcompartment/pool各1追加、DG/policy各1更新。新pool size0、既存worker/network/LB等は全てno-op。まだ実スケール/DeleteNodeの成功は証明していない。
+STG移行の旧workerはPDBを遵守して1Podずつ退避し、代替Readyを確認する。vmagentの旧ディスクキューは新規収集なしの送信専用Podで4送信先すべてpending_data_bytes=0を確認してから旧VMを削除する。PRDはSTGの実動作確認後に適用する。
