@@ -28,62 +28,6 @@ resource "oci_containerengine_cluster" "oke_cluster" {
   }
 }
 
-resource "oci_containerengine_node_pool" "oke_node_pool" {
-  cluster_id         = oci_containerengine_cluster.oke_cluster.id
-  compartment_id     = var.compartment_ocid
-  kubernetes_version = oci_containerengine_cluster.oke_cluster.kubernetes_version
-  name               = "oke-free-node-pool"
-  node_shape         = var.node_pool_shape
-  freeform_tags = merge(local.common_tags, {
-    autoscaler = "cluster"
-  })
-  defined_tags = {
-    "${oci_identity_tag_namespace.oke.name}.${oci_identity_tag.autoscaler.name}" = "cluster"
-  }
-
-  node_shape_config {
-    ocpus         = var.node_pool_ocpus
-    memory_in_gbs = var.node_pool_memory_gbs
-  }
-
-  node_source_details {
-    image_id                = local.oke_node_image_id
-    source_type             = "image"
-    boot_volume_size_in_gbs = var.node_pool_boot_volume_gbs
-  }
-
-  node_config_details {
-    # Tags in node_config_details are applied to worker Compute instances.
-    # The Dynamic Group intentionally matches this defined tag.
-    defined_tags = {
-      "${oci_identity_tag_namespace.oke.name}.${oci_identity_tag.autoscaler.name}" = "cluster"
-    }
-    freeform_tags = merge(local.common_tags, {
-      autoscaler = "cluster"
-    })
-
-    size = var.node_pool_size
-
-    # Spread across ADs when region has multiple; fall back to AD-1 for single-AD regions
-    placement_configs {
-      availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-      subnet_id           = oci_core_subnet.oke_worker_subnet.id
-    }
-    placement_configs {
-      availability_domain = data.oci_identity_availability_domains.ads.availability_domains[min(1, length(data.oci_identity_availability_domains.ads.availability_domains) - 1)].name
-      subnet_id           = oci_core_subnet.oke_worker_subnet.id
-    }
-  }
-
-  ssh_public_key = var.ssh_public_key
-
-  lifecycle {
-    ignore_changes = [
-      node_config_details[0].size,
-    ]
-  }
-}
-
 # OKE requires images built specifically for the target Kubernetes version
 # (they ship a matching kubelet build / cgroup config); generic Oracle Linux
 # OS images are not guaranteed to work (e.g. v1.36.0 kubelet refuses to start
@@ -121,7 +65,7 @@ output "cluster_id" {
 
 output "node_pool_id" {
   description = "OKE worker node pool OCID"
-  value       = oci_containerengine_node_pool.oke_node_pool.id
+  value       = module.oke_workers_v2.node_pool_ids.base
 }
 
 output "nat_ip" {

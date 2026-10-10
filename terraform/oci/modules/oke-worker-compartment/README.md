@@ -1,9 +1,9 @@
 # OKE worker compartment module
 
-STG/PRD共通のworker専用compartment、private subnet、DHCP、route table、security list、base/burst poolとAutoscaler IAMを管理する。既存cluster/VCN/NAT/Service Gatewayを入力として維持する。
+STG/PRD共通のworker専用compartment、private subnet、DHCP、route table、security list、base/burst poolとAutoscaler IAMを管理する。既存cluster/VCN/NAT/Service Gatewayを維持する。
 
-初回poolは両方0台。稼働VMの追加と旧poolからの移行は別途行い、sizeはTerraformのignore_changesで維持する。base定常1台、burstはAutoscaler 0〜1台を想定。instance principalの対象は専用compartmentのoke.autoscaler=clusterタグ付きworker。Compute/VNIC/subnetの管理範囲は専用compartment内、pool UpdateNodePool/DeleteNodeはburstだけ。
+base poolは親worker compartment、burst poolはその配下の専用子compartmentに配置する。子compartmentにはburst pool以外のpoolや下位compartmentを追加しない。sizeはignore_changesで保持する。通常はbase 1台、burst 0〜1台（各2 OCPU/12 GB/boot 50 GB）。
 
-VCNのDNSドメインを入力し、DHCP設定もworker compartment内に作る。NAT/Service Gatewayは既存VCNのものを参照する。OCIが自動付与するOracle-Tags.CreatedBy/CreatedOnはTerraformが除去しない。
+Dynamic Groupはoke.autoscaler=clusterタグ付きの親worker/子burst compartmentのinstanceだけ。UpdateNodePool/DeleteNodeはburst子compartmentだけに許可し、pool作成・削除とbase pool更新は許可しない。補助Compute/VNIC/subnet権限はworker compartment内（子を含む）。rootにはVM操作を付与せず、共有VCN/NAT/Service Gatewayの指定された読み取りAPIだけを許可する。IAM権限は加算なので、移行後は旧root workerのDynamic Group/policyも明示的に撤去する。
 
-既存のroot nodepoolや旧Autoscaler IAMは、このmoduleを作成しただけでは撤去されない。移行成功後に明示的に撤去する。IAM権限は加算なので旧主体の広いgrantを残した状態を権限限定の完了とは扱わない。
+VCNのDNSドメインを入力し、DHCPもworker compartment内に作る。CCMが管理するNodePort/healthCheckルールとOCI標準Oracle-Tags.CreatedBy/CreatedOnはTerraformが除去しない。
