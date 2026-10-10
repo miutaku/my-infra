@@ -75,11 +75,6 @@ resource "oci_core_route_table" "private_rt" {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_nat_gateway.oke_ngw.id
   }
-  # 自宅 LAN → DRG → IX2215 (Site-to-Site VPN)
-  route_rules {
-    destination       = var.home_lan_cidr
-    network_entity_id = oci_core_drg.home_vpn.id
-  }
 }
 
 # Security List for public subnet (API endpoint + Flex LB)
