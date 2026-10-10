@@ -9,6 +9,7 @@ variable "tenancy_ocid" { type = string }
 variable "cluster_id" { type = string }
 variable "vcn_id" { type = string }
 variable "vcn_cidr" { type = string }
+variable "vcn_dns_domain" { type = string }
 variable "shared_network_compartment_id" { type = string }
 variable "nat_gateway_id" { type = string }
 variable "service_gateway_id" { type = string }
