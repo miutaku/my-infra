@@ -65,48 +65,6 @@ variable "node_pool_memory_gbs" {
   default     = 12
 }
 
-variable "node_pool_boot_volume_gbs" {
-  description = "50GB per OKE worker (the OKE API minimum) leaves capacity for two 50GB STG monitoring VMs: 2*50+2*50=200GB within the tenancy allowance. Existing 100GB boots require sequential worker replacement; reclaim only detached retired boots after validation. Temporary migration/recovery charges are authorized."
-  default     = 50
-}
-
-variable "node_pool_size" {
-  description = "Initial worker node count. Cluster Autoscaler may change this after creation; min/max is configured in the Kubernetes manifest."
-  default     = 1
-}
-
-# ── Site-to-Site VPN (IX2215 <-> OCI) ────────────────────────────────────────
-
-variable "ix2215_wan_ip" {
-  description = "IX2215 の WAN IP (v6plus 固定 IPv4)。OCI CPE リソースに設定する。BSM MIRAKURUN の bsm_ix2215_tunnel_ip と同値。"
-  type        = string
-}
-
-variable "home_lan_cidr" {
-  description = "自宅 LAN の CIDR。OCI DRG がこの宛先を IX2215 へルーティングする。"
-  type        = string
-  default     = "192.168.0.0/16"
-}
-
-variable "ix_public_ipv4" {
-  description = "BSM の IX_PUBLIC_IPv4 から取得する、自宅の固定 IPv4 アドレス。OKE API のアクセス制限に使用します。"
-  type        = string
-}
-
-variable "vpn_psk" {
-  description = "IX2215 <-> OCI IPSec トンネルの Pre-Shared Key。TFC に sensitive variable として登録し、IX2215 Ansible 側は BSM VPN_OCI_PSK に同値を登録する。"
-  type        = string
-  sensitive   = true
-}
-
-# ── DB Backup ─────────────────────────────────────────────────────────────────
-
-variable "backup_retention_days" {
-  description = "バックアップの保持日数。OCI Object Storage ライフサイクルポリシーで自動削除される。"
-  type        = number
-  default     = 30
-}
-
 variable "api_management_ipv4_cidrs" {
   description = "Trusted public IPv4 /32 sources for Kubernetes API management: fixed home IPv4 and STG NAT IPv4. Configure identically in both TFC workspaces."
   type        = set(string)
