@@ -52,6 +52,23 @@ spec:
           \  namespace: app-reventer-prd\nspec:\n  updateStrategy:\n    type: OnDelete\n\
           \    rollingUpdate: null\n  template:\n    spec:\n      containers:\n  \
           \    - name: sentinel\n        image: docker.io/valkey/valkey@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507"
+      - target:
+          group: autoscaling
+          version: v2
+          kind: HorizontalPodAutoscaler
+          name: backend
+          namespace: app-reventer-prd
+        patch: "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n\
+          \  name: backend\n  namespace: app-reventer-prd\nspec:\n  minReplicas: 2\n"
+      - target:
+          group: autoscaling
+          version: v2
+          kind: HorizontalPodAutoscaler
+          name: frontend
+          namespace: app-reventer-prd
+        patch: "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n\
+          \  name: frontend\n  namespace: app-reventer-prd\nspec:\n  minReplicas:\
+          \ 2\n"
   destination:
     name: oke-prd
     namespace: app-reventer-prd
