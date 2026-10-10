@@ -119,7 +119,7 @@ resource "oci_containerengine_node_pool" "workers" {
   ssh_public_key = var.ssh_public_key
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = [node_config_details[0].size]
+    ignore_changes  = [node_config_details[0].size, defined_tags["Oracle-Tags.CreatedBy"], defined_tags["Oracle-Tags.CreatedOn"]]
   }
 }
 
