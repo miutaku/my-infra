@@ -26,8 +26,19 @@ resource "oci_identity_policy" "cluster_autoscaler" {
   name           = "my-infra-oke-cluster-autoscaler"
   description    = "Allow my-infra OKE Cluster Autoscaler to resize managed node pools."
 
+  # Preserve approved live permissions while the legacy workers are in use.
+  # Remove this legacy policy after the dedicated-compartment migration.
   statements = [
-    "Allow dynamic-group ${oci_identity_dynamic_group.cluster_autoscaler_nodes.name} to read cluster-node-pools in compartment id ${var.compartment_ocid}",
-    "Allow dynamic-group ${oci_identity_dynamic_group.cluster_autoscaler_nodes.name} to manage cluster-node-pools in compartment id ${var.compartment_ocid} where target.cluster.id = '${oci_containerengine_cluster.oke_cluster.id}'",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to read cluster-node-pools in tenancy",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to manage cluster-node-pools in tenancy where all {target.nodepool.id = 'ocid1.nodepool.oc1.ap-tokyo-1.aaaaaaaa45asmqnfxl46xn2owabqbqfyy74zddkbvpvlt7g66ncqvqdcixnq', any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to manage instance-family in tenancy where any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to use subnets in tenancy where any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to read virtual-network-family in tenancy where any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to use vnics in tenancy where any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to inspect compartments in tenancy where any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to use tag-namespaces in tenancy where all {target.tag-namespace.name = 'oke', any {request.operation = 'UpdateNodePool', request.operation = 'DeleteNode'}}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to read instance-family in tenancy where any {request.operation = 'ListShapes', request.operation = 'ListInstances', request.operation = 'GetInstance', request.operation = 'GetImage'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to read virtual-network-family in tenancy where any {request.operation = 'GetSubnet', request.operation = 'GetVcn', request.operation = 'GetVnic'}",
+    "Allow dynamic-group id ocid1.dynamicgroup.oc1..aaaaaaaaocfp7bj6pwlg4tuaklxpao54fapra5xxskfmuwjpzcep6cf2czaq to inspect compartments in tenancy where any {request.operation = 'GetCompartment', request.operation = 'ListCompartments'}"
   ]
 }

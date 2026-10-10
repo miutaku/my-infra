@@ -140,6 +140,11 @@ resource "oci_core_security_list" "lb_sl" {
     destination = "0.0.0.0/0"
     stateless   = false
   }
+
+  # OCI CCM owns dynamic LoadBalancer health-check and NodePort rules.
+  lifecycle {
+    ignore_changes = [ingress_security_rules, egress_security_rules]
+  }
 }
 
 # Security List for private worker subnet
@@ -160,5 +165,10 @@ resource "oci_core_security_list" "worker_sl" {
     protocol    = "all"
     destination = "0.0.0.0/0"
     stateless   = false
+  }
+
+  # OCI CCM owns dynamic LoadBalancer health-check and NodePort rules.
+  lifecycle {
+    ignore_changes = [ingress_security_rules, egress_security_rules]
   }
 }
