@@ -33,7 +33,7 @@ flowchart LR
 
 ## 管理責務
 
-| 対象 | 正本 |
+| 対象 | 管理する場所 |
 | --- | --- |
 | 自宅VM/LXC・Talos・ネットワーク機器 | 本リポジトリの `terraform/`、`talos/`、`ansible/` |
 | STG OKE・共通Kubernetes基盤 | `terraform/oci/`、`k8s/oci/` |
