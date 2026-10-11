@@ -5,14 +5,26 @@ specification {
   tag placementStg
   tag placementPrd
 
-  element actor { style { shape person
+  element actor { style { size xs
+    textSize md
+    padding sm shape person
     color green } }
-  element system { style { color gray } }
-  element service { style { color blue } }
-  element component { style { color muted } }
-  element store { style { shape storage
+  element system { style { size xs
+    textSize md
+    padding sm color gray } }
+  element service { style { size xs
+    textSize md
+    padding sm color blue } }
+  element component { style { size xs
+    textSize md
+    padding sm color muted } }
+  element store { style { size xs
+    textSize md
+    padding sm shape storage
     color amber } }
-  element device { style { color gray } }
+  element device { style { size xs
+    textSize md
+    padding sm color gray } }
   tag runtime
   tag delivery
   tag secrets

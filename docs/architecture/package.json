@@ -5,13 +5,18 @@
     "node": ">=22.22.3"
   },
   "scripts": {
-    "dev": "likec4 start",
+    "dev": "vite",
     "validate": "likec4 validate",
-    "build": "likec4 build -o dist --use-hash-history",
-    "preview": "likec4 preview",
-    "build:standalone": "likec4 build -o standalone --use-hash-history --output-single-file --no-build-webcomponent"
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:standalone": "vite build --mode standalone",
+    "dev:native": "likec4 start"
   },
   "devDependencies": {
-    "likec4": "1.59.4"
+    "likec4": "1.59.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vite": "8.3.4",
+    "vite-plugin-singlefile": "2.3.3"
   }
 }

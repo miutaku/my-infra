@@ -5,7 +5,10 @@
   "implicitViews": false,
   "webapp": {
     "relationshipsBrowser": {
-      "defaultScope": "global"
+      "defaultScope": "view"
     }
+  },
+  "landingPage": {
+    "redirect": true
   }
 }

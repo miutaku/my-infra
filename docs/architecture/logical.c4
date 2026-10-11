@@ -475,7 +475,7 @@ model {
       }
     }
   }
-  system control '構成管理とGitOps' {
+  system control '構成管理' {
     link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd '構成の根拠'
     metadata {
       owner 'my-infra'
@@ -659,7 +659,7 @@ model {
       }
     }
   }
-  system edge 'Cloudflare公開・認証・私設アクセス' {
+  system edge 'Cloudflare' {
     link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare '構成の根拠'
     metadata {
       owner 'my-infra'
@@ -723,7 +723,7 @@ model {
       }
     }
   }
-  system data 'NAS・DB・バックアップ' {
+  system data 'データ' {
     link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/ansible/truenas '構成の根拠'
     metadata {
       owner 'my-infra'
@@ -814,7 +814,7 @@ model {
       }
     }
   }
-  system monitoring '監視収集・保存・query' {
+  system monitoring '監視' {
     link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/vmagent '構成の根拠'
     metadata {
       owner 'my-infra'
@@ -1113,7 +1113,7 @@ model {
       }
     }
   }
-  system oke 'STG・PRD共通基盤' {
+  system oke 'OCI' {
     link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci '構成の根拠'
     metadata {
       owner 'my-infra'
