@@ -35,7 +35,7 @@ spec:
               spec:
                 nodeSelector:
                   reventer.io/capacity: base
-                  node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq
+                  node.info/compartment.id: aaaaaaaagv44lra2xieodrt75xzwqyvfrk35lpuon5fyxk4zzr52tqli3j5a
                 containers:
                 - name: cloudflared
                   image: docker.io/cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
@@ -64,10 +64,10 @@ spec:
               spec:
                 nodeSelector:
                   reventer.io/capacity: base
-                  node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq
+                  node.info/compartment.id: aaaaaaaagv44lra2xieodrt75xzwqyvfrk35lpuon5fyxk4zzr52tqli3j5a
   destination:
     namespace: app-reventer-prd
-    name: oke-stg
+    name: oke-prd
   syncPolicy:
     automated:
       prune: true
