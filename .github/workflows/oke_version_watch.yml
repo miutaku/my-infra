@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '30 17 * * *'
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: 'OCI認証と対応バージョンの確認のみ（ブランチ・PRを更新しない）'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -63,7 +68,7 @@ jobs:
           echo "target=${target}" >> "${GITHUB_OUTPUT}"
 
       - name: Update version and open pull request
-        if: steps.version.outputs.current != steps.version.outputs.target
+        if: steps.version.outputs.current != steps.version.outputs.target && inputs.check_only != true
         env:
           GH_TOKEN: ${{ github.token }}
           CURRENT: ${{ steps.version.outputs.current }}
