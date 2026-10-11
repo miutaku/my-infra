@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "likec4 start",
     "validate": "likec4 validate",
-    "generate": "node generate.mjs && node render.mjs",
-    "check": "node generate.mjs --check && node render.mjs --check",
-    "build": "likec4 build -o dist --use-hash-history"
+    "build": "likec4 build -o dist --use-hash-history",
+    "preview": "likec4 preview",
+    "build:standalone": "likec4 build -o standalone --use-hash-history --output-single-file --no-build-webcomponent"
   },
   "devDependencies": {
     "likec4": "1.59.4"

@@ -1,30 +1,82 @@
 views {
   view index {
-    title '利用者・管理者のアクセス'
+    title '構成の入口'
+    order 0
+    description '同じ構成モデルを目的別・環境別に見る入口。要素の遷移ボタンから詳細ビューへ進む。線は表示せず、通信・デプロイ・秘密情報は各ビューで確認する。'
+    include *
+    include user with { navigateTo runtime }
+    include operator with { navigateTo runtime }
+    include edge with { navigateTo runtime_home }
+    include stg with { navigateTo runtime_stg }
+    include prd with { navigateTo runtime_prd }
+    include home with { navigateTo delivery }
+    include bws with { navigateTo secrets }
+    include git with { navigateTo delivery }
+    include ci with { navigateTo delivery }
+    include tfc with { navigateTo delivery }
+    include grafana with { navigateTo observability }
+    include monitorstg with { navigateTo observability }
+    include monitorprd with { navigateTo observability }
+    include pve with { navigateTo placement }
+    include nas with { navigateTo placement }
+    include network with { navigateTo runtime_home }
+    exclude * -> *
+    autoLayout LeftRight
+  }
+
+  view runtime_home of home {
+    title 'アクセス / 自宅'
+    description '実行時の通信だけを表示する。デプロイと秘密情報は運用ビューへ切り替える。'
+    include user, operator, edge, network, home.tunnel, home.apps, home.argo, home.dns, nas
+    exclude * -> * where kind is not access
+    autoLayout LeftRight
+  }
+  view runtime_stg of stg {
+    title 'アクセス / STG'
+    description '実行時の通信だけを表示する。デプロイと秘密情報は運用ビューへ切り替える。'
+    include user, edge, stg.lb, stg.apps
+    exclude * -> * where kind is not access
+    autoLayout LeftRight
+  }
+  view runtime_prd of prd {
+    title 'アクセス / PRD'
+    description '実行時の通信だけを表示する。デプロイと秘密情報は運用ビューへ切り替える。'
+    include user, edge, prd.lb, prd.apps
+    exclude * -> * where kind is not access
+    autoLayout LeftRight
+  }
+
+  view runtime {
+    title 'アクセス / 全体'
+    description '利用者・管理者の実行時通信。環境ごとの詳細はSTG・PRDビューへ。'
     include user, operator, edge, network, home.tunnel, home.apps, home.argo, home.dns, nas, stg.lb, prd.lb, stg.apps, prd.apps
     exclude * -> * where kind is not access
     autoLayout LeftRight
   }
-  view delivery {
-    title 'GitOps・Terraform・構成管理'
+  view delivery of home {
+    title '運用 / GitOps・Terraform・構成管理'
+    description 'Git・GHCRから同期までの制御経路。利用者のアクセスは含めない。'
     include git, ci, tfc, operator, home.argo, home.agent, home.runner, home.apps, home.eso, pve, stg.argo, stg.apps, prd.apps, stg.eso, prd.eso, stg.admin, stg, monitorstg, monitorprd, network, home
     exclude * -> * where kind is not deploy
     autoLayout LeftRight
   }
-  view secrets {
-    title 'BWS・SDK・ESO・bootstrap'
+  view secrets of bws {
+    title '運用 / BWSと秘密情報'
+    description 'BWSからの取得とKubernetesへの注入。実行時とbootstrapの取得元を確認する。'
     include operator, bws, home.eso, stg.eso, prd.eso, home.secrets, stg.secrets, prd.secrets, home.apps, stg.apps, prd.apps, home.argo, home.agent, home.tunnel, home.runner, stg.admin
     exclude * -> * where kind is not secret
     autoLayout LeftRight
   }
   view observability {
-    title '収集・保存・Grafana query'
+    title '運用 / 監視'
+    description '収集agent、保存先、Grafana queryの関係。監視VMはOKE外で稼働する。'
     include home.scrape, home.metrics, home.pdc, pve, network, nas, grafana, stg.collect, prd.collect, monitorstg, monitorprd
     exclude * -> * where kind is not observe
     autoLayout LeftRight
   }
   view placement {
-    title '稼働場所と管理基盤'
+    title '配置 / 全体'
+    description 'モデルの要素を稼働場所でまとめる。通信の線は表示しない。'
     include pve, nas, home.*, stg.*, prd.*
     exclude * -> * where kind is not placement
     autoLayout LeftRight

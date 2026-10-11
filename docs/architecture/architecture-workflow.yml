@@ -22,10 +22,13 @@ jobs:
           cache-dependency-path: docs/architecture/package-lock.json
       - run: npm ci
       - run: npm run validate
-      - run: npm run check
-      - run: git diff --exit-code -- generated
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
           name: architecture-site
           path: docs/architecture/dist/
+      - run: npm run build:standalone
+      - uses: actions/upload-artifact@v4
+        with:
+          name: architecture-standalone
+          path: docs/architecture/standalone/index.html

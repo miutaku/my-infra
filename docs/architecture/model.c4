@@ -2,15 +2,20 @@ model {
   actor user '利用者'
   actor operator '管理者 / Ansible / Talos CLI'
   system edge 'Cloudflare DNS / Access / Tunnel'
-  store git 'GitHub my-infra / reventer'
+  store git 'GitHub my-infra / reventer' {
+    description '構成の正本。GitOpsの同期元とCIのソース取得元。'
+  }
   service ci 'GitHub Actions'
   system tfc 'Terraform Cloud'
-  store bws 'Bitwarden Secrets Manager'
+  store bws 'Bitwarden Secrets Manager' {
+    description '秘密情報の管理元。CIや管理端末はbws CLI、KubernetesはSDKとESOを経由して取得する。'
+  }
   system grafana 'Grafana Cloud'
   system pve 'Proxmox VE 2ホスト'
   store nas 'TrueNAS'
   system network 'IX2215 / switch / AP / VLAN'
   system home 'home-k8s / Talos' {
+    style { color green }
     service argo 'ArgoCD + Image Updater'
     service tunnel 'cloudflared'
     service agent 'Terraform Cloud agent'
@@ -24,6 +29,7 @@ model {
     service runner 'ARC GitHub Actions runners'
   }
   system stg 'STG OCI / OKE' {
+    style { color blue }
     service eso 'ESO + Bitwarden SDK server'
     store secrets 'Kubernetes Secrets'
     service apps 'Re:Venterアプリ / reventer所有'
@@ -33,6 +39,7 @@ model {
     service admin 'STG / PRD管理画面 / reventer所有'
   }
   system prd 'PRD OCI / OKE / reventer所有' {
+    style { color red }
     service eso 'ESO + Bitwarden SDK server'
     store secrets 'Kubernetes Secrets'
     service apps 'Re:Venterアプリ / reventer所有'

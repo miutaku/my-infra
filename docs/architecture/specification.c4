@@ -1,8 +1,10 @@
 specification {
-  element actor { style { shape person } }
-  element system
+  element actor { style { shape person
+    color green } }
+  element system { style { color gray } }
   element service
-  element store { style { shape storage } }
+  element store { style { shape storage
+    color amber } }
   relationship access { color blue
     line solid }
   relationship deploy { color amber
