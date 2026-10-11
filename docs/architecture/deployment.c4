@@ -1,0 +1,221 @@
+deployment {
+  site homeSite '自宅 / 物理障害範囲' { #placementPhysical
+    hypervisor x570 'pve-x570' { #placementPhysical
+      instanceOf hardware.x570 { #placementPhysical }
+      vm cp1 'Talos controlplane01 / VM13001' { #placementPhysical }
+      vm worker1 'Talos worker01 / VM13004' { #placementPhysical }
+      vm lb1 'HAProxy Keepalived VM10001' { #placementPhysical  instanceOf hardware.lb { #placementPhysical } }
+      vm nas1 'TrueNAS nas-01 / .191' { #placementPhysical  instanceOf data.nas { #placementPhysical } }
+      vm loockit 'Loockit LXC / BLE USB' { #placementPhysical  instanceOf home.loockit_bridge { #placementPhysical } }
+      vm pbs 'PBS VM14001 / 手動退避' { #placementPhysical  instanceOf data.pbs { #placementPhysical } }
+      vm unifi 'UniFi OS VM13201' { #placementPhysical  instanceOf network.unifi { #placementPhysical } }
+      vm mirakurun 'Mirakurun tuner LXC' { #placementPhysical  instanceOf home.mirakurun_tuner { #placementPhysical } }
+    }
+    hypervisor b550m 'pve-b550m' { #placementPhysical
+      instanceOf hardware.b550m { #placementPhysical }
+      vm cp2 'Talos controlplane02 / VM13002' { #placementPhysical }
+      vm cp3 'Talos controlplane03 / VM13003' { #placementPhysical }
+      vm worker2 'Talos worker02 / VM13005' { #placementPhysical }
+      vm lb2 'HAProxy Keepalived VM10002' { #placementPhysical  instanceOf hardware.lb { #placementPhysical } }
+      vm nas2 'TrueNAS nas-02 / .192' { #placementPhysical  instanceOf data.nas { #placementPhysical } }
+      vm loockit 'Loockit LXC / BLE USB' { #placementPhysical  instanceOf home.loockit_bridge { #placementPhysical } }
+      vm dev 'dev application server VM40000 / 4CPU・10GB' { #placementPhysical }
+      vm kiosk 'DisplayLink kiosk / VLAN40' { #placementPhysical }
+      vm mirakurunStg 'Mirakurun STG LXC' { #placementPhysical  instanceOf home.mirakurun_staging_tuner { #placementPhysical } }
+    }
+    instanceOf hardware.worker3 { #placementPhysical }
+    instanceOf hardware.worker4 { #placementPhysical }
+    instanceOf hardware.nut1 { #placementPhysical }
+    instanceOf hardware.nut2 { #placementPhysical }
+    instanceOf hardware.upsA { #placementPhysical }
+    instanceOf hardware.upsB { #placementPhysical }
+    instanceOf hardware.kvm1 { #placementPhysical }
+    instanceOf hardware.kvm2 { #placementPhysical }
+    cluster talos 'home-k8s / Talos1.14.1・K8s1.35.7' { #placementHome
+      description 'CP VM3・worker VM2は上記PVE、RPi worker2は別物理機。namespace内Podは動的配置。b550m停止はCP2台喪失。'
+      instanceOf control.api { #placementHome }
+      namespace ns_app_annict_rec_sync_tnlastation_staging 'app-annict-rec-sync-tnlastation-staging' { #placementHome
+        instanceOf home.annict_rec_sync_tnlastation_staging { #placementHome }
+      }
+      namespace ns_app_annict_rec_sync_tnlastation 'app-annict-rec-sync-tnlastation' { #placementHome
+        instanceOf home.annict_rec_sync_tnlastation { #placementHome }
+      }
+      namespace ns_app_annict_rec_sync 'app-annict-rec-sync' { #placementHome
+        instanceOf home.annict_rec_sync { #placementHome }
+      }
+      namespace ns_app_annict_scraper 'app-annict-scraper' { #placementHome
+        instanceOf home.annict_scraper { #placementHome }
+      }
+      namespace ns_arc_systems 'arc-systems' { #placementHome
+        instanceOf control.arc { #placementHome }
+      }
+      namespace ns_arc_runners 'arc-runners' { #placementHome
+        instanceOf control.runnerInfra { #placementHome }
+        instanceOf control.runnerRev { #placementHome }
+      }
+      namespace ns_argocd 'argocd' { #placementHome
+        instanceOf control.updater { #placementHome }
+        instanceOf control.argo { #placementHome }
+      }
+      namespace ns_monitoring 'monitoring' { #placementHome
+        instanceOf home.blackbox_exporter { #placementHome }
+        instanceOf home.nut_exporter { #placementHome }
+        instanceOf monitoring.pdc { #placementHome }
+        instanceOf home.prometheus_node_exporter { #placementHome }
+        instanceOf home.pve_exporter { #placementHome }
+        instanceOf home.snmp_exporter { #placementHome }
+        instanceOf home.speedtest_exporter { #placementHome }
+        instanceOf home.tinytuya_exporter { #placementHome }
+        instanceOf monitoring.homeVM { #placementHome }
+        instanceOf monitoring.vmagent { #placementHome }
+        instanceOf data.metricsBackup { #placementHome }
+      }
+      namespace ns_cloudflared 'cloudflared' { #placementHome
+        instanceOf edge.connector { #placementHome }
+      }
+      namespace ns_app_coredns 'app-coredns' { #placementHome
+        instanceOf home.coredns { #placementHome }
+      }
+      namespace ns_app_coupon_manager 'app-coupon-manager' { #placementHome
+        instanceOf home.coupon_manager { #placementHome }
+      }
+      namespace ns_kube_system 'kube-system' { #placementHome
+        instanceOf home.descheduler { #placementHome }
+      }
+      namespace ns_app_epgstation 'app-epgstation' { #placementHome
+        instanceOf home.epgstation { #placementHome }
+      }
+      namespace ns_external_secrets 'external-secrets' { #placementHome
+        instanceOf control.eso { #placementHome }
+        instanceOf control.sdk { #placementHome }
+        instanceOf control.secrets { #placementHome }
+      }
+      namespace ns_app_loockit 'app-loockit' { #placementHome
+        instanceOf home.loockit { #placementHome }
+      }
+      namespace ns_app_magic_mirror 'app-magic-mirror' { #placementHome
+        instanceOf home.magic_mirror { #placementHome }
+      }
+      namespace ns_infra_db 'infra-db' { #placementHome
+        instanceOf home.mariadb { #placementHome }
+        instanceOf home.postgres { #placementHome }
+        instanceOf data.dbBackup { #placementHome }
+      }
+      namespace ns_metallb_system 'metallb-system' { #placementHome
+        instanceOf home.metallb { #placementHome }
+      }
+      namespace ns_app_mirakurun_staging 'app-mirakurun-staging' { #placementHome
+        instanceOf home.mirakurun_staging { #placementHome }
+      }
+      namespace ns_app_mirakurun 'app-mirakurun' { #placementHome
+        instanceOf home.mirakurun { #placementHome }
+      }
+      namespace ns_infra_backup 'infra-backup' { #placementHome
+        instanceOf data.restic { #placementHome }
+      }
+      namespace ns_app_nextcloud 'app-nextcloud' { #placementHome
+        instanceOf home.nextcloud { #placementHome }
+      }
+      namespace ns_infra_db_staging 'infra-db-staging' { #placementHome
+        instanceOf home.postgres_staging { #placementHome }
+      }
+      namespace ns_reventer_tfc_agent 'reventer-tfc-agent' { #placementHome
+        instanceOf control.revagent { #placementHome }
+      }
+      namespace ns_tfc_agent 'tfc-agent' { #placementHome
+        instanceOf control.agent { #placementHome }
+      }
+      namespace ns_app_tnlastation_staging 'app-tnlastation-staging' { #placementHome
+        instanceOf home.tnlastation_staging { #placementHome }
+      }
+      namespace ns_app_tnlastation 'app-tnlastation' { #placementHome
+        instanceOf home.tnlastation { #placementHome }
+        instanceOf home.tnlastation.gateway { #placementHome }
+        instanceOf home.tnlastation.frontend { #placementHome }
+        instanceOf home.tnlastation.backend { #placementHome }
+        instanceOf home.tnlastation.encoder { #placementHome }
+        instanceOf home.tnlastation.stream { #placementHome }
+        instanceOf home.tnlastation.mediamtx { #placementHome }
+      }
+      namespace ns_app_gptwol 'app-gptwol' { #placementHome
+        instanceOf home.wol { #placementHome }
+      }
+    }
+  }
+  environment external '外部サービス' { #placementShared  instanceOf control.git
+    instanceOf control.tfc { #placementShared }
+    instanceOf control.bws { #placementShared }
+    instanceOf control.registry { #placementShared }
+    instanceOf edge.access { #placementShared }
+    instanceOf edge.tunnel { #placementShared }
+    instanceOf edge.warp { #placementShared }
+    instanceOf monitoring.grafana { #placementShared }
+    instanceOf data.e2 { #placementShared } }
+  environment stg 'STG / 別OCIアカウント' { #placementStg
+    site tokyo 'OCI Tokyo' { #placementStg
+      subnet lb '公開LB / cluster外' { #placementStg  instanceOf oke.lb { #placementStg } }
+      cluster oke 'OKE BASIC / K8s1.36.4' { #placementStg
+        instanceOf oke.api { #placementStg }
+        nodepool base 'A1 Flex base ×1 / 2OCPU・12GB' { #placementStg }
+        nodepool burst 'A1 Flex burst ×0–1' { #placementStg }
+        namespace gateway 'nginx-gateway' { #placementStg  instanceOf oke.gateway { #placementStg } }
+        namespace cert 'cert-manager' { #placementStg  instanceOf oke.cert { #placementStg } }
+        namespace secrets 'external-secrets' { #placementStg  instanceOf oke.eso
+          instanceOf oke.sdk { #placementStg }
+          instanceOf oke.secrets { #placementStg } }
+        namespace argo 'argocd' { #placementStg
+          instanceOf oke.argo { #placementStg }
+        }
+        namespace apps 'Re:Venter / reventer所有' { #placementStg  instanceOf oke.apps
+          instanceOf oke.autoscaler { #placementStg } }
+      }
+      vm monitor1 'monitor1 / E2.1.Micro / 別fault domain' { #placementStg
+        instanceOf monitoring.remoteMetrics { #placementStg }
+        instanceOf monitoring.remoteLogs { #placementStg }
+        instanceOf monitoring.query { #placementStg }
+        instanceOf monitoring.remotePdc { #placementStg }
+        instanceOf monitoring.tunnel { #placementStg }
+      }
+      vm monitor2 'monitor2 / E2.1.Micro / 別fault domain' { #placementStg
+        instanceOf monitoring.remoteMetrics { #placementStg }
+        instanceOf monitoring.remoteLogs { #placementStg }
+        instanceOf monitoring.query { #placementStg }
+        instanceOf monitoring.remotePdc { #placementStg }
+        instanceOf monitoring.tunnel { #placementStg }
+      }
+    }
+  }
+  environment prd 'PRD / 別OCIアカウント' { #placementPrd
+    site tokyo 'OCI Tokyo' { #placementPrd
+      subnet lb '公開LB / cluster外' { #placementPrd  instanceOf oke.lb { #placementPrd } }
+      cluster oke 'OKE BASIC / K8s1.36.4' { #placementPrd
+        instanceOf oke.api { #placementPrd }
+        nodepool base 'A1 Flex base ×1 / 2OCPU・12GB' { #placementPrd }
+        nodepool burst 'A1 Flex burst ×0–1' { #placementPrd }
+        namespace gateway 'nginx-gateway' { #placementPrd  instanceOf oke.gateway { #placementPrd } }
+        namespace cert 'cert-manager' { #placementPrd  instanceOf oke.cert { #placementPrd } }
+        namespace secrets 'external-secrets' { #placementPrd  instanceOf oke.eso
+          instanceOf oke.sdk { #placementPrd }
+          instanceOf oke.secrets { #placementPrd } }
+        namespace argo 'argocd' { #placementPrd
+        }
+        namespace apps 'Re:Venter / reventer所有' { #placementPrd  instanceOf oke.apps
+          instanceOf oke.autoscaler { #placementPrd } }
+      }
+      vm monitor1 'monitor1 / E2.1.Micro / 別fault domain' { #placementPrd
+        instanceOf monitoring.remoteMetrics { #placementPrd }
+        instanceOf monitoring.remoteLogs { #placementPrd }
+        instanceOf monitoring.query { #placementPrd }
+        instanceOf monitoring.remotePdc { #placementPrd }
+        instanceOf monitoring.tunnel { #placementPrd }
+      }
+      vm monitor2 'monitor2 / E2.1.Micro / 別fault domain' { #placementPrd
+        instanceOf monitoring.remoteMetrics { #placementPrd }
+        instanceOf monitoring.remoteLogs { #placementPrd }
+        instanceOf monitoring.query { #placementPrd }
+        instanceOf monitoring.remotePdc { #placementPrd }
+        instanceOf monitoring.tunnel { #placementPrd }
+      }
+    }
+  }
+}

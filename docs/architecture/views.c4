@@ -1,84 +1,129 @@
 views {
   view index {
-    title '構成の入口'
-    order 0
-    description '同じ構成モデルを目的別・環境別に見る入口。要素の遷移ボタンから詳細ビューへ進む。線は表示せず、通信・デプロイ・秘密情報は各ビューで確認する。'
-    include *
-    include user with { navigateTo runtime }
-    include operator with { navigateTo runtime }
-    include edge with { navigateTo runtime_home }
-    include stg with { navigateTo runtime_stg }
-    include prd with { navigateTo runtime_prd }
-    include home with { navigateTo delivery }
-    include bws with { navigateTo secrets }
-    include git with { navigateTo delivery }
-    include ci with { navigateTo delivery }
-    include tfc with { navigateTo delivery }
-    include grafana with { navigateTo observability }
-    include monitorstg with { navigateTo observability }
-    include monitorprd with { navigateTo observability }
-    include pve with { navigateTo placement }
-    include nas with { navigateTo placement }
-    include network with { navigateTo runtime_home }
-    exclude * -> *
+    title '01 概要 / 責務から詳細へ'
+    description '01 概要 / 責務から詳細へ'
+    include user, home, edge, control, oke, data, monitoring, network, hardware
+    global predicate runtimeLinks
+    include home with { navigateTo home_apps }
+    include edge with { navigateTo access }
+    include control with { navigateTo delivery }
+    include oke with { navigateTo oke_platform }
+    include data with { navigateTo storage }
+    include monitoring with { navigateTo observability }
+    include network with { navigateTo network_topology }
+    include hardware with { navigateTo power }
     autoLayout LeftRight
   }
 
-  view runtime_home of home {
-    title 'アクセス / 自宅'
-    description '実行時の通信だけを表示する。デプロイと秘密情報は運用ビューへ切り替える。'
-    include user, operator, edge, network, home.tunnel, home.apps, home.argo, home.dns, nas
-    exclude * -> * where kind is not access
-    autoLayout LeftRight
-  }
-  view runtime_stg of stg {
-    title 'アクセス / STG'
-    description '実行時の通信だけを表示する。デプロイと秘密情報は運用ビューへ切り替える。'
-    include user, edge, stg.lb, stg.apps
-    exclude * -> * where kind is not access
-    autoLayout LeftRight
-  }
-  view runtime_prd of prd {
-    title 'アクセス / PRD'
-    description '実行時の通信だけを表示する。デプロイと秘密情報は運用ビューへ切り替える。'
-    include user, edge, prd.lb, prd.apps
-    exclude * -> * where kind is not access
+  view home_apps of home {
+    title '02 論理構成 / homeサービス'
+    description '02 論理構成 / homeサービス'
+    include home.*
+    global predicate runtimeLinks
+    include home.tnlastation with { navigateTo media }
+    include home.loockit with { navigateTo loockit }
     autoLayout LeftRight
   }
 
-  view runtime {
-    title 'アクセス / 全体'
-    description '利用者・管理者の実行時通信。環境ごとの詳細はSTG・PRDビューへ。'
-    include user, operator, edge, network, home.tunnel, home.apps, home.argo, home.dns, nas, stg.lb, prd.lb, stg.apps, prd.apps
-    exclude * -> * where kind is not access
+  view access of edge {
+    title '03 アクセス / 公開・Access・mTLS'
+    description '03 アクセス / 公開・Access・mTLS'
+    include user, edge.*, home.nextcloud, home.tnlastation, home.epgstation, home.loockit, home.wol, home.coupon_manager
+    global predicate runtimeLinks
     autoLayout LeftRight
   }
-  view delivery of home {
-    title '運用 / GitOps・Terraform・構成管理'
-    description 'Git・GHCRから同期までの制御経路。利用者のアクセスは含めない。'
-    include git, ci, tfc, operator, home.argo, home.agent, home.runner, home.apps, home.eso, pve, stg.argo, stg.apps, prd.apps, stg.eso, prd.eso, stg.admin, stg, monitorstg, monitorprd, network, home
-    exclude * -> * where kind is not deploy
+
+  view admin_access of edge {
+    title '03 アクセス / 管理hostname'
+    description '03 アクセス / 管理hostname'
+    include operator, edge.access, edge.tunnel, edge.connector, hardware.x570, hardware.b550m, hardware.kvm1, hardware.kvm2, network.unifi, network.router, network.ap, data.nas
+    global predicate runtimeLinks
     autoLayout LeftRight
   }
-  view secrets of bws {
-    title '運用 / BWSと秘密情報'
-    description 'BWSからの取得とKubernetesへの注入。実行時とbootstrapの取得元を確認する。'
-    include operator, bws, home.eso, stg.eso, prd.eso, home.secrets, stg.secrets, prd.secrets, home.apps, stg.apps, prd.apps, home.argo, home.agent, home.tunnel, home.runner, stg.admin
-    exclude * -> * where kind is not secret
+
+  view media of home.tnlastation {
+    title '03 アクセス / 録画・encoder・streaming'
+    description '03 アクセス / 録画・encoder・streaming'
+    include home.tnlastation.*, home.postgres, home.mirakurun, home.mirakurun_tuner, home.epgstation, home.mariadb
+    global predicate runtimeLinks
     autoLayout LeftRight
   }
-  view observability {
-    title '運用 / 監視'
-    description '収集agent、保存先、Grafana queryの関係。監視VMはOKE外で稼働する。'
-    include home.scrape, home.metrics, home.pdc, pve, network, nas, grafana, stg.collect, prd.collect, monitorstg, monitorprd
-    exclude * -> * where kind is not observe
+
+  view loockit of home.loockit {
+    title '03 アクセス / proxyとBLE LXC'
+    description '03 アクセス / proxyとBLE LXC'
+    include user, edge.mtls, edge.tunnel, edge.connector, home.loockit, home.loockit_bridge
+    global predicate runtimeLinks
     autoLayout LeftRight
   }
-  view placement {
-    title '配置 / 全体'
-    description 'モデルの要素を稼働場所でまとめる。通信の線は表示しない。'
-    include pve, nas, home.*, stg.*, prd.*
-    exclude * -> * where kind is not placement
+
+  view delivery of control {
+    title '04 運用 / CI・TFC agent・GitOps'
+    description '04 運用 / CI・TFC agent・GitOps'
+    include control.*, oke.api, oke.argo, hardware.x570, hardware.b550m, monitoring.remoteMetrics, oke.vcn
+    global predicate deliveryLinks
+    autoLayout LeftRight
+  }
+
+  view gitops_apps {
+    title '04 運用 / 全Applicationへの同期'
+    description 'サービス一覧はモデルに残し、通常アクセスビューでは関係を絞る。'
+    include control.argo, home.*, control.git, oke.api, control.agent, control.revagent, control.updater, control.arc, control.runnerInfra, control.runnerRev, control.eso, edge.connector, monitoring.homeVM, monitoring.vmagent, monitoring.pdc, data.restic
+    global predicate deliveryLinks
+    autoLayout LeftRight
+  }
+
+  view secrets of control.bws {
+    title '04 運用 / bootstrap・BWS・SDK・ESO'
+    description '04 運用 / bootstrap・BWS・SDK・ESO'
+    include control.bootstrap, control.ci, control.ansible, control.bws, control.sdk, control.eso, control.secrets, oke.sdk, oke.eso, oke.secrets, oke.apps, home.nextcloud, home.tnlastation
+    global predicate secretsLinks
+    autoLayout LeftRight
+  }
+
+  view oke_platform of oke {
+    title '04 運用 / OKE共通基盤と所有境界'
+    description 'PRD OKE・アプリ・Autoscalerはreventer所有。STG ArgoCDは共通基盤管理。利用者経路と管理経路は個別ビューで確認。'
+    include oke.*, control.argo, control.git, control.bws
+    autoLayout LeftRight
+  }
+
+  view observability of monitoring {
+    title '05 監視 / homeとOCIの収集・query'
+    description '05 監視 / homeとOCIの収集・query'
+    include monitoring.*, home.blackbox_exporter, home.nut_exporter, home.prometheus_node_exporter, home.pve_exporter, home.snmp_exporter, home.speedtest_exporter, home.tinytuya_exporter
+    global predicate observabilityLinks
+    autoLayout LeftRight
+  }
+
+  view exporter_targets extends observability {
+    title '05 監視 / exporterの対象'
+    description '05 監視 / exporterの対象'
+    include hardware.x570, hardware.b550m, hardware.nut1, hardware.nut2, network.router, network.switch, network.ap, network.iot
+    autoLayout LeftRight
+  }
+
+  view storage of data {
+    title '05 保存 / NFS・restic・PBS'
+    description '05 保存 / NFS・restic・PBS'
+    include data.*, home.nextcloud, home.epgstation, home.tnlastation.backend, home.tnlastation.encoder, home.tnlastation.stream, hardware.x570, hardware.b550m
+    global predicate storageLinks
+    autoLayout LeftRight
+  }
+
+  view network_topology of network {
+    title '06 ネットワーク / VLANと管理経路'
+    description '06 ネットワーク / VLANと管理経路'
+    include network.*, hardware.x570, hardware.b550m, hardware.worker3, hardware.worker4, edge.warp, user, home.coredns
+    global predicate networkLinks
+    autoLayout LeftRight
+  }
+
+  view power of hardware {
+    title '06 電源 / UPSとNUTの別責務'
+    description '電源供給だけを表示。NUT statusとshutdown関係は要素のrelationship browserで確認できる。'
+    include hardware.upsA, hardware.upsB, hardware.nut1, hardware.nut2, hardware.x570, hardware.b550m, network.switch
+    global predicate hardwareLinks
     autoLayout LeftRight
   }
 }

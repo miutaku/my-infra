@@ -1,0 +1,23 @@
+global {
+  predicateGroup runtimeLinks {
+    exclude * -> * where tag is not #runtime
+  }
+  predicateGroup deliveryLinks {
+    exclude * -> * where tag is not #delivery
+  }
+  predicateGroup secretsLinks {
+    exclude * -> * where tag is not #secrets
+  }
+  predicateGroup observabilityLinks {
+    exclude * -> * where tag is not #observability
+  }
+  predicateGroup storageLinks {
+    exclude * -> * where tag is not #storage
+  }
+  predicateGroup networkLinks {
+    exclude * -> * where tag is not #network
+  }
+  predicateGroup hardwareLinks {
+    exclude * -> * where tag is not #hardware
+  }
+}

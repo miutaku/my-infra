@@ -1,0 +1,55 @@
+views {
+  deployment view placement {
+    title '07 実配置 / home・STG・PRD'
+    description 'PVEホストとRPi、OKEクラスタ外のLB・監視VM。論理グループは物理収容を意味しない。'
+    includeAncestors true
+    include homeSite.x570, homeSite.b550m, homeSite.worker3, homeSite.worker4, homeSite.talos, stg.tokyo.*, prd.tokyo.*
+    exclude * -> *
+    autoLayout LeftRight
+  }
+
+  deployment view home_hardware {
+    title '07 実配置 / VM・LXCと物理ホスト'
+    description 'CP3台が物理2ホストに配置される。b550mにCP2台があるためホスト冗長性は3VMと異なる。'
+    includeAncestors true
+    include * where tag is #placementPhysical
+    exclude * -> *
+    autoLayout LeftRight
+  }
+
+  deployment view home_workloads {
+    title '07 実配置 / Talosの論理workload配置'
+    description 'Application登録とnamespace所属。全Podを特定workerへ固定配置した図ではない。'
+    includeAncestors true
+    include * where tag is #placementHome
+    exclude * -> *
+    autoLayout LeftRight
+  }
+
+  deployment view deployment_stg {
+    title '07 実配置 / STG共通基盤と監視VM'
+    description '07 実配置 / STG共通基盤と監視VM'
+    includeAncestors true
+    include * where tag is #placementStg
+    exclude * -> *
+    autoLayout LeftRight
+  }
+
+  deployment view deployment_prd {
+    title '07 実配置 / PRD共通基盤と監視VM'
+    description '07 実配置 / PRD共通基盤と監視VM'
+    includeAncestors true
+    include * where tag is #placementPrd
+    exclude * -> *
+    autoLayout LeftRight
+  }
+
+  deployment view monitoring_placement {
+    title '05 監視 / 保存の障害範囲'
+    description 'homeと環境別2VM。PDCとquery proxyは保存先VMで稼働。'
+    includeAncestors true
+    include homeSite.talos.ns_monitoring.*, stg.tokyo.monitor1.*, stg.tokyo.monitor2.*, prd.tokyo.monitor1.*, prd.tokyo.monitor2.*
+    exclude * -> *
+    autoLayout LeftRight
+  }
+}

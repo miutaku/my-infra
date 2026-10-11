@@ -1,10 +1,10 @@
-# アーキテクチャをLikeC4で見る
+# LikeC4で構成を読む
 
-構成の正本は `model.c4`、見方の宣言は `views.c4`。同じモデルを、アクセス・デプロイ・秘密情報・監視・配置の各ビューに投影し、LikeC4の対話UIで切り替えて読む。
+READMEと、そこから参照するTerraform・Kubernetes・workflow・実装を読み直して作った構成モデル。同じ論理要素・関係から観点別ビューを宣言し、環境ごとの実配置は `instanceOf` で表す。
 
-## 起動
+## ブラウザで開く
 
-Node.js 24を使用する。リポジトリのルートから実行する。
+Node.js 24を使用する。
 
 ```bash
 cd docs/architecture
@@ -12,49 +12,74 @@ npm ci
 npm run dev
 ```
 
-ターミナルに表示されるURLをブラウザで開く。最初はビュー一覧が表示される。「構成の入口」の要素にマウスを重ね、`Navigate to view` ボタンを押すと環境や役割ごとの詳細へ移動できる。パン・ズーム、ビュー切替、要素・関係の詳細表示を使って構成を確認する。ソースを変更すると対話UIにも反映される。
+表示されたURLを開く。最初はビュー一覧。「01 概要」の要素をhoverして `Navigate to view` を押すと責務別の詳細へ移動できる。要素や関係の詳細、全モデルのrelationship browser、パン・ズーム、検索も使用できる。各要素の「構成の根拠」リンクから対応する定義へ移動する。
 
-| ビュー | 見るもの |
+## モデルとビュー
+
+| ファイル | 内容 |
 | --- | --- |
-| 構成の入口 | モデルの主要要素から詳細へのナビゲーション |
-| アクセス / 全体・環境別 | 利用者・管理者の要求と実行時の通信 |
-| 運用 / デプロイ | GitOps、イメージ配布、Terraformの制御経路 |
-| 運用 / BWSと秘密情報 | BWSの取得、ESOの同期、bootstrap認証情報 |
-| 運用 / 監視 | scrape、ログ・メトリクス、Grafanaのquery |
-| 配置 / 全体 | 実行場所と管理基盤。入れ子の枠は収容関係 |
+| `specification.c4` | actor・system・service・storeなどの要素kind、関係kind・タグ、deployment nodeの種類 |
+| `logical.c4` | 論理サービスの階層、責務、依存関係、所有者・定義へのリンク |
+| `predicates.c4` | runtime・delivery・secrets・observability・storage・network・hardwareごとの共有filter |
+| `views.c4` | `view of`、`include/exclude`、共有predicate、`navigateTo`で宣言する観点別ビュー |
+| `deployment.c4` | 物理ホスト・VM・クラスタ・namespaceと論理要素の `instanceOf` |
+| `deployment-views.c4` | 環境・物理配置・障害範囲を読むdeployment view |
+| `scenarios.c4` | 処理順を読むdynamic view。sequence表示も切り替え可能 |
 
-入口には関係線を表示しない。アクセス・デプロイ・秘密情報・監視のビューでは関係kindを絞り、同じ要素でも異なる意味の矢印を混ぜない。関係ブラウザではモデル全体の関係も確認できる。STG/PRDの枠はOCI環境の境界で、LBはOKEクラスタ外、GatewayとアプリはOKE内。矢印は論理的な要求・操作の向きで、TCP接続開始の向きとは異なる。TunnelやPDCは外向きに接続する。
+利用者の通信、デプロイ制御、secret取得、監視、storage、ネットワーク、電源を関係kindとタグで区別する。通常ビューでは共有predicateで観点を絞る。概要から詳細へ段階的に展開し、省略した要素もモデルと関係ブラウザには残る。物理収容を論理サービスの入れ子で代用せず、deployment modelで表す。環境の全配置と自宅の物理／workload配置は `placementStg`・`placementPrd`・`placementPhysical`・`placementHome` タグで選択し、空VM・node pool・孤立したサービスも表示する。deploymentのタグは親から継承されないため、新しいnode/instanceにも対応タグを付ける。
 
-## モデルとビューの更新
+矢印はラベルに記載した要求・操作・データの向き。Tunnel/PDCの要求転送はTCP接続開始の向きと異なる。connector/agentは外向き接続する。deploymentの配置ビューは線を省略し、配置と経路を混ぜない。
 
-リソースや関係を追加・変更する場合は `model.c4` を編集する。ビューは `include`・`exclude`・`view of`・`navigateTo` で宣言する。特定のビューで省略してもモデルには残るため、別の観点から参照できる。`specification.c4` は要素・関係の種類と表示スタイルを定義する。READMEには図のコピーを置かない。
+| view ID | 観点 |
+| --- | --- |
+| `index` | 01 概要 / 責務から詳細へ |
+| `home_apps` | 02 論理構成 / homeサービス |
+| `access` | 03 アクセス / 公開・Access・mTLS |
+| `admin_access` | 03 アクセス / 管理hostname |
+| `media` | 03 アクセス / 録画・encoder・streaming |
+| `loockit` | 03 アクセス / proxyとBLE LXC |
+| `delivery` | 04 運用 / CI・TFC agent・GitOps |
+| `gitops_apps` | 04 運用 / 全Applicationへの同期 |
+| `secrets` | 04 運用 / bootstrap・BWS・SDK・ESO |
+| `oke_platform` | 04 運用 / OKE共通基盤と所有境界 |
+| `observability` | 05 監視 / homeとOCIの収集・query |
+| `exporter_targets` | 05 監視 / exporterの対象 |
+| `storage` | 05 保存 / NFS・restic・PBS |
+| `network_topology` | 06 ネットワーク / VLANと管理経路 |
+| `power` | 06 電源 / UPSとNUTの別責務 |
+| `placement` | 07 実配置 / home・STG・PRD |
+| `home_hardware` | 07 実配置 / VM・LXCと物理ホスト |
+| `home_workloads` | 07 実配置 / Talosの論理workload配置 |
+| `deployment_stg` | 07 実配置 / STG共通基盤と監視VM |
+| `deployment_prd` | 07 実配置 / PRD共通基盤と監視VM |
+| `monitoring_placement` | 05 監視 / 保存の障害範囲 |
+| `gitops_release` | 08 処理順 / Git更新からhome同期 |
+| `secret_sync` | 08 処理順 / BWSからhome Podへ |
+| `record_encode` | 08 処理順 / 録画とSQL queue |
+
+## 更新する
+
+サービス・依存関係を変更したら `logical.c4` を更新する。共通サービスは一度定義し、配置の追加は `deployment.c4` の `instanceOf` で行う。見せ方の追加はビューの宣言だけで行う。モデルから削除することと、特定ビューで省略することを区別する。新しい関係には実行時通信・運用・secretなどのkindを指定する。所有者、定義へのリンク、説明も更新する。
 
 ```bash
-npm run validate         # モデル・参照・レイアウトを検証
-npm run build            # 対話サイトを dist/ に生成
-npm run preview          # buildしたサイトをローカルで確認
-npm run build:standalone # 単一HTMLの対話サイトを standalone/ に生成
+npm run validate
+npm run build
+npm run preview
+npm run build:standalone
 ```
 
-通常のbuild成果物はHTTPサーバーで配信する。standaloneの `index.html` はダウンロードしてブラウザで開き、ホスティングなしで対話ビューを試せる。生成物はGit管理せず、モデルとビューを管理する。
+`dist/` はHTTPサーバーで配信する対話サイト。`standalone/index.html` はダウンロードしてブラウザで開ける単一HTML。生成物はGit管理しない。モデル変更後は再buildする。
 
-[CIテンプレート](architecture-workflow.yml)は検証と対話サイトのbuildを行い、通常サイトと単一HTMLをActions artifactに保存する。push認証にworkflow追加権限がないため、自動実行は未設定。利用する場合は権限を持つ認証で `.github/workflows/architecture.yml` に配置する。
+[CIテンプレート](architecture-workflow.yml)はvalidateと両buildを実行する。現在のpush認証にworkflow追加権限がないため、テンプレートを同梱している。自動実行は未設定。
 
-## 範囲と構成の根拠
+## 構成の根拠と読み方
 
-これは定義ファイルから整理した論理構成で、稼働環境の自動検出ではない。Pod・Secret・IAM・DNSレコードの全件一覧は対象定義を参照する。リソース追加はモデルに反映し、特定viewで省略することとモデルから削除することを区別する。STG/PRDやリポジトリ間で共有する基盤は各モデルの境界要素として明記し、詳細の正本は所有リポジトリに置く。
+自宅のApplication登録を個別にモデルへ残す。ArgoCD・TFC agent・ARC・ESO/SDK、Nextcloud、DB、TNLAStationとそのworker、EPGStation、Mirakurun、Loockit、exporter、DNS・MetalLBなどを辿れる。配置はApplicationのdestination namespaceに基づく。config Applicationは設定要素で、架空の実行Podとして配置しない。
 
-| 構成 | 定義・所有者 |
-| --- | --- |
-| Proxmox / Talos / NAS / VLAN | [Terraform](../../terraform/)、[Talos](../../talos/home-k8s/)、[Ansible](../../ansible/) |
-| 自宅のhostname / Access / Tunnel | [Cloudflare Terraform](../../terraform/cloudflare/locals.tf)、[cloudflared](../../k8s/pve/cloudflared/) |
-| home-k8sアプリ / agents / ESO SDK | [App-of-Apps](../../k8s/pve/argocd-apps/)、[SecretStore](../../k8s/pve/external-secrets/cluster-secret-store.yaml) |
-| 自宅ArgoCD / Image Updater / Re:Venter destination | [GitOps](../../k8s/pve/reventer-gitops/README.md) |
-| STG / PRD共通基盤 | [STG ArgoCD](../../k8s/oci/argocd/)、[STG基盤](../../k8s/oci/infrastructure/)、[PRD基盤](../../k8s/oci-prd/) |
-| Terraform実行モード / agent | [workflows](../../.github/workflows/)、[tfc-agent](../../k8s/pve/tfc-agent/)、[監視VM local実行](../../terraform/oci-observability/README.md) |
-| 監視 | [home vmagent](../../k8s/pve/vmagent/values.yaml)、[監視VM](../../observability/reventer/) |
-| PRD OKE・アプリ・TiDB・メール・公開edge | [reventerモデル](https://github.com/miutaku/reventer/tree/docs/likec4-architecture/docs/architecture) |
+Loockitはクラスタ内HAProxyから2台のBLE LXCへ接続する。MirakurunはService/EndpointSliceの先のtuner LXC。TNLAStationのencode queueはPostgreSQL、録画・HLSはNFS。NAS restic、DB dump、VictoriaMetrics snapshot、PBS VM/LXC backupは別の責務。
 
-自宅アプリは代表サービスをまとめて表示する。全ApplicationはApp-of-Apps、公開hostnameの全件はCloudflare localsが正本。RPi workerはProxmox VMではない。Re:Venterのユーザーアクセスは公開LB、GitOpsはKubernetes APIを使い、拠点間VPNは使わない。Accessはhostnameごとに適用され、全サービスへの一律認証を意味しない。
+物理配置はProxmox2台、Talos CP VM3・worker VM2、独立RPi worker2、NAS、LXC、一般VMを表す。CP2台がb550m上にあるので、そのホスト停止でetcd quorumを失う。Talos worker RPiとNUT Piは別機器。UPSの電源経路、VLAN/native/guest、WARP routesはそれぞれ独立ビューで確認する。Podの現在のworker配置を固定して描かず、TNLAStationの優先配置・退避方針は説明に記載する。
 
-BWS access token・SDK TLS・ArgoCD deploy key/クラスタ接続情報にはbootstrap投入が必要。ESOだけでbootstrapが完結するわけではない。監視VMはOKE外で稼働し、Terraform stateをCloudに置いても実行はlocal。CI→TFC、agent→Proxmox、管理端末→監視VMを分けて表す。
+STG/PRDは別OCIアカウント。公開LBと監視VMはOKE外。STG ArgoCDは共通基盤、自宅ArgoCDはRe:Venterアプリを管理する。PRD OKEとアプリはreventer所有。[Re:Venterモデル](https://github.com/miutaku/reventer/tree/docs/likec4-architecture/docs/architecture)へ詳細を分担する。旧OKE内pve-tfc-agent、廃止VPNやOCI encoderを現行配置に復活させない。
+
+このモデルはmain `e2e83070ce85` のREADMEと参照定義を基準にした設計上の構成。稼働環境の自動検出ではない。各要素のmetadataに所有者・source・確認時commitを持たせ、参照先は確認時commitへ固定している。今後の構成変更では該当要素の根拠も更新する。Secret値は含めない。IAMルール・DNSレコード・Pod全件の詳細はリンク先の定義で確認する。

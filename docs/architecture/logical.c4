@@ -1,0 +1,1406 @@
+model {
+  actor user '利用者' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'README.md'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+  }
+  actor operator '管理者' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'README.md'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+  }
+  system home '自宅サービス' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'k8s/pve'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    service annict_rec_sync_tnlastation_staging 'annict-rec-sync-tnlastation-staging' {
+      #application
+      description 'ArgoCD Application。namespace: app-annict-rec-sync-tnlastation-staging。source: k8s/pve/annict-rec-sync-tnlastation-staging。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/annict-rec-sync-tnlastation-staging.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/annict-rec-sync-tnlastation-staging.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'annict-rec-sync-tnlastation-staging'
+        namespace 'app-annict-rec-sync-tnlastation-staging'
+      }
+    }
+    service annict_rec_sync_tnlastation 'annict-rec-sync-tnlastation' {
+      #application
+      description 'ArgoCD Application。namespace: app-annict-rec-sync-tnlastation。source: k8s/pve/annict-rec-sync-tnlastation。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/annict-rec-sync-tnlastation.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/annict-rec-sync-tnlastation.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'annict-rec-sync-tnlastation'
+        namespace 'app-annict-rec-sync-tnlastation'
+      }
+    }
+    service annict_rec_sync 'annict-rec-sync' {
+      #application
+      description 'ArgoCD Application。namespace: app-annict-rec-sync。source: k8s/pve/annict-rec-sync。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/annict-rec-sync.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/annict-rec-sync.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'annict-rec-sync'
+        namespace 'app-annict-rec-sync'
+      }
+    }
+    service annict_scraper 'annict-scraper' {
+      #application
+      description 'ArgoCD Application。namespace: app-annict-scraper。source: k8s/pve/annict-scraper。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/annict-scraper.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/annict-scraper.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'annict-scraper'
+        namespace 'app-annict-scraper'
+      }
+    }
+    component arc_runners_config 'arc-runners-config' {
+      #application
+      description 'ArgoCD Application。namespace: arc-runners。source: k8s/pve/arc-runners。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/arc-runners-config.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/arc-runners-config.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'arc-runners-config'
+        namespace 'arc-runners'
+      }
+    }
+    service blackbox_exporter 'blackbox-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: 。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/blackbox-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/blackbox-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'blackbox-exporter'
+        namespace 'monitoring'
+      }
+    }
+    service coredns 'coredns' {
+      #application
+      description 'ArgoCD Application。namespace: app-coredns。source: k8s/pve/coredns。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/coredns.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/coredns.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'coredns'
+        namespace 'app-coredns'
+      }
+    }
+    service coupon_manager 'coupon-manager' {
+      #application
+      description 'ArgoCD Application。namespace: app-coupon-manager。source: k8s/pve/coupon-manager。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/coupon-manager.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/coupon-manager.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'coupon-manager'
+        namespace 'app-coupon-manager'
+      }
+    }
+    service descheduler 'descheduler' {
+      #application
+      description 'ArgoCD Application。namespace: kube-system。source: descheduler。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/descheduler.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/descheduler.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'descheduler'
+        namespace 'kube-system'
+      }
+    }
+    service epgstation 'epgstation' {
+      #application
+      description 'ArgoCD Application。namespace: app-epgstation。source: k8s/pve/epgstation。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/epgstation.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/epgstation.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'epgstation'
+        namespace 'app-epgstation'
+      }
+    }
+    component external_secrets_config 'external-secrets-config' {
+      #application
+      description 'ArgoCD Application。namespace: external-secrets。source: k8s/pve/external-secrets。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/external-secrets-config.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/external-secrets-config.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'external-secrets-config'
+        namespace 'external-secrets'
+      }
+    }
+    service loockit 'loockit' {
+      #application
+      description 'ArgoCD Application。namespace: app-loockit。source: k8s/pve/loockit。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/loockit.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/loockit.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'loockit'
+        namespace 'app-loockit'
+      }
+    }
+    service magic_mirror 'magic-mirror' {
+      #application
+      description 'ArgoCD Application。namespace: app-magic-mirror。source: k8s/pve/magic-mirror。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/magic-mirror.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/magic-mirror.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'magic-mirror'
+        namespace 'app-magic-mirror'
+      }
+    }
+    service mariadb 'mariadb' {
+      #application
+      description 'ArgoCD Application。namespace: infra-db。source: k8s/pve/mariadb。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/mariadb.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/mariadb.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'mariadb'
+        namespace 'infra-db'
+      }
+    }
+    service metallb 'metallb' {
+      #application
+      description 'ArgoCD Application。namespace: metallb-system。source: 。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/metallb.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/metallb.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'metallb'
+        namespace 'metallb-system'
+      }
+    }
+    service mirakurun_staging 'mirakurun-staging' {
+      #application
+      description 'ArgoCD Application。namespace: app-mirakurun-staging。source: k8s/pve/mirakurun-staging。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/mirakurun-staging.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/mirakurun-staging.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'mirakurun-staging'
+        namespace 'app-mirakurun-staging'
+      }
+    }
+    service mirakurun 'mirakurun' {
+      #application
+      description 'ArgoCD Application。namespace: app-mirakurun。source: k8s/pve/mirakurun。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/mirakurun.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/mirakurun.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'mirakurun'
+        namespace 'app-mirakurun'
+      }
+    }
+    service nextcloud 'nextcloud' {
+      #application
+      description 'ArgoCD Application。namespace: app-nextcloud。source: k8s/pve/nextcloud。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/nextcloud.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/nextcloud.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'nextcloud'
+        namespace 'app-nextcloud'
+      }
+    }
+    service nut_exporter 'nut-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: k8s/pve/nut-exporter。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/nut-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/nut-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'nut-exporter'
+        namespace 'monitoring'
+      }
+    }
+    service postgres_staging 'postgres-staging' {
+      #application
+      description 'ArgoCD Application。namespace: infra-db-staging。source: k8s/pve/postgres-staging。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/postgres-staging.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/postgres-staging.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'postgres-staging'
+        namespace 'infra-db-staging'
+      }
+    }
+    service postgres 'postgres' {
+      #application
+      description 'ArgoCD Application。namespace: infra-db。source: k8s/pve/postgres。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/postgres.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/postgres.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'postgres'
+        namespace 'infra-db'
+      }
+    }
+    service prometheus_node_exporter 'prometheus-node-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: 。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/prometheus-node-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/prometheus-node-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'prometheus-node-exporter'
+        namespace 'monitoring'
+      }
+    }
+    service pve_exporter 'pve-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: k8s/pve/pve-exporter。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/pve-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/pve-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'pve-exporter'
+        namespace 'monitoring'
+      }
+    }
+    component reventer_gitops 'reventer-gitops' {
+      #application
+      description 'ArgoCD Application。namespace: argocd。source: k8s/pve/reventer-gitops。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/reventer-gitops.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/reventer-gitops.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'reventer-gitops'
+        namespace 'argocd'
+      }
+    }
+    component shared_state_storage 'shared-state-storage' {
+      #application
+      description 'ArgoCD Application。namespace: default。source: k8s/pve/shared-state-storage。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/shared-state-storage.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/shared-state-storage.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'shared-state-storage'
+        namespace 'default'
+      }
+    }
+    service snmp_exporter 'snmp-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: 。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/snmp-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/snmp-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'snmp-exporter'
+        namespace 'monitoring'
+      }
+    }
+    service speedtest_exporter 'speedtest-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: k8s/pve/speedtest-exporter。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/speedtest-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/speedtest-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'speedtest-exporter'
+        namespace 'monitoring'
+      }
+    }
+    service tinytuya_exporter 'tinytuya-exporter' {
+      #application
+      description 'ArgoCD Application。namespace: monitoring。source: k8s/pve/tinytuya-exporter。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/tinytuya-exporter.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/tinytuya-exporter.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'tinytuya-exporter'
+        namespace 'monitoring'
+      }
+    }
+    service tnlastation_staging 'tnlastation-staging' {
+      #application
+      description 'ArgoCD Application。namespace: app-tnlastation-staging。source: k8s/pve/tnlastation-staging。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/tnlastation-staging.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/tnlastation-staging.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'tnlastation-staging'
+        namespace 'app-tnlastation-staging'
+      }
+    }
+    service tnlastation 'tnlastation' {
+      #application
+      description 'ArgoCD Application。namespace: app-tnlastation。source: k8s/pve/tnlastation。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/tnlastation.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/tnlastation.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'tnlastation'
+        namespace 'app-tnlastation'
+      }
+      service gateway 'gateway' {
+        description 'HTTP入口。LAN .210、STG .215。'
+        link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation '構成の根拠'
+        metadata {
+          owner 'my-infra'
+          source 'k8s/pve/tnlastation'
+          sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        }
+      }
+      service frontend 'frontend' {
+        description 'UI。'
+        link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation '構成の根拠'
+        metadata {
+          owner 'my-infra'
+          source 'k8s/pve/tnlastation'
+          sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        }
+      }
+      service backend 'backend' {
+        description '録画管理・worker制御。'
+        link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation '構成の根拠'
+        metadata {
+          owner 'my-infra'
+          source 'k8s/pve/tnlastation'
+          sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        }
+      }
+      service encoder '録画TS encoder' {
+        description 'Deployment 1–2。PostgreSQL queueをatomic claim。x570を優先するが固定配置ではない。'
+        link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation '構成の根拠'
+        metadata {
+          owner 'my-infra'
+          source 'k8s/pve/tnlastation'
+          sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        }
+      }
+      service stream 'streaming worker' {
+        description 'StatefulSet 2–3。b550m優先、Podはworkerへ分散。'
+        link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation '構成の根拠'
+        metadata {
+          owner 'my-infra'
+          source 'k8s/pve/tnlastation'
+          sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        }
+      }
+      service mediamtx 'MediaMTX' {
+        description '配信用media server。'
+        link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation '構成の根拠'
+        metadata {
+          owner 'my-infra'
+          source 'k8s/pve/tnlastation'
+          sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        }
+      }
+    }
+    service wol 'wol' {
+      #application
+      description 'ArgoCD Application。namespace: app-gptwol。source: k8s/pve/wol。Pod配置は動的。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/wol.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/wol.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'wol'
+        namespace 'app-gptwol'
+      }
+    }
+    service loockit_bridge 'BLE Loockit bridge' {
+      description '2 LXC、.133/.134。KubernetesにあるのはHAProxy 2 Pod。BLE bridgeはLXCで稼働。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/loockit-lxc '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/loockit-lxc'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service mirakurun_tuner 'Mirakurun tuner LXC' {
+      description 'Kubernetes Service/EndpointSliceからLXCへ転送。USB tunerはLXC側。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/mirakurun-lxc '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/mirakurun-lxc'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service mirakurun_staging_tuner 'STG Mirakurun tuner LXC' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/mirakurun-staging-lxc '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/mirakurun-staging-lxc'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  system control '構成管理とGitOps' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'k8s/pve/argocd'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    store git 'GitHub my-infra / reventer' {
+      description '所有リポジトリが構成の正本。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service ci 'GitHub Actions' {
+      description 'Terraform・Ansible・buildのworkflow。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/.github/workflows '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source '.github/workflows'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service tfc 'Terraform Cloud' {
+      description 'agentで実行するworkspaceとlocal実行・remote stateを区別。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tfc-agent '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/tfc-agent'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service agent 'my-infra TFC agent' {
+      description '自宅Talosで実行。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/tfc-agent.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/tfc-agent.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'tfc-agent'
+        namespace 'tfc-agent'
+      }
+    }
+    service revagent 'reventer TFC agent' {
+      description 'Re:Venter workspace用。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/reventer-tfc-agent.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/reventer-tfc-agent.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'reventer-tfc-agent'
+        namespace 'reventer-tfc-agent'
+      }
+    }
+    service argo 'home ArgoCD' {
+      description 'home-k8sとRe:Venter STG/PRDのアプリを同期。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service updater 'Image Updater' {
+      description 'registry検出とGit write-back。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/argocd-image-updater.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/argocd-image-updater.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'argocd-image-updater'
+        namespace 'argocd'
+      }
+    }
+    service arc 'ARC controller' {
+      description 'runner scale set管理。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/arc-controller.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/arc-controller.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'arc-controller'
+        namespace 'arc-systems'
+      }
+    }
+    service runnerInfra 'my-infra ARC runner' {
+      description '自宅Talosで稼働。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/arc-runner-my-infra.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/arc-runner-my-infra.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'arc-runner-my-infra'
+        namespace 'arc-runners'
+      }
+    }
+    service runnerRev 'reventer ARC runner' {
+      description '自宅Talosで稼働。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/arc-runner-reventer.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/arc-runner-reventer.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'arc-runner-reventer'
+        namespace 'arc-runners'
+      }
+    }
+    store bws 'Bitwarden Secrets Manager' {
+      description '秘密情報の正本。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/external-secrets '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/external-secrets'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service eso 'External Secrets Operator' {
+      description 'SDK経由で同期。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/external-secrets.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/external-secrets.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'external-secrets'
+        namespace 'external-secrets'
+      }
+    }
+    service sdk 'Bitwarden SDK server' {
+      description 'ESOとは別Service。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/external-secrets '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/external-secrets'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store secrets 'Kubernetes Secrets' {
+      description 'アプリへの注入先。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/external-secrets '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/external-secrets'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store bootstrap 'bootstrap資格情報' {
+      description 'BWS token・TLS・deploy keyは事前投入。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/external-secrets '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/external-secrets'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service ansible 'Ansible / 管理端末' {
+      description 'VM・LXC・機器設定。監視VMのTerraformはlocal実行。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/ansible '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'ansible'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service api 'Talos Kubernetes API' {
+      description 'VIP 192.168.20.228:6443。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/talos/home-k8s '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'talos/home-k8s'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store registry 'GHCR / image registry' {
+      description 'GitOps同期後のimage取得元。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-image-updater '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-image-updater'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  system edge 'Cloudflare公開・認証・私設アクセス' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'terraform/cloudflare'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    service dns '公開DNS' {
+      description 'miutaku.work。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service access 'Cloudflare Access' {
+      description 'hostnameごとの認証。loockit-apiはmTLSの別方針。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service tunnel 'Cloudflare Tunnel edge' {
+      description '要求の論理転送。connectorから外向きに接続。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service connector 'home cloudflared' {
+      description 'home-k8sで稼働。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/argocd-apps/cloudflared.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/argocd-apps/cloudflared.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'cloudflared'
+        namespace 'cloudflared'
+      }
+    }
+    service warp 'WARP private routes' {
+      description 'native・VLAN10/20/30/40へ。guest31は含まない。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare/locals.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare/locals.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service mtls 'Loockit API mTLS' {
+      description '証明書fingerprintによる認証。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare/loockit-api.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare/loockit-api.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  system data 'NAS・DB・バックアップ' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/ansible/truenas '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'ansible/truenas'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    service restic 'NAS restic CronJobs' {
+      description 'NAS/NextcloudとTNLAStation recordedは別job。04時JSTの定期backup。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/nas-backup '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/nas-backup'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'nas-backup'
+        namespace 'infra-backup'
+      }
+    }
+    store nas 'TrueNAS / NFS' {
+      description 'NAS VMは各Proxmoxに1台。アプリ共有・録画の主要データはnas-02 .192。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/pve/main.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/pve/main.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store recorded 'recorded dataset' {
+      description 'EPGStationとTNLAStationで共有。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/tnlastation/README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store shared 'tnlastation shared dataset' {
+      description 'HLS・thumbnail・drop log・一時file。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/tnlastation/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/tnlastation/README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store nextcloud 'Nextcloud data' {
+      description 'アプリデータ。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/nextcloud '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/nextcloud'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service pbs 'Proxmox Backup Server' {
+      description 'VM/LXC backup。平常時x570、OS disk replication、障害時手動移行。HA managerで自動failoverする構成ではない。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/pve/main.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/pve/main.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store e2 'IDrive e2 / S3' {
+      description 'resticとPBSの別backup repository/datastore。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/nas-backup/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/nas-backup/README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service dbBackup 'MariaDB logical dump' {
+      description '稼働中DBのfile copyとは分離した整合性のあるdump。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/mariadb '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/mariadb'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service metricsBackup 'VictoriaMetrics snapshot backup' {
+      description '毎時20分、vmbackupのsnapshotをrcloneでS3へ保存。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/victoria-metrics/backup-cronjob.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/victoria-metrics/backup-cronjob.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  system monitoring '監視収集・保存・query' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/vmagent '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'k8s/pve/vmagent'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    service pdc 'home PDC agent' {
+      description '3replicas。Grafanaへ外向きSSH tunnel。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/pdc-agent '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/pdc-agent'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'pdc-agent'
+        namespace 'monitoring'
+      }
+    }
+    store homeVM 'home VictoriaMetrics' {
+      description 'ローカルmetrics保存。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/victoria-metrics '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/victoria-metrics'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'victoria-metrics'
+        namespace 'monitoring'
+      }
+    }
+    service vmagent 'home vmagent' {
+      description '各exporter scrape。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/vmagent '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/vmagent'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+        application 'vmagent'
+        namespace 'monitoring'
+      }
+    }
+    service grafana 'Grafana Cloud' {
+      description 'query要求側。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/pve/pdc-agent '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/pve/pdc-agent'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store remoteMetrics 'OCI VictoriaMetrics' {
+      description '環境別2VM。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/observability/reventer/docker-compose.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'observability/reventer/docker-compose.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    store remoteLogs 'OCI VictoriaLogs' {
+      description '環境別2VM。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/observability/reventer/docker-compose.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'observability/reventer/docker-compose.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service query 'vmauth query proxy' {
+      description '認証proxy。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/observability/reventer/docker-compose.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'observability/reventer/docker-compose.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service remotePdc 'OCI PDC' {
+      description '各monitorVMで稼働。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/observability/reventer/docker-compose.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'observability/reventer/docker-compose.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service tunnel 'OCI cloudflared' {
+      description 'ingest/query公開。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/observability/reventer/docker-compose.yaml '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'observability/reventer/docker-compose.yaml'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service collector 'OKE vmagent / Fluent Bit' {
+      description 'Re:Venterが管理。'
+      link https://github.com/miutaku/reventer/tree/ba76bc7562fe937723fe04bbf780e93ab7ecc074/infrastructure/k8s/monitoring '構成の根拠'
+      metadata {
+        owner 'reventer'
+        source 'infrastructure/k8s/monitoring'
+        sourceRevision 'ba76bc7562fe937723fe04bbf780e93ab7ecc074'
+      }
+    }
+  }
+  system network '自宅ネットワーク' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/ansible/ix2215 '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'ansible/ix2215'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    device router 'NEC IX2215' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/ansible/ix2215 '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'ansible/ix2215'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device switch 'UniFi US8-60W' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device ap 'Wi-Fi AP' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare/locals.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare/locals.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device unifi 'UniFi OS Server' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/pve/main.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/pve/main.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    system native 'native / 192.168.0.0/24' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    system management 'VLAN10 / 機器・RPi' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    system servers 'VLAN20 / Talos VM・NAS' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    system clients 'VLAN30 / クライアント' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    system guest 'VLAN31 / guest・他VLAN禁止' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    system iot 'VLAN40 / IoT' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  system hardware '電源・物理サーバ' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/docs/ups-shutdown.md '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'docs/ups-shutdown.md'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    device x570 'pve-x570 / Ryzen9 5950X' {
+      description 'controlplane01、worker01、nas01、Loockit、PBS。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/home-k8s/main.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/home-k8s/main.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device b550m 'pve-b550m / Ryzen5 5600X' {
+      description 'controlplane02/03、worker02、nas02。ホスト停止でetcd過半数を失う。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/home-k8s/main.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/home-k8s/main.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device upsA 'UPS A / RS550S 2020' {
+      description 'x570・NUT Pi2をbackup電源へ。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/docs/ups-shutdown.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'docs/ups-shutdown.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device upsB 'UPS B / RS550S 2025' {
+      description 'b550m・NUT Pi1・networkをbackup電源へ。Aのsurge-onlyからAC入力。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/docs/ups-shutdown.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'docs/ups-shutdown.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device nut1 'NUT Pi1 / .112' {
+      description 'UPS AとUSB接続。Talos worker RPiとは別個体。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/docs/ups-shutdown.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'docs/ups-shutdown.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device nut2 'NUT Pi2 / .113' {
+      description 'UPS BとUSB接続。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/docs/ups-shutdown.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'docs/ups-shutdown.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device worker3 'Talos RPi worker03 / 2GB' {
+      description 'VLAN10 .107、物理worker。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/talos/home-k8s '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'talos/home-k8s'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device worker4 'Talos RPi worker04 / 4GB' {
+      description 'VLAN10 .109、物理worker。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/talos/home-k8s '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'talos/home-k8s'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device kvm1 'NanoKVM 1' {
+      description '.240。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare/locals.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare/locals.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    device kvm2 'NanoKVM 2' {
+      description '.241。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/cloudflare/locals.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/cloudflare/locals.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service lb 'HAProxy / Keepalived' {
+      description 'VLAN20のLB VM 2台。Talos VIPとは別のリソース。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/pve/main.tf '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/pve/main.tf'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  system oke 'STG・PRD共通基盤' {
+    link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci '構成の根拠'
+    metadata {
+      owner 'my-infra'
+      source 'k8s/oci'
+      sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+    }
+    service api 'OKE Kubernetes API' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/oci '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/oci'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service lb 'OCI公開 Load Balancer' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/oci '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/oci'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service gateway 'NGINX Gateway Fabric' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci/infrastructure '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/oci/infrastructure'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service cert 'cert-manager / Origin CA' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci/infrastructure '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/oci/infrastructure'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service argo 'STG ArgoCD / 共通基盤管理' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci/argocd '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/oci/argocd'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service eso 'External Secrets Operator' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci/infrastructure '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/oci/infrastructure'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service sdk 'Bitwarden SDK server' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci/infrastructure '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/oci/infrastructure'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service secrets 'Kubernetes Secrets' {
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/k8s/oci/infrastructure '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'k8s/oci/infrastructure'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    service apps 'Re:Venter frontend/backend' {
+      link https://github.com/miutaku/reventer/tree/ba76bc7562fe937723fe04bbf780e93ab7ecc074/infrastructure/k8s '構成の根拠'
+      metadata {
+        owner 'reventer'
+        source 'infrastructure/k8s'
+        sourceRevision 'ba76bc7562fe937723fe04bbf780e93ab7ecc074'
+      }
+    }
+    service autoscaler 'Cluster Autoscaler / HPA' {
+      link https://github.com/miutaku/reventer/tree/ba76bc7562fe937723fe04bbf780e93ab7ecc074/infrastructure/k8s/prd '構成の根拠'
+      metadata {
+        owner 'reventer'
+        source 'infrastructure/k8s/prd'
+        sourceRevision 'ba76bc7562fe937723fe04bbf780e93ab7ecc074'
+      }
+    }
+    component identity 'OCI Default domain / MFA' {
+      description 'STG・PRDは別アカウント。Defaultドメインを使用しMFA必須。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/README.md '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'README.md'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+    component vcn 'VCN / subnet / NAT / NSG' {
+      description 'API許可元は自宅固定IPv4とSTG NAT IPv4。LBはCloudflareの送信元に制限。拠点間VPNなし。'
+      link https://github.com/miutaku/my-infra/tree/e2e83070ce85d16d748815592886d567b2f7c496/terraform/oci '構成の根拠'
+      metadata {
+        owner 'my-infra'
+        source 'terraform/oci'
+        sourceRevision 'e2e83070ce85d16d748815592886d567b2f7c496'
+      }
+    }
+  }
+  control.argo -[gitops]-> home.annict_rec_sync_tnlastation_staging 'Application sync'
+  control.argo -[gitops]-> home.annict_rec_sync_tnlastation 'Application sync'
+  control.argo -[gitops]-> home.annict_rec_sync 'Application sync'
+  control.argo -[gitops]-> home.annict_scraper 'Application sync'
+  control.argo -[gitops]-> control.arc 'Application sync'
+  control.argo -[gitops]-> control.runnerInfra 'Application sync'
+  control.argo -[gitops]-> control.runnerRev 'Application sync'
+  control.argo -[gitops]-> home.arc_runners_config 'Application sync'
+  control.argo -[gitops]-> control.updater 'Application sync'
+  control.argo -[gitops]-> home.blackbox_exporter 'Application sync'
+  control.argo -[gitops]-> edge.connector 'Application sync'
+  control.argo -[gitops]-> home.coredns 'Application sync'
+  control.argo -[gitops]-> home.coupon_manager 'Application sync'
+  control.argo -[gitops]-> home.descheduler 'Application sync'
+  control.argo -[gitops]-> home.epgstation 'Application sync'
+  control.argo -[gitops]-> home.external_secrets_config 'Application sync'
+  control.argo -[gitops]-> control.eso 'Application sync'
+  control.argo -[gitops]-> home.loockit 'Application sync'
+  control.argo -[gitops]-> home.magic_mirror 'Application sync'
+  control.argo -[gitops]-> home.mariadb 'Application sync'
+  control.argo -[gitops]-> home.metallb 'Application sync'
+  control.argo -[gitops]-> home.mirakurun_staging 'Application sync'
+  control.argo -[gitops]-> home.mirakurun 'Application sync'
+  control.argo -[gitops]-> data.restic 'Application sync'
+  control.argo -[gitops]-> home.nextcloud 'Application sync'
+  control.argo -[gitops]-> home.nut_exporter 'Application sync'
+  control.argo -[gitops]-> monitoring.pdc 'Application sync'
+  control.argo -[gitops]-> home.postgres_staging 'Application sync'
+  control.argo -[gitops]-> home.postgres 'Application sync'
+  control.argo -[gitops]-> home.prometheus_node_exporter 'Application sync'
+  control.argo -[gitops]-> home.pve_exporter 'Application sync'
+  control.argo -[gitops]-> home.reventer_gitops 'Application sync'
+  control.argo -[gitops]-> control.revagent 'Application sync'
+  control.argo -[gitops]-> home.shared_state_storage 'Application sync'
+  control.argo -[gitops]-> home.snmp_exporter 'Application sync'
+  control.argo -[gitops]-> home.speedtest_exporter 'Application sync'
+  control.argo -[gitops]-> control.agent 'Application sync'
+  control.argo -[gitops]-> home.tinytuya_exporter 'Application sync'
+  control.argo -[gitops]-> home.tnlastation_staging 'Application sync'
+  control.argo -[gitops]-> home.tnlastation 'Application sync'
+  control.argo -[gitops]-> monitoring.homeVM 'Application sync'
+  control.argo -[gitops]-> monitoring.vmagent 'Application sync'
+  control.argo -[gitops]-> home.wol 'Application sync'
+  control.agent -[provision]-> oke.vcn 'OCI provider / STG resources'
+  control.revagent -[provision]-> oke.vcn 'OCI provider / PRD resources'
+  data.dbBackup -[backup]-> home.mariadb 'logical dump取得'
+  data.dbBackup -[backup]-> data.nas 'dump保存'
+  data.metricsBackup -[backup]-> monitoring.homeVM 'snapshot取得'
+  data.metricsBackup -[backup]-> data.e2 'snapshot upload'
+  user -[auth]-> edge.access '認証'
+  edge.access -[http]-> edge.tunnel '許可したhostname'
+  edge.mtls -[auth]-> edge.tunnel 'loockit-api'
+  edge.tunnel -[http]-> edge.connector '論理要求転送 / 接続は外向き'
+  user -[auth]-> edge.mtls 'API client certificate'
+  user -[lan]-> edge.warp 'private access'
+  edge.warp -[lan]-> network.servers 'private CIDR route'
+  operator -[provision]-> control.ansible '操作'
+  control.ci -[gitops]-> control.git 'checkout'
+  control.ci -[provision]-> control.tfc 'workspace run'
+  control.agent -[provision]-> control.tfc '外向きpoll'
+  control.revagent -[provision]-> control.tfc '外向きpoll'
+  control.agent -[provision]-> hardware.x570 'Terraform provider'
+  control.agent -[provision]-> hardware.b550m 'Terraform provider'
+  control.ansible -[provision]-> hardware.x570 'Ansible / 管理API'
+  control.ansible -[provision]-> hardware.b550m 'Ansible / 管理API'
+  control.ansible -[provision]-> control.api 'Talos bootstrap'
+  control.ansible -[provision]-> monitoring.remoteMetrics 'local Terraform / SSH'
+  control.argo -[gitops]-> control.git 'pull desired state'
+  control.argo -[gitops]-> control.api 'home sync'
+  control.argo -[gitops]-> oke.api 'STG/PRD app sync'
+  oke.argo -[gitops]-> oke.api '共通基盤sync'
+  control.updater -[image]-> control.registry 'image確認'
+  control.updater -[gitops]-> control.git 'write-back'
+  control.arc -[schedule]-> control.runnerInfra 'scale set'
+  control.arc -[schedule]-> control.runnerRev 'scale set'
+  oke.lb -[http]-> oke.gateway 'HTTPS'
+  oke.gateway -[http]-> oke.apps 'HTTPRoute'
+  control.bootstrap -[secret]-> control.sdk 'token / TLS事前投入'
+  control.ci -[secret]-> control.bws 'bws CLI'
+  control.ansible -[secret]-> control.bws 'bws CLI'
+  control.eso -[secret]-> control.sdk 'TLS SDK request'
+  control.sdk -[secret]-> control.bws 'secret取得'
+  control.eso -[secret]-> control.secrets '同期'
+  oke.eso -[secret]-> oke.sdk 'TLS SDK request'
+  oke.sdk -[secret]-> control.bws 'project別secret'
+  oke.eso -[secret]-> oke.secrets '同期'
+  oke.secrets -[secret]-> oke.apps '注入'
+  hardware.upsA -[power]-> hardware.x570 'backup電源'
+  hardware.upsA -[power]-> hardware.nut2 'backup電源'
+  hardware.upsB -[power]-> hardware.b550m 'backup電源'
+  hardware.upsB -[power]-> hardware.nut1 'backup電源'
+  hardware.upsB -[power]-> network.switch 'backup電源'
+  hardware.nut1 -[scrape]-> hardware.upsA 'USB status'
+  hardware.nut2 -[scrape]-> hardware.upsB 'USB status'
+  hardware.nut1 -[provision]-> hardware.x570 'shutdown control'
+  hardware.nut2 -[provision]-> hardware.b550m 'shutdown control'
+  edge.connector -[http]-> home.nextcloud 'hostname→Service'
+  control.secrets -[secret]-> home.nextcloud 'ExternalSecret / env'
+  edge.connector -[http]-> home.epgstation 'hostname→Service'
+  control.secrets -[secret]-> home.epgstation 'ExternalSecret / env'
+  edge.connector -[http]-> home.tnlastation 'hostname→Service'
+  control.secrets -[secret]-> home.tnlastation 'ExternalSecret / env'
+  edge.connector -[http]-> home.tnlastation_staging 'hostname→Service'
+  control.secrets -[secret]-> home.tnlastation_staging 'ExternalSecret / env'
+  edge.connector -[http]-> home.coupon_manager 'hostname→Service'
+  control.secrets -[secret]-> home.coupon_manager 'ExternalSecret / env'
+  edge.connector -[http]-> home.wol 'hostname→Service'
+  control.secrets -[secret]-> home.wol 'ExternalSecret / env'
+  edge.connector -[http]-> home.loockit 'hostname→Service'
+  control.secrets -[secret]-> home.loockit 'ExternalSecret / env'
+  home.tnlastation.gateway -[http]-> home.tnlastation.frontend 'UI'
+  home.tnlastation.gateway -[http]-> home.tnlastation.backend 'API'
+  home.tnlastation.backend -[sql]-> home.postgres 'DB / shared queue'
+  home.tnlastation.encoder -[sql]-> home.postgres 'atomic claim / lease'
+  home.tnlastation.backend -[http]-> home.tnlastation.stream '開始・停止 / stable Pod DNS'
+  home.tnlastation.stream -[http]-> home.tnlastation.mediamtx 'media publish'
+  home.tnlastation.backend -[http]-> home.mirakurun '録画入力'
+  home.mirakurun -[http]-> home.mirakurun_tuner 'EndpointSlice→LXC'
+  home.mirakurun_staging -[http]-> home.mirakurun_staging_tuner 'STG EndpointSlice→LXC'
+  home.loockit -[http]-> home.loockit_bridge 'HAProxy→2 LXC REST/gRPC'
+  home.epgstation -[http]-> home.mirakurun '録画入力'
+  home.epgstation -[sql]-> home.mariadb 'DB'
+  home.nextcloud -[sql]-> home.mariadb 'DB'
+  home.tnlastation.backend -[file]-> data.recorded '録画TS'
+  home.tnlastation.encoder -[file]-> data.recorded 'encode read/write'
+  home.tnlastation.stream -[file]-> data.shared 'HLS / thumbnail'
+  home.epgstation -[file]-> data.recorded '録画'
+  home.nextcloud -[file]-> data.nextcloud 'NFS data'
+  home.nextcloud -[file]-> data.recorded 'read-only共有'
+  data.restic -[backup]-> data.nextcloud 'backup読み取り'
+  data.restic -[backup]-> data.recorded '別jobでbackup読み取り'
+  data.restic -[backup]-> data.e2 'restic snapshot'
+  data.pbs -[backup]-> hardware.x570 'VM/LXC backup取得'
+  data.pbs -[backup]-> hardware.b550m 'VM/LXC backup取得'
+  data.pbs -[backup]-> data.e2 'S3 datastore'
+  monitoring.vmagent -[ingest]-> monitoring.homeVM 'remote_write'
+  monitoring.grafana -[query]-> monitoring.pdc 'query / 外向きSSH接続内'
+  monitoring.pdc -[query]-> monitoring.homeVM 'home query'
+  monitoring.collector -[ingest]-> monitoring.remoteMetrics '環境別remote_write'
+  monitoring.collector -[ingest]-> monitoring.remoteLogs '環境別log ingest'
+  monitoring.grafana -[query]-> monitoring.remotePdc 'query'
+  monitoring.remotePdc -[query]-> monitoring.query 'loopback'
+  monitoring.query -[query]-> monitoring.remoteMetrics 'metrics query'
+  monitoring.query -[query]-> monitoring.remoteLogs 'logs query'
+  monitoring.vmagent -[scrape]-> home.blackbox_exporter 'scrape'
+  monitoring.vmagent -[scrape]-> home.nut_exporter 'scrape'
+  monitoring.vmagent -[scrape]-> home.prometheus_node_exporter 'scrape'
+  monitoring.vmagent -[scrape]-> home.pve_exporter 'scrape'
+  monitoring.vmagent -[scrape]-> home.snmp_exporter 'scrape'
+  monitoring.vmagent -[scrape]-> home.speedtest_exporter 'scrape'
+  monitoring.vmagent -[scrape]-> home.tinytuya_exporter 'scrape'
+  network.servers -[lan]-> hardware.x570 'LAN所属'
+  network.servers -[lan]-> hardware.b550m 'LAN所属'
+  network.management -[lan]-> hardware.worker3 'LAN所属'
+  network.management -[lan]-> hardware.worker4 'LAN所属'
+  network.router -[lan]-> network.native 'VLAN routing / guest隔離'
+  network.router -[lan]-> network.management 'VLAN routing / guest隔離'
+  network.router -[lan]-> network.servers 'VLAN routing / guest隔離'
+  network.router -[lan]-> network.clients 'VLAN routing / guest隔離'
+  network.router -[lan]-> network.guest 'VLAN routing / guest隔離'
+  network.router -[lan]-> network.iot 'VLAN routing / guest隔離'
+  user -[dns]-> home.coredns 'miutaku.internal解決'
+  home.metallb -[http]-> home.tnlastation.gateway 'LAN LoadBalancer .210'
+  edge.connector -[http]-> hardware.x570 'pve-x570 / 管理UI'
+  edge.connector -[http]-> hardware.b550m 'pve-b550m / 管理UI'
+  edge.connector -[http]-> hardware.kvm1 'nanokvm1 / 管理UI'
+  edge.connector -[http]-> hardware.kvm2 'nanokvm2 / 管理UI'
+  edge.connector -[http]-> network.unifi 'unifi / 管理UI'
+  edge.connector -[http]-> network.router 'ix2215 / 管理UI'
+  edge.connector -[http]-> network.ap 'wifi-ap / 管理UI'
+  edge.connector -[http]-> data.nas 'nas-01 / nas-02 / 管理UI'
+  operator -[auth]-> edge.access '管理hostname認証'
+  edge.warp -[lan]-> network.native 'private CIDR route'
+  edge.warp -[lan]-> network.management 'private CIDR route'
+  edge.warp -[lan]-> network.clients 'private CIDR route'
+  edge.warp -[lan]-> network.iot 'private CIDR route'
+  home.pve_exporter -[scrape]-> hardware.x570 'metrics取得'
+  home.pve_exporter -[scrape]-> hardware.b550m 'metrics取得'
+  home.nut_exporter -[scrape]-> hardware.nut1 'metrics取得'
+  home.nut_exporter -[scrape]-> hardware.nut2 'metrics取得'
+  home.snmp_exporter -[scrape]-> network.router 'metrics取得'
+  home.snmp_exporter -[scrape]-> network.switch 'metrics取得'
+  home.snmp_exporter -[scrape]-> network.ap 'metrics取得'
+  home.tinytuya_exporter -[scrape]-> network.iot 'metrics取得'
+}

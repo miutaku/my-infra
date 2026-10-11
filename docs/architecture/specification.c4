@@ -1,18 +1,132 @@
 specification {
+  tag placementPhysical
+  tag placementHome
+  tag placementShared
+  tag placementStg
+  tag placementPrd
+
   element actor { style { shape person
     color green } }
   element system { style { color gray } }
-  element service
+  element service { style { color blue } }
+  element component { style { color muted } }
   element store { style { shape storage
     color amber } }
-  relationship access { color blue
-    line solid }
-  relationship deploy { color amber
-    line dashed }
-  relationship secret { color red
-    line dotted }
-  relationship observe { color green
-    line dotted }
-  relationship placement { color gray
-    line dashed }
+  element device { style { color gray } }
+  tag runtime
+  tag delivery
+  tag secrets
+  tag observability
+  tag storage
+  tag network
+  tag hardware
+  tag managed
+  tag boundary
+  tag home
+  tag stg
+  tag prd
+  tag application
+  tag platform
+  tag external
+  tag media
+  relationship http {
+    #runtime
+    color blue
+    line solid
+  }
+  relationship sql {
+    #runtime
+    color blue
+    line solid
+  }
+  relationship cache {
+    #runtime
+    color blue
+    line solid
+  }
+  relationship auth {
+    #runtime
+    color blue
+    line solid
+  }
+  relationship mail {
+    #runtime
+    color blue
+    line dotted
+  }
+  relationship gitops {
+    #delivery
+    color amber
+    line dashed
+  }
+  relationship image {
+    #delivery
+    color amber
+    line dashed
+  }
+  relationship provision {
+    #delivery
+    color amber
+    line dashed
+  }
+  relationship secret {
+    #secrets
+    color red
+    line dotted
+  }
+  relationship scrape {
+    #observability
+    color green
+    line dotted
+  }
+  relationship ingest {
+    #observability
+    color green
+    line solid
+  }
+  relationship query {
+    #observability
+    color green
+    line dashed
+  }
+  relationship file {
+    #storage
+    color sky
+    line solid
+  }
+  relationship backup {
+    #storage
+    color sky
+    line dashed
+  }
+  relationship dns {
+    #network
+    color gray
+    line dotted
+  }
+  relationship lan {
+    #network
+    color gray
+    line solid
+  }
+  relationship power {
+    #hardware
+    color amber
+    line solid
+  }
+  relationship schedule {
+    #delivery
+    color amber
+    line dotted
+  }
+  deploymentNode environment { style { color gray } }
+  deploymentNode site { style { color gray } }
+  deploymentNode hypervisor { style { color green } }
+  deploymentNode vm { style { color gray } }
+  deploymentNode cluster { style { color blue } }
+  deploymentNode namespace { style { color muted } }
+  deploymentNode nodepool { style { color sky } }
+  deploymentNode subnet { style { color muted } }
+  deploymentNode physical { style { color gray } }
+  deploymentNode cloudservice { style { color amber } }
 }

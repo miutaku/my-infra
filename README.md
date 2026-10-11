@@ -4,7 +4,7 @@
 
 ## 全体構成
 
-構成は[LikeC4の対話ビュー](docs/architecture/README.md)で確認する。同じ構成モデルから、利用者アクセス・デプロイ・秘密情報・監視・配置のビューを宣言している。
+構成は[LikeC4の対話ビュー](docs/architecture/README.md)で確認する。論理サービスを一度定義し、利用者アクセス・デプロイ・BWS・監視・処理順のビューと、`instanceOf` による環境別・物理配置のビューを宣言している。
 
 ```bash
 cd docs/architecture
