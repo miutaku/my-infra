@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Register OCI clusters and copy the existing Re:Venter repository deploy key.
+"""Register OCI clusters for the Talos Re:Venter GitOps configuration.
 Secrets stay in memory and are never printed or written to this repository.
 Run with access to ~/.kube/{home-k8s,oke,oke-prd}.yaml.
 """
@@ -28,10 +28,13 @@ def read(config, kind, name, namespace):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--approve-cluster-admin', action='store_true', help='Explicitly approve persistent cluster-admin access in both OCI clusters')
-    parser.add_argument('--approve-deploy-key-transfer', action='store_true', help='Explicitly approve copying the writable Re:Venter SSH deploy key into Talos')
     args = parser.parse_args()
-    if not (args.approve_cluster_admin and args.approve_deploy_key_transfer):
-        parser.error('Both approval flags are required; no cluster resources were changed')
+    if not args.approve_cluster_admin:
+        parser.error('--approve-cluster-admin is required; no cluster resources were changed')
+    # Repository credentials must be restored independently; no retired OKE install is used.
+    repository = read('home-k8s.yaml', 'secret', 'argocd-repo-reventer', 'argocd')
+    if not repository.get('data', {}).get('sshPrivateKey'):
+        raise RuntimeError('Restore the writable Re:Venter repository deploy key in Talos before registering clusters')
     for config, cluster in [('oke.yaml', 'oke-stg'), ('oke-prd.yaml', 'oke-prd')]:
         sa = 'talos-reventer-argocd'
         apply(config, {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': sa, 'namespace': 'kube-system'}})
@@ -48,9 +51,6 @@ def main():
         connection = {'bearerToken': base64.b64decode(secret['data']['token']).decode(), 'tlsClientConfig': {'insecure': False, 'caData': secret['data']['ca.crt']}}
         apply('home-k8s.yaml', {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': f'reventer-{cluster}-cluster', 'namespace': 'argocd', 'labels': {'argocd.argoproj.io/secret-type': 'cluster'}}, 'type': 'Opaque', 'stringData': {'name': cluster, 'server': view['clusters'][0]['cluster']['server'], 'config': json.dumps(connection)}})
         print(f'Registered {cluster} with a dedicated ServiceAccount', flush=True)
-    source = read('oke.yaml', 'secret', 'argocd-repo-reventer', 'argocd-reventer')
-    apply('home-k8s.yaml', {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'argocd-repo-reventer', 'namespace': 'argocd', 'labels': {'argocd.argoproj.io/secret-type': 'repository'}}, 'type': source.get('type', 'Opaque'), 'data': source['data']})
-    print('Copied repository credentials without exposing their values', flush=True)
 
 if __name__ == '__main__':
     main()

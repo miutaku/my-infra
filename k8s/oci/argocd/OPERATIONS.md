@@ -6,10 +6,8 @@
 
 ## ⚠️ このクラスタ(STG・PRD双方)は `my-infra` 専用ではない
 
-本番 Re:Venter アプリ(別リポジトリ `reventer`、別 ArgoCD インスタンス
-`argocd-reventer` / `argocd-reventer-prd`)が同じクラスタに同居しており、
-`ingress-nginx` 等クラスタ全体で共有するコンポーネントは Re:Venter 側にも
-実際に使われている。
+STG OKEには別リポジトリ `reventer` のSTGアプリと管理画面が同居する。
+PRDアプリは別OCIアカウントのOKEで動作する。Re:VenterのGitOps管理は自宅TalosのArgoCD、OKE共有基盤の管理はこの共有ArgoCDが担う。
 
 **ingress controller / StorageClass / CNI などクラスタ共有コンポーネントを
 変更・撤去する前に、必ず `kubectl get ingress,httproute -A` をクラスタ全体に

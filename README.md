@@ -42,7 +42,7 @@ flowchart LR
 | ArgoCDのアプリ登録・Image Updater | `k8s/pve/argocd-apps/`、`k8s/pve/reventer-gitops/` |
 | 自宅向けCloudflare設定 | `terraform/cloudflare/` |
 
-自宅ArgoCDはhome-k8sとRe:VenterのSTG・PRDを管理する。STG OKEの `argocd` は共通インフラを管理する。旧 `argocd-reventer` / `argocd-reventer-prd` は停止状態で、稼働中の管理元は自宅ArgoCD。旧コントローラを再起動すると二重管理になる。
+自宅ArgoCDはhome-k8sとRe:VenterのSTG・PRDを管理する。STG OKEの `argocd` は共通インフラを管理する。Re:VenterのGitOps管理は自宅ArgoCDへ集約している。
 
 ## 運用上の前提
 
