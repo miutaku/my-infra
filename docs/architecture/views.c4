@@ -1,0 +1,32 @@
+views {
+  view index {
+    title '利用者・管理者のアクセス'
+    include user, operator, edge, network, home.tunnel, home.apps, home.argo, home.dns, nas, stg.lb, prd.lb, stg.apps, prd.apps
+    exclude * -> * where kind is not access
+    autoLayout LeftRight
+  }
+  view delivery {
+    title 'GitOps・Terraform・構成管理'
+    include git, ci, tfc, operator, home.argo, home.agent, home.runner, home.apps, home.eso, pve, stg.argo, stg.apps, prd.apps, stg.eso, prd.eso, stg.admin, stg, monitorstg, monitorprd, network, home
+    exclude * -> * where kind is not deploy
+    autoLayout LeftRight
+  }
+  view secrets {
+    title 'BWS・SDK・ESO・bootstrap'
+    include operator, bws, home.eso, stg.eso, prd.eso, home.secrets, stg.secrets, prd.secrets, home.apps, stg.apps, prd.apps, home.argo, home.agent, home.tunnel, home.runner, stg.admin
+    exclude * -> * where kind is not secret
+    autoLayout LeftRight
+  }
+  view observability {
+    title '収集・保存・Grafana query'
+    include home.scrape, home.metrics, home.pdc, pve, network, nas, grafana, stg.collect, prd.collect, monitorstg, monitorprd
+    exclude * -> * where kind is not observe
+    autoLayout LeftRight
+  }
+  view placement {
+    title '稼働場所と管理基盤'
+    include pve, nas, home.*, stg.*, prd.*
+    exclude * -> * where kind is not placement
+    autoLayout LeftRight
+  }
+}

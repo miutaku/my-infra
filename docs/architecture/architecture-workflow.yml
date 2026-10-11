@@ -1,0 +1,31 @@
+name: Architecture
+on:
+  pull_request:
+    paths: ['docs/architecture/**', 'README.md', '.github/workflows/architecture.yml']
+  push:
+    paths: ['docs/architecture/**', 'README.md', '.github/workflows/architecture.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/architecture
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: docs/architecture/package-lock.json
+      - run: npm ci
+      - run: npm run validate
+      - run: npm run check
+      - run: git diff --exit-code -- generated
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: architecture-site
+          path: docs/architecture/dist/

@@ -4,21 +4,103 @@
 
 ## 全体構成
 
+図は[LikeC4モデル](docs/architecture/README.md)から生成する。利用者アクセスとデプロイ経路を分け、秘密情報・監視・配置はリンク先の専用viewで確認できる。
+
+<!-- likec4:overview:start -->
+
+### 利用者・管理者のアクセス
+
 ```mermaid
-flowchart LR
-  Git[GitHub] --> HomeArgo[自宅TalosのArgoCD]
-  Git --> OKEArgo[STG OKEの共通インフラ用ArgoCD]
-  HomeArgo --> Home[home-k8s]
-  HomeArgo --> STG[STG OKE]
-  HomeArgo --> PRD[PRD OKE]
-  OKEArgo --> STG
-  TFC[Terraform Cloud] --> PVE[Proxmox VE]
-  TFC --> OCI[OCI / STG・PRD別アカウント]
-  PVE --> Home
-  CF[Cloudflare / DNS・Access・Tunnel] --> Home
-  CF --> STG
-  CF --> PRD
+---
+title: "利用者・管理者のアクセス"
+---
+graph LR
+  User@{ icon: "fa:user", shape: rounded, label: "利用者" }
+  Operator@{ icon: "fa:user", shape: rounded, label: "管理者 / Ansible / Talos CLI" }
+  Network@{ shape: rectangle, label: "IX2215 / switch / AP / VLAN" }
+  Edge@{ shape: rectangle, label: "Cloudflare DNS / Access / Tunnel" }
+  subgraph Home["`home-k8s / Talos`"]
+    Home.Tunnel@{ shape: rectangle, label: "cloudflared" }
+    Home.Dns@{ shape: rectangle, label: "CoreDNS / MetalLB" }
+    Home.Apps@{ shape: rectangle, label: "Nextcloud / 録画・配信 / WoL / その他アプリ" }
+    Home.Argo@{ shape: rectangle, label: "ArgoCD + Image Updater" }
+  end
+  subgraph Stg["`STG OCI / OKE`"]
+    Stg.Lb@{ shape: rectangle, label: "OCI LB / NGINX Gateway" }
+    Stg.Apps@{ shape: rectangle, label: "Re:Venterアプリ / reventer所有" }
+  end
+  subgraph Prd["`PRD OCI / OKE / reventer所有`"]
+    Prd.Lb@{ shape: rectangle, label: "OCI LB / NGINX Gateway" }
+    Prd.Apps@{ shape: rectangle, label: "Re:Venterアプリ / reventer所有" }
+  end
+  Nas@{ shape: disk, label: "TrueNAS" }
+  User -. "`公開hostname HTTPS`" .-> Edge
+  Operator -. "`管理hostname / Access`" .-> Edge
+  User -. "`LANアクセス`" .-> Network
+  Edge -. "`Access対象は認証後 / Tunnel`" .-> Home.Tunnel
+  Home.Tunnel -. "`内部serviceへ転送`" .-> Home.Apps
+  Home.Tunnel -. "`管理UI`" .-> Home.Argo
+  Network -. "`内部DNS問い合わせ`" .-> Home.Dns
+  Home.Apps -. "`録画保存 / NFS`" .-> Nas
+  Edge -. "`Re:Venter STG / Access`" .-> Stg.Lb
+  Edge -. "`Re:Venter PRD / 公開`" .-> Prd.Lb
+  Stg.Lb -. "`HTTPRoute`" .-> Stg.Apps
+  Prd.Lb -. "`HTTPRoute`" .-> Prd.Apps
 ```
+
+### GitOps・Terraform・構成管理
+
+```mermaid
+---
+title: "GitOps・Terraform・構成管理"
+---
+graph LR
+  Ci@{ shape: rectangle, label: "GitHub Actions" }
+  Operator@{ icon: "fa:user", shape: rounded, label: "管理者 / Ansible / Talos CLI" }
+  Monitorstg@{ shape: rectangle, label: "STG OCI監視VM 2台" }
+  Monitorprd@{ shape: rectangle, label: "PRD OCI監視VM 2台" }
+  Network@{ shape: rectangle, label: "IX2215 / switch / AP / VLAN" }
+  subgraph Home["`home-k8s / Talos`"]
+    Home.Argo@{ shape: rectangle, label: "ArgoCD + Image Updater" }
+    Home.Agent@{ shape: rectangle, label: "Terraform Cloud agent" }
+    Home.Runner@{ shape: rectangle, label: "ARC GitHub Actions runners" }
+    Home.Apps@{ shape: rectangle, label: "Nextcloud / 録画・配信 / WoL / その他アプリ" }
+    Home.Eso@{ shape: rectangle, label: "ESO + Bitwarden SDK server" }
+  end
+  Tfc@{ shape: rectangle, label: "Terraform Cloud" }
+  Pve@{ shape: rectangle, label: "Proxmox VE 2ホスト" }
+  subgraph Stg["`STG OCI / OKE`"]
+    Stg.Argo@{ shape: rectangle, label: "共通基盤用ArgoCD" }
+    Stg.Apps@{ shape: rectangle, label: "Re:Venterアプリ / reventer所有" }
+    Stg.Admin@{ shape: rectangle, label: "STG / PRD管理画面 / reventer所有" }
+    Stg.Eso@{ shape: rectangle, label: "ESO + Bitwarden SDK server" }
+  end
+  Git@{ shape: disk, label: "GitHub my-infra / reventer" }
+  subgraph Prd["`PRD OCI / OKE / reventer所有`"]
+    Prd.Apps@{ shape: rectangle, label: "Re:Venterアプリ / reventer所有" }
+    Prd.Eso@{ shape: rectangle, label: "ESO + Bitwarden SDK server" }
+  end
+  Ci -. "`plan / apply run`" .-> Tfc
+  Home.Argo -. "`desired state取得`" .-> Git
+  Home.Agent -. "`job取得 / 実行結果`" .-> Tfc
+  Ci -. "`job配布`" .-> Home.Runner
+  Home.Argo -. "`Kubernetes APIへ同期`" .-> Home.Apps
+  Home.Argo -. "`共通基盤同期`" .-> Home.Eso
+  Home.Agent -. "`Proxmox API / VM作成`" .-> Pve
+  Stg.Argo -. "`共通基盤定義取得`" .-> Git
+  Home.Argo -. "`Kubernetes APIへ同期`" .-> Stg.Apps
+  Home.Argo -. "`Kubernetes APIへ同期`" .-> Prd.Apps
+  Stg.Argo -. "`共通基盤同期`" .-> Stg.Eso
+  Stg.Argo -. "`PRD共通基盤同期`" .-> Prd.Eso
+  Home.Argo -. "`STG OKEへ同期`" .-> Stg.Admin
+  Operator -. "`Terraform local / Ansible`" .-> Monitorstg
+  Operator -. "`Terraform local / Ansible`" .-> Monitorprd
+  Operator -. "`Ansible設定`" .-> Network
+  Tfc -. "`OCI API / STG作成`" .-> Stg
+  Operator -. "`Talos設定 / bootstrap`" .-> Home
+```
+
+<!-- likec4:overview:end -->
 
 | 基盤 | 現在の構成・役割 |
 | --- | --- |

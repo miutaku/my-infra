@@ -1,0 +1,17 @@
+{
+  "name": "my-infra-likec4-architecture",
+  "private": true,
+  "engines": {
+    "node": ">=22.22.3"
+  },
+  "scripts": {
+    "dev": "likec4 start",
+    "validate": "likec4 validate",
+    "generate": "node generate.mjs && node render.mjs",
+    "check": "node generate.mjs --check && node render.mjs --check",
+    "build": "likec4 build -o dist --use-hash-history"
+  },
+  "devDependencies": {
+    "likec4": "1.59.4"
+  }
+}

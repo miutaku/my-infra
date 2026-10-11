@@ -1,0 +1,16 @@
+specification {
+  element actor { style { shape person } }
+  element system
+  element service
+  element store { style { shape storage } }
+  relationship access { color blue
+    line solid }
+  relationship deploy { color amber
+    line dashed }
+  relationship secret { color red
+    line dotted }
+  relationship observe { color green
+    line dotted }
+  relationship placement { color gray
+    line dashed }
+}

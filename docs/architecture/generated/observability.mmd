@@ -1,0 +1,31 @@
+---
+title: "収集・保存・Grafana query"
+---
+graph LR
+  Grafana@{ shape: rectangle, label: "Grafana Cloud" }
+  subgraph Stg["`STG OCI / OKE`"]
+    Stg.Collect@{ shape: rectangle, label: "vmagent / Fluent Bit" }
+  end
+  subgraph Prd["`PRD OCI / OKE / reventer所有`"]
+    Prd.Collect@{ shape: rectangle, label: "vmagent / Fluent Bit" }
+  end
+  subgraph Home["`home-k8s / Talos`"]
+    Home.Scrape@{ shape: rectangle, label: "vmagent / exporters" }
+    Home.Pdc@{ shape: rectangle, label: "Grafana PDC" }
+    Home.Metrics@{ shape: disk, label: "VictoriaMetrics" }
+  end
+  Monitorstg@{ shape: rectangle, label: "STG OCI監視VM 2台" }
+  Monitorprd@{ shape: rectangle, label: "PRD OCI監視VM 2台" }
+  Pve@{ shape: rectangle, label: "Proxmox VE 2ホスト" }
+  Network@{ shape: rectangle, label: "IX2215 / switch / AP / VLAN" }
+  Nas@{ shape: disk, label: "TrueNAS" }
+  Home.Scrape -. "`remote_write`" .-> Home.Metrics
+  Home.Pdc -. "`query`" .-> Home.Metrics
+  Home.Scrape -. "`API scrape`" .-> Pve
+  Home.Scrape -. "`SNMP / probes`" .-> Network
+  Home.Scrape -. "`exporter scrape`" .-> Nas
+  Grafana -. "`PDC経由query`" .-> Home.Pdc
+  Grafana -. "`PDC経由query`" .-> Monitorstg
+  Stg.Collect -. "`metrics / logs`" .-> Monitorstg
+  Grafana -. "`PDC経由query`" .-> Monitorprd
+  Prd.Collect -. "`metrics / logs`" .-> Monitorprd
