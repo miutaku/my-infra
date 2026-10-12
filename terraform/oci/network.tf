@@ -41,19 +41,6 @@ resource "oci_core_subnet" "oke_lb_subnet" {
   freeform_tags              = local.common_tags
 }
 
-# Private Subnet — Worker Nodes
-resource "oci_core_subnet" "oke_worker_subnet" {
-  compartment_id             = var.compartment_ocid
-  vcn_id                     = oci_core_vcn.oke_vcn.id
-  cidr_block                 = cidrsubnet(var.vcn_cidr, 8, 1) # 10.0.1.0/24
-  display_name               = "oke-worker-subnet"
-  dns_label                  = "okeworker"
-  prohibit_public_ip_on_vnic = true
-  route_table_id             = oci_core_route_table.private_rt.id
-  security_list_ids          = [oci_core_security_list.worker_sl.id]
-  freeform_tags              = local.common_tags
-}
-
 # Route Tables
 resource "oci_core_route_table" "public_rt" {
   compartment_id = var.compartment_ocid
@@ -63,22 +50,6 @@ resource "oci_core_route_table" "public_rt" {
   route_rules {
     destination       = "0.0.0.0/0"
     network_entity_id = oci_core_internet_gateway.oke_igw.id
-  }
-}
-
-resource "oci_core_route_table" "private_rt" {
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.oke_vcn.id
-  display_name   = "oke-private-rt"
-  freeform_tags  = local.common_tags
-  route_rules {
-    destination       = "0.0.0.0/0"
-    network_entity_id = oci_core_nat_gateway.oke_ngw.id
-  }
-  route_rules {
-    destination       = data.oci_core_services.all_oci_services.services[0].cidr_block
-    destination_type  = "SERVICE_CIDR_BLOCK"
-    network_entity_id = oci_core_service_gateway.oke_sgw.id
   }
 }
 
@@ -142,51 +113,6 @@ resource "oci_core_security_list" "lb_sl" {
     protocol    = "all"
     destination = "0.0.0.0/0"
     stateless   = false
-  }
-
-  # OCI CCM owns dynamic LoadBalancer health-check and NodePort rules.
-  lifecycle {
-    ignore_changes = [ingress_security_rules, egress_security_rules]
-  }
-}
-
-# Security List for private worker subnet
-resource "oci_core_security_list" "worker_sl" {
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.oke_vcn.id
-  display_name   = "oke-worker-sl"
-  freeform_tags  = local.common_tags
-
-  # Node-to-node and LB→node communication within VCN
-  ingress_security_rules {
-    protocol  = "all"
-    source    = var.vcn_cidr
-    stateless = false
-  }
-
-  # ICMP path discovery, matching PRD.
-  ingress_security_rules {
-    protocol  = "1"
-    source    = "0.0.0.0/0"
-    stateless = false
-    icmp_options {
-      type = 3
-      code = 4
-    }
-  }
-
-  egress_security_rules {
-    protocol    = "all"
-    destination = "0.0.0.0/0"
-    stateless   = false
-  }
-
-  # Oracle Services Network via the existing Service Gateway, matching PRD.
-  egress_security_rules {
-    protocol         = "all"
-    destination_type = "SERVICE_CIDR_BLOCK"
-    destination      = data.oci_core_services.all_oci_services.services[0].cidr_block
-    stateless        = false
   }
 
   # OCI CCM owns dynamic LoadBalancer health-check and NodePort rules.
