@@ -14,9 +14,15 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "home_k8s" {
         for hostname, service in local.home_k8s_services : {
           hostname = "${hostname}.${var.domain}"
           service  = service.backend
-          origin_request = {
+          origin_request = merge({
             no_tls_verify = service.no_tls_verify
-          }
+            }, hostname == "architecture-review" ? {
+            access = {
+              required  = true
+              team_name = var.zero_trust_team_name
+              aud_tag   = [cloudflare_zero_trust_access_application.architecture_review.aud]
+            }
+          } : {})
         }
       ],
       [
