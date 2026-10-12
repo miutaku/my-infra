@@ -195,7 +195,7 @@ resource "oci_containerengine_node_pool" "autoscaled" {
   }
 }
 
-# New group and policy coexist with the legacy group during migration.
+# Autoscaler permissions are restricted to the dedicated worker compartments.
 # Base workers also need membership: Autoscaler normally runs on a base node.
 resource "oci_identity_dynamic_group" "autoscaler" {
   compartment_id = var.tenancy_ocid
