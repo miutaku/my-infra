@@ -4,6 +4,10 @@ locals {
   # backend       = internal URL reachable by cloudflared (k8s DNS or LAN IP)
   # no_tls_verify = skip TLS verification for self-signed certs
   home_k8s_services = {
+    "architecture-review" = {
+      backend       = "http://architecture-review.arc-runners.svc.cluster.local:8080"
+      no_tls_verify = false
+    }
     # ── k8s services ──────────────────────────────────────────────────────────
     "argocd-home-k8s" = {
       backend       = "http://argocd-server.argocd.svc.cluster.local:80"

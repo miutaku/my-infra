@@ -1,5 +1,6 @@
 resource "cloudflare_dns_record" "home_k8s" {
-  for_each = local.home_k8s_services
+  for_each   = local.home_k8s_services
+  depends_on = [cloudflare_zero_trust_access_application.architecture_review]
 
   zone_id = var.zone_id
   name    = "${each.key}.${var.domain}"
