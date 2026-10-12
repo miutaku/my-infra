@@ -5,9 +5,7 @@ terraform {
     workspaces { name = "reventer-observability" }
   }
   required_providers {
-    oci        = { source = "oracle/oci", version = "8.19.0" }
-    cloudflare = { source = "cloudflare/cloudflare", version = "5.19.1" }
-    kubernetes = { source = "hashicorp/kubernetes", version = "3.1.0" }
+    oci = { source = "oracle/oci", version = "8.19.0" }
   }
 }
 
@@ -69,7 +67,7 @@ resource "oci_core_network_security_group_security_rule" "ssh" {
   protocol                  = "6"
   source                    = var.admin_cidr
   source_type               = "CIDR_BLOCK"
-  description               = "Administrator SSH only; monitoring traffic uses outbound Tunnel/PDC"
+  description               = "Administrator SSH only; monitoring traffic stays in the local VCN"
   tcp_options {
     destination_port_range {
       min = 22
@@ -129,4 +127,41 @@ output "instances" {
   value = { for vm in oci_core_instance.monitoring : vm.display_name => {
     id = vm.id, public_ip = vm.public_ip, private_ip = vm.private_ip, fault_domain = vm.fault_domain
   } }
+}
+
+# Only OKE worker egress and the two storage peers can reach private storage.
+variable "collector_cidr" {
+  type        = string
+  description = "This environment OKE worker subnet; overlay Pod traffic is SNATed by the nodes"
+  default     = "10.0.2.0/24"
+}
+resource "oci_core_network_security_group_security_rule" "ingest" {
+  for_each                  = toset(["18428", "19428"])
+  network_security_group_id = oci_core_network_security_group.monitoring.id
+  direction                 = "INGRESS"
+  protocol                  = "6"
+  source                    = var.collector_cidr
+  source_type               = "CIDR_BLOCK"
+  description               = "Private storage ingestion from this environment OKE workers only"
+  tcp_options {
+    destination_port_range {
+      min = tonumber(each.key)
+      max = tonumber(each.key)
+    }
+  }
+}
+resource "oci_core_network_security_group_security_rule" "ingest_peer" {
+  for_each                  = toset(["18428", "19428"])
+  network_security_group_id = oci_core_network_security_group.monitoring.id
+  direction                 = "INGRESS"
+  protocol                  = "6"
+  source                    = oci_core_network_security_group.monitoring.id
+  source_type               = "NETWORK_SECURITY_GROUP"
+  description               = "Private replica queries and OS maintenance inside this environment only"
+  tcp_options {
+    destination_port_range {
+      min = tonumber(each.key)
+      max = tonumber(each.key)
+    }
+  }
 }

@@ -1,3 +1,7 @@
+# Historical design plan
+
+Superseded by the environment-isolated private-VCN architecture described in [RUNBOOK.md](RUNBOOK.md).
+
 2026-10-08: 現在のPRD datasource URLは `victoria-metrics-prd` / `victoria-logs-prd`。旧PRD aliasは廃止。以下の旧URLは当時の履歴。
 
 > Current placement changed on 2026-10-07: STG storage is replicated inside
