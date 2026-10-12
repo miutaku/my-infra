@@ -21,7 +21,7 @@ import uuid
 import oci
 STATE_KEY='reventer_os_maintenance'
 TAG={'ReVenterMaintenance':{'Role':'observability'}}
-SERVICES={'metrics','logs','metrics-query','logs-query','metrics-remote-query','logs-remote-query','tunnel'}
+SERVICES={'metrics','logs','metrics-query','logs-query'}
 class Unsafe(RuntimeError):pass
 class FailedUpdate(Unsafe):pass
 
@@ -90,16 +90,11 @@ class Controller:
   self.block=oci.core.BlockstorageClient({'region':cfg['region']},signer=signer)
   self.identity=oci.identity.IdentityClient({'region':cfg['region']},signer=signer)
   self.state={};self.version=None
-  # Read the already-authorized local credentials, never controller credentials.
-  env={}
-  for line in Path('/opt/reventer-observability/.env').read_text().splitlines():
-   if '=' in line:
-    k,v=line.split('=',1);env[k]=v.strip("'")
-  self.headers={'User-Agent':'ReVenter-OS-Maintenance/1.0','CF-Access-Client-Id':env['CF_ACCESS_CLIENT_ID'],'CF-Access-Client-Secret':env['CF_ACCESS_CLIENT_SECRET']}
+  self.headers={'User-Agent':'ReVenter-OS-Maintenance/1.0'}
 
  def http(self,replica,service,path):
   port=18428 if service=='metrics' else 19428
-  url=f'http://127.0.0.1:{port}' if replica==self.me else f'https://{service}{self.cfg.get("endpoint_suffix", "")}-ha-{replica}.re-venter.com'
+  url=f'http://127.0.0.1:{port}' if replica==self.me else f'http://{self.cfg["nodes"][replica]["private_ip"]}:{port}'
   return urllib.request.urlopen(urllib.request.Request(url+path,headers=self.headers),timeout=90)
 
  def health(self,replica):

@@ -1,13 +1,13 @@
 unauthorized_user:
   url_map:
-    - src_paths:
-        - '/(prometheus/)?api/v1/(query|query_range|labels|label/[^/]+/values|series|metadata|status/(buildinfo|tsdb)|format_query)'
-      url_prefix:
-        - 'http://127.0.0.1:18428/'
-        - '%{PEER_METRICS_URL}'
-      load_balancing_policy: first_available
-      retry_status_codes: [500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530]
-      headers:
-        - 'CF-Access-Client-Id: %{CF_ACCESS_CLIENT_ID}'
-        - 'CF-Access-Client-Secret: %{CF_ACCESS_CLIENT_SECRET}'
-        - 'User-Agent: ReVenter-Observability/1.0'
+  - src_paths:
+    - /(prometheus/)?api/v1/(query|query_range|labels|label/[^/]+/values|series|metadata|status/(buildinfo|tsdb)|format_query)
+    url_prefix:
+    - http://127.0.0.1:18428/
+    - '%{PEER_METRICS_URL}'
+    load_balancing_policy: first_available
+    retry_status_codes:
+    - 500
+    - 502
+    - 503
+    - 504

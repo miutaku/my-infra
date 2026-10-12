@@ -1,27 +1,21 @@
-# STG Re:Venter monitoring
+# STG Re:Venter monitoring VMs
 
-Dedicated STG OCI tenancy deployment; encrypted state in
-`miutaku/reventer-observability-stg` with local execution and the `STG` OCI profile.
-Two E2 Micro VMs, different fault domains, 50GB boot each, isolated maintenance
-compartment and instance-principal rollback permissions. Existing OKE networking
-is referenced, not managed here. Workers use 50GB boot each after sequential
-replacement, so total tenancy storage is 200GB. Temporary recovery charges are
-authorized; do not permanently leave retired or detached volumes behind.
+Two independent storage VMs in the STG OKE VCN, on a dedicated monitoring subnet.
+Metrics and logs are duplicated across both replicas in this environment only.
+Storage binds to loopback and the VM private IP, never its public IP. The NSG
+permits TCP 18428/19428 only from the OKE worker subnet and the monitoring peer NSG.
+The public IP remains for administrator SSH; it is not an ingestion endpoint.
+No peering, remote environment query gateway, Cloudflare Tunnel, Access service
+token or public monitoring DNS is used.
 
-Private `*.auto.tfvars.json` inputs must never be committed. Review saved plans
-before apply. Use deployment/maintenance scripts with `--environment stg`.
-Images, retention and memory bounds are shared in `observability/reventer`.
-STG ingest uses `metrics-stg-ha-{01,02}.re-venter.com` and
-`logs-stg-ha-{01,02}.re-venter.com`, with a separate Access service token and the
-`monitoring-stg-ha-access-token` collector Secret.
+Terraform preserves instances and boot volumes. Review a saved plan before apply;
+network changes must not replace VMs or storage. Existing OS-update IAM, peer SSH,
+coordinated maintenance and fault-domain separation remain in effect.
+Deployment input files and state/plan exports contain sensitive data and must
+remain untracked. Use `scripts/deploy-reventer-observability.py --environment stg`.
 
-Only STG data is stored here. The second environment query gateway forwards
-read-only Grafana requests directly to PRD; it does not persist PRD data.
-The existing PDC network may choose any agent, so every agent resolves both
-sets of DNS aliases consistently. STG Grafana URLs:
-
-- `http://victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428`
-- `http://victoria-logs-stg.reventer-monitoring.svc.cluster.local:9428`
-
-Each environment retains its own two storage replicas and independent peer
-OS maintenance, freshness checks, boot rollback and history catch-up.
+Grafana uses the environment-specific PDC network. Store its agent token in BSM as
+`STG_REVENTER_GRAFANA_PDC_TOKEN`, then deploy with `--enable-pdc`. Configure both
+of this environment's Grafana data sources to use that network. Agents permit only
+`victoria-metrics-stg.reventer-monitoring.svc.cluster.local:8428` and
+`victoria-logs-stg.reventer-monitoring.svc.cluster.local:9428`.

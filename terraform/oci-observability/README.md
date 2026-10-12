@@ -1,41 +1,21 @@
-# Re:Venter monitoring VMs (PRD OCI tenancy)
+# PRD Re:Venter monitoring VMs
 
-Independent my-infra Terraform root. The PRD OKE VCN and public route table are
-referenced by ID; this root neither imports nor changes the OKE resources.
+Two independent storage VMs in the PRD OKE VCN, on a dedicated monitoring subnet.
+Metrics and logs are duplicated across both replicas in this environment only.
+Storage binds to loopback and the VM private IP, never its public IP. The NSG
+permits TCP 18428/19428 only from the OKE worker subnet and the monitoring peer NSG.
+The public IP remains for administrator SSH; it is not an ingestion endpoint.
+No peering, remote environment query gateway, Cloudflare Tunnel, Access service
+token or public monitoring DNS is used.
 
-- Two `VM.Standard.E2.1.Micro` instances, separate fault domains, 50GB boot each.
-- Instances and boot/recovery assets use the dedicated `reventer-observability`
-  compartment; shared OKE network assets stay in the original compartment.
-  `tenancy_id` is required even before OS maintenance IAM is prepared.
-- No extra block volumes; the previous PRD total of 94GB becomes 194GB.
-- Dedicated subnet/security list with outbound traffic, SSH restricted to one /32.
-- Monitoring APIs bind to loopback, with outbound Cloudflare Tunnel and PDC.
-- IMDSv2 only, SSH keys only, encrypted remote state in HCP Terraform workspace
-  `miutaku/reventer-observability` (local execution).
-- VM destruction is prevented and boot volumes are preserved. Review storage
-  usage before any replacement; retained boot volumes count toward the quota.
+Terraform preserves instances and boot volumes. Review a saved plan before apply;
+network changes must not replace VMs or storage. Existing OS-update IAM, peer SSH,
+coordinated maintenance and fault-domain separation remain in effect.
+Deployment input files and state/plan exports contain sensitive data and must
+remain untracked. Use `scripts/deploy-reventer-observability.py --environment prd`.
 
-Inputs are in a gitignored `deployment.auto.tfvars.json`; it contains resource IDs,
-admin CIDR and a public SSH key, not private credentials. OCI provider reads the
-local `PRD` profile. Run `terraform init`, `terraform validate`, then save and
-review a plan before `terraform apply`. Recheck all active/detached boot and block
-volumes across compartments before provisioning. Do not use paid shape fallbacks
-if free E2 capacity is unavailable.
-
-The two boot volumes leave only 6GB under the 200GB free allocation. OKE node
-replacement/burst activity can exceed it. Resizing a volume down is unsupported;
-restructuring the existing storage requires a separate migration.
-
-Cloud-init installs Docker/Compose v2 and enables security updates, bounded Docker
-logs, and a 2GB swap file to absorb transient initialization memory pressure.
-Swap does not make a workload requiring more than 1GB RAM suitable for a micro VM.
-
-Cloudflare Access protects four per-replica endpoints; management APIs are
-excluded. Provider-managed credentials live in encrypted remote state and are
-installed as collector Secrets in STG/PRD. The deployment script reads sensitive
-outputs without printing them. Reconcile Secrets here; do not create a competing
-ExternalSecret for the same name.
-
-After initial deployment, install the coordinated peer OS updater described in
-`../../observability/reventer/os-update/README.md`. It replaces independent
-unattended upgrades with staggered full-LTS updates and boot-volume rollback.
+Grafana uses the environment-specific PDC network. Store its agent token in BSM as
+`PRD_REVENTER_GRAFANA_PDC_TOKEN`, then deploy with `--enable-pdc`. Configure both
+of this environment's Grafana data sources to use that network. Agents permit only
+`victoria-metrics-prd.reventer-monitoring.svc.cluster.local:8428` and
+`victoria-logs-prd.reventer-monitoring.svc.cluster.local:9428`.
