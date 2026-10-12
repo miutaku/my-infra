@@ -16,33 +16,88 @@ spec:
     targetRevision: 0.9.3
     helm:
       releaseName: arc-runner-reventer-codex
-      values: "githubConfigUrl: https://github.com/miutaku/reventer\ngithubConfigSecret:\
-        \ github-token-secret\ncontrollerServiceAccount:\n  namespace: arc-systems\n\
-        \  name: arc-systems-gha-rs-controller\nminRunners: 1\nmaxRunners: 1\ntemplate:\n\
-        \  spec:\n    securityContext:\n      fsGroup: 1001\n      fsGroupChangePolicy:\
-        \ OnRootMismatch\n    nodeSelector:\n      kubernetes.io/arch: amd64\n   \
-        \   kubernetes.io/os: linux\n    affinity:\n      nodeAffinity:\n        preferredDuringSchedulingIgnoredDuringExecution:\n\
-        \        - weight: 100\n          preference:\n            matchExpressions:\n\
-        \            - key: topology.miutaku/proxmox-node\n              operator:\
-        \ In\n              values:\n              - pve-x570\n        - weight: 20\n\
-        \          preference:\n            matchExpressions:\n            - key:\
-        \ topology.miutaku/proxmox-node\n              operator: In\n            \
-        \  values:\n              - pve-b550m\n    initContainers:\n    - name: prepare-codex-auth\n\
-        \      image: ghcr.io/actions/actions-runner:latest\n      command:\n    \
-        \  - /bin/sh\n      - -c\n      args:\n      - 'set -eu\n\n        mkdir -p\
-        \ /cache/codex-architecture-auth\n\n        chown 1001:1001 /cache/codex-architecture-auth\n\
-        \n        chmod 0700 /cache/codex-architecture-auth\n\n        '\n      securityContext:\n\
-        \        runAsUser: 0\n      volumeMounts:\n      - name: runner-cache\n \
-        \       mountPath: /cache\n    containers:\n    - name: runner\n      image:\
-        \ ghcr.io/actions/actions-runner:latest\n      command:\n      - /home/runner/run.sh\n\
-        \      env:\n      - name: RUNNER_TOOL_CACHE\n        value: /opt/hostedtoolcache\n\
-        \      resources:\n        requests:\n          cpu: 1000m\n          memory:\
-        \ 1Gi\n        limits:\n          cpu: '2'\n          memory: 4Gi\n      volumeMounts:\n\
-        \      - name: runner-cache\n        mountPath: /home/runner/.codex\n    \
-        \    subPath: codex-architecture-auth\n      - name: toolcache\n        mountPath:\
-        \ /opt/hostedtoolcache\n    volumes:\n    - name: runner-cache\n      persistentVolumeClaim:\n\
-        \        claimName: arc-runner-reventer-cache\n    - name: toolcache\n   \
-        \   emptyDir: {}\n    automountServiceAccountToken: false\n"
+      values: |
+        githubConfigUrl: https://github.com/miutaku/reventer
+        githubConfigSecret: github-token-secret
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-systems-gha-rs-controller
+        minRunners: 1
+        maxRunners: 1
+        template:
+          spec:
+            securityContext:
+              fsGroup: 1001
+              fsGroupChangePolicy: OnRootMismatch
+            nodeSelector:
+              kubernetes.io/arch: amd64
+              kubernetes.io/os: linux
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                    - key: topology.miutaku/proxmox-node
+                      operator: In
+                      values:
+                      - pve-x570
+                - weight: 20
+                  preference:
+                    matchExpressions:
+                    - key: topology.miutaku/proxmox-node
+                      operator: In
+                      values:
+                      - pve-b550m
+            initContainers:
+            - name: prepare-codex-auth
+              image: ghcr.io/actions/actions-runner:latest
+              command:
+              - /bin/sh
+              - -c
+              args:
+              - 'set -eu
+
+                mkdir -p /cache/codex-architecture-auth
+
+                chown 1001:1001 /cache/codex-architecture-auth
+
+                chmod 0700 /cache/codex-architecture-auth
+
+                '
+              securityContext:
+                runAsUser: 0
+              volumeMounts:
+              - name: runner-cache
+                mountPath: /cache
+            containers:
+            - name: runner
+              image: ghcr.io/actions/actions-runner:latest
+              command:
+              - /home/runner/run.sh
+              env:
+              - name: RUNNER_TOOL_CACHE
+                value: /opt/hostedtoolcache
+              resources:
+                requests:
+                  cpu: 1000m
+                  memory: 1Gi
+                limits:
+                  cpu: '2'
+                  memory: 4Gi
+              volumeMounts:
+              - name: runner-cache
+                mountPath: /home/runner/.codex
+                subPath: codex-architecture-auth
+              - name: toolcache
+                mountPath: /opt/hostedtoolcache
+            volumes:
+            - name: runner-cache
+              persistentVolumeClaim:
+                claimName: arc-runner-reventer-cache
+            - name: toolcache
+              emptyDir: {}
+            automountServiceAccountToken: false
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-runners
