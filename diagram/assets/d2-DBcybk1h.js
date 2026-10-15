@@ -1,40 +1,12 @@
 var e=e=>{switch(e){case`index`:return`direction: down
 
+User: {
+  label: "利用者"
+  shape: c4-person
+}
 Operator: {
   label: "管理者"
   shape: c4-person
-}
-Premises: {
-  label: "自宅"
-
-  Home: {
-    label: "Talos / home-k8s"
-
-    Agent: {
-      label: "自宅監視基盤"
-    }
-    Nextcloud: {
-      label: "Nextcloud"
-    }
-    Eso: {
-      label: "External Secrets Operator"
-    }
-  }
-  Data: {
-    label: "保存・バックアップ"
-
-    Pbs: {
-      label: "Proxmox Backup Server"
-      shape: stored_data
-    }
-    Nas: {
-      label: "TrueNAS VM ×2 / ZFS・NFS"
-      shape: stored_data
-    }
-    Backups: {
-      label: "バックアップ処理"
-    }
-  }
 }
 Monitoring: {
   label: "監視"
@@ -44,76 +16,92 @@ Monitoring: {
     shape: stored_data
   }
 }
-User: {
-  label: "利用者"
-  shape: c4-person
-}
 External: {
   label: "外部サービス / SaaS・公開サービス"
 
   Edge: {
     label: "Cloudflare"
 
+    Access: {
+      label: "Cloudflare Access / 共通の認証入口"
+    }
     Tunnel: {
       label: "Cloudflare Tunnel"
-    }
-    Access: {
-      label: "Access / 認証"
     }
   }
   Bws: {
     label: "Bitwarden Secrets Manager"
   }
-  Grafana: {
-    label: "Grafana Cloud / PDC"
-  }
-  Idrive: {
-    label: "IDrive e2 / S3"
-    shape: stored_data
-  }
-}
-Control: {
-  label: "変更・運用"
-
-  Argo: {
-    label: "自宅ArgoCD"
-  }
 }
 Oke: {
   label: "OCI / STG OKE共通基盤"
 }
+Shared_prd: {
+  label: "PRDクラスタへ提供する共通アドオン"
+}
+Premises: {
+  label: "自宅"
 
-Operator -> External.Edge.Access: "管理認証"
-External.Edge.Tunnel -> Premises.Home.Nextcloud: "公開hostname / 内部HTTP"
-External.Edge.Access -> Control.Argo: "Tunnel / 管理UI"
-External.Edge.Tunnel -> Control.Argo: "Access後 / 管理UI"
-External.Bws -> Premises.Home.Eso: "Secret注入"
+  Data: {
+    label: "保存・バックアップ"
+
+    Nas: {
+      label: "TrueNAS VM ×2 / ZFS・NFS"
+      shape: stored_data
+    }
+  }
+  Home: {
+    label: "Talos / home-k8s"
+  }
+}
+Control: {
+  label: "変更・運用"
+}
+Consumers: {
+  label: "基盤の利用側 / 別リポジトリ"
+
+  Reventer: {
+    label: "Re:Venter"
+  }
+}
+
+User -> External.Edge.Access: "HTTPS / 利用時の認証"
+Operator -> External.Edge.Access: "HTTPS / 管理時の認証"
+External.Edge.Access -> External.Edge.Tunnel: "Access認証後の転送"
+External.Edge.Tunnel -> Premises.Home: "Access認証後 / 公開UI・サービス"
+External.Bws -> Premises.Home: "Secret注入"
+External.Edge.Tunnel -> Premises.Data.Nas: "Access認証後 / NAS管理UI"
+Premises.Data.Nas -> Premises.Home: "NFSストレージを提供"
 External.Bws -> Oke: "Secret注入"
-Operator -> External.Grafana: "照会"
-Premises.Home.Agent -> External.Grafana: "外向きPDC接続"
-Monitoring.Vms -> External.Grafana: "VM側PDC agentから外向き接続"
-External.Grafana -> Premises.Home.Agent: "PDC経由の検索"
-External.Grafana -> Monitoring.Vms: "PDC経由"
-Premises.Home.Nextcloud -> Premises.Data.Nas: "html・data / NFS"
-Premises.Home.Agent -> Premises.Data.Nas: "metrics用NFS PVC"
-Premises.Home.Agent -> Premises.Data.Backups: "snapshot / vmbackup"
-External.Bws -> Premises.Data.Backups: "ESO経由 / backup credential"
-Premises.Data.Nas -> Premises.Data.Backups: "対象dataset / restic"
-Premises.Data.Pbs -> External.Idrive: "S3 datastore / VM backup"
-Premises.Data.Backups -> External.Idrive: "用途別prefix / 暗号化・retention"
-User -> External.Edge: "HTTPS"
+External.Bws -> Shared_prd: "ESO / PRD Secret注入"
+External.Edge.Tunnel -> Control: "Access認証後 / 管理UI"
+External.Bws -> Control: "機器・PBS用credential"
+Oke -> Consumers.Reventer: "STGの実行基盤を提供"
+Shared_prd -> Consumers.Reventer: "共有Gateway Controllerを提供"
+Monitoring.Vms -> Consumers.Reventer: "監視データの保存先を提供"
+Control -> Consumers.Reventer: "GitOps・CI・Terraformの実行基盤を提供"
 `;case`home_apps`:return`direction: right
 
 User: {
   label: "利用者"
   shape: c4-person
 }
-ExternalEdge: {
-  label: "Cloudflare"
+Operator: {
+  label: "管理者"
+  shape: c4-person
+}
+ExternalEdgeAccess: {
+  label: "Cloudflare Access / 共通の認証入口"
+}
+ExternalEdgeTunnel: {
+  label: "Cloudflare Tunnel"
 }
 PremisesHome: {
   label: "Talos / home-k8s"
 
+  Dns: {
+    label: "内部DNS / MetalLB"
+  }
   Nextcloud: {
     label: "Nextcloud"
   }
@@ -121,78 +109,57 @@ PremisesHome: {
     label: "録画・配信"
   }
   Apps: {
-    label: "宅内アプリ"
-
-    Coupon_manager: {
-      label: "Coupon Manager"
-    }
-    Loockit: {
-      label: "Loockit"
-    }
-    Annict_scraper: {
-      label: "Annict scraper"
-    }
-    Magic_mirror: {
-      label: "MagicMirror"
-    }
-    Wol: {
-      label: "Wake-on-LAN"
-    }
-  }
-  Dns: {
-    label: "内部DNS / MetalLB"
+    label: "自宅ワークロード / 基盤の利用側"
   }
 }
-PremisesData: {
-  label: "保存・バックアップ"
-
-  Databases: {
-    label: "DB / アプリ共有基盤"
-  }
-  Nas: {
-    label: "TrueNAS VM ×2 / ZFS・NFS"
-    shape: stored_data
-  }
+ControlArgo: {
+  label: "自宅ArgoCD"
+}
+PremisesDataDatabases: {
+  label: "DB / アプリ共有基盤"
+}
+PremisesDataNas: {
+  label: "TrueNAS VM ×2 / ZFS・NFS"
+  shape: stored_data
 }
 
-User -> ExternalEdge: "HTTPS"
-ExternalEdge -> PremisesHome.Nextcloud: "公開hostname / 内部HTTP"
-ExternalEdge -> PremisesHome.Recording: "公開hostname / 内部HTTP"
-ExternalEdge -> PremisesHome.Apps.Coupon_manager: "公開hostname / 内部HTTP"
-ExternalEdge -> PremisesHome.Apps.Loockit: "内部接続"
-PremisesHome.Recording -> PremisesHome.Apps.Annict_scraper: "番組照合"
-PremisesHome.Nextcloud -> PremisesData.Nas: "html・data / NFS"
-PremisesHome.Recording -> PremisesData.Nas: "録画・thumbnail・drop / NFS"
-PremisesHome.Apps.Coupon_manager -> PremisesData.Nas: "images・Data Protection keys / PVC"
-PremisesHome.Nextcloud -> PremisesData.Databases: "MYSQL_HOST / MariaDB"
-PremisesHome.Recording -> PremisesData.Databases: "[...]"
-PremisesHome.Apps.Coupon_manager -> PremisesData.Databases: "PostgreSQL"
-PremisesData.Databases -> PremisesData.Nas: "DB用NFS PVC"
+User -> ExternalEdgeAccess: "HTTPS / 利用時の認証"
+Operator -> ExternalEdgeAccess: "HTTPS / 管理時の認証"
+ExternalEdgeAccess -> ExternalEdgeTunnel: "Access認証後の転送"
+ExternalEdgeTunnel -> PremisesHome.Nextcloud: "Access認証後 / 公開UI・サービス"
+ExternalEdgeTunnel -> PremisesHome.Recording: "Access認証後 / 公開UI・サービス"
+ExternalEdgeTunnel -> PremisesHome.Apps: "Access認証後 / 公開UI・サービス"
+ExternalEdgeTunnel -> PremisesDataNas: "Access認証後 / NAS管理UI"
+PremisesHome.Nextcloud -> PremisesDataNas: "html・data / NFS"
+PremisesHome.Recording -> PremisesDataNas: "録画・thumbnail・drop / NFS"
+PremisesHome.Apps -> PremisesDataNas: "images・Data Protection keys / PVC"
+PremisesHome.Nextcloud -> PremisesDataDatabases: "MYSQL_HOST / MariaDB"
+PremisesHome.Recording -> PremisesDataDatabases: "[...]"
+PremisesHome.Apps -> PremisesDataDatabases: "PostgreSQL"
+PremisesDataDatabases -> PremisesDataNas: "DB用NFS PVC"
+ExternalEdgeTunnel -> ControlArgo: "Access認証後 / 管理UI"
 `;case`delivery`:return`direction: down
 
 Control: {
   label: "変更・運用"
 
-  Reviews: {
-    label: "Re:Venterの一時レビュー"
-  }
   Images: {
     label: "Image Updater"
-  }
-  Runner: {
-    label: "ARC / 専用runner"
   }
   Argo: {
     label: "自宅ArgoCD"
   }
+  Runner: {
+    label: "ARC / 専用runner"
+  }
   Tfc_agents: {
     label: "Terraform Cloud agents / 自宅"
   }
-  Packer: {
-    label: "Packer / VM template"
-  }
   Ansible: {
     label: "Ansible"
+  }
+  Packer: {
+    label: "Packer / VM template"
   }
 }
 External: {
@@ -204,9 +171,15 @@ External: {
   Terraform_cloud: {
     label: "Terraform Cloud"
   }
+  Github_pages: {
+    label: "GitHub Pages / my-infra図・レビュー"
+  }
   Edge: {
     label: "Cloudflare"
   }
+}
+Shared_prd: {
+  label: "PRDクラスタへ提供する共通アドオン"
 }
 Monitoring: {
   label: "監視"
@@ -222,15 +195,16 @@ Oke: {
   Argo: {
     label: "OKE ArgoCD"
   }
-  Scale: {
-    label: "Cluster Autoscaler"
-  }
   Api: {
     label: "OKE API / Node pools"
   }
 }
-Reventer: {
-  label: "Re:Venter / STG・PRD"
+Consumers: {
+  label: "基盤の利用側 / 別リポジトリ"
+
+  Reventer: {
+    label: "Re:Venter"
+  }
 }
 Premises: {
   label: "自宅"
@@ -243,18 +217,20 @@ Premises: {
   }
 }
 
-External.Github -> Control.Runner: "Actions job"
 External.Github -> Control.Argo: "GitOps"
+External.Github -> Control.Runner: "Actions job"
 External.Github -> External.Terraform_cloud: "Terraform実行"
 External.Terraform_cloud -> Control.Tfc_agents: "workspace runを自宅agentで実行"
+External.Github -> External.Github_pages: "構成図・PR比較を公開"
 Control.Argo -> Premises.Home: "manifest同期"
 External.Github -> Oke.Argo: "GitOps"
 Oke.Argo -> Oke.Api: "共通基盤同期"
-Oke.Scale -> Oke.Api: "burst pool増減"
-Control.Argo -> Reventer: "STG・PRDアプリ同期"
+Control.Argo -> Consumers.Reventer: "STG・PRDアプリ同期"
+Control.Runner -> Consumers.Reventer: "利用側のCI jobを実行"
+Control.Tfc_agents -> Consumers.Reventer: "利用側workspaceの実行を受託"
 Control.Tfc_agents -> Premises.Hardware: "VM / ネットワーク"
-Control.Packer -> Premises.Hardware: "VM template"
 Control.Ansible -> Premises.Hardware: "機器設定"
+Control.Packer -> Premises.Hardware: "VM template"
 External.Terraform_cloud -> External.Edge: "DNS / Access / Tunnel"
 External.Terraform_cloud -> Monitoring.Vms: "監視VM"
 External.Terraform_cloud -> Oke: "OCI / OKE"
@@ -276,19 +252,11 @@ External: {
 Premises: {
   label: "自宅"
 
-  Home: {
-    label: "Talos / home-k8s"
-
-    Eso: {
-      label: "External Secrets Operator"
-    }
+  HomeEso: {
+    label: "External Secrets Operator"
   }
-  Data: {
-    label: "保存・バックアップ"
-
-    Backups: {
-      label: "バックアップ処理"
-    }
+  DataBackups: {
+    label: "バックアップ処理"
   }
 }
 Oke: {
@@ -298,11 +266,11 @@ Oke: {
     label: "External Secrets Operator"
   }
 }
-Reventer: {
-  label: "Re:Venter / STG・PRD"
+Shared_prd: {
+  label: "PRDクラスタへ提供する共通アドオン"
 
-  PlatformExternal_secrets: {
-    label: "ESO / PRD共通基盤"
+  Eso: {
+    label: "External Secrets Operator"
   }
 }
 Control: {
@@ -312,25 +280,34 @@ Control: {
     label: "Ansible"
   }
 }
+Consumers: {
+  label: "基盤の利用側 / 別リポジトリ"
 
-External.Bws -> Premises.Home.Eso: "Secret注入"
+  Reventer: {
+    label: "Re:Venter"
+  }
+}
+
+External.Bws -> Premises.HomeEso: "Secret注入"
 External.Bws -> Oke.Eso: "Secret注入"
-External.Bws -> Reventer.PlatformExternal_secrets: "ESO / PRD Secret注入"
+External.Bws -> Shared_prd.Eso: "ESO / PRD Secret注入"
+Oke.Eso -> Consumers.Reventer: "利用側Secretへ注入 / STG"
+Shared_prd.Eso -> Consumers.Reventer: "利用側Secretへ注入 / PRD"
 External.Bws -> External.Github: "CI credential"
 External.Bws -> External.Terraform_cloud: "Terraform変数"
 External.Bws -> Control.Ansible: "機器・PBS用credential"
-External.Bws -> Premises.Data.Backups: "ESO経由 / backup credential"
+External.Bws -> Premises.DataBackups: "ESO経由 / backup credential"
 `;case`observability`:return`direction: right
 
 Operator: {
   label: "管理者"
   shape: c4-person
 }
-Reventer: {
-  label: "Re:Venter / STG・PRD"
+Consumers: {
+  label: "基盤の利用側 / 別リポジトリ"
 
-  Collectors: {
-    label: "STG・PRD監視collector"
+  Reventer: {
+    label: "Re:Venter"
   }
 }
 External: {
@@ -385,7 +362,7 @@ Premises.Home.Agent.Pdc -> External.Grafana: "外向きPDC接続"
 Premises.Home.Agent.Pdc -> Premises.Home.Agent.Local_store: "private query / :8428"
 Premises.Home.Agent.Exporters -> Premises.Home.Agent.Collector: "scrape"
 External.Grafana -> Monitoring.Vms: "PDC経由"
-Reventer.Collectors -> Monitoring.Vms: "[...]"
+Consumers.Reventer -> Monitoring.Vms: "metrics / logs / 環境別"
 Monitoring.Vms -> External.Grafana: "VM側PDC agentから外向き接続"
 `;case`network`:return`direction: right
 
@@ -399,42 +376,32 @@ Premises: {
   Hardware: {
     label: "物理・ネットワーク"
 
-    Lb: {
-      label: "HAProxy / Keepalived ×2"
-    }
-    Router: {
-      label: "IX2215 / VLAN"
-    }
     Wifi: {
       label: "Wi-Fi AP"
     }
     Unifi: {
       label: "UniFi OS Server"
     }
-  }
-  Home: {
-    label: "Talos / home-k8s"
-
-    Dns: {
-      label: "内部DNS / MetalLB"
-
-      Coredns: {
-        label: "CoreDNS / miutaku.internal"
-      }
-      Metallb: {
-        label: "MetalLB / LANのService IP"
-      }
+    Lb: {
+      label: "HAProxy / Keepalived ×2"
     }
-    PlatformCloudflared: {
-      label: "cloudflared / 自宅connector"
+    Router: {
+      label: "IX2215 / VLAN"
+    }
+  }
+  HomeDns: {
+    label: "内部DNS / MetalLB"
+
+    Coredns: {
+      label: "CoreDNS / miutaku.internal"
+    }
+    Metallb: {
+      label: "MetalLB / LANのService IP"
     }
   }
   Lan: {
     label: "LAN / VLAN・経路"
 
-    Server: {
-      label: "VLAN20 / 192.168.20.0/24"
-    }
     Native: {
       label: "native / 192.168.0.0/24"
     }
@@ -449,6 +416,9 @@ Premises: {
     }
     Iot: {
       label: "VLAN40 / 192.168.40.0/24"
+    }
+    Server: {
+      label: "VLAN20 / 192.168.20.0/24"
     }
   }
 }
@@ -481,21 +451,8 @@ Oke: {
 External: {
   label: "外部サービス / SaaS・公開サービス"
 
-  Edge: {
-    label: "Cloudflare"
-
-    Warp: {
-      label: "WARP / private CIDR routes"
-    }
-    Access: {
-      label: "Access / 認証"
-    }
-    Tunnel: {
-      label: "Cloudflare Tunnel"
-    }
-    Routes: {
-      label: "公開hostname / 設定から抽出"
-    }
+  EdgeWarp: {
+    label: "WARP / private CIDR routes"
   }
   Internet: {
     label: "Internet"
@@ -505,20 +462,13 @@ External: {
   }
 }
 
-Operator -> External.Edge.Access: "管理認証"
-External.Edge.Tunnel -> External.Edge.Routes: "hostname転送"
-External.Edge.Access -> External.Edge.Routes: "Access policy"
-External.Edge.Warp -> Premises.Lan.Server: "private CIDR routes / WARP policy"
-External.Edge.Routes -> Premises.Hardware.Router: "認証後の内部接続"
+External.EdgeWarp -> Premises.Lan.Server: "private CIDR routes / WARP policy"
 Premises.Hardware.Router -> Premises.Lan.Native: "native IF"
 Premises.Hardware.Router -> Premises.Lan.Management: "BVI10"
 Premises.Hardware.Router -> Premises.Lan.Server: "BVI20"
 Premises.Hardware.Router -> Premises.Lan.Client: "BVI30"
 Premises.Hardware.Router -> Premises.Lan.Guest: "BVI31 / 他VLAN拒否"
 Premises.Hardware.Router -> Premises.Lan.Iot: "BVI40"
-External.Edge.Routes -> Premises.Hardware.Wifi: "認証後の内部接続"
-External.Edge.Routes -> Premises.Hardware.Unifi: "認証後の内部接続"
-Premises.Home.PlatformCloudflared -> External.Edge.Tunnel: "外向きTunnel接続"
 Oke.Workers -> Oke.Network.Private_workers: "private subnet / 10.0.2.0/24"
 Oke.Network.Igw -> Oke.Network.Public_api: "public route table"
 Oke.Network.Private_workers -> Oke.Network.Nat: "default route"
@@ -526,7 +476,6 @@ Oke.Network.Private_workers -> Oke.Network.Service_gateway: "Oracle service CIDR
 Oke.Network.Nat -> External.Internet: "NAT / reserved IPv4"
 External.Internet -> Oke.Network.Igw: "公開API・LBへの到達"
 Oke.Network.Service_gateway -> External.Oracle: "Oracle Services Network"
-Premises.Hardware.Router -> Premises.Home.Dns: "LAN / 内部DNS"
 `;case`storage`:return`direction: right
 
 Premises: {
@@ -634,6 +583,90 @@ Premises.Hardware.B550m -> Premises.Data.Pbs: "VM backup"
 Premises.Data.Databases -> Premises.Data.Nas.Nas02: "DB用NFS PVC"
 Premises.Data.Databases -> Premises.Data.Backups.Db: "整合性あるlogical dump"
 Premises.Data.Backups -> External.Idrive: "用途別prefix / 暗号化・retention"
+`;case`access`:return`direction: right
+
+User: {
+  label: "利用者"
+  shape: c4-person
+}
+Operator: {
+  label: "管理者"
+  shape: c4-person
+}
+Client: {
+  label: "専用クライアント"
+  shape: c4-person
+}
+External: {
+  label: "外部サービス / SaaS・公開サービス"
+
+  Edge: {
+    label: "Cloudflare"
+
+    Access: {
+      label: "Cloudflare Access / 共通の認証入口"
+    }
+    Mtls: {
+      label: "mTLS / 専用APIの例外"
+    }
+    Tunnel: {
+      label: "Cloudflare Tunnel"
+    }
+    Routes: {
+      label: "公開hostname / 設定から抽出"
+
+      Protected: {
+        label: "Access保護のhostname"
+      }
+      Exceptions: {
+        label: "例外 / mTLS専用API"
+      }
+    }
+  }
+}
+Premises: {
+  label: "自宅"
+
+  Data: {
+    label: "保存・バックアップ"
+
+    Nas: {
+      label: "TrueNAS VM ×2 / ZFS・NFS"
+      shape: stored_data
+    }
+  }
+  Home: {
+    label: "Talos / home-k8s"
+  }
+  Hardware: {
+    label: "物理・ネットワーク"
+  }
+}
+Control: {
+  label: "変更・運用"
+
+  Argo: {
+    label: "自宅ArgoCD"
+  }
+  Reviews: {
+    label: "Re:Venterの一時レビュー"
+  }
+}
+
+User -> External.Edge.Access: "HTTPS / 利用時の認証"
+Operator -> External.Edge.Access: "HTTPS / 管理時の認証"
+Client -> External.Edge.Mtls: "クライアント証明書"
+External.Edge.Access -> External.Edge.Tunnel: "Access認証後の転送"
+External.Edge.Mtls -> External.Edge.Tunnel: "mTLS検証済みのAPIリクエスト"
+External.Edge.Tunnel -> External.Edge.Routes.Protected: "hostname転送"
+External.Edge.Tunnel -> External.Edge.Routes.Exceptions: "hostname転送"
+External.Edge.Routes.Protected -> Premises.Home: "内部接続"
+External.Edge.Routes.Exceptions -> Premises.Home: "内部接続"
+Premises.Home -> External.Edge.Tunnel: "外向きTunnel接続"
+External.Edge.Routes.Protected -> Premises.Hardware: "認証後の内部接続"
+External.Edge.Routes.Protected -> Premises.Data.Nas: "認証後の内部接続"
+External.Edge.Routes.Protected -> Control.Argo: "認証後の内部接続"
+External.Edge.Routes.Protected -> Control.Reviews: "認証後の内部接続"
 `;case`placement`:return`direction: down
 
 HomeSite: {
@@ -667,87 +700,8 @@ Stg: {
   label: "OCI / STG OKE共通基盤"
 }
 Prd: {
-  label: "PRD OKE / 本体reventer所有・共通アドオンmy-infra"
+  label: "外部所有PRDクラスタ / 共通アドオンの配置先"
 }
-`;case`media`:return`direction: right
-
-PremisesHomeRecording: {
-  label: "録画・配信"
-
-  Epgstation: {
-    label: "EPGStation"
-  }
-  Annict_sync: {
-    label: "Annict録画同期 / CronJob"
-  }
-  Mirakurun_staging: {
-    label: "Mirakurun Service / STG LXCへの中継"
-  }
-  Tnlastation: {
-    label: "TNLaStation / 共通モデル"
-
-    Gateway: {
-      label: "Gateway"
-    }
-    Frontend: {
-      label: "Frontend"
-    }
-    Backend: {
-      label: "Backend / API・録画制御"
-    }
-    Encode: {
-      label: "ffmpeg encode worker"
-    }
-    Streaming: {
-      label: "ffmpeg streaming worker"
-    }
-    Mediamtx: {
-      label: "MediaMTX / HLS配信"
-    }
-  }
-  Mirakurun: {
-    label: "Mirakurun Service / 本番LXCへの中継"
-  }
-}
-PremisesHomeAppsAnnict_scraper: {
-  label: "Annict scraper"
-}
-PremisesHardwareTuner_stg: {
-  label: "Mirakurun STG LXC / CT12904・PX-S1UD"
-}
-ExternalAnnict: {
-  label: "Annict API"
-}
-PremisesHardwareTuner_prod: {
-  label: "Mirakurun LXC / CT12901・PT3"
-}
-PremisesDataDatabases: {
-  label: "DB / アプリ共有基盤"
-}
-PremisesDataNas: {
-  label: "TrueNAS VM ×2 / ZFS・NFS"
-  shape: stored_data
-}
-
-PremisesHomeRecording.Epgstation -> PremisesHomeRecording.Mirakurun: "tuner API"
-PremisesHomeRecording.Annict_sync -> PremisesHomeRecording.Tnlastation.Backend: "録画登録API"
-PremisesHomeRecording.Tnlastation.Backend -> PremisesHomeRecording.Mirakurun: "tuner API"
-PremisesHomeRecording.Tnlastation.Gateway -> PremisesHomeRecording.Tnlastation.Frontend: "Web"
-PremisesHomeRecording.Tnlastation.Gateway -> PremisesHomeRecording.Tnlastation.Backend: "API"
-PremisesHomeRecording.Tnlastation.Gateway -> PremisesHomeRecording.Tnlastation.Mediamtx: "HLS"
-PremisesHomeRecording.Tnlastation.Backend -> PremisesHomeRecording.Tnlastation.Encode: "encode制御"
-PremisesHomeRecording.Tnlastation.Backend -> PremisesHomeRecording.Tnlastation.Streaming: "streaming制御"
-PremisesHomeRecording.Tnlastation.Streaming -> PremisesHomeRecording.Tnlastation.Mediamtx: "配信"
-PremisesHomeRecording.Mirakurun -> PremisesHardwareTuner_prod: "EndpointSlice / 外部LXC"
-PremisesHomeRecording.Mirakurun_staging -> PremisesHardwareTuner_stg: "EndpointSlice / 外部LXC"
-PremisesHardwareTuner_stg -> PremisesHardwareTuner_prod: "BS/CS TCP fallback"
-PremisesHomeRecording.Annict_sync -> PremisesHomeAppsAnnict_scraper: "番組照合"
-PremisesHomeAppsAnnict_scraper -> ExternalAnnict: "Annict API"
-PremisesHomeRecording.Epgstation -> PremisesDataDatabases: "EPGStation DB"
-PremisesHomeRecording.Tnlastation.Backend -> PremisesDataDatabases: "PostgreSQL"
-PremisesHomeRecording.Tnlastation.Encode -> PremisesDataDatabases: "encode状態"
-PremisesDataDatabases -> PremisesDataNas: "DB用NFS PVC"
-PremisesHomeRecording -> PremisesDataNas: "録画・thumbnail・drop / NFS"
 `;case`power`:return`direction: right
 
 PremisesHardwareUps: {

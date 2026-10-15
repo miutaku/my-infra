@@ -2762,125 +2762,161 @@
     "type": "Tunnel hostname",
     "name": "architecture-review",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_a6fbba4fe58063"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_a6fbba4fe58063"
   },
   {
     "id": "hostname:argocd-home-k8s",
     "type": "Tunnel hostname",
     "name": "argocd-home-k8s",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_aa7be3a36b5c48"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_aa7be3a36b5c48"
   },
   {
     "id": "hostname:wol",
     "type": "Tunnel hostname",
     "name": "wol",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_9a6aa3c240035f"
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_9a6aa3c240035f"
   },
   {
     "id": "hostname:loockit-api",
     "type": "Tunnel hostname",
     "name": "loockit-api",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_c4f5a55b428348"
+    "accessMode": "mtls",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.exceptions.r_c4f5a55b428348"
   },
   {
     "id": "hostname:epgstation",
     "type": "Tunnel hostname",
     "name": "epgstation",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_0ceb9e10baf1aa"
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_0ceb9e10baf1aa"
   },
   {
     "id": "hostname:tnlastation",
     "type": "Tunnel hostname",
     "name": "tnlastation",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_ca51f2ede193bf"
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_ca51f2ede193bf"
   },
   {
     "id": "hostname:tnlastation-staging",
     "type": "Tunnel hostname",
     "name": "tnlastation-staging",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_db1d338e50f41c"
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_db1d338e50f41c"
   },
   {
     "id": "hostname:nextcloud",
     "type": "Tunnel hostname",
     "name": "nextcloud",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_5495d99954175c"
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_5495d99954175c"
   },
   {
     "id": "hostname:coupon-manager",
     "type": "Tunnel hostname",
     "name": "coupon-manager",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_8707e543d2323c"
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_8707e543d2323c"
   },
   {
     "id": "hostname:unifi",
     "type": "Tunnel hostname",
     "name": "unifi",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_1d844aae4872d1"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_1d844aae4872d1"
   },
   {
     "id": "hostname:wifi-ap",
     "type": "Tunnel hostname",
     "name": "wifi-ap",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_9e7130e5c1438a"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_9e7130e5c1438a"
   },
   {
     "id": "hostname:ix2215",
     "type": "Tunnel hostname",
     "name": "ix2215",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_307b9cfe34f5c6"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_307b9cfe34f5c6"
   },
   {
     "id": "hostname:nas-01",
     "type": "Tunnel hostname",
     "name": "nas-01",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_ac83613e0c48d5"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_ac83613e0c48d5"
   },
   {
     "id": "hostname:nas-02",
     "type": "Tunnel hostname",
     "name": "nas-02",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_57aad05e7dd3c0"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_57aad05e7dd3c0"
   },
   {
     "id": "hostname:pve-x570",
     "type": "Tunnel hostname",
     "name": "pve-x570",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_e476f69c53182c"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_e476f69c53182c"
   },
   {
     "id": "hostname:pve-b550m",
     "type": "Tunnel hostname",
     "name": "pve-b550m",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_12af4e978445b6"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_12af4e978445b6"
   },
   {
     "id": "hostname:nanokvm-1",
     "type": "Tunnel hostname",
     "name": "nanokvm-1",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_94954bf5cdae0f"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_94954bf5cdae0f"
   },
   {
     "id": "hostname:nanokvm-2",
     "type": "Tunnel hostname",
     "name": "nanokvm-2",
     "file": "terraform/cloudflare/locals.tf",
-    "modelRef": "external.edge.routes.r_bd62f81c28d3da"
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_bd62f81c28d3da"
   }
 ]
