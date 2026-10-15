@@ -58,12 +58,12 @@ model {
     component pdc 'PDC agent / 自宅'
     component exporters 'exporter群' { description 'node・PVE・SNMP・NUT・TinyTuya・blackbox・speedtest。個別Applicationを内部に保持。' }
   }
-  extend control {
+  extend premises.management {
     component images 'Image Updater'
-    component reviews 'Re:Venterの一時レビュー' { description 'reventerだけTalosから非公開配信。my-infraの本番・レビューはGitHub Pages。' }
+
     component packer 'Packer / VM template' { link https://github.com/miutaku/my-infra/tree/main/packer '定義' }
   }
-  extend control.argo { component registry 'Application登録 / root-app' component workloads '利用側Applicationの登録' { description 'この基盤から同期する対象の登録だけを保持。参照先アプリの内部構成は展開しない。' } }
+  extend premises.management.argo { component registry 'Application登録 / root-app' }
   extend premises.data {
     component shared '共有PV / runner cache・状態'
     component databases 'DB / アプリ共有基盤' {
@@ -105,31 +105,11 @@ model {
     component pi_b 'NUT Pi .113 / 監視B・給電A'
   }
 
-  extend oke {
-    component services 'STG共通Application'
-    component gateway 'Gateway Controller / NGINX'
-    component certificates 'cert-manager / ClusterIssuer' { description 'Controller・Issuerを提供。証明書の要求は利用側で定義する。' }
-    component network 'OCI network' {
-      component public_api '公開API・LB subnet'
-      component private_workers 'private worker subnet'
-      component nat 'NAT gateway / reserved IP'
-      component igw 'Internet gateway'
-      component service_gateway 'Service Gateway / Oracle Services'
-    }
-    component workers 'base / burst node pool' { description 'worker compartmentの権限はAutoscalerへ限定。control plane・公開APIと区別する。' }
-  }
-  extend monitoring.vms {
-    store stg 'STG監視VM ×2 / 専用アカウント'
-    store prd 'PRD監視VM ×2 / 専用アカウント'
-  }
+  extend consumers.reventer { component definitions '専用定義の参照 / 詳細はreventer側' { metadata { owner "reventer" referenceOnly "true" } description 'my-infraにある専用リソースの名前・参照元だけを自動抽出。構成図・通信トポロジーは重複して作らない。' link https://reventer-architecture.pages.dev/ 'Re:Venterの構成図' } }
+
+
   client .runtime external.edge.mtls 'クライアント証明書'
   external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
-  oke .provide consumers.reventer 'STGの実行基盤を提供'
-  oke.gateway .provide consumers.reventer '共有Gateway Controllerを提供'
-  shared_prd.gateway .provide consumers.reventer '共有Gateway Controllerを提供'
-  oke.eso .secret consumers.reventer '利用側Secretへ注入 / STG'
-  shared_prd.eso .secret consumers.reventer '利用側Secretへ注入 / PRD'
-  external.bws .secret shared_prd.eso 'ESO / PRD Secret注入'
   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_a 'readyz / leaderのみ'
   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_b 'readyz / leaderのみ'
   premises.hardware.loockit_a .runtime premises.hardware.ble_a 'read-only D-Bus / org.bluez'
@@ -164,9 +144,6 @@ model {
   premises.home.agent.pdc .connect external.grafana '外向きPDC接続'
   external.grafana .query premises.home.agent.pdc 'PDC経由の検索'
   premises.home.agent.pdc .query premises.home.agent.local_store 'private query / :8428'
-  consumers.reventer .observe monitoring.vms.stg 'metrics / logs / 環境別'
-  consumers.reventer .observe monitoring.vms.prd 'metrics / logs / 環境別'
-  monitoring.vms .connect external.grafana 'VM側PDC agentから外向き接続'
   premises.hardware.router .network premises.lan.native 'native IF'
   premises.hardware.router .network premises.lan.management 'BVI10'
   premises.hardware.router .network premises.lan.server 'BVI20'
@@ -196,17 +173,10 @@ model {
   premises.hardware.b550m .query premises.hardware.ups.pi_b 'charge-guard監視 / 80%で自身停止'
   premises.hardware.ups.pi_b .query premises.hardware.ups.pi_a 'ups-a監視 / LOWBATT10%で自身停止'
   premises.hardware.ups.pi_a .query premises.hardware.ups.pi_b 'ups-b監視 / LOWBATT10%で自身停止'
-  control.packer .deploy premises.hardware 'VM template'
+  premises.management.packer .deploy premises.hardware 'VM template'
   external.github .deploy external.github_pages '構成図・PR比較を公開'
-  external.bws .secret control.ansible '機器・PBS用credential'
+  external.bws .secret premises.management.ansible '機器・PBS用credential'
   external.bws .secret premises.data.backups 'ESO経由 / backup credential'
-  oke.workers .network oke.network.private_workers 'private subnet / 10.0.2.0/24'
-  oke.network.private_workers .network oke.network.nat 'default route'
-  oke.network.private_workers .network oke.network.service_gateway 'Oracle service CIDR route'
-  oke.network.nat .network external.internet 'NAT / reserved IPv4'
-  oke.network.service_gateway .network external.oracle 'Oracle Services Network'
-  external.internet .network oke.network.igw '公開API・LBへの到達'
-  oke.network.igw .network oke.network.public_api 'public route table'
   premises.data.shared .runtime premises.data.nas.nas01 'runner cache / NFS'
   premises.home.nextcloud .runtime premises.data.nas.nas02 'html・data / NFS'
   premises.home.recording .runtime premises.data.nas.nas02 '録画・thumbnail・drop / NFS'

@@ -3,15 +3,15 @@ import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
 // Fail the build if the upstream API changes, rather than silently losing this behavior.
 export function targetView(fqn) {
  if(fqn.startsWith('premises.hardware.ups'))return 'power';
- if(fqn.startsWith('premises.lan')||fqn.startsWith('oke.network')||fqn.startsWith('premises.hardware.router')||fqn.startsWith('premises.home.dns')||fqn.startsWith('external.edge.warp'))return 'network';
+ if(fqn.startsWith('premises.lan')||fqn.startsWith('premises.hardware.router')||fqn.startsWith('premises.home.dns')||fqn.startsWith('external.edge.warp'))return 'network';
  if(fqn.startsWith('premises.data')||fqn==='external.idrive')return 'storage';
  if(fqn.startsWith('external.edge')&&!fqn.startsWith('external.edge.warp'))return 'access';
  if(fqn==='external.bws'||fqn.endsWith('.eso'))return 'secrets';
  if(fqn==='external.github'||fqn==='external.terraform_cloud')return 'delivery';
- if(fqn.startsWith('consumers'))return 'delivery';
- if(fqn.startsWith('control'))return 'delivery';
- if(fqn==='external.grafana'||fqn.startsWith('monitoring')||fqn==='premises.home.agent')return 'observability';
- if(fqn.startsWith('premises.hardware')||fqn.startsWith('premises.data')||fqn.startsWith('oke')||fqn.startsWith('shared_prd'))return 'placement';
+ if(fqn.startsWith('consumers'))return 'index';
+ if(fqn.startsWith('premises.management'))return 'delivery';
+ if(fqn==='external.grafana'||fqn==='premises.home.agent')return 'observability';
+ if(fqn.startsWith('premises.hardware')||fqn.startsWith('premises.data'))return 'placement';
  return 'home_apps';
 }
 export function adaptViewer(directory) {
