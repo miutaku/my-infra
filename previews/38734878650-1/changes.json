@@ -1,0 +1,47 @@
+{
+  "base": "1386542519d7bbce77a638b6ccd06b5aaae35a21",
+  "head": "a47858562b9696f358b39e46f80ae6c7c9405423",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [],
+        "relations": [],
+        "views": [],
+        "specification": [],
+        "inventory": []
+      },
+      "views": {
+        "delivery": {
+          "title": "変更・デプロイ",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "自宅のサービス・保存",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "my-infra / 全体",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "配置 / 所有境界",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}

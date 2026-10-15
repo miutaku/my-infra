@@ -1,0 +1,61 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>構成図の変更レビュー</title>
+<style>
+[hidden]{display:none!important}#controls{display:contents}*{box-sizing:border-box}body{margin:0;background:#111318;color:#edf0f7;font:14px system-ui}header{padding:18px 24px;border-bottom:1px solid #343d4e;display:flex;gap:16px;align-items:center;flex-wrap:wrap}h1{font-size:19px;margin:0}select,button{background:#202530;color:inherit;border:1px solid #59677e;border-radius:6px;padding:8px;font:inherit}main{padding:16px 24px}#commits{color:#aebbd0;font-size:12px}#summary{margin:12px 0;color:#cbd8ed}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0;min-width:0}figcaption{padding:10px;background:#232c3a}.canvas{overflow:auto;background:white;height:62vh}.canvas img{display:block;width:100%;max-width:none}.missing{color:#111;padding:24px}details{padding:10px;border-bottom:1px solid #343d4e}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}a{color:#9ec2ff}.added{color:#80d49b}.removed{color:#ffaaa5}.changed{color:#f5d281}@media(max-width:850px){.pair{grid-template-columns:1fr}.canvas{height:45vh}header,main{padding:12px}}.pair.overlay{display:block;position:relative;height:62vh;overflow:auto;background:white}.overlay figure{position:absolute;inset:0}.overlay figcaption{display:none}.overlay .canvas{height:auto;overflow:visible}.overlay figure:last-child{clip-path:inset(0 0 0 var(--wipe,50%))}
+</style>
+<header><h1 id="heading">構成図の変更レビュー</h1><button id="toggleComparison" hidden aria-expanded="false" aria-controls="comparison">比較画面を開く</button><span id="controls"><label>環境 <select id="env"><option value="infra">my-infra</option></select></label><label>ビュー <select id="view"></select></label><button id="mode">重ねて比較</button><label>拡大 <input id="zoom" type="range" min="100" max="800" value="100"></label><label id="wipeLabel" hidden>境界 <input id="wipe" type="range" min="0" max="100" value="50"></label></span></header>
+<main><div id="commits"></div><p id="noChanges" hidden>構成図の変更はありません。</p><section id="comparison"><p>画像は記載したコミットから生成した固定スナップショットです。箱・矢印・ラベルを確認し、下のモデル差分と照合してください。画像をダブルクリックすると原寸で開きます。</p><div id="summary"></div><p><a href="explorer/">変更後のLikeC4を操作する</a></p><div class="pair" id="pair"><figure><figcaption>変更前</figcaption><div class="canvas" id="before"></div></figure><figure><figcaption>変更後</figcaption><div class="canvas" id="after"></div></figure></div><h2>モデルの変更</h2><div id="changes"></div></section><p><a href="source.diff">LikeC4・生成処理などのソース差分</a> · <a href="changes.json">構造化された比較結果</a></p></main>
+<script>
+const data={"base":"1386542519d7bbce77a638b6ccd06b5aaae35a21","head":"a47858562b9696f358b39e46f80ae6c7c9405423","environments":{"infra":{"changes":{"elements":[],"relations":[],"views":[],"specification":[],"inventory":[]},"views":{"delivery":{"title":"変更・デプロイ","before":true,"after":true},"home_apps":{"title":"自宅のサービス・保存","before":true,"after":true},"index":{"title":"my-infra / 全体","before":true,"after":true},"observability":{"title":"監視の収集・保存・照会","before":true,"after":true},"placement":{"title":"配置 / 所有境界","before":true,"after":true},"secrets":{"title":"秘密情報の管理・注入","before":true,"after":true}}}}};
+const $=id=>document.getElementById(id);
+const status={added:'追加',removed:'削除',changed:'変更'};
+$('commits').textContent=`変更前 ${data.base} → 変更後 ${data.head}`;
+function setViews(){
+ const current=data.environments[$('env').value],changed=new Set(current.changes.views.map(v=>v.id));
+ $('view').replaceChildren();
+ for(const [id,view] of Object.entries(current.views).sort(([a],[b])=>Number(changed.has(b))-Number(changed.has(a)))){
+  const option=document.createElement('option');option.value=id;option.textContent=`${changed.has(id)?'● 変更あり · ':''}${view.title} (${id})`;$('view').append(option);
+ }
+ render();
+}
+function render(){
+ const env=$('env').value,current=data.environments[env],view=$('view').value;
+ for(const side of ['before','after']){
+  const target=$(side);target.replaceChildren();
+  if(current.views[view][side]){const img=document.createElement('img');img.src=`${side}/${env}/${encodeURIComponent(view)}.png`;img.alt=`${side==='before'?'変更前':'変更後'}の${current.views[view].title}`;img.style.width=$('zoom').value+'%';img.ondblclick=()=>window.open(img.src,'_blank','noopener');target.append(img);}
+  else {const p=document.createElement('p');p.className='missing';p.textContent='このコミットにはビューがありません';target.append(p);}
+ }
+ const changes=current.changes;
+ $('summary').textContent=`変更ビュー ${changes.views.length} · 要素 ${changes.elements.length} · 通信経路 ${changes.relations.length} · 表示定義 ${changes.specification.length} · リソース ${changes.inventory.length}（配置計算のhashなどは除外）`;
+ $('changes').replaceChildren();
+ for(const [category,label] of [['elements','要素'],['relations','通信経路'],['views','ビュー'],['specification','表示定義'],['inventory','リソース一覧']]){
+  for(const change of changes[category]){
+   const details=document.createElement('details'),summary=document.createElement('summary');summary.className=change.status;summary.textContent=`${status[change.status]} · ${label} · ${change.id}`;details.append(summary);
+   const pre=document.createElement('pre');pre.textContent=JSON.stringify({変更前:change.before ?? null,変更後:change.after ?? null},null,2);details.append(pre);$('changes').append(details);
+  }
+ }
+}
+for(const side of ['before','after']) $(side).onscroll=()=>{
+ const source=$(side),other=$(side==='before'?'after':'before');
+ const top=source.scrollTop/Math.max(1,source.scrollHeight-source.clientHeight)*(other.scrollHeight-other.clientHeight);
+ const left=source.scrollLeft/Math.max(1,source.scrollWidth-source.clientWidth)*(other.scrollWidth-other.clientWidth);
+ if(Math.abs(other.scrollTop-top)>1)other.scrollTop=top;if(Math.abs(other.scrollLeft-left)>1)other.scrollLeft=left;
+};
+$('env').onchange=setViews;$('view').onchange=render;$('zoom').oninput=render;
+$('mode').onclick=()=>{const active=$('pair').classList.toggle('overlay');$('mode').textContent=active?'左右に並べる':'重ねて比較';$('wipeLabel').hidden=!active;};
+$('wipe').oninput=()=>$('pair').style.setProperty('--wipe',$('wipe').value+'%');
+const hasChanges=Object.values(data.environments).some(env=>Object.values(env.changes).some(changes=>changes.length>0));
+if(hasChanges) setViews();
+else {
+ document.title=$('heading').textContent='構成図の変更なし';
+ $('noChanges').hidden=false;$('toggleComparison').hidden=false;
+ $('controls').hidden=true;$('comparison').hidden=true;
+ $('toggleComparison').onclick=()=>{
+  const open=$('comparison').hidden;
+  $('comparison').hidden=!open;$('controls').hidden=!open;
+  $('toggleComparison').textContent=open?'比較画面を閉じる':'比較画面を開く';
+  $('toggleComparison').setAttribute('aria-expanded',String(open));
+  if(open) setViews();
+ };
+}
+</script></html>

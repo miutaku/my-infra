@@ -1,0 +1,12 @@
+diff --git a/docs/architecture/README.md b/docs/architecture/README.md
+index 038a28c..f31480a 100644
+--- a/docs/architecture/README.md
++++ b/docs/architecture/README.md
+@@ -37,7 +37,7 @@ PRで変更前後の正確なコミットから全ビューを画像化し、意
+ 
+ 本番はルート、レビューは `pr/<番号>/<SHA>/<run>-<attempt>/`、手動比較は `previews/<run>-<attempt>/` に公開する。すべて公開で認証不要。本番とレビューを同じデプロイへ含め、PRの公開が本番を置き換えない。生成物の状態は `gh-pages`、ソースはmainで管理する。GitHub PagesはActionsのworkflow方式で配信する。
+ 
+-公開処理はworkflow_runでmainのコードを使う。PRのコードをwrite権限付きjobで実行せず、artifactのregular file・元コミット・保存先を検証する。同じリポジトリのPRだけを配信し、フォークは公開しない。AIのGITHUB_TOKENが作ったPRはイベントが発火しないため、比較workflowを明示的にdispatchする。
++検証後にmainの公開workflowを明示dispatchし、公開処理はmainのコードだけを使う。PRのコードをwrite権限付きjobで実行せず、artifactのregular file・元コミット・保存先を検証する。同じリポジトリのPRだけを配信し、フォークは公開しない。AIのGITHUB_TOKENが作ったPRはイベントが発火しないため、比較workflowを明示的にdispatchする。
+ 
+ PR終了イベントと日次再照合で終了済みPRを削除し、30日を過ぎたレビューも削除する。古いURLは公開コンテンツとして他者が取得済みである可能性があり、Git履歴からの機密削除機構ではない。公開モデル・一覧に秘密情報を入れない。
