@@ -1,0 +1,2969 @@
+[
+  {
+    "id": "ansible/truenas/host_vars/nas-01.yml:dataset:raid1_case/arc-runner-cache",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/arc-runner-cache",
+    "file": "ansible/truenas/host_vars/nas-01.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/drop",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/drop",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-coupon-manager-data-protection-keys",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-coupon-manager-data-protection-keys",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-coupon-manager-images",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-coupon-manager-images",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-mariadb",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-mariadb",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-nextcloud-html",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-nextcloud-html",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-postgres",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-postgres",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-postgres-staging",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-postgres-staging",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-victoria-metrics",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-victoria-metrics",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/recorded",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/recorded",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/thumbnail",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/thumbnail",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "k8s/oci-prd/argocd-apps/cert-manager-config.yaml:Application:argocd:oci-prd-cert-manager-config",
+    "type": "Application",
+    "name": "oci-prd-cert-manager-config",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/cert-manager-config.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/argocd-apps/cert-manager.yaml:Application:argocd:oci-prd-cert-manager",
+    "type": "Application",
+    "name": "oci-prd-cert-manager",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/cert-manager.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/argocd-apps/external-secrets-config.yaml:Application:argocd:oci-prd-external-secrets-config",
+    "type": "Application",
+    "name": "oci-prd-external-secrets-config",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/external-secrets-config.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/argocd-apps/external-secrets.yaml:Application:argocd:oci-prd-external-secrets",
+    "type": "Application",
+    "name": "oci-prd-external-secrets",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/external-secrets.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/argocd-apps/gateway-api-crds.yaml:Application:argocd:oci-prd-gateway-api-crds",
+    "type": "Application",
+    "name": "oci-prd-gateway-api-crds",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/gateway-api-crds.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/argocd-apps/nginx-gateway-fabric.yaml:Application:argocd:oci-prd-nginx-gateway-fabric",
+    "type": "Application",
+    "name": "oci-prd-nginx-gateway-fabric",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/nginx-gateway-fabric.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml:ExternalSecret:cert-manager:cloudflare-api-token",
+    "type": "ExternalSecret",
+    "name": "cloudflare-api-token",
+    "namespace": "cert-manager",
+    "file": "k8s/oci-prd/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/infrastructure/cert-manager-config/cluster-issuer.yaml:ClusterIssuer::letsencrypt-prod",
+    "type": "ClusterIssuer",
+    "name": "letsencrypt-prod",
+    "namespace": "",
+    "file": "k8s/oci-prd/infrastructure/cert-manager-config/cluster-issuer.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml:ClusterSecretStore::bitwarden-reventer-prd",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden-reventer-prd",
+    "namespace": "",
+    "file": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml"
+  },
+  {
+    "id": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store.yaml:ClusterSecretStore::bitwarden",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden",
+    "namespace": "",
+    "file": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/cloudflared/availability.yaml:PodDisruptionBudget:cloudflared:cloudflared",
+    "type": "PodDisruptionBudget",
+    "name": "cloudflared",
+    "namespace": "cloudflared",
+    "file": "k8s/oci/apps/cloudflared/availability.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/cloudflared/deployment.yaml:Deployment:cloudflared:cloudflared",
+    "type": "Deployment",
+    "name": "cloudflared",
+    "namespace": "cloudflared",
+    "file": "k8s/oci/apps/cloudflared/deployment.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/cloudflared/namespace.yaml:Namespace::cloudflared",
+    "type": "Namespace",
+    "name": "cloudflared",
+    "namespace": "",
+    "file": "k8s/oci/apps/cloudflared/namespace.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/cloudflared/tunnel-secret.yaml:ExternalSecret:cloudflared:cloudflared-tunnel-token",
+    "type": "ExternalSecret",
+    "name": "cloudflared-tunnel-token",
+    "namespace": "cloudflared",
+    "file": "k8s/oci/apps/cloudflared/tunnel-secret.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/pve-tfc-agent/deployment.yaml:Deployment:tfc-agent:tfc-agent",
+    "type": "Deployment",
+    "name": "tfc-agent",
+    "namespace": "tfc-agent",
+    "file": "k8s/oci/apps/pve-tfc-agent/deployment.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/pve-tfc-agent/namespace.yaml:Namespace::tfc-agent",
+    "type": "Namespace",
+    "name": "tfc-agent",
+    "namespace": "",
+    "file": "k8s/oci/apps/pve-tfc-agent/namespace.yaml"
+  },
+  {
+    "id": "k8s/oci/apps/pve-tfc-agent/tfc-agent-secret.yaml:ExternalSecret:tfc-agent:tfc-agent-credentials",
+    "type": "ExternalSecret",
+    "name": "tfc-agent-credentials",
+    "namespace": "tfc-agent",
+    "file": "k8s/oci/apps/pve-tfc-agent/tfc-agent-secret.yaml"
+  },
+  {
+    "id": "k8s/oci/arc-runners/github-token-secret.yaml:ExternalSecret:arc-runners:github-token-secret",
+    "type": "ExternalSecret",
+    "name": "github-token-secret",
+    "namespace": "arc-runners",
+    "file": "k8s/oci/arc-runners/github-token-secret.yaml"
+  },
+  {
+    "id": "k8s/oci/arc-runners/namespace.yaml:Namespace::arc-runners",
+    "type": "Namespace",
+    "name": "arc-runners",
+    "namespace": "",
+    "file": "k8s/oci/arc-runners/namespace.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/arc-controller.yaml:Application:argocd:oci-arc-controller",
+    "type": "Application",
+    "name": "oci-arc-controller",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/arc-controller.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/arc-runner-home-k8s.yaml:Application:argocd:oci-arc-runner-home-k8s",
+    "type": "Application",
+    "name": "oci-arc-runner-home-k8s",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/arc-runner-home-k8s.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/arc-runners-config.yaml:Application:argocd:oci-arc-runners-config",
+    "type": "Application",
+    "name": "oci-arc-runners-config",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/arc-runners-config.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/cert-manager-config.yaml:Application:argocd:oci-cert-manager-config",
+    "type": "Application",
+    "name": "oci-cert-manager-config",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/cert-manager-config.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/cert-manager.yaml:Application:argocd:oci-cert-manager",
+    "type": "Application",
+    "name": "oci-cert-manager",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/cert-manager.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/cloudflared.yaml:Application:argocd:oci-cloudflared",
+    "type": "Application",
+    "name": "oci-cloudflared",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/cloudflared.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/external-secrets-config.yaml:Application:argocd:oci-external-secrets-config",
+    "type": "Application",
+    "name": "oci-external-secrets-config",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/external-secrets-config.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/external-secrets.yaml:Application:argocd:oci-external-secrets",
+    "type": "Application",
+    "name": "oci-external-secrets",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/external-secrets.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/gateway-api-crds.yaml:Application:argocd:oci-gateway-api-crds",
+    "type": "Application",
+    "name": "oci-gateway-api-crds",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/gateway-api-crds.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/nginx-gateway-fabric.yaml:Application:argocd:oci-nginx-gateway-fabric",
+    "type": "Application",
+    "name": "oci-nginx-gateway-fabric",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/nginx-gateway-fabric.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/oci-prd-apps.yaml:Application:argocd:oci-prd-apps",
+    "type": "Application",
+    "name": "oci-prd-apps",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/oci-prd-apps.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/pve-tfc-agent.yaml:Application:argocd:oci-pve-tfc-agent",
+    "type": "Application",
+    "name": "oci-pve-tfc-agent",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/pve-tfc-agent.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd/argocd-cmd-params-patch.yaml:ConfigMap:argocd:argocd-cmd-params-cm",
+    "type": "ConfigMap",
+    "name": "argocd-cmd-params-cm",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd/argocd-cmd-params-patch.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd/root-app.yaml:Application:argocd:root-app",
+    "type": "Application",
+    "name": "root-app",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd/root-app.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml:ExternalSecret:cert-manager:cloudflare-api-token",
+    "type": "ExternalSecret",
+    "name": "cloudflare-api-token",
+    "namespace": "cert-manager",
+    "file": "k8s/oci/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/cert-manager-config/cluster-issuer.yaml:ClusterIssuer::letsencrypt-prod",
+    "type": "ClusterIssuer",
+    "name": "letsencrypt-prod",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/cert-manager-config/cluster-issuer.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/cert-manager/namespace.yaml:Namespace::cert-manager",
+    "type": "Namespace",
+    "name": "cert-manager",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/cert-manager/namespace.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml:ClusterSecretStore::bitwarden-reventer-prd",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden-reventer-prd",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-stg.yaml:ClusterSecretStore::bitwarden-reventer-stg",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden-reventer-stg",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-stg.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store.yaml:ClusterSecretStore::bitwarden",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/external-secrets/namespace.yaml:Namespace::external-secrets",
+    "type": "Namespace",
+    "name": "external-secrets",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/external-secrets/namespace.yaml"
+  },
+  {
+    "id": "k8s/oci/infrastructure/ingress-nginx/namespace.yaml:Namespace::ingress-nginx",
+    "type": "Namespace",
+    "name": "ingress-nginx",
+    "namespace": "",
+    "file": "k8s/oci/infrastructure/ingress-nginx/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync-tnlastation-staging/cronjob-patch.yaml:CronJob:app-annict-rec-sync-tnlastation:annict-rec-sync-tnlastation",
+    "type": "CronJob",
+    "name": "annict-rec-sync-tnlastation",
+    "namespace": "app-annict-rec-sync-tnlastation",
+    "file": "k8s/pve/annict-rec-sync-tnlastation-staging/cronjob-patch.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync-tnlastation/channel-map-configmap.yaml:ConfigMap:app-annict-rec-sync-tnlastation:annict-rec-sync-tnlastation-channel-map",
+    "type": "ConfigMap",
+    "name": "annict-rec-sync-tnlastation-channel-map",
+    "namespace": "app-annict-rec-sync-tnlastation",
+    "file": "k8s/pve/annict-rec-sync-tnlastation/channel-map-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync-tnlastation/cronjob.yaml:CronJob:app-annict-rec-sync-tnlastation:annict-rec-sync-tnlastation",
+    "type": "CronJob",
+    "name": "annict-rec-sync-tnlastation",
+    "namespace": "app-annict-rec-sync-tnlastation",
+    "file": "k8s/pve/annict-rec-sync-tnlastation/cronjob.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync-tnlastation/namespace.yaml:Namespace::app-annict-rec-sync-tnlastation",
+    "type": "Namespace",
+    "name": "app-annict-rec-sync-tnlastation",
+    "namespace": "",
+    "file": "k8s/pve/annict-rec-sync-tnlastation/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync-tnlastation/secret.yaml:ExternalSecret:app-annict-rec-sync-tnlastation:annict-rec-sync-tnlastation-secrets",
+    "type": "ExternalSecret",
+    "name": "annict-rec-sync-tnlastation-secrets",
+    "namespace": "app-annict-rec-sync-tnlastation",
+    "file": "k8s/pve/annict-rec-sync-tnlastation/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync/channel-map-configmap.yaml:ConfigMap:app-annict-rec-sync:annict-rec-sync-channel-map",
+    "type": "ConfigMap",
+    "name": "annict-rec-sync-channel-map",
+    "namespace": "app-annict-rec-sync",
+    "file": "k8s/pve/annict-rec-sync/channel-map-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync/cronjob.yaml:CronJob:app-annict-rec-sync:annict-rec-sync",
+    "type": "CronJob",
+    "name": "annict-rec-sync",
+    "namespace": "app-annict-rec-sync",
+    "file": "k8s/pve/annict-rec-sync/cronjob.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync/namespace.yaml:Namespace::app-annict-rec-sync",
+    "type": "Namespace",
+    "name": "app-annict-rec-sync",
+    "namespace": "",
+    "file": "k8s/pve/annict-rec-sync/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-rec-sync/secret.yaml:ExternalSecret:app-annict-rec-sync:annict-rec-sync-secrets",
+    "type": "ExternalSecret",
+    "name": "annict-rec-sync-secrets",
+    "namespace": "app-annict-rec-sync",
+    "file": "k8s/pve/annict-rec-sync/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-scraper/deployment.yaml:Deployment:app-annict-scraper:annict-scraper",
+    "type": "Deployment",
+    "name": "annict-scraper",
+    "namespace": "app-annict-scraper",
+    "file": "k8s/pve/annict-scraper/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-scraper/namespace.yaml:Namespace::app-annict-scraper",
+    "type": "Namespace",
+    "name": "app-annict-scraper",
+    "namespace": "",
+    "file": "k8s/pve/annict-scraper/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/annict-scraper/service.yaml:Service:app-annict-scraper:annict-scraper",
+    "type": "Service",
+    "name": "annict-scraper",
+    "namespace": "app-annict-scraper",
+    "file": "k8s/pve/annict-scraper/service.yaml"
+  },
+  {
+    "id": "k8s/pve/arc-runners/github-app-secret.yaml:ExternalSecret:arc-runners:github-app-secret",
+    "type": "ExternalSecret",
+    "name": "github-app-secret",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/arc-runners/github-app-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/arc-runners/github-my-infra-token-secret.yaml:ExternalSecret:arc-runners:github-my-infra-token-secret",
+    "type": "ExternalSecret",
+    "name": "github-my-infra-token-secret",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/arc-runners/github-my-infra-token-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/arc-runners/github-token-secret.yaml:ExternalSecret:arc-runners:github-token-secret",
+    "type": "ExternalSecret",
+    "name": "github-token-secret",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/arc-runners/github-token-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/arc-runners/namespace.yaml:Namespace::arc-runners",
+    "type": "Namespace",
+    "name": "arc-runners",
+    "namespace": "",
+    "file": "k8s/pve/arc-runners/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/arc-runners/reventer-cache-pvc.yaml:PersistentVolume::arc-runner-reventer-cache-pv",
+    "type": "PersistentVolume",
+    "name": "arc-runner-reventer-cache-pv",
+    "namespace": "",
+    "file": "k8s/pve/arc-runners/reventer-cache-pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/arc-runners/reventer-cache-pvc.yaml:PersistentVolumeClaim:arc-runners:arc-runner-reventer-cache",
+    "type": "PersistentVolumeClaim",
+    "name": "arc-runner-reventer-cache",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/arc-runners/reventer-cache-pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-review/resources.yaml:ConfigMap:arc-runners:architecture-review-nginx",
+    "type": "ConfigMap",
+    "name": "architecture-review-nginx",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/architecture-review/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-review/resources.yaml:Deployment:arc-runners:architecture-review",
+    "type": "Deployment",
+    "name": "architecture-review",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/architecture-review/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-review/resources.yaml:NetworkPolicy:arc-runners:architecture-review",
+    "type": "NetworkPolicy",
+    "name": "architecture-review",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/architecture-review/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-review/resources.yaml:Service:arc-runners:architecture-review",
+    "type": "Service",
+    "name": "architecture-review",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/architecture-review/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/annict-rec-sync-tnlastation-staging.yaml:Application:argocd:annict-rec-sync-tnlastation-staging",
+    "type": "Application",
+    "name": "annict-rec-sync-tnlastation-staging",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/annict-rec-sync-tnlastation-staging.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/annict-rec-sync-tnlastation.yaml:Application:argocd:annict-rec-sync-tnlastation",
+    "type": "Application",
+    "name": "annict-rec-sync-tnlastation",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/annict-rec-sync-tnlastation.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/annict-rec-sync.yaml:Application:argocd:annict-rec-sync",
+    "type": "Application",
+    "name": "annict-rec-sync",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/annict-rec-sync.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/annict-scraper.yaml:Application:argocd:annict-scraper",
+    "type": "Application",
+    "name": "annict-scraper",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/annict-scraper.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-controller.yaml:Application:argocd:arc-controller",
+    "type": "Application",
+    "name": "arc-controller",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-controller.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runner-my-infra-codex.yaml:Application:argocd:arc-runner-my-infra-codex",
+    "type": "Application",
+    "name": "arc-runner-my-infra-codex",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-my-infra-codex.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runner-my-infra.yaml:Application:argocd:arc-runner-my-infra",
+    "type": "Application",
+    "name": "arc-runner-my-infra",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-my-infra.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runner-reventer-codex.yaml:Application:argocd:arc-runner-reventer-codex",
+    "type": "Application",
+    "name": "arc-runner-reventer-codex",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-reventer-codex.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runner-reventer-review.yaml:Application:argocd:arc-runner-reventer-review",
+    "type": "Application",
+    "name": "arc-runner-reventer-review",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-reventer-review.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runner-reventer.yaml:Application:argocd:arc-runner-reventer",
+    "type": "Application",
+    "name": "arc-runner-reventer",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-reventer.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runners-config.yaml:Application:argocd:arc-runners-config",
+    "type": "Application",
+    "name": "arc-runners-config",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runners-config.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/architecture-review.yaml:Application:argocd:architecture-review",
+    "type": "Application",
+    "name": "architecture-review",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/architecture-review.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/argocd-image-updater.yaml:Application:argocd:argocd-image-updater",
+    "type": "Application",
+    "name": "argocd-image-updater",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/argocd-image-updater.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/blackbox-exporter.yaml:Application:argocd:blackbox-exporter",
+    "type": "Application",
+    "name": "blackbox-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/blackbox-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/cloudflared.yaml:Application:argocd:cloudflared",
+    "type": "Application",
+    "name": "cloudflared",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/cloudflared.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/coredns.yaml:Application:argocd:coredns",
+    "type": "Application",
+    "name": "coredns",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/coredns.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/coupon-manager.yaml:Application:argocd:coupon-manager",
+    "type": "Application",
+    "name": "coupon-manager",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/coupon-manager.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/descheduler.yaml:Application:argocd:descheduler",
+    "type": "Application",
+    "name": "descheduler",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/descheduler.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/epgstation.yaml:Application:argocd:epgstation",
+    "type": "Application",
+    "name": "epgstation",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/epgstation.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/external-secrets-config.yaml:Application:argocd:external-secrets-config",
+    "type": "Application",
+    "name": "external-secrets-config",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/external-secrets-config.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/external-secrets.yaml:Application:argocd:external-secrets",
+    "type": "Application",
+    "name": "external-secrets",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/external-secrets.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/loockit.yaml:Application:argocd:loockit",
+    "type": "Application",
+    "name": "loockit",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/loockit.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/magic-mirror.yaml:Application:argocd:magic-mirror",
+    "type": "Application",
+    "name": "magic-mirror",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/magic-mirror.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/mariadb.yaml:Application:argocd:mariadb",
+    "type": "Application",
+    "name": "mariadb",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/mariadb.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/metallb.yaml:Application:argocd:metallb",
+    "type": "Application",
+    "name": "metallb",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/metallb.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/mirakurun-staging.yaml:Application:argocd:mirakurun-staging",
+    "type": "Application",
+    "name": "mirakurun-staging",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/mirakurun-staging.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/mirakurun.yaml:Application:argocd:mirakurun",
+    "type": "Application",
+    "name": "mirakurun",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/mirakurun.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/nas-backup.yaml:Application:argocd:nas-backup",
+    "type": "Application",
+    "name": "nas-backup",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/nas-backup.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/nextcloud.yaml:Application:argocd:nextcloud",
+    "type": "Application",
+    "name": "nextcloud",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/nextcloud.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/nut-exporter.yaml:Application:argocd:nut-exporter",
+    "type": "Application",
+    "name": "nut-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/nut-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/pdc-agent.yaml:Application:argocd:pdc-agent",
+    "type": "Application",
+    "name": "pdc-agent",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/pdc-agent.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/postgres-staging.yaml:Application:argocd:postgres-staging",
+    "type": "Application",
+    "name": "postgres-staging",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/postgres-staging.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/postgres.yaml:Application:argocd:postgres",
+    "type": "Application",
+    "name": "postgres",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/postgres.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/prometheus-node-exporter.yaml:Application:argocd:prometheus-node-exporter",
+    "type": "Application",
+    "name": "prometheus-node-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/prometheus-node-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/pve-exporter.yaml:Application:argocd:pve-exporter",
+    "type": "Application",
+    "name": "pve-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/pve-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/reventer-gitops.yaml:Application:argocd:reventer-gitops",
+    "type": "Application",
+    "name": "reventer-gitops",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/reventer-gitops.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/reventer-tfc-agent.yaml:Application:argocd:reventer-tfc-agent",
+    "type": "Application",
+    "name": "reventer-tfc-agent",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/reventer-tfc-agent.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/shared-state-storage.yaml:Application:argocd:shared-state-storage",
+    "type": "Application",
+    "name": "shared-state-storage",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/shared-state-storage.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/snmp-exporter.yaml:Application:argocd:snmp-exporter",
+    "type": "Application",
+    "name": "snmp-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/snmp-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/speedtest-exporter.yaml:Application:argocd:speedtest-exporter",
+    "type": "Application",
+    "name": "speedtest-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/speedtest-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/tfc-agent.yaml:Application:argocd:tfc-agent",
+    "type": "Application",
+    "name": "tfc-agent",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/tfc-agent.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/tinytuya-exporter.yaml:Application:argocd:tinytuya-exporter",
+    "type": "Application",
+    "name": "tinytuya-exporter",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/tinytuya-exporter.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/tnlastation-staging-image-updater.yaml:ImageUpdater:argocd:tnlastation-staging",
+    "type": "ImageUpdater",
+    "name": "tnlastation-staging",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/tnlastation-staging-image-updater.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/tnlastation-staging.yaml:Application:argocd:tnlastation-staging",
+    "type": "Application",
+    "name": "tnlastation-staging",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/tnlastation-staging.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/tnlastation.yaml:Application:argocd:tnlastation",
+    "type": "Application",
+    "name": "tnlastation",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/tnlastation.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/victoria-metrics.yaml:Application:argocd:victoria-metrics",
+    "type": "Application",
+    "name": "victoria-metrics",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/victoria-metrics.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/vmagent.yaml:Application:argocd:vmagent",
+    "type": "Application",
+    "name": "vmagent",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/vmagent.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/wol.yaml:Application:argocd:wol",
+    "type": "Application",
+    "name": "wol",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/wol.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/argocd-cm-patch.yaml:ConfigMap:argocd:argocd-cm",
+    "type": "ConfigMap",
+    "name": "argocd-cm",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd/argocd-cm-patch.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/argocd-cmd-params-patch.yaml:ConfigMap:argocd:argocd-cmd-params-cm",
+    "type": "ConfigMap",
+    "name": "argocd-cmd-params-cm",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd/argocd-cmd-params-patch.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/availability.yaml:PodDisruptionBudget::argocd-redis-ha-haproxy",
+    "type": "PodDisruptionBudget",
+    "name": "argocd-redis-ha-haproxy",
+    "namespace": "",
+    "file": "k8s/pve/argocd/availability.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/availability.yaml:PodDisruptionBudget::argocd-redis-ha-server",
+    "type": "PodDisruptionBudget",
+    "name": "argocd-redis-ha-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/availability.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/availability.yaml:PodDisruptionBudget::argocd-repo-server",
+    "type": "PodDisruptionBudget",
+    "name": "argocd-repo-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/availability.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/availability.yaml:PodDisruptionBudget::argocd-server",
+    "type": "PodDisruptionBudget",
+    "name": "argocd-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/availability.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/availability.yaml:PriorityClass::argocd-management",
+    "type": "PriorityClass",
+    "name": "argocd-management",
+    "namespace": "",
+    "file": "k8s/pve/argocd/availability.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:Deployment::argocd-applicationset-controller",
+    "type": "Deployment",
+    "name": "argocd-applicationset-controller",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:Deployment::argocd-dex-server",
+    "type": "Deployment",
+    "name": "argocd-dex-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:Deployment::argocd-notifications-controller",
+    "type": "Deployment",
+    "name": "argocd-notifications-controller",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:Deployment::argocd-redis-ha-haproxy",
+    "type": "Deployment",
+    "name": "argocd-redis-ha-haproxy",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:Deployment::argocd-repo-server",
+    "type": "Deployment",
+    "name": "argocd-repo-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:Deployment::argocd-server",
+    "type": "Deployment",
+    "name": "argocd-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:StatefulSet::argocd-application-controller",
+    "type": "StatefulSet",
+    "name": "argocd-application-controller",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/ha-placement-patches.yaml:StatefulSet::argocd-redis-ha-server",
+    "type": "StatefulSet",
+    "name": "argocd-redis-ha-server",
+    "namespace": "",
+    "file": "k8s/pve/argocd/ha-placement-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/retired-redis.yaml:Deployment::argocd-redis",
+    "type": "Deployment",
+    "name": "argocd-redis",
+    "namespace": "",
+    "file": "k8s/pve/argocd/retired-redis.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd/root-app.yaml:Application:argocd:root-app",
+    "type": "Application",
+    "name": "root-app",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd/root-app.yaml"
+  },
+  {
+    "id": "k8s/pve/cloudflared/deployment.yaml:Deployment:cloudflared:cloudflared",
+    "type": "Deployment",
+    "name": "cloudflared",
+    "namespace": "cloudflared",
+    "file": "k8s/pve/cloudflared/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/cloudflared/namespace.yaml:Namespace::cloudflared",
+    "type": "Namespace",
+    "name": "cloudflared",
+    "namespace": "",
+    "file": "k8s/pve/cloudflared/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/cloudflared/tunnel-secret.yaml:ExternalSecret:cloudflared:cloudflared-tunnel-token",
+    "type": "ExternalSecret",
+    "name": "cloudflared-tunnel-token",
+    "namespace": "cloudflared",
+    "file": "k8s/pve/cloudflared/tunnel-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/coredns/deployment.yaml:Deployment:app-coredns:coredns-deployment",
+    "type": "Deployment",
+    "name": "coredns-deployment",
+    "namespace": "app-coredns",
+    "file": "k8s/pve/coredns/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/coredns/namespace.yaml:Namespace::app-coredns",
+    "type": "Namespace",
+    "name": "app-coredns",
+    "namespace": "",
+    "file": "k8s/pve/coredns/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/coredns/service.yaml:Service:app-coredns:coredns-service",
+    "type": "Service",
+    "name": "coredns-service",
+    "namespace": "app-coredns",
+    "file": "k8s/pve/coredns/service.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/api.yaml:Deployment:app-coupon-manager:coupon-manager-api",
+    "type": "Deployment",
+    "name": "coupon-manager-api",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/api.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/api.yaml:Service:app-coupon-manager:coupon-manager-api",
+    "type": "Service",
+    "name": "coupon-manager-api",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/api.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/namespace.yaml:Namespace::app-coupon-manager",
+    "type": "Namespace",
+    "name": "app-coupon-manager",
+    "namespace": "",
+    "file": "k8s/pve/coupon-manager/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/pvc.yaml:PersistentVolume::coupon-manager-data-protection-keys-nfs",
+    "type": "PersistentVolume",
+    "name": "coupon-manager-data-protection-keys-nfs",
+    "namespace": "",
+    "file": "k8s/pve/coupon-manager/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/pvc.yaml:PersistentVolume::coupon-manager-images-nfs",
+    "type": "PersistentVolume",
+    "name": "coupon-manager-images-nfs",
+    "namespace": "",
+    "file": "k8s/pve/coupon-manager/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/pvc.yaml:PersistentVolumeClaim:app-coupon-manager:coupon-images-nfs",
+    "type": "PersistentVolumeClaim",
+    "name": "coupon-images-nfs",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/pvc.yaml:PersistentVolumeClaim:app-coupon-manager:web-data-protection-keys-nfs",
+    "type": "PersistentVolumeClaim",
+    "name": "web-data-protection-keys-nfs",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/secret.yaml:ExternalSecret:app-coupon-manager:coupon-manager-secrets",
+    "type": "ExternalSecret",
+    "name": "coupon-manager-secrets",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/web.yaml:Deployment:app-coupon-manager:coupon-manager-web",
+    "type": "Deployment",
+    "name": "coupon-manager-web",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/web.yaml"
+  },
+  {
+    "id": "k8s/pve/coupon-manager/web.yaml:Service:app-coupon-manager:coupon-manager-web",
+    "type": "Service",
+    "name": "coupon-manager-web",
+    "namespace": "app-coupon-manager",
+    "file": "k8s/pve/coupon-manager/web.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/epgstation-configmap.yaml:ConfigMap:app-epgstation:epgstation-config",
+    "type": "ConfigMap",
+    "name": "epgstation-config",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/epgstation-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/epgstation-deployment.yaml:Deployment:app-epgstation:epgstation",
+    "type": "Deployment",
+    "name": "epgstation",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/epgstation-deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/epgstation-secret.yaml:ExternalSecret:app-epgstation:epgstation-secrets",
+    "type": "ExternalSecret",
+    "name": "epgstation-secrets",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/epgstation-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/epgstation-service.yaml:Service:app-epgstation:epgstation",
+    "type": "Service",
+    "name": "epgstation",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/epgstation-service.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/ghcr-pull-secret.yaml:ExternalSecret:app-epgstation:ghcr-pull-secret",
+    "type": "ExternalSecret",
+    "name": "ghcr-pull-secret",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/ghcr-pull-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/namespace.yaml:Namespace::app-epgstation",
+    "type": "Namespace",
+    "name": "app-epgstation",
+    "namespace": "",
+    "file": "k8s/pve/epgstation/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/pvc.yaml:PersistentVolume::epgstation-drop-pv",
+    "type": "PersistentVolume",
+    "name": "epgstation-drop-pv",
+    "namespace": "",
+    "file": "k8s/pve/epgstation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/pvc.yaml:PersistentVolume::epgstation-recorded-pv",
+    "type": "PersistentVolume",
+    "name": "epgstation-recorded-pv",
+    "namespace": "",
+    "file": "k8s/pve/epgstation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/pvc.yaml:PersistentVolume::epgstation-thumbnail-pv",
+    "type": "PersistentVolume",
+    "name": "epgstation-thumbnail-pv",
+    "namespace": "",
+    "file": "k8s/pve/epgstation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/pvc.yaml:PersistentVolumeClaim:app-epgstation:epgstation-drop-pvc",
+    "type": "PersistentVolumeClaim",
+    "name": "epgstation-drop-pvc",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/pvc.yaml:PersistentVolumeClaim:app-epgstation:epgstation-recorded-pvc",
+    "type": "PersistentVolumeClaim",
+    "name": "epgstation-recorded-pvc",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/epgstation/pvc.yaml:PersistentVolumeClaim:app-epgstation:epgstation-thumbnail-pvc",
+    "type": "PersistentVolumeClaim",
+    "name": "epgstation-thumbnail-pvc",
+    "namespace": "app-epgstation",
+    "file": "k8s/pve/epgstation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/external-secrets/cluster-secret-store.yaml:ClusterSecretStore::bitwarden",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden",
+    "namespace": "",
+    "file": "k8s/pve/external-secrets/cluster-secret-store.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/configmap.yaml:ConfigMap:app-loockit:loockit-config",
+    "type": "ConfigMap",
+    "name": "loockit-config",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/deployment.yaml:Deployment:app-loockit:loockit",
+    "type": "Deployment",
+    "name": "loockit",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/endpointslice.yaml:EndpointSlice:app-loockit:loockit-lxc",
+    "type": "EndpointSlice",
+    "name": "loockit-lxc",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/endpointslice.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/external-rbac.yaml:Role:app-loockit:loockit-external-lease",
+    "type": "Role",
+    "name": "loockit-external-lease",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/external-rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/external-rbac.yaml:RoleBinding:app-loockit:loockit-external-lease",
+    "type": "RoleBinding",
+    "name": "loockit-external-lease",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/external-rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/external-rbac.yaml:Secret:app-loockit:loockit-external-token",
+    "type": "Secret",
+    "name": "loockit-external-token",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/external-rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/external-rbac.yaml:ServiceAccount:app-loockit:loockit-external",
+    "type": "ServiceAccount",
+    "name": "loockit-external",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/external-rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/namespace.yaml:Namespace::app-loockit",
+    "type": "Namespace",
+    "name": "app-loockit",
+    "namespace": "",
+    "file": "k8s/pve/loockit/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/networkpolicy.yaml:NetworkPolicy:app-loockit:loockit-ingress",
+    "type": "NetworkPolicy",
+    "name": "loockit-ingress",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/networkpolicy.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/proxy.yaml:ConfigMap:app-loockit:loockit-proxy",
+    "type": "ConfigMap",
+    "name": "loockit-proxy",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/proxy.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/proxy.yaml:Deployment:app-loockit:loockit-proxy",
+    "type": "Deployment",
+    "name": "loockit-proxy",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/proxy.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/rbac.yaml:Role:app-loockit:loockit-lease",
+    "type": "Role",
+    "name": "loockit-lease",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/rbac.yaml:RoleBinding:app-loockit:loockit-lease",
+    "type": "RoleBinding",
+    "name": "loockit-lease",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/rbac.yaml:ServiceAccount:app-loockit:loockit",
+    "type": "ServiceAccount",
+    "name": "loockit",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/secret.yaml:ExternalSecret:app-loockit:loockit-keys",
+    "type": "ExternalSecret",
+    "name": "loockit-keys",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/loockit/service.yaml:Service:app-loockit:loockit",
+    "type": "Service",
+    "name": "loockit",
+    "namespace": "app-loockit",
+    "file": "k8s/pve/loockit/service.yaml"
+  },
+  {
+    "id": "k8s/pve/magic-mirror/custom-css-configmap.yaml:ConfigMap:app-magic-mirror:magic-mirror-custom-css",
+    "type": "ConfigMap",
+    "name": "magic-mirror-custom-css",
+    "namespace": "app-magic-mirror",
+    "file": "k8s/pve/magic-mirror/custom-css-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/magic-mirror/deployment.yaml:Deployment:app-magic-mirror:magic-mirror",
+    "type": "Deployment",
+    "name": "magic-mirror",
+    "namespace": "app-magic-mirror",
+    "file": "k8s/pve/magic-mirror/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/magic-mirror/namespace.yaml:Namespace::app-magic-mirror",
+    "type": "Namespace",
+    "name": "app-magic-mirror",
+    "namespace": "",
+    "file": "k8s/pve/magic-mirror/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/magic-mirror/secret.yaml:ExternalSecret:app-magic-mirror:magic-mirror-config",
+    "type": "ExternalSecret",
+    "name": "magic-mirror-config",
+    "namespace": "app-magic-mirror",
+    "file": "k8s/pve/magic-mirror/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/magic-mirror/service.yaml:Service:app-magic-mirror:magic-mirror",
+    "type": "Service",
+    "name": "magic-mirror",
+    "namespace": "app-magic-mirror",
+    "file": "k8s/pve/magic-mirror/service.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/backup-cronjob.yaml:CronJob:infra-db:mariadb-backup",
+    "type": "CronJob",
+    "name": "mariadb-backup",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/backup-cronjob.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/backup-scripts-configmap.yaml:ConfigMap:infra-db:backup-scripts",
+    "type": "ConfigMap",
+    "name": "backup-scripts",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/backup-scripts-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/backup-secret.yaml:ExternalSecret:infra-db:db-backup-credentials",
+    "type": "ExternalSecret",
+    "name": "db-backup-credentials",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/backup-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/mariadb-secret.yaml:ExternalSecret:infra-db:mariadb-credentials",
+    "type": "ExternalSecret",
+    "name": "mariadb-credentials",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/mariadb-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/mariadb-service.yaml:Service:infra-db:mariadb",
+    "type": "Service",
+    "name": "mariadb",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/mariadb-service.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/mariadb-statefulset.yaml:StatefulSet:infra-db:mariadb",
+    "type": "StatefulSet",
+    "name": "mariadb",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/mariadb-statefulset.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/namespace.yaml:Namespace::infra-db",
+    "type": "Namespace",
+    "name": "infra-db",
+    "namespace": "",
+    "file": "k8s/pve/mariadb/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/nextcloud-db-user.yaml:ExternalSecret:infra-db:nextcloud-db-user",
+    "type": "ExternalSecret",
+    "name": "nextcloud-db-user",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/nextcloud-db-user.yaml"
+  },
+  {
+    "id": "k8s/pve/mariadb/nextcloud-db-user.yaml:Job:infra-db:mariadb-ensure-db-users",
+    "type": "Job",
+    "name": "mariadb-ensure-db-users",
+    "namespace": "infra-db",
+    "file": "k8s/pve/mariadb/nextcloud-db-user.yaml"
+  },
+  {
+    "id": "k8s/pve/metallb/metallb.yaml:IPAddressPool:metallb-system:home-k8s-address-pool",
+    "type": "IPAddressPool",
+    "name": "home-k8s-address-pool",
+    "namespace": "metallb-system",
+    "file": "k8s/pve/metallb/metallb.yaml"
+  },
+  {
+    "id": "k8s/pve/metallb/metallb.yaml:L2Advertisement:metallb-system:l2advertisement",
+    "type": "L2Advertisement",
+    "name": "l2advertisement",
+    "namespace": "metallb-system",
+    "file": "k8s/pve/metallb/metallb.yaml"
+  },
+  {
+    "id": "k8s/pve/metallb/namespace.yaml:Namespace::metallb-system",
+    "type": "Namespace",
+    "name": "metallb-system",
+    "namespace": "",
+    "file": "k8s/pve/metallb/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun-staging/endpointslice.yaml:EndpointSlice:app-mirakurun-staging:mirakurun-staging-lxc",
+    "type": "EndpointSlice",
+    "name": "mirakurun-staging-lxc",
+    "namespace": "app-mirakurun-staging",
+    "file": "k8s/pve/mirakurun-staging/endpointslice.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun-staging/namespace.yaml:Namespace::app-mirakurun-staging",
+    "type": "Namespace",
+    "name": "app-mirakurun-staging",
+    "namespace": "",
+    "file": "k8s/pve/mirakurun-staging/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun-staging/service.yaml:Service:app-mirakurun-staging:mirakurun",
+    "type": "Service",
+    "name": "mirakurun",
+    "namespace": "app-mirakurun-staging",
+    "file": "k8s/pve/mirakurun-staging/service.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/mirakurun-configmap.yaml:ConfigMap:app-mirakurun:mirakurun-config",
+    "type": "ConfigMap",
+    "name": "mirakurun-config",
+    "namespace": "app-mirakurun",
+    "file": "k8s/pve/mirakurun/mirakurun-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/mirakurun-deployment.yaml:Deployment:app-mirakurun:mirakurun",
+    "type": "Deployment",
+    "name": "mirakurun",
+    "namespace": "app-mirakurun",
+    "file": "k8s/pve/mirakurun/mirakurun-deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/mirakurun-endpointslice.yaml:EndpointSlice:app-mirakurun:mirakurun-lxc",
+    "type": "EndpointSlice",
+    "name": "mirakurun-lxc",
+    "namespace": "app-mirakurun",
+    "file": "k8s/pve/mirakurun/mirakurun-endpointslice.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/mirakurun-ghcr-pull-secret.yaml:ExternalSecret:app-mirakurun:ghcr-pull-secret",
+    "type": "ExternalSecret",
+    "name": "ghcr-pull-secret",
+    "namespace": "app-mirakurun",
+    "file": "k8s/pve/mirakurun/mirakurun-ghcr-pull-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/mirakurun-secret.yaml:ExternalSecret:app-mirakurun:mirakurun-bcas-keys",
+    "type": "ExternalSecret",
+    "name": "mirakurun-bcas-keys",
+    "namespace": "app-mirakurun",
+    "file": "k8s/pve/mirakurun/mirakurun-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/mirakurun-service.yaml:Service:app-mirakurun:mirakurun",
+    "type": "Service",
+    "name": "mirakurun",
+    "namespace": "app-mirakurun",
+    "file": "k8s/pve/mirakurun/mirakurun-service.yaml"
+  },
+  {
+    "id": "k8s/pve/mirakurun/namespace.yaml:Namespace::app-mirakurun",
+    "type": "Namespace",
+    "name": "app-mirakurun",
+    "namespace": "",
+    "file": "k8s/pve/mirakurun/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/backup-script.yaml:ConfigMap:infra-backup:nas-backup-script",
+    "type": "ConfigMap",
+    "name": "nas-backup-script",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/backup-script.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/cronjob.yaml:CronJob:infra-backup:nas-backup",
+    "type": "CronJob",
+    "name": "nas-backup",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/cronjob.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/external-secret.yaml:ExternalSecret:infra-backup:nas-backup-credentials",
+    "type": "ExternalSecret",
+    "name": "nas-backup-credentials",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/namespace.yaml:Namespace::infra-backup",
+    "type": "Namespace",
+    "name": "infra-backup",
+    "namespace": "",
+    "file": "k8s/pve/nas-backup/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/tnlastation-recorded-backup-script.yaml:ConfigMap:infra-backup:tnlastation-recorded-backup-script",
+    "type": "ConfigMap",
+    "name": "tnlastation-recorded-backup-script",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/tnlastation-recorded-backup-script.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/tnlastation-recorded-cronjob.yaml:CronJob:infra-backup:tnlastation-recorded-backup",
+    "type": "CronJob",
+    "name": "tnlastation-recorded-backup",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/tnlastation-recorded-cronjob.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/tnlastation-recorded-external-secret.yaml:ExternalSecret:infra-backup:tnlastation-recorded-backup-credentials",
+    "type": "ExternalSecret",
+    "name": "tnlastation-recorded-backup-credentials",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/tnlastation-recorded-external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/namespace.yaml:Namespace::app-nextcloud",
+    "type": "Namespace",
+    "name": "app-nextcloud",
+    "namespace": "",
+    "file": "k8s/pve/nextcloud/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/nextcloud-configmap.yaml:ConfigMap:app-nextcloud:nextcloud-config",
+    "type": "ConfigMap",
+    "name": "nextcloud-config",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/nextcloud-configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/nextcloud-deployment.yaml:Deployment:app-nextcloud:nextcloud",
+    "type": "Deployment",
+    "name": "nextcloud",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/nextcloud-deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/nextcloud-secret.yaml:ExternalSecret:app-nextcloud:nextcloud-secrets",
+    "type": "ExternalSecret",
+    "name": "nextcloud-secrets",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/nextcloud-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/nextcloud-service.yaml:Service:app-nextcloud:nextcloud",
+    "type": "Service",
+    "name": "nextcloud",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/nextcloud-service.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/pvc.yaml:PersistentVolume::nextcloud-recorded-readonly-pv",
+    "type": "PersistentVolume",
+    "name": "nextcloud-recorded-readonly-pv",
+    "namespace": "",
+    "file": "k8s/pve/nextcloud/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/pvc.yaml:PersistentVolumeClaim:app-nextcloud:nextcloud-nas-recorded-pvc",
+    "type": "PersistentVolumeClaim",
+    "name": "nextcloud-nas-recorded-pvc",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/redis.yaml:Deployment:app-nextcloud:nextcloud-redis",
+    "type": "Deployment",
+    "name": "nextcloud-redis",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/redis.yaml"
+  },
+  {
+    "id": "k8s/pve/nextcloud/redis.yaml:Service:app-nextcloud:nextcloud-redis",
+    "type": "Service",
+    "name": "nextcloud-redis",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/nextcloud/redis.yaml"
+  },
+  {
+    "id": "k8s/pve/nut-exporter/deployment.yaml:Deployment:monitoring:nut-exporter",
+    "type": "Deployment",
+    "name": "nut-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/nut-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/nut-exporter/deployment.yaml:Service:monitoring:nut-exporter",
+    "type": "Service",
+    "name": "nut-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/nut-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/pdc-agent/deployment.yaml:Deployment:monitoring:pdc-agent",
+    "type": "Deployment",
+    "name": "pdc-agent",
+    "namespace": "monitoring",
+    "file": "k8s/pve/pdc-agent/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/pdc-agent/pdc-secret.yaml:ExternalSecret:monitoring:grafana-pdc-credentials",
+    "type": "ExternalSecret",
+    "name": "grafana-pdc-credentials",
+    "namespace": "monitoring",
+    "file": "k8s/pve/pdc-agent/pdc-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/postgres-staging/namespace.yaml:Namespace::infra-db-staging",
+    "type": "Namespace",
+    "name": "infra-db-staging",
+    "namespace": "",
+    "file": "k8s/pve/postgres-staging/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/postgres/coupon-manager-db-user.yaml:ExternalSecret:infra-db:coupon-manager-db-user",
+    "type": "ExternalSecret",
+    "name": "coupon-manager-db-user",
+    "namespace": "infra-db",
+    "file": "k8s/pve/postgres/coupon-manager-db-user.yaml"
+  },
+  {
+    "id": "k8s/pve/postgres/coupon-manager-db-user.yaml:Job:infra-db:postgres-ensure-coupon-manager-db",
+    "type": "Job",
+    "name": "postgres-ensure-coupon-manager-db",
+    "namespace": "infra-db",
+    "file": "k8s/pve/postgres/coupon-manager-db-user.yaml"
+  },
+  {
+    "id": "k8s/pve/postgres/postgres.yaml:Service:infra-db:postgres",
+    "type": "Service",
+    "name": "postgres",
+    "namespace": "infra-db",
+    "file": "k8s/pve/postgres/postgres.yaml"
+  },
+  {
+    "id": "k8s/pve/postgres/postgres.yaml:StatefulSet:infra-db:postgres",
+    "type": "StatefulSet",
+    "name": "postgres",
+    "namespace": "infra-db",
+    "file": "k8s/pve/postgres/postgres.yaml"
+  },
+  {
+    "id": "k8s/pve/postgres/secret.yaml:ExternalSecret:infra-db:postgres-credentials",
+    "type": "ExternalSecret",
+    "name": "postgres-credentials",
+    "namespace": "infra-db",
+    "file": "k8s/pve/postgres/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/pve-exporter/deployment.yaml:Deployment:monitoring:pve-exporter",
+    "type": "Deployment",
+    "name": "pve-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/pve-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/pve-exporter/deployment.yaml:Service:monitoring:pve-exporter",
+    "type": "Service",
+    "name": "pve-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/pve-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/pve-exporter/namespace.yaml:Namespace::monitoring",
+    "type": "Namespace",
+    "name": "monitoring",
+    "namespace": "",
+    "file": "k8s/pve/pve-exporter/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/pve-exporter/secret.yaml:ExternalSecret:monitoring:pve-exporter-config",
+    "type": "ExternalSecret",
+    "name": "pve-exporter-config",
+    "namespace": "monitoring",
+    "file": "k8s/pve/pve-exporter/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/argo-rollouts-prd.yaml:Application:argocd:argo-rollouts-prd",
+    "type": "Application",
+    "name": "argo-rollouts-prd",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/argo-rollouts-prd.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/external-secret-image-updater-ghcr.yaml:ExternalSecret:argocd:ghcr-image-updater-secret",
+    "type": "ExternalSecret",
+    "name": "ghcr-image-updater-secret",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/external-secret-image-updater-ghcr.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/external-secret-notifications-discord.yaml:ExternalSecret:argocd:notifications-discord-webhook",
+    "type": "ExternalSecret",
+    "name": "notifications-discord-webhook",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/external-secret-notifications-discord.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/image-updater.yaml:ImageUpdater:argocd:reventer-image-updater",
+    "type": "ImageUpdater",
+    "name": "reventer-image-updater",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/image-updater.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/notifications.yaml:ConfigMap:argocd:argocd-notifications-cm",
+    "type": "ConfigMap",
+    "name": "argocd-notifications-cm",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/notifications.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/observability-canary-prd.yaml:Application:argocd:reventer-observability-canary-prd",
+    "type": "Application",
+    "name": "reventer-observability-canary-prd",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/observability-canary-prd.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/observability-canary-stg.yaml:Application:argocd:reventer-observability-canary-stg",
+    "type": "Application",
+    "name": "reventer-observability-canary-stg",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/observability-canary-stg.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/project.yaml:AppProject:argocd:reventer",
+    "type": "AppProject",
+    "name": "reventer",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/project.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/reventer-admin-prd.yaml:Application:argocd:reventer-admin-prd",
+    "type": "Application",
+    "name": "reventer-admin-prd",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/reventer-admin-prd.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/reventer-monitoring-prd.yaml:Application:argocd:reventer-monitoring-prd",
+    "type": "Application",
+    "name": "reventer-monitoring-prd",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/reventer-monitoring-prd.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/reventer-monitoring.yaml:Application:argocd:reventer-monitoring",
+    "type": "Application",
+    "name": "reventer-monitoring",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/reventer-monitoring.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/reventer-prd.yaml:Application:argocd:reventer-prd",
+    "type": "Application",
+    "name": "reventer-prd",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/reventer-prd.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/reventer-stg.yaml:Application:argocd:reventer-stg",
+    "type": "Application",
+    "name": "reventer-stg",
+    "namespace": "argocd",
+    "file": "k8s/pve/reventer-gitops/reventer-stg.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-gitops/secret-store.yaml:ClusterSecretStore::bitwarden-reventer-stg",
+    "type": "ClusterSecretStore",
+    "name": "bitwarden-reventer-stg",
+    "namespace": "",
+    "file": "k8s/pve/reventer-gitops/secret-store.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-observability-canary/base/deployment.yaml:Deployment::observability-canary",
+    "type": "Deployment",
+    "name": "observability-canary",
+    "namespace": "",
+    "file": "k8s/pve/reventer-observability-canary/base/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-tfc-agent/deployment.yaml:Deployment:reventer-tfc-agent:reventer-tfc-agent",
+    "type": "Deployment",
+    "name": "reventer-tfc-agent",
+    "namespace": "reventer-tfc-agent",
+    "file": "k8s/pve/reventer-tfc-agent/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-tfc-agent/namespace.yaml:Namespace::reventer-tfc-agent",
+    "type": "Namespace",
+    "name": "reventer-tfc-agent",
+    "namespace": "",
+    "file": "k8s/pve/reventer-tfc-agent/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/reventer-tfc-agent/tfc-agent-secret.yaml:ExternalSecret:reventer-tfc-agent:reventer-tfc-agent-credentials",
+    "type": "ExternalSecret",
+    "name": "reventer-tfc-agent-credentials",
+    "namespace": "reventer-tfc-agent",
+    "file": "k8s/pve/reventer-tfc-agent/tfc-agent-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolume::home-k8s-mariadb-nfs",
+    "type": "PersistentVolume",
+    "name": "home-k8s-mariadb-nfs",
+    "namespace": "",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolume::home-k8s-nextcloud-html-nfs",
+    "type": "PersistentVolume",
+    "name": "home-k8s-nextcloud-html-nfs",
+    "namespace": "",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolume::home-k8s-postgres-nfs",
+    "type": "PersistentVolume",
+    "name": "home-k8s-postgres-nfs",
+    "namespace": "",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolume::home-k8s-postgres-staging-nfs",
+    "type": "PersistentVolume",
+    "name": "home-k8s-postgres-staging-nfs",
+    "namespace": "",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolume::home-k8s-victoria-metrics-nfs",
+    "type": "PersistentVolume",
+    "name": "home-k8s-victoria-metrics-nfs",
+    "namespace": "",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolumeClaim:app-nextcloud:nextcloud-html-nfs-pvc",
+    "type": "PersistentVolumeClaim",
+    "name": "nextcloud-html-nfs-pvc",
+    "namespace": "app-nextcloud",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolumeClaim:infra-db-staging:postgres-data-nfs",
+    "type": "PersistentVolumeClaim",
+    "name": "postgres-data-nfs",
+    "namespace": "infra-db-staging",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolumeClaim:infra-db:mariadb-data-nfs",
+    "type": "PersistentVolumeClaim",
+    "name": "mariadb-data-nfs",
+    "namespace": "infra-db",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolumeClaim:infra-db:postgres-data-nfs",
+    "type": "PersistentVolumeClaim",
+    "name": "postgres-data-nfs",
+    "namespace": "infra-db",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolumeClaim:monitoring:victoria-metrics-data-nfs",
+    "type": "PersistentVolumeClaim",
+    "name": "victoria-metrics-data-nfs",
+    "namespace": "monitoring",
+    "file": "k8s/pve/shared-state-storage/volumes.yaml"
+  },
+  {
+    "id": "k8s/pve/speedtest-exporter/deployment.yaml:Deployment:monitoring:speedtest-exporter",
+    "type": "Deployment",
+    "name": "speedtest-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/speedtest-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/speedtest-exporter/deployment.yaml:Service:monitoring:speedtest-exporter",
+    "type": "Service",
+    "name": "speedtest-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/speedtest-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/speedtest-exporter/namespace.yaml:Namespace::monitoring",
+    "type": "Namespace",
+    "name": "monitoring",
+    "namespace": "",
+    "file": "k8s/pve/speedtest-exporter/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/tfc-agent/deployment.yaml:Deployment:tfc-agent:tfc-agent",
+    "type": "Deployment",
+    "name": "tfc-agent",
+    "namespace": "tfc-agent",
+    "file": "k8s/pve/tfc-agent/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/tfc-agent/namespace.yaml:Namespace::tfc-agent",
+    "type": "Namespace",
+    "name": "tfc-agent",
+    "namespace": "",
+    "file": "k8s/pve/tfc-agent/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/tfc-agent/tfc-agent-secret.yaml:ExternalSecret:tfc-agent:tfc-agent-credentials",
+    "type": "ExternalSecret",
+    "name": "tfc-agent-credentials",
+    "namespace": "tfc-agent",
+    "file": "k8s/pve/tfc-agent/tfc-agent-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Deployment:monitoring:tinytuya-exporter-bedside",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-bedside",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Deployment:monitoring:tinytuya-exporter-desk",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-desk",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Deployment:monitoring:tinytuya-exporter-entrance",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-entrance",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Deployment:monitoring:tinytuya-exporter-refrigerator",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-refrigerator",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Deployment:monitoring:tinytuya-exporter-washing-machine",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-washing-machine",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Service:monitoring:tinytuya-exporter-bedside",
+    "type": "Service",
+    "name": "tinytuya-exporter-bedside",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Service:monitoring:tinytuya-exporter-desk",
+    "type": "Service",
+    "name": "tinytuya-exporter-desk",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Service:monitoring:tinytuya-exporter-entrance",
+    "type": "Service",
+    "name": "tinytuya-exporter-entrance",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Service:monitoring:tinytuya-exporter-refrigerator",
+    "type": "Service",
+    "name": "tinytuya-exporter-refrigerator",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/additional-deployments.yaml:Service:monitoring:tinytuya-exporter-washing-machine",
+    "type": "Service",
+    "name": "tinytuya-exporter-washing-machine",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/additional-deployments.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/arm64-patches.yaml:Deployment:monitoring:tinytuya-exporter",
+    "type": "Deployment",
+    "name": "tinytuya-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/arm64-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/arm64-patches.yaml:Deployment:monitoring:tinytuya-exporter-bedside",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-bedside",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/arm64-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/arm64-patches.yaml:Deployment:monitoring:tinytuya-exporter-desk",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-desk",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/arm64-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/arm64-patches.yaml:Deployment:monitoring:tinytuya-exporter-entrance",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-entrance",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/arm64-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/arm64-patches.yaml:Deployment:monitoring:tinytuya-exporter-refrigerator",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-refrigerator",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/arm64-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/arm64-patches.yaml:Deployment:monitoring:tinytuya-exporter-washing-machine",
+    "type": "Deployment",
+    "name": "tinytuya-exporter-washing-machine",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/arm64-patches.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/deployment.yaml:Deployment:monitoring:tinytuya-exporter",
+    "type": "Deployment",
+    "name": "tinytuya-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/deployment.yaml:Service:monitoring:tinytuya-exporter",
+    "type": "Service",
+    "name": "tinytuya-exporter",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/tinytuya-exporter/secret.yaml:ExternalSecret:monitoring:tinytuya-device",
+    "type": "ExternalSecret",
+    "name": "tinytuya-device",
+    "namespace": "monitoring",
+    "file": "k8s/pve/tinytuya-exporter/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation-staging/backend-patch.yaml:Deployment:app-tnlastation:backend",
+    "type": "Deployment",
+    "name": "backend",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation-staging/backend-patch.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation-staging/secret-patch.yaml:ExternalSecret:app-tnlastation:tnlastation-secrets",
+    "type": "ExternalSecret",
+    "name": "tnlastation-secrets",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation-staging/secret-patch.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/backend.yaml:Deployment:app-tnlastation:backend",
+    "type": "Deployment",
+    "name": "backend",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/backend.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/backend.yaml:Service:app-tnlastation:backend",
+    "type": "Service",
+    "name": "backend",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/backend.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/configmap.yaml:ConfigMap:app-tnlastation:tnlastation-config",
+    "type": "ConfigMap",
+    "name": "tnlastation-config",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/configmap.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-encode.yaml:Deployment:app-tnlastation:ffmpeg-worker-encode",
+    "type": "Deployment",
+    "name": "ffmpeg-worker-encode",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-encode.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-encode.yaml:HorizontalPodAutoscaler:app-tnlastation:ffmpeg-worker-encode",
+    "type": "HorizontalPodAutoscaler",
+    "name": "ffmpeg-worker-encode",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-encode.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-encode.yaml:Service:app-tnlastation:ffmpeg-worker-encode",
+    "type": "Service",
+    "name": "ffmpeg-worker-encode",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-encode.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml:HorizontalPodAutoscaler:app-tnlastation:ffmpeg-worker-streaming",
+    "type": "HorizontalPodAutoscaler",
+    "name": "ffmpeg-worker-streaming",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml:Service:app-tnlastation:ffmpeg-worker-streaming",
+    "type": "Service",
+    "name": "ffmpeg-worker-streaming",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml:Service:app-tnlastation:ffmpeg-worker-streaming-headless",
+    "type": "Service",
+    "name": "ffmpeg-worker-streaming-headless",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml:StatefulSet:app-tnlastation:ffmpeg-worker-streaming",
+    "type": "StatefulSet",
+    "name": "ffmpeg-worker-streaming",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/ffmpeg-worker-streaming.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/frontend.yaml:Deployment:app-tnlastation:frontend",
+    "type": "Deployment",
+    "name": "frontend",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/frontend.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/frontend.yaml:Service:app-tnlastation:frontend",
+    "type": "Service",
+    "name": "frontend",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/frontend.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/gateway.yaml:Deployment:app-tnlastation:gateway",
+    "type": "Deployment",
+    "name": "gateway",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/gateway.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/gateway.yaml:Service:app-tnlastation:tnlastation",
+    "type": "Service",
+    "name": "tnlastation",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/gateway.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/mediamtx.yaml:ConfigMap:app-tnlastation:mediamtx-config",
+    "type": "ConfigMap",
+    "name": "mediamtx-config",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/mediamtx.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/mediamtx.yaml:Deployment:app-tnlastation:mediamtx",
+    "type": "Deployment",
+    "name": "mediamtx",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/mediamtx.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/mediamtx.yaml:Service:app-tnlastation:mediamtx",
+    "type": "Service",
+    "name": "mediamtx",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/mediamtx.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/namespace.yaml:Namespace::app-tnlastation",
+    "type": "Namespace",
+    "name": "app-tnlastation",
+    "namespace": "",
+    "file": "k8s/pve/tnlastation/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/pvc.yaml:PersistentVolume::tnlastation-app-data-pv",
+    "type": "PersistentVolume",
+    "name": "tnlastation-app-data-pv",
+    "namespace": "",
+    "file": "k8s/pve/tnlastation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/pvc.yaml:PersistentVolume::tnlastation-recorded-pv",
+    "type": "PersistentVolume",
+    "name": "tnlastation-recorded-pv",
+    "namespace": "",
+    "file": "k8s/pve/tnlastation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/pvc.yaml:PersistentVolumeClaim:app-tnlastation:tnlastation-app-data",
+    "type": "PersistentVolumeClaim",
+    "name": "tnlastation-app-data",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/pvc.yaml:PersistentVolumeClaim:app-tnlastation:tnlastation-recorded",
+    "type": "PersistentVolumeClaim",
+    "name": "tnlastation-recorded",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/pvc.yaml"
+  },
+  {
+    "id": "k8s/pve/tnlastation/secret.yaml:ExternalSecret:app-tnlastation:tnlastation-secrets",
+    "type": "ExternalSecret",
+    "name": "tnlastation-secrets",
+    "namespace": "app-tnlastation",
+    "file": "k8s/pve/tnlastation/secret.yaml"
+  },
+  {
+    "id": "k8s/pve/victoria-metrics/backup-cronjob.yaml:CronJob::victoria-metrics-backup",
+    "type": "CronJob",
+    "name": "victoria-metrics-backup",
+    "namespace": "",
+    "file": "k8s/pve/victoria-metrics/backup-cronjob.yaml"
+  },
+  {
+    "id": "k8s/pve/victoria-metrics/backup-secret.yaml:ExternalSecret::victoria-metrics-backup-credentials",
+    "type": "ExternalSecret",
+    "name": "victoria-metrics-backup-credentials",
+    "namespace": "",
+    "file": "k8s/pve/victoria-metrics/backup-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/victoria-metrics/service-alias.yaml:Service:monitoring:victoria-metrics-victoria-metrics-single-server",
+    "type": "Service",
+    "name": "victoria-metrics-victoria-metrics-single-server",
+    "namespace": "monitoring",
+    "file": "k8s/pve/victoria-metrics/service-alias.yaml"
+  },
+  {
+    "id": "k8s/pve/victoria-metrics/victoria-metrics.yaml:Service::victoria-metrics",
+    "type": "Service",
+    "name": "victoria-metrics",
+    "namespace": "",
+    "file": "k8s/pve/victoria-metrics/victoria-metrics.yaml"
+  },
+  {
+    "id": "k8s/pve/victoria-metrics/victoria-metrics.yaml:StatefulSet::victoria-metrics",
+    "type": "StatefulSet",
+    "name": "victoria-metrics",
+    "namespace": "",
+    "file": "k8s/pve/victoria-metrics/victoria-metrics.yaml"
+  },
+  {
+    "id": "k8s/pve/wol/deployment.yaml:Deployment:app-gptwol:gptwol-deployment",
+    "type": "Deployment",
+    "name": "gptwol-deployment",
+    "namespace": "app-gptwol",
+    "file": "k8s/pve/wol/deployment.yaml"
+  },
+  {
+    "id": "k8s/pve/wol/namespace.yaml:Namespace::app-gptwol",
+    "type": "Namespace",
+    "name": "app-gptwol",
+    "namespace": "",
+    "file": "k8s/pve/wol/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/wol/service.yaml:Service:app-gptwol:gptwol-service",
+    "type": "Service",
+    "name": "gptwol-service",
+    "namespace": "app-gptwol",
+    "file": "k8s/pve/wol/service.yaml"
+  },
+  {
+    "id": "terraform/cloudflare/access.tf:resource:cloudflare_zero_trust_access_application:protected",
+    "type": "cloudflare_zero_trust_access_application",
+    "name": "protected",
+    "file": "terraform/cloudflare/access.tf"
+  },
+  {
+    "id": "terraform/cloudflare/architecture-review.tf:resource:cloudflare_zero_trust_access_application:architecture_review",
+    "type": "cloudflare_zero_trust_access_application",
+    "name": "architecture_review",
+    "file": "terraform/cloudflare/architecture-review.tf"
+  },
+  {
+    "id": "terraform/cloudflare/dns.tf:resource:cloudflare_dns_record:home_k8s",
+    "type": "cloudflare_dns_record",
+    "name": "home_k8s",
+    "file": "terraform/cloudflare/dns.tf"
+  },
+  {
+    "id": "terraform/cloudflare/dns.tf:resource:cloudflare_dns_record:oke",
+    "type": "cloudflare_dns_record",
+    "name": "oke",
+    "file": "terraform/cloudflare/dns.tf"
+  },
+  {
+    "id": "terraform/cloudflare/email.tf:resource:cloudflare_email_routing_dns:main",
+    "type": "cloudflare_email_routing_dns",
+    "name": "main",
+    "file": "terraform/cloudflare/email.tf"
+  },
+  {
+    "id": "terraform/cloudflare/loockit-api.tf:resource:cloudflare_certificate_authorities_hostname_associations:loockit_api",
+    "type": "cloudflare_certificate_authorities_hostname_associations",
+    "name": "loockit_api",
+    "file": "terraform/cloudflare/loockit-api.tf"
+  },
+  {
+    "id": "terraform/cloudflare/loockit-api.tf:resource:cloudflare_client_certificate:loockit_android",
+    "type": "cloudflare_client_certificate",
+    "name": "loockit_android",
+    "file": "terraform/cloudflare/loockit-api.tf"
+  },
+  {
+    "id": "terraform/cloudflare/loockit-api.tf:resource:terraform_data:loockit_api_edge_rules",
+    "type": "terraform_data",
+    "name": "loockit_api_edge_rules",
+    "file": "terraform/cloudflare/loockit-api.tf"
+  },
+  {
+    "id": "terraform/cloudflare/tunnels.tf:resource:cloudflare_zero_trust_tunnel_cloudflared_config:home_k8s",
+    "type": "cloudflare_zero_trust_tunnel_cloudflared_config",
+    "name": "home_k8s",
+    "file": "terraform/cloudflare/tunnels.tf"
+  },
+  {
+    "id": "terraform/cloudflare/tunnels.tf:resource:cloudflare_zero_trust_tunnel_cloudflared_config:oke",
+    "type": "cloudflare_zero_trust_tunnel_cloudflared_config",
+    "name": "oke",
+    "file": "terraform/cloudflare/tunnels.tf"
+  },
+  {
+    "id": "terraform/cloudflare/tunnels.tf:resource:cloudflare_zero_trust_tunnel_cloudflared_route:home_k8s_private",
+    "type": "cloudflare_zero_trust_tunnel_cloudflared_route",
+    "name": "home_k8s_private",
+    "file": "terraform/cloudflare/tunnels.tf"
+  },
+  {
+    "id": "terraform/cloudflare/tunnels.tf:resource:cloudflare_zero_trust_tunnel_cloudflared:home_k8s",
+    "type": "cloudflare_zero_trust_tunnel_cloudflared",
+    "name": "home_k8s",
+    "file": "terraform/cloudflare/tunnels.tf"
+  },
+  {
+    "id": "terraform/cloudflare/tunnels.tf:resource:cloudflare_zero_trust_tunnel_cloudflared:oke",
+    "type": "cloudflare_zero_trust_tunnel_cloudflared",
+    "name": "oke",
+    "file": "terraform/cloudflare/tunnels.tf"
+  },
+  {
+    "id": "terraform/cloudflare/warp.tf:resource:cloudflare_zero_trust_access_application:warp_enrollment",
+    "type": "cloudflare_zero_trust_access_application",
+    "name": "warp_enrollment",
+    "file": "terraform/cloudflare/warp.tf"
+  },
+  {
+    "id": "terraform/cloudflare/warp.tf:resource:cloudflare_zero_trust_device_default_profile_local_domain_fallback:default_warp",
+    "type": "cloudflare_zero_trust_device_default_profile_local_domain_fallback",
+    "name": "default_warp",
+    "file": "terraform/cloudflare/warp.tf"
+  },
+  {
+    "id": "terraform/cloudflare/warp.tf:resource:cloudflare_zero_trust_device_default_profile:default_warp",
+    "type": "cloudflare_zero_trust_device_default_profile",
+    "name": "default_warp",
+    "file": "terraform/cloudflare/warp.tf"
+  },
+  {
+    "id": "terraform/cloudflare/warp.tf:resource:cloudflare_zero_trust_device_settings:account",
+    "type": "cloudflare_zero_trust_device_settings",
+    "name": "account",
+    "file": "terraform/cloudflare/warp.tf"
+  },
+  {
+    "id": "terraform/cloudflare/warp.tf:resource:cloudflare_zero_trust_gateway_settings:account",
+    "type": "cloudflare_zero_trust_gateway_settings",
+    "name": "account",
+    "file": "terraform/cloudflare/warp.tf"
+  },
+  {
+    "id": "terraform/home-k8s/main.tf:resource:proxmox_download_file:talos_iso",
+    "type": "proxmox_download_file",
+    "name": "talos_iso",
+    "file": "terraform/home-k8s/main.tf"
+  },
+  {
+    "id": "terraform/home-k8s/main.tf:resource:proxmox_virtual_environment_vm:talos",
+    "type": "proxmox_virtual_environment_vm",
+    "name": "talos",
+    "file": "terraform/home-k8s/main.tf"
+  },
+  {
+    "id": "terraform/loockit-lxc/main.tf:resource:proxmox_virtual_environment_container:loockit",
+    "type": "proxmox_virtual_environment_container",
+    "name": "loockit",
+    "file": "terraform/loockit-lxc/main.tf"
+  },
+  {
+    "id": "terraform/mirakurun-lxc/main.tf:resource:proxmox_virtual_environment_container:mirakurun",
+    "type": "proxmox_virtual_environment_container",
+    "name": "mirakurun",
+    "file": "terraform/mirakurun-lxc/main.tf"
+  },
+  {
+    "id": "terraform/mirakurun-staging-lxc/main.tf:resource:proxmox_virtual_environment_container:mirakurun_staging",
+    "type": "proxmox_virtual_environment_container",
+    "name": "mirakurun_staging",
+    "file": "terraform/mirakurun-staging-lxc/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_instance:monitoring",
+    "type": "oci_core_instance",
+    "name": "monitoring",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group_security_rule:ingest",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "ingest",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group_security_rule:ingest_peer",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "ingest_peer",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group_security_rule:ssh",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "ssh",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group:monitoring",
+    "type": "oci_core_network_security_group",
+    "name": "monitoring",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_security_list:monitoring",
+    "type": "oci_core_security_list",
+    "name": "monitoring",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_subnet:monitoring",
+    "type": "oci_core_subnet",
+    "name": "monitoring",
+    "file": "terraform/oci-observability-stg/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_core_network_security_group_security_rule:os_update_peer",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "os_update_peer",
+    "file": "terraform/oci-observability-stg/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_compartment:os_recovery",
+    "type": "oci_identity_compartment",
+    "name": "os_recovery",
+    "file": "terraform/oci-observability-stg/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_dynamic_group:os_update",
+    "type": "oci_identity_dynamic_group",
+    "name": "os_update",
+    "file": "terraform/oci-observability-stg/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_policy:os_update",
+    "type": "oci_identity_policy",
+    "name": "os_update",
+    "file": "terraform/oci-observability-stg/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_tag_namespace:os_update",
+    "type": "oci_identity_tag_namespace",
+    "name": "os_update",
+    "file": "terraform/oci-observability-stg/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_tag:os_update_role",
+    "type": "oci_identity_tag",
+    "name": "os_update_role",
+    "file": "terraform/oci-observability-stg/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_instance:monitoring",
+    "type": "oci_core_instance",
+    "name": "monitoring",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group_security_rule:ingest",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "ingest",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group_security_rule:ingest_peer",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "ingest_peer",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group_security_rule:ssh",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "ssh",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group:monitoring",
+    "type": "oci_core_network_security_group",
+    "name": "monitoring",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_security_list:monitoring",
+    "type": "oci_core_security_list",
+    "name": "monitoring",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/main.tf:resource:oci_core_subnet:monitoring",
+    "type": "oci_core_subnet",
+    "name": "monitoring",
+    "file": "terraform/oci-observability/main.tf"
+  },
+  {
+    "id": "terraform/oci-observability/os-update.tf:resource:oci_core_network_security_group_security_rule:os_update_peer",
+    "type": "oci_core_network_security_group_security_rule",
+    "name": "os_update_peer",
+    "file": "terraform/oci-observability/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_compartment:os_recovery",
+    "type": "oci_identity_compartment",
+    "name": "os_recovery",
+    "file": "terraform/oci-observability/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_dynamic_group:os_update",
+    "type": "oci_identity_dynamic_group",
+    "name": "os_update",
+    "file": "terraform/oci-observability/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_policy:os_update",
+    "type": "oci_identity_policy",
+    "name": "os_update",
+    "file": "terraform/oci-observability/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_tag_namespace:os_update",
+    "type": "oci_identity_tag_namespace",
+    "name": "os_update",
+    "file": "terraform/oci-observability/os-update.tf"
+  },
+  {
+    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_tag:os_update_role",
+    "type": "oci_identity_tag",
+    "name": "os_update_role",
+    "file": "terraform/oci-observability/os-update.tf"
+  },
+  {
+    "id": "terraform/oci/autoscaler.tf:resource:oci_identity_tag_namespace:oke",
+    "type": "oci_identity_tag_namespace",
+    "name": "oke",
+    "file": "terraform/oci/autoscaler.tf"
+  },
+  {
+    "id": "terraform/oci/autoscaler.tf:resource:oci_identity_tag:autoscaler",
+    "type": "oci_identity_tag",
+    "name": "autoscaler",
+    "file": "terraform/oci/autoscaler.tf"
+  },
+  {
+    "id": "terraform/oci/budget.tf:resource:oci_budget_alert_rule:one_percent_alert",
+    "type": "oci_budget_alert_rule",
+    "name": "one_percent_alert",
+    "file": "terraform/oci/budget.tf"
+  },
+  {
+    "id": "terraform/oci/budget.tf:resource:oci_budget_budget:always_free_budget",
+    "type": "oci_budget_budget",
+    "name": "always_free_budget",
+    "file": "terraform/oci/budget.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_containerengine_node_pool:autoscaled",
+    "type": "oci_containerengine_node_pool",
+    "name": "autoscaled",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_containerengine_node_pool:workers",
+    "type": "oci_containerengine_node_pool",
+    "name": "workers",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_dhcp_options:workers",
+    "type": "oci_core_dhcp_options",
+    "name": "workers",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_route_table:workers",
+    "type": "oci_core_route_table",
+    "name": "workers",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_security_list:workers",
+    "type": "oci_core_security_list",
+    "name": "workers",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_subnet:workers",
+    "type": "oci_core_subnet",
+    "name": "workers",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_compartment:burst",
+    "type": "oci_identity_compartment",
+    "name": "burst",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_compartment:workers",
+    "type": "oci_identity_compartment",
+    "name": "workers",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_dynamic_group:autoscaler",
+    "type": "oci_identity_dynamic_group",
+    "name": "autoscaler",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_policy:autoscaler",
+    "type": "oci_identity_policy",
+    "name": "autoscaler",
+    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_internet_gateway:oke_igw",
+    "type": "oci_core_internet_gateway",
+    "name": "oke_igw",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_nat_gateway:oke_ngw",
+    "type": "oci_core_nat_gateway",
+    "name": "oke_ngw",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_public_ip:nat_ip",
+    "type": "oci_core_public_ip",
+    "name": "nat_ip",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_route_table:public_rt",
+    "type": "oci_core_route_table",
+    "name": "public_rt",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_security_list:lb_sl",
+    "type": "oci_core_security_list",
+    "name": "lb_sl",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_subnet:oke_lb_subnet",
+    "type": "oci_core_subnet",
+    "name": "oke_lb_subnet",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/network.tf:resource:oci_core_vcn:oke_vcn",
+    "type": "oci_core_vcn",
+    "name": "oke_vcn",
+    "file": "terraform/oci/network.tf"
+  },
+  {
+    "id": "terraform/oci/oke.tf:resource:oci_containerengine_cluster:oke_cluster",
+    "type": "oci_containerengine_cluster",
+    "name": "oke_cluster",
+    "file": "terraform/oci/oke.tf"
+  },
+  {
+    "id": "terraform/oci/worker-compartment.tf:module:oke_workers_v2:",
+    "type": "Terraform module",
+    "name": "oke_workers_v2",
+    "file": "terraform/oci/worker-compartment.tf"
+  },
+  {
+    "id": "terraform/oci/worker-compartment.tf:resource:oci_core_service_gateway:oke_sgw",
+    "type": "oci_core_service_gateway",
+    "name": "oke_sgw",
+    "file": "terraform/oci/worker-compartment.tf"
+  },
+  {
+    "id": "terraform/pve/main.tf:module:dev_application_server:",
+    "type": "Terraform module",
+    "name": "dev_application_server",
+    "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/main.tf:module:displaylink_kiosk:",
+    "type": "Terraform module",
+    "name": "displaylink_kiosk",
+    "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/main.tf:module:load_balancer:",
+    "type": "Terraform module",
+    "name": "load_balancer",
+    "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/main.tf:module:pbs:",
+    "type": "Terraform module",
+    "name": "pbs",
+    "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/main.tf:module:truenas:",
+    "type": "Terraform module",
+    "name": "truenas",
+    "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/main.tf:module:unifi_os_server:",
+    "type": "Terraform module",
+    "name": "unifi_os_server",
+    "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/modules/proxmox_vm/main.tf:resource:proxmox_vm_qemu:vm",
+    "type": "proxmox_vm_qemu",
+    "name": "vm",
+    "file": "terraform/pve/modules/proxmox_vm/main.tf"
+  },
+  {
+    "id": "hostname:architecture-review",
+    "type": "Tunnel hostname",
+    "name": "architecture-review",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "reventer",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "consumers.reventer.definitions.r_a6fbba4fe58063"
+  },
+  {
+    "id": "hostname:argocd-home-k8s",
+    "type": "Tunnel hostname",
+    "name": "argocd-home-k8s",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_aa7be3a36b5c48"
+  },
+  {
+    "id": "hostname:wol",
+    "type": "Tunnel hostname",
+    "name": "wol",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_9a6aa3c240035f"
+  },
+  {
+    "id": "hostname:loockit-api",
+    "type": "Tunnel hostname",
+    "name": "loockit-api",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "mtls",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.exceptions.r_c4f5a55b428348"
+  },
+  {
+    "id": "hostname:epgstation",
+    "type": "Tunnel hostname",
+    "name": "epgstation",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_0ceb9e10baf1aa"
+  },
+  {
+    "id": "hostname:tnlastation",
+    "type": "Tunnel hostname",
+    "name": "tnlastation",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_ca51f2ede193bf"
+  },
+  {
+    "id": "hostname:tnlastation-staging",
+    "type": "Tunnel hostname",
+    "name": "tnlastation-staging",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_db1d338e50f41c"
+  },
+  {
+    "id": "hostname:nextcloud",
+    "type": "Tunnel hostname",
+    "name": "nextcloud",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_5495d99954175c"
+  },
+  {
+    "id": "hostname:nextcloud-model-test",
+    "type": "Tunnel hostname",
+    "name": "nextcloud-model-test",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_9206cd3558ad22"
+  },
+  {
+    "id": "hostname:coupon-manager",
+    "type": "Tunnel hostname",
+    "name": "coupon-manager",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "runtime",
+    "modelRef": "external.edge.routes.protected.r_8707e543d2323c"
+  },
+  {
+    "id": "hostname:unifi",
+    "type": "Tunnel hostname",
+    "name": "unifi",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_1d844aae4872d1"
+  },
+  {
+    "id": "hostname:wifi-ap",
+    "type": "Tunnel hostname",
+    "name": "wifi-ap",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_9e7130e5c1438a"
+  },
+  {
+    "id": "hostname:ix2215",
+    "type": "Tunnel hostname",
+    "name": "ix2215",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_307b9cfe34f5c6"
+  },
+  {
+    "id": "hostname:nas-01",
+    "type": "Tunnel hostname",
+    "name": "nas-01",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_ac83613e0c48d5"
+  },
+  {
+    "id": "hostname:nas-02",
+    "type": "Tunnel hostname",
+    "name": "nas-02",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_57aad05e7dd3c0"
+  },
+  {
+    "id": "hostname:pve-x570",
+    "type": "Tunnel hostname",
+    "name": "pve-x570",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_e476f69c53182c"
+  },
+  {
+    "id": "hostname:pve-b550m",
+    "type": "Tunnel hostname",
+    "name": "pve-b550m",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_12af4e978445b6"
+  },
+  {
+    "id": "hostname:nanokvm-1",
+    "type": "Tunnel hostname",
+    "name": "nanokvm-1",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_94954bf5cdae0f"
+  },
+  {
+    "id": "hostname:nanokvm-2",
+    "type": "Tunnel hostname",
+    "name": "nanokvm-2",
+    "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
+    "accessMode": "access",
+    "trafficKind": "admin",
+    "modelRef": "external.edge.routes.protected.r_bd62f81c28d3da"
+  }
+]
