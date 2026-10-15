@@ -2762,15 +2762,19 @@
     "type": "Tunnel hostname",
     "name": "architecture-review",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "reventer",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
-    "modelRef": "external.edge.routes.protected.r_a6fbba4fe58063"
+    "modelRef": "consumers.reventer.definitions.r_a6fbba4fe58063"
   },
   {
     "id": "hostname:argocd-home-k8s",
     "type": "Tunnel hostname",
     "name": "argocd-home-k8s",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_aa7be3a36b5c48"
@@ -2780,6 +2784,8 @@
     "type": "Tunnel hostname",
     "name": "wol",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.protected.r_9a6aa3c240035f"
@@ -2789,6 +2795,8 @@
     "type": "Tunnel hostname",
     "name": "loockit-api",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "mtls",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.exceptions.r_c4f5a55b428348"
@@ -2798,6 +2806,8 @@
     "type": "Tunnel hostname",
     "name": "epgstation",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.protected.r_0ceb9e10baf1aa"
@@ -2807,6 +2817,8 @@
     "type": "Tunnel hostname",
     "name": "tnlastation",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.protected.r_ca51f2ede193bf"
@@ -2816,6 +2828,8 @@
     "type": "Tunnel hostname",
     "name": "tnlastation-staging",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.protected.r_db1d338e50f41c"
@@ -2825,6 +2839,8 @@
     "type": "Tunnel hostname",
     "name": "nextcloud",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.protected.r_5495d99954175c"
@@ -2834,6 +2850,8 @@
     "type": "Tunnel hostname",
     "name": "coupon-manager",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "runtime",
     "modelRef": "external.edge.routes.protected.r_8707e543d2323c"
@@ -2843,6 +2861,8 @@
     "type": "Tunnel hostname",
     "name": "unifi",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_1d844aae4872d1"
@@ -2852,6 +2872,8 @@
     "type": "Tunnel hostname",
     "name": "wifi-ap",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_9e7130e5c1438a"
@@ -2861,6 +2883,8 @@
     "type": "Tunnel hostname",
     "name": "ix2215",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_307b9cfe34f5c6"
@@ -2870,6 +2894,8 @@
     "type": "Tunnel hostname",
     "name": "nas-01",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_ac83613e0c48d5"
@@ -2879,6 +2905,8 @@
     "type": "Tunnel hostname",
     "name": "nas-02",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_57aad05e7dd3c0"
@@ -2888,6 +2916,8 @@
     "type": "Tunnel hostname",
     "name": "pve-x570",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_e476f69c53182c"
@@ -2897,6 +2927,8 @@
     "type": "Tunnel hostname",
     "name": "pve-b550m",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_12af4e978445b6"
@@ -2906,6 +2938,8 @@
     "type": "Tunnel hostname",
     "name": "nanokvm-1",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_94954bf5cdae0f"
@@ -2915,6 +2949,8 @@
     "type": "Tunnel hostname",
     "name": "nanokvm-2",
     "file": "terraform/cloudflare/locals.tf",
+    "owner": "my-infra",
+    "definitionRepository": "my-infra",
     "accessMode": "access",
     "trafficKind": "admin",
     "modelRef": "external.edge.routes.protected.r_bd62f81c28d3da"

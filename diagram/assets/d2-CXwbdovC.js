@@ -8,14 +8,6 @@ Operator: {
   label: "管理者"
   shape: c4-person
 }
-Monitoring: {
-  label: "監視"
-
-  Vms: {
-    label: "OCI監視VM / STG・PRD"
-    shape: stored_data
-  }
-}
 External: {
   label: "外部サービス / SaaS・公開サービス"
 
@@ -33,12 +25,6 @@ External: {
     label: "Bitwarden Secrets Manager"
   }
 }
-Oke: {
-  label: "OCI / STG OKE共通基盤"
-}
-Shared_prd: {
-  label: "PRDクラスタへ提供する共通アドオン"
-}
 Premises: {
   label: "自宅"
 
@@ -50,12 +36,19 @@ Premises: {
       shape: stored_data
     }
   }
+  Management: {
+    label: "自宅基盤の構成管理"
+
+    Runner: {
+      label: "ARC / 共用のrunner制御基盤"
+    }
+    Argo: {
+      label: "自宅ArgoCD"
+    }
+  }
   Home: {
     label: "Talos / home-k8s"
   }
-}
-Control: {
-  label: "変更・運用"
 }
 Consumers: {
   label: "基盤の利用側 / 別リポジトリ"
@@ -72,14 +65,9 @@ External.Edge.Tunnel -> Premises.Home: "Access認証後 / 公開UI・サービ�
 External.Bws -> Premises.Home: "Secret注入"
 External.Edge.Tunnel -> Premises.Data.Nas: "Access認証後 / NAS管理UI"
 Premises.Data.Nas -> Premises.Home: "NFSストレージを提供"
-External.Bws -> Oke: "Secret注入"
-External.Bws -> Shared_prd: "ESO / PRD Secret注入"
-External.Edge.Tunnel -> Control: "Access認証後 / 管理UI"
-External.Bws -> Control: "機器・PBS用credential"
-Oke -> Consumers.Reventer: "STGの実行基盤を提供"
-Shared_prd -> Consumers.Reventer: "共有Gateway Controllerを提供"
-Monitoring.Vms -> Consumers.Reventer: "監視データの保存先を提供"
-Control -> Consumers.Reventer: "GitOps・CI・Terraformの実行基盤を提供"
+External.Edge.Tunnel -> Premises.Management.Argo: "Access認証後 / 管理UI"
+Premises.Management.Argo -> Consumers.Reventer: "共用ArgoCDの同期インターフェース"
+Premises.Management.Runner -> Consumers.Reventer: "専用runner向けの共用制御基盤"
 `;case`home_apps`:return`direction: right
 
 User: {
@@ -112,7 +100,7 @@ PremisesHome: {
     label: "自宅ワークロード / 基盤の利用側"
   }
 }
-ControlArgo: {
+PremisesManagementArgo: {
   label: "自宅ArgoCD"
 }
 PremisesDataDatabases: {
@@ -137,29 +125,39 @@ PremisesHome.Nextcloud -> PremisesDataDatabases: "MYSQL_HOST / MariaDB"
 PremisesHome.Recording -> PremisesDataDatabases: "[...]"
 PremisesHome.Apps -> PremisesDataDatabases: "PostgreSQL"
 PremisesDataDatabases -> PremisesDataNas: "DB用NFS PVC"
-ExternalEdgeTunnel -> ControlArgo: "Access認証後 / 管理UI"
+ExternalEdgeTunnel -> PremisesManagementArgo: "Access認証後 / 管理UI"
 `;case`delivery`:return`direction: down
 
-Control: {
-  label: "変更・運用"
+Premises: {
+  label: "自宅"
 
-  Images: {
-    label: "Image Updater"
+  Management: {
+    label: "自宅基盤の構成管理"
+
+    Images: {
+      label: "Image Updater"
+    }
+    Ansible: {
+      label: "Ansible"
+    }
+    Packer: {
+      label: "Packer / VM template"
+    }
+    Argo: {
+      label: "自宅ArgoCD"
+    }
+    Runner: {
+      label: "ARC / 共用のrunner制御基盤"
+    }
+    Tfc_agents: {
+      label: "Terraform Cloud agents / 自宅"
+    }
   }
-  Argo: {
-    label: "自宅ArgoCD"
+  Home: {
+    label: "Talos / home-k8s"
   }
-  Runner: {
-    label: "ARC / 専用runner"
-  }
-  Tfc_agents: {
-    label: "Terraform Cloud agents / 自宅"
-  }
-  Ansible: {
-    label: "Ansible"
-  }
-  Packer: {
-    label: "Packer / VM template"
+  Hardware: {
+    label: "物理・ネットワーク"
   }
 }
 External: {
@@ -178,62 +176,17 @@ External: {
     label: "Cloudflare"
   }
 }
-Shared_prd: {
-  label: "PRDクラスタへ提供する共通アドオン"
-}
-Monitoring: {
-  label: "監視"
 
-  Vms: {
-    label: "OCI監視VM / STG・PRD"
-    shape: stored_data
-  }
-}
-Oke: {
-  label: "OCI / STG OKE共通基盤"
-
-  Argo: {
-    label: "OKE ArgoCD"
-  }
-  Api: {
-    label: "OKE API / Node pools"
-  }
-}
-Consumers: {
-  label: "基盤の利用側 / 別リポジトリ"
-
-  Reventer: {
-    label: "Re:Venter"
-  }
-}
-Premises: {
-  label: "自宅"
-
-  Home: {
-    label: "Talos / home-k8s"
-  }
-  Hardware: {
-    label: "物理・ネットワーク"
-  }
-}
-
-External.Github -> Control.Argo: "GitOps"
-External.Github -> Control.Runner: "Actions job"
+External.Github -> Premises.Management.Argo: "GitOps"
+External.Github -> Premises.Management.Runner: "Actions job"
 External.Github -> External.Terraform_cloud: "Terraform実行"
-External.Terraform_cloud -> Control.Tfc_agents: "workspace runを自宅agentで実行"
+External.Terraform_cloud -> Premises.Management.Tfc_agents: "workspace runを自宅agentで実行"
 External.Github -> External.Github_pages: "構成図・PR比較を公開"
-Control.Argo -> Premises.Home: "manifest同期"
-External.Github -> Oke.Argo: "GitOps"
-Oke.Argo -> Oke.Api: "共通基盤同期"
-Control.Argo -> Consumers.Reventer: "STG・PRDアプリ同期"
-Control.Runner -> Consumers.Reventer: "利用側のCI jobを実行"
-Control.Tfc_agents -> Consumers.Reventer: "利用側workspaceの実行を受託"
-Control.Tfc_agents -> Premises.Hardware: "VM / ネットワーク"
-Control.Ansible -> Premises.Hardware: "機器設定"
-Control.Packer -> Premises.Hardware: "VM template"
+Premises.Management.Argo -> Premises.Home: "manifest同期"
+Premises.Management.Tfc_agents -> Premises.Hardware: "VM / ネットワーク"
+Premises.Management.Ansible -> Premises.Hardware: "機器設定"
+Premises.Management.Packer -> Premises.Hardware: "VM template"
 External.Terraform_cloud -> External.Edge: "DNS / Access / Tunnel"
-External.Terraform_cloud -> Monitoring.Vms: "監視VM"
-External.Terraform_cloud -> Oke: "OCI / OKE"
 `;case`secrets`:return`direction: right
 
 External: {
@@ -255,60 +208,24 @@ Premises: {
   HomeEso: {
     label: "External Secrets Operator"
   }
+  ManagementAnsible: {
+    label: "Ansible"
+  }
   DataBackups: {
     label: "バックアップ処理"
   }
 }
-Oke: {
-  label: "OCI / STG OKE共通基盤"
-
-  Eso: {
-    label: "External Secrets Operator"
-  }
-}
-Shared_prd: {
-  label: "PRDクラスタへ提供する共通アドオン"
-
-  Eso: {
-    label: "External Secrets Operator"
-  }
-}
-Control: {
-  label: "変更・運用"
-
-  Ansible: {
-    label: "Ansible"
-  }
-}
-Consumers: {
-  label: "基盤の利用側 / 別リポジトリ"
-
-  Reventer: {
-    label: "Re:Venter"
-  }
-}
 
 External.Bws -> Premises.HomeEso: "Secret注入"
-External.Bws -> Oke.Eso: "Secret注入"
-External.Bws -> Shared_prd.Eso: "ESO / PRD Secret注入"
-Oke.Eso -> Consumers.Reventer: "利用側Secretへ注入 / STG"
-Shared_prd.Eso -> Consumers.Reventer: "利用側Secretへ注入 / PRD"
 External.Bws -> External.Github: "CI credential"
 External.Bws -> External.Terraform_cloud: "Terraform変数"
-External.Bws -> Control.Ansible: "機器・PBS用credential"
+External.Bws -> Premises.ManagementAnsible: "機器・PBS用credential"
 External.Bws -> Premises.DataBackups: "ESO経由 / backup credential"
 `;case`observability`:return`direction: right
 
 Operator: {
   label: "管理者"
   shape: c4-person
-}
-Consumers: {
-  label: "基盤の利用側 / 別リポジトリ"
-
-  Reventer: {
-    label: "Re:Venter"
-  }
 }
 External: {
   label: "外部サービス / SaaS・公開サービス"
@@ -345,14 +262,6 @@ Premises: {
     }
   }
 }
-Monitoring: {
-  label: "監視"
-
-  Vms: {
-    label: "OCI監視VM / STG・PRD"
-    shape: stored_data
-  }
-}
 
 Operator -> External.Grafana: "照会"
 Premises.Hardware -> Premises.Home.Agent.Collector: "exporter収集"
@@ -361,14 +270,18 @@ External.Grafana -> Premises.Home.Agent.Pdc: "PDC経由の検索"
 Premises.Home.Agent.Pdc -> External.Grafana: "外向きPDC接続"
 Premises.Home.Agent.Pdc -> Premises.Home.Agent.Local_store: "private query / :8428"
 Premises.Home.Agent.Exporters -> Premises.Home.Agent.Collector: "scrape"
-External.Grafana -> Monitoring.Vms: "PDC経由"
-Consumers.Reventer -> Monitoring.Vms: "metrics / logs / 環境別"
-Monitoring.Vms -> External.Grafana: "VM側PDC agentから外向き接続"
 `;case`network`:return`direction: right
 
 Operator: {
   label: "管理者"
   shape: c4-person
+}
+External: {
+  label: "外部サービス / SaaS・公開サービス"
+
+  EdgeWarp: {
+    label: "WARP / private CIDR routes"
+  }
 }
 Premises: {
   label: "自宅"
@@ -376,6 +289,9 @@ Premises: {
   Hardware: {
     label: "物理・ネットワーク"
 
+    Router: {
+      label: "IX2215 / VLAN"
+    }
     Wifi: {
       label: "Wi-Fi AP"
     }
@@ -385,23 +301,13 @@ Premises: {
     Lb: {
       label: "HAProxy / Keepalived ×2"
     }
-    Router: {
-      label: "IX2215 / VLAN"
-    }
-  }
-  HomeDns: {
-    label: "内部DNS / MetalLB"
-
-    Coredns: {
-      label: "CoreDNS / miutaku.internal"
-    }
-    Metallb: {
-      label: "MetalLB / LANのService IP"
-    }
   }
   Lan: {
     label: "LAN / VLAN・経路"
 
+    Server: {
+      label: "VLAN20 / 192.168.20.0/24"
+    }
     Native: {
       label: "native / 192.168.0.0/24"
     }
@@ -417,48 +323,16 @@ Premises: {
     Iot: {
       label: "VLAN40 / 192.168.40.0/24"
     }
-    Server: {
-      label: "VLAN20 / 192.168.20.0/24"
-    }
   }
-}
-Oke: {
-  label: "OCI / STG OKE共通基盤"
+  HomeDns: {
+    label: "内部DNS / MetalLB"
 
-  Workers: {
-    label: "base / burst node pool"
-  }
-  Network: {
-    label: "OCI network"
-
-    Private_workers: {
-      label: "private worker subnet"
+    Coredns: {
+      label: "CoreDNS / miutaku.internal"
     }
-    Nat: {
-      label: "NAT gateway / reserved IP"
+    Metallb: {
+      label: "MetalLB / LANのService IP"
     }
-    Service_gateway: {
-      label: "Service Gateway / Oracle Services"
-    }
-    Igw: {
-      label: "Internet gateway"
-    }
-    Public_api: {
-      label: "公開API・LB subnet"
-    }
-  }
-}
-External: {
-  label: "外部サービス / SaaS・公開サービス"
-
-  EdgeWarp: {
-    label: "WARP / private CIDR routes"
-  }
-  Internet: {
-    label: "Internet"
-  }
-  Oracle: {
-    label: "Oracle Services Network"
   }
 }
 
@@ -469,13 +343,6 @@ Premises.Hardware.Router -> Premises.Lan.Server: "BVI20"
 Premises.Hardware.Router -> Premises.Lan.Client: "BVI30"
 Premises.Hardware.Router -> Premises.Lan.Guest: "BVI31 / 他VLAN拒否"
 Premises.Hardware.Router -> Premises.Lan.Iot: "BVI40"
-Oke.Workers -> Oke.Network.Private_workers: "private subnet / 10.0.2.0/24"
-Oke.Network.Igw -> Oke.Network.Public_api: "public route table"
-Oke.Network.Private_workers -> Oke.Network.Nat: "default route"
-Oke.Network.Private_workers -> Oke.Network.Service_gateway: "Oracle service CIDR route"
-Oke.Network.Nat -> External.Internet: "NAT / reserved IPv4"
-External.Internet -> Oke.Network.Igw: "公開API・LBへの到達"
-Oke.Network.Service_gateway -> External.Oracle: "Oracle Services Network"
 `;case`storage`:return`direction: right
 
 Premises: {
@@ -624,6 +491,13 @@ External: {
     }
   }
 }
+Consumers: {
+  label: "基盤の利用側 / 別リポジトリ"
+
+  Reventer: {
+    label: "Re:Venter"
+  }
+}
 Premises: {
   label: "自宅"
 
@@ -635,21 +509,18 @@ Premises: {
       shape: stored_data
     }
   }
+  Management: {
+    label: "自宅基盤の構成管理"
+
+    Argo: {
+      label: "自宅ArgoCD"
+    }
+  }
   Home: {
     label: "Talos / home-k8s"
   }
   Hardware: {
     label: "物理・ネットワーク"
-  }
-}
-Control: {
-  label: "変更・運用"
-
-  Argo: {
-    label: "自宅ArgoCD"
-  }
-  Reviews: {
-    label: "Re:Venterの一時レビュー"
   }
 }
 
@@ -665,8 +536,8 @@ External.Edge.Routes.Exceptions -> Premises.Home: "内部接続"
 Premises.Home -> External.Edge.Tunnel: "外向きTunnel接続"
 External.Edge.Routes.Protected -> Premises.Hardware: "認証後の内部接続"
 External.Edge.Routes.Protected -> Premises.Data.Nas: "認証後の内部接続"
-External.Edge.Routes.Protected -> Control.Argo: "認証後の内部接続"
-External.Edge.Routes.Protected -> Control.Reviews: "認証後の内部接続"
+External.Edge.Routes.Protected -> Premises.Management.Argo: "認証後の内部接続"
+External.Edge.Tunnel -> Consumers.Reventer: "hostname転送"
 `;case`placement`:return`direction: down
 
 HomeSite: {
@@ -695,12 +566,6 @@ HomeSite: {
   Talos: {
     label: "home-k8s"
   }
-}
-Stg: {
-  label: "OCI / STG OKE共通基盤"
-}
-Prd: {
-  label: "外部所有PRDクラスタ / 共通アドオンの配置先"
 }
 `;case`power`:return`direction: right
 
