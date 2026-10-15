@@ -1,0 +1,57 @@
+views {
+  style * { size xs textSize md padding sm }
+  style control, bws { color amber }
+  style monitoring { color green }
+  style data { color gray }
+  view index {
+    title 'my-infra / 全体'
+    description '構成の入口。要素をクリックして詳細へ。通信・デプロイ・秘密情報・監視は、それぞれの観点で確認する。'
+    group '実行・保存' {
+      include home, oke, data
+    }
+    group '変更・運用' {
+      include control, bws, monitoring
+    }
+    include home with { navigateTo home_apps }
+    include control with { navigateTo delivery }
+    include bws with { navigateTo secrets }
+    include monitoring with { navigateTo observability }
+    include oke with { navigateTo placement }
+    include data with { navigateTo placement }
+    exclude * -> *
+    autoLayout TopBottom 70 50
+  }
+  view home_apps of home {
+    title '自宅のサービス・保存'
+    include user, edge, home, home.nextcloud, home.recording, home.apps, home.dns, data, data.nas
+    include data with { navigateTo placement }
+    exclude * -> * where kind is not runtime
+    autoLayout LeftRight 80 60
+  }
+  view delivery {
+    title '変更・デプロイ'
+    include control, control.*, home, oke, oke.argo, oke.scale, oke.api, reventer, hardware, edge, monitoring.vms
+    include home with { navigateTo home_apps }
+    include hardware with { navigateTo placement }
+    exclude * -> * where kind is not deploy
+    autoLayout TopBottom 80 60
+  }
+  view secrets {
+    title '秘密情報の管理・注入'
+    include bws, home, home.eso, oke, oke.eso, control.git, control.tfc
+    exclude * -> * where kind is not secret
+    autoLayout LeftRight 80 60
+  }
+  view observability {
+    title '監視の収集・保存・照会'
+    include operator, hardware, home.agent, oke, monitoring, monitoring.*
+    exclude * -> * where kind is not observe and kind is not query
+    autoLayout LeftRight 80 60
+  }
+  deployment view placement {
+    title '配置 / 所有境界'
+    include homeSite, stg, application
+    exclude * -> *
+    autoLayout LeftRight 80 60
+  }
+}

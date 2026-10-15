@@ -1,0 +1,151 @@
+name: Update architecture model
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: architecture-update
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  propose:
+    if: vars.ARCHITECTURE_CODEX_ENABLED == 'true'
+    runs-on: arc-runner-my-infra-codex
+    timeout-minutes: 30
+    outputs:
+      result: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: docs/architecture/package-lock.json
+      - run: npm ci
+        working-directory: docs/architecture
+      - name: Require ChatGPT account login
+        run: |
+          node - <<'JS'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const authPath = path.join(require('node:os').homedir(), '.codex/auth.json');
+          if (!fs.existsSync(authPath)) {
+            console.error('Log in to ChatGPT on the dedicated Codex runner first. See docs/architecture/README.md.');
+            process.exit(1);
+          }
+          const auth = JSON.parse(fs.readFileSync(authPath, 'utf8'));
+          if (auth.auth_mode !== 'chatgpt' || !auth.tokens?.refresh_token || auth.OPENAI_API_KEY) {
+            console.error('The dedicated runner must use managed ChatGPT authentication, not an API key.');
+            process.exit(1);
+          }
+          JS
+      # Talos disables user namespaces. This isolated non-privileged pod is the
+      # sandbox: no host paths, Docker socket or Kubernetes service account token.
+      # Keep Codex last. Validation and publishing use a fresh hosted runner.
+      - name: Propose architecture updates using Plus
+        id: codex
+        env:
+          ARCHITECTURE_BASE_SHA: ${{ github.event.before }}
+          ARCHITECTURE_CODEX_MODEL: ${{ vars.ARCHITECTURE_CODEX_MODEL }}
+        run: |
+          unset OPENAI_API_KEY CODEX_API_KEY
+          args=()
+          if [ -n "$ARCHITECTURE_CODEX_MODEL" ]; then
+            args+=(--model "$ARCHITECTURE_CODEX_MODEL")
+          fi
+          npx --yes --package=@openai/codex@0.162.1 codex exec \
+            --sandbox danger-full-access \
+            --ephemeral \
+            -c 'forced_login_method="chatgpt"' \
+            -c 'cli_auth_credentials_store="file"' \
+            --output-schema .github/codex/architecture-output.schema.json \
+            --output-last-message "$RUNNER_TEMP/architecture-result.json" \
+            "${args[@]}" - < .github/codex/architecture-update.md
+          node - <<'JS'
+          const fs = require('node:fs');
+          const delimiter = require('node:crypto').randomUUID();
+          const result = fs.readFileSync(process.env.RUNNER_TEMP + '/architecture-result.json', 'utf8');
+          JSON.parse(result);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `final-message<<${delimiter}\n${result}\n${delimiter}\n`);
+          JS
+
+  publish:
+    needs: propose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Ignore stale results
+        id: current
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = await github.rest.repos.getBranch({
+              ...context.repo, branch: context.ref.replace('refs/heads/', '')
+            });
+            core.setOutput('fresh', branch.data.commit.sha === context.sha);
+      - uses: actions/setup-node@v4
+        if: steps.current.outputs.fresh == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: docs/architecture/package-lock.json
+      - run: npm ci
+        if: steps.current.outputs.fresh == 'true'
+        working-directory: docs/architecture
+      - name: Apply only allowed model changes
+        id: apply
+        if: steps.current.outputs.fresh == 'true'
+        env:
+          ARCHITECTURE_RESULT: ${{ needs.propose.outputs.result }}
+          ARCHITECTURE_SOURCE_SHA: ${{ github.sha }}
+        run: node docs/architecture/scripts/apply-ai-update.mjs
+      - name: Validate the updated explorer
+        if: steps.apply.outputs.changed == 'true'
+        working-directory: docs/architecture
+        run: npm run build && npm test
+      - name: Create or update one architecture PR
+        if: steps.apply.outputs.changed == 'true'
+        id: pr
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
+        with:
+          token: ${{ github.token }}
+          branch: automation/architecture-model
+          base: ${{ github.ref_name }}
+          add-paths: |
+            docs/architecture/logical.c4
+            docs/architecture/deployment.c4
+            docs/architecture/views.c4
+          commit-message: 'docs: synchronize LikeC4 with current code'
+          title: 'docs: synchronize architecture model with code'
+          body-path: /tmp/architecture-pr-body.md
+      # GITHUB_TOKEN PRs do not trigger pull_request workflows automatically.
+      - name: Run architecture checks on the generated PR
+        if: steps.pr.outputs.pull-request-number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              ...context.repo, workflow_id: 'architecture-check.yml',
+              ref: 'automation/architecture-model', inputs: {base_ref: context.sha}
+            });

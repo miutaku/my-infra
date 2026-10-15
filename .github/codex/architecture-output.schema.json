@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary",
+    "updates"
+  ],
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "content"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "enum": [
+              "docs/architecture/logical.c4",
+              "docs/architecture/views.c4",
+              "docs/architecture/deployment.c4"
+            ]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

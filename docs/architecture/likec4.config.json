@@ -1,0 +1,14 @@
+{
+  "$schema": "https://likec4.dev/schemas/config.json",
+  "name": "my-infra",
+  "title": "my-infra Architecture",
+  "implicitViews": false,
+  "webapp": {
+    "relationshipsBrowser": {
+      "defaultScope": "view"
+    }
+  },
+  "landingPage": {
+    "redirect": true
+  }
+}

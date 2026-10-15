@@ -1,0 +1,35 @@
+deployment {
+  site homeSite '自宅 / Proxmox2ホスト・RPi' {
+    description 'CP VM3台とworker VM2台はPVE2ホストへ配置。Podの配置は動的。配置詳細はホスト・クラスタをクリックして辿る。'
+    hypervisor x570 'pve-x570' {
+      instanceOf hardware.x570
+      vm cp1 'Talos controlplane01'
+      vm worker1 'Talos worker01'
+      vm nas1 'TrueNAS nas-01' { instanceOf data.nas }
+    }
+    hypervisor b550m 'pve-b550m' {
+      instanceOf hardware.b550m
+      vm cp2 'Talos controlplane02'
+      vm cp3 'Talos controlplane03'
+      vm worker2 'Talos worker02'
+      vm nas2 'TrueNAS nas-02' { instanceOf data.nas }
+    }
+    cluster talos 'home-k8s' {
+      description 'VMとRPiにまたがるクラスタ。PVEホストとクラスタを入れ子にしてPod配置を固定しない。'
+      instanceOf home
+      namespace argocd 'argocd' { instanceOf control.argo }
+      namespace secrets 'external-secrets' { instanceOf home.eso }
+      namespace apps '各アプリnamespace' { instanceOf home.apps instanceOf home.nextcloud instanceOf home.recording }
+      namespace monitoring 'monitoring' { instanceOf home.agent }
+    }
+  }
+  cluster stg 'OCI / STG OKE共通基盤' {
+    instanceOf oke
+    namespace argocd 'argocd / 共通基盤' { instanceOf oke.argo }
+    namespace secrets 'external-secrets' { instanceOf oke.eso }
+  }
+  site application 'reventer所有 / STG・PRDアプリ・PRD OKE' {
+    description '別リポジトリ管理。モデルで所有境界を維持する。'
+    instanceOf reventer
+  }
+}

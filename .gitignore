@@ -57,3 +57,11 @@ k8s/pve/snmp-exporter/generator/snmp.yml
 # STG observability private deployment inputs and generated Python caches
 terraform/oci-observability-stg/*.auto.tfvars.json
 __pycache__/
+
+# LikeC4 generated artifacts
+/docs/architecture/node_modules/
+/docs/architecture/dist/
+/docs/architecture/standalone/
+/docs/architecture/resource-inventory.json
+/architecture-review/
+/.pages-state/

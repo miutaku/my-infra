@@ -1,0 +1,60 @@
+name: Architecture explorer
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ['docs/architecture/**', 'terraform/**', 'k8s/**', 'talos/**', 'ansible/**', '.github/workflows/architecture-*.yml', '.github/codex/**']
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: 'Exact base commit for a manual comparison (blank compares with main)'
+        type: string
+        required: false
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: docs/architecture
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: docs/architecture/package-lock.json
+      - run: npm ci
+      - run: npm run build && npm test
+      - name: Record source commit
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node -e 'require("fs").writeFileSync("dist/build-info.json", JSON.stringify({head:process.env.SOURCE_SHA}))'
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push'
+        with:
+          name: architecture-site
+          path: docs/architecture/dist/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Install screenshot browser
+        if: github.event_name != 'push'
+        run: npx playwright install --with-deps chromium
+      - name: Build exact-commit visual comparison
+        if: github.event_name != 'push'
+        env:
+          ARCHITECTURE_REVIEW_BASE: ${{ github.event.pull_request.base.sha || inputs.base_ref }}
+        run: node scripts/build-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'push'
+        with:
+          name: architecture-review
+          path: architecture-review/
+          retention-days: 30
+          if-no-files-found: error
