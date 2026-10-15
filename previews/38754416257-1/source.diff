@@ -1,0 +1,608 @@
+diff --git a/docs/architecture/README.md b/docs/architecture/README.md
+index 9a05d5c..43e5606 100644
+--- a/docs/architecture/README.md
++++ b/docs/architecture/README.md
+@@ -2,13 +2,13 @@
+ 
+ 公開サイト: https://miutaku.github.io/my-infra/
+ 
+-reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
++reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。PRD共有アドオン・監視保存先・ArgoCD・runnerはmy-infraの提供基盤として分ける。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
+ 
+ | ファイル | 役割 |
+ | --- | --- |
+ | logical.c4 / details.c4 | サービス・所有境界・説明・関係・根拠リンク |
+ | deployment.c4 | 物理ホスト・VM・クラスタ・namespaceとinstanceOf |
+-| views.c4 | 全体・サービス・録画・デプロイ・秘密情報・監視・配置・ネットワーク・保存・電源の観点とクリックナビゲーション |
++| views.c4 | 全体・サービス・入口認証・デプロイ・秘密情報・監視・配置・ネットワーク・保存・電源の観点とクリックナビゲーション |
+ | specification.c4 | 種類と線の意味 |
+ | scripts/inventory.mjs / scripts/catalog.mjs | 全宣言を抽出し、Application・内部定義・namespace配置・公開hostnameをモデル化 |
+ | shell.html / scripts/*navigation.mjs / scripts/line-filters.mjs | reventerと同じ標準viewer・外枠・線フィルター。構成情報のコピーを持たない |
+@@ -48,3 +48,9 @@ PR終了イベントと日次再照合で終了済みPRを削除し、30日を
+ model-coverage.jsonは宣言ごとのモデル要素と、Applicationの配置先を記録する。テストでコンパイル後の要素・配置が実在すること、Proxmoxの全VM module・LXC宣言に物理配置と根拠があること、参照元リンクが実在することを検証する。宣言が存在することを稼働証明とはしない。未登録・共有の定義は専用グループに保持し、稼働中と推測して配置しない。
+ 
+ 自宅のvmagent→自宅VictoriaMetricsと、reventerのcollector→OCI監視VMは独立。NASのファイル、DB logical dump、metrics snapshot、PBSのVM backupは復元単位を区別する。UPSの給電、NUT状態の読み取り、各ホスト自身の停止も異なる関係として保持する。
++
++## 表す責務とアクセス経路
++
++この図はインフラ基盤の提供範囲を表す。Re:Venterのアプリ・PRDクラスタ本体・アプリ固有のGateway/HTTPRouteは外部所有とし、利用側Applicationの同期登録と、実行・共通Controller・Secret注入・監視保存先の接点を示す。定義がmy-infraに存在すること、配置先、所有する責務を混同しない。
++
++自宅公開hostnameの原則は利用者・管理者 → Cloudflare Access → Tunnel → 内部サービス。公開hostnameの認証方式はTerraformから生成し、用途（利用・管理）と認証（Access・mTLS）を別の属性にする。loockit-apiは専用クライアント証明書と操作制限の例外として表示する。WARP/LANのprivate経路、GitOps/CIによる変更、基盤の提供はそれぞれ別の線種・観点とする。認証方式を判定できないhostnameはビルドを失敗させる。
+diff --git a/docs/architecture/deployment.c4 b/docs/architecture/deployment.c4
+index e7bca7f..74754fc 100644
+--- a/docs/architecture/deployment.c4
++++ b/docs/architecture/deployment.c4
+@@ -42,8 +42,8 @@ deployment {
+     instanceOf oke
+ 
+   }
+-  cluster prd 'PRD OKE / 本体reventer所有・共通アドオンmy-infra' {
+-    description '別リポジトリ管理。モデルで所有境界を維持する。'
+-    instanceOf reventer
++  cluster prd '外部所有PRDクラスタ / 共通アドオンの配置先' {
++    description 'この図が管理対象として示すのは共通アドオンとApplication登録。クラスタ本体・アプリ実装はreventerが所有。'
++    instanceOf shared_prd
+   }
+ }
+diff --git a/docs/architecture/details.c4 b/docs/architecture/details.c4
+index 66a39fe..57b421e 100644
+--- a/docs/architecture/details.c4
++++ b/docs/architecture/details.c4
+@@ -18,7 +18,9 @@ model {
+     component ai 'Gemini API / OpenAI互換' { description 'Coupon ManagerのAi設定から利用。認証値は掲載しない。' }
+     component github_pages 'GitHub Pages / my-infra図・レビュー'
+   }
++  actor client '専用クライアント'
+   extend external.edge {
++    component mtls 'mTLS / 専用APIの例外' { description 'loockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/loockit-api.tf '例外の定義' }
+     component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
+   }
+   extend premises.home.nextcloud { store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
+@@ -61,7 +63,7 @@ model {
+     component reviews 'Re:Venterの一時レビュー' { description 'reventerだけTalosから非公開配信。my-infraの本番・レビューはGitHub Pages。' }
+     component packer 'Packer / VM template' { link https://github.com/miutaku/my-infra/tree/main/packer '定義' }
+   }
+-  extend control.argo { component registry 'Application登録 / root-app' }
++  extend control.argo { component registry 'Application登録 / root-app' component workloads '利用側Applicationの登録' { description 'この基盤から同期する対象の登録だけを保持。参照先アプリの内部構成は展開しない。' } }
+   extend premises.data {
+     component shared '共有PV / runner cache・状態'
+     component databases 'DB / アプリ共有基盤' {
+@@ -105,6 +107,8 @@ model {
+ 
+   extend oke {
+     component services 'STG共通Application'
++    component gateway 'Gateway Controller / NGINX'
++    component certificates 'cert-manager / ClusterIssuer' { description 'Controller・Issuerを提供。証明書の要求は利用側で定義する。' }
+     component network 'OCI network' {
+       component public_api '公開API・LB subnet'
+       component private_workers 'private worker subnet'
+@@ -114,16 +118,18 @@ model {
+     }
+     component workers 'base / burst node pool' { description 'worker compartmentの権限はAutoscalerへ限定。control plane・公開APIと区別する。' }
+   }
+-  extend reventer {
+-    component platform 'PRD共通基盤・外部所有アプリ登録' { description '共通アドオンとApplication登録はmy-infra。アプリ実装・PRDクラスタ本体の所有はreventer。' }
+-    component collectors 'STG・PRD監視collector' { description 'reventer側monitoring manifestsを自宅ArgoCDが同期する。' }
+-  }
+-  extend reventer.platform { component external_secrets 'ESO / PRD共通基盤' }
+   extend monitoring.vms {
+     store stg 'STG監視VM ×2 / 専用アカウント'
+     store prd 'PRD監視VM ×2 / 専用アカウント'
+   }
+-  external.bws .secret reventer.platform.external_secrets 'ESO / PRD Secret注入'
++  client .runtime external.edge.mtls 'クライアント証明書'
++  external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
++  oke .provide consumers.reventer 'STGの実行基盤を提供'
++  oke.gateway .provide consumers.reventer '共有Gateway Controllerを提供'
++  shared_prd.gateway .provide consumers.reventer '共有Gateway Controllerを提供'
++  oke.eso .secret consumers.reventer '利用側Secretへ注入 / STG'
++  shared_prd.eso .secret consumers.reventer '利用側Secretへ注入 / PRD'
++  external.bws .secret shared_prd.eso 'ESO / PRD Secret注入'
+   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_a 'readyz / leaderのみ'
+   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_b 'readyz / leaderのみ'
+   premises.hardware.loockit_a .runtime premises.hardware.ble_a 'read-only D-Bus / org.bluez'
+@@ -158,8 +164,8 @@ model {
+   premises.home.agent.pdc .connect external.grafana '外向きPDC接続'
+   external.grafana .query premises.home.agent.pdc 'PDC経由の検索'
+   premises.home.agent.pdc .query premises.home.agent.local_store 'private query / :8428'
+-  reventer.collectors .observe monitoring.vms.stg 'STG metrics / logs'
+-  reventer.collectors .observe monitoring.vms.prd 'PRD metrics / logs'
++  consumers.reventer .observe monitoring.vms.stg 'metrics / logs / 環境別'
++  consumers.reventer .observe monitoring.vms.prd 'metrics / logs / 環境別'
+   monitoring.vms .connect external.grafana 'VM側PDC agentから外向き接続'
+   premises.hardware.router .network premises.lan.native 'native IF'
+   premises.hardware.router .network premises.lan.management 'BVI10'
+@@ -169,10 +175,6 @@ model {
+   premises.hardware.router .network premises.lan.iot 'BVI40'
+   premises.home.platform.cloudflared .connect external.edge.tunnel '外向きTunnel接続'
+   external.edge.warp .network premises.lan.server 'private CIDR routes / WARP policy'
+-  external.edge.tunnel .runtime premises.home.nextcloud '公開hostname / 内部HTTP'
+-  external.edge.tunnel .runtime premises.home.recording.tnlastation.gateway '公開hostname / 内部HTTP'
+-  external.edge.tunnel .runtime premises.home.apps.coupon_manager.web '公開hostname / 内部HTTP'
+-  external.edge.tunnel .admin control.argo 'Access後 / 管理UI'
+   premises.data.databases .runtime premises.data.nas.nas02 'DB用NFS PVC'
+   premises.home.agent.local_store .runtime premises.data.nas.nas02 'metrics用NFS PVC'
+   premises.data.pbs .backup external.idrive 'S3 datastore / VM backup'
+diff --git a/docs/architecture/logical.c4 b/docs/architecture/logical.c4
+index 1914963..cca0186 100644
+--- a/docs/architecture/logical.c4
++++ b/docs/architecture/logical.c4
+@@ -5,7 +5,7 @@ model {
+       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
+       component nextcloud 'Nextcloud' { link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
+       component recording '録画・配信' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
+-      component apps '宅内アプリ' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
++      component apps '自宅ワークロード / 基盤の利用側' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
+       component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
+       component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
+       component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
+@@ -23,10 +23,10 @@ model {
+   }
+   extend external {
+     system edge 'Cloudflare' {
+-      description 'DNS・Access・TunnelをTerraformで管理。公開経路と管理アクセスを認証ポリシーで分離。'
++      description '自宅サービスの公開入口は原則Accessで認証してTunnelへ転送。mTLS専用APIとWARP/LAN経路は別に示す。'
+       link https://github.com/miutaku/my-infra/tree/main/terraform/cloudflare '定義'
+       component tunnel 'Cloudflare Tunnel' { description '自宅とSTG OKEのcloudflaredが外向き接続を確立。公開hostnameのHTTPを内部Serviceへ転送する。' }
+-      component access 'Access / 認証' { description '管理サービスをAccessで保護。WARPのprivate CIDR routeとは別の接続経路。' }
++      component access 'Cloudflare Access / 共通の認証入口' { description '利用・管理の公開UIを原則Accessで保護。mTLS専用API、WARPのprivate CIDR routeとは区別する。' }
+     }
+     system bws 'Bitwarden Secrets Manager' { description 'BWS。Terraform・CI・External Secretsから利用する秘密情報の管理先。参照元の定義だけを図示し、秘密値は保持しない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets 'SecretStore定義' }
+     component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存先は自宅VictoriaMetricsとOCI監視VM。' }
+@@ -44,7 +44,17 @@ model {
+     component scale 'Cluster Autoscaler' { description 'burst poolを需要で増減。自宅Talos停止に依存しない。' }
+     component eso 'External Secrets Operator'
+   }
+-  system reventer 'Re:Venter / STG・PRD' { description 'アプリ・PRD OKE・アプリ用ネットワークは別リポジトリで管理。本図は所有境界と管理関係を示す。' link https://github.com/miutaku/reventer '所有リポジトリ' }
++  system consumers '基盤の利用側 / 別リポジトリ' {
++    system reventer 'Re:Venter' { description '基盤を利用するワークロードの一つ。アプリ内部・PRDクラスタ本体・アプリ固有のGateway/HTTPRouteはreventerで管理する。' link https://github.com/miutaku/reventer '利用側の構成' link https://reventer-architecture.pages.dev/ '利用側の構成図' }
++  }
++  system shared_prd 'PRDクラスタへ提供する共通アドオン' {
++    description '外部所有クラスタに提供するControllerと共通設定。クラスタ本体や利用側のアプリ構成をmy-infraの所有として扱わない。'
++    link https://github.com/miutaku/my-infra/tree/main/k8s/oci-prd '提供するアドオン'
++    component services '共通Application'
++    component eso 'External Secrets Operator'
++    component gateway 'Gateway Controller / NGINX'
++    component certificates 'cert-manager / ClusterIssuer' { description 'Controller・Issuerを提供。証明書の要求は利用側の責務。設置と実際の発行は区別する。' }
++  }
+   system control '変更・運用' {
+     component tfc_agents 'Terraform Cloud agents / 自宅' { description 'クラウドのworkspaceから処理を受け取る自宅のagent。Terraform Cloudサービスとは配置を分ける。' }
+ 
+@@ -57,17 +67,22 @@ model {
+     store vms 'OCI監視VM / STG・PRD' { description 'OKEから独立したVM2台／環境へVictoriaMetrics・VictoriaLogsを配置。STG/PRDの定義ディレクトリとアカウントは分離。' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability-stg 'STG定義' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability 'PRD定義' }
+ 
+   }
+-  user .runtime external.edge 'HTTPS'
+-  external.edge .runtime premises.home 'Tunnel / 内部HTTP'
+-  operator .admin external.edge.access '管理認証'
+-  external.edge.access .admin control.argo 'Tunnel / 管理UI'
++  user .runtime external.edge.access 'HTTPS / 利用時の認証'
++  operator .admin external.edge.access 'HTTPS / 管理時の認証'
++  external.edge.access .authenticate external.edge.tunnel 'Access認証後の転送'
++  external.edge.tunnel .runtime premises.home.nextcloud 'Access認証後 / 公開UI・サービス'
++  external.edge.tunnel .runtime premises.home.apps 'Access認証後 / 公開UI・サービス'
++  external.edge.tunnel .runtime premises.home.recording 'Access認証後 / 公開UI・サービス'
++  external.edge.tunnel .admin control.argo 'Access認証後 / 管理UI'
++  external.edge.tunnel .admin premises.hardware 'Access認証後 / 機器管理UI'
++  external.edge.tunnel .admin premises.data.nas 'Access認証後 / NAS管理UI'
+   premises.hardware.router .runtime premises.home.dns 'LAN / 内部DNS'
+   external.github .deploy control.argo 'GitOps'
+   external.github .deploy oke.argo 'GitOps'
+   external.github .deploy external.terraform_cloud 'Terraform実行'
+   external.github .deploy control.runner 'Actions job'
+   control.argo .deploy premises.home 'manifest同期'
+-  control.argo .deploy reventer 'STG・PRDアプリ同期'
++  control.argo .deploy consumers.reventer 'STG・PRDアプリ同期'
+   oke.argo .deploy oke.api '共通基盤同期'
+   oke.scale .deploy oke.api 'burst pool増減'
+   external.terraform_cloud .deploy control.tfc_agents 'workspace runを自宅agentで実行'
+@@ -75,6 +90,11 @@ model {
+   external.terraform_cloud .deploy oke 'OCI / OKE'
+   external.terraform_cloud .deploy external.edge 'DNS / Access / Tunnel'
+   external.terraform_cloud .deploy monitoring.vms '監視VM'
++  control .provide consumers.reventer 'GitOps・CI・Terraformの実行基盤を提供'
++  monitoring.vms .provide consumers.reventer '監視データの保存先を提供'
++  premises.data.nas .provide premises.home 'NFSストレージを提供'
++  control.runner .deploy consumers.reventer '利用側のCI jobを実行'
++  control.tfc_agents .deploy consumers.reventer '利用側workspaceの実行を受託'
+   control.ansible .deploy premises.hardware '機器設定'
+   external.bws .secret premises.home.eso 'Secret注入'
+   external.bws .secret oke.eso 'Secret注入'
+diff --git a/docs/architecture/scripts/catalog.mjs b/docs/architecture/scripts/catalog.mjs
+index 0fe7f0f..a0c74b1 100644
+--- a/docs/architecture/scripts/catalog.mjs
++++ b/docs/architecture/scripts/catalog.mjs
+@@ -1,4 +1,4 @@
+-import {readFileSync,writeFileSync} from 'node:fs';
++import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
+ import {resolve} from 'node:path';
+ import {createHash} from 'node:crypto';
+ import {parseAllDocuments} from 'yaml';
+@@ -13,31 +13,38 @@ function placement(file,destination){
+  if(destination.server==='https://kubernetes.default.svc'||(!destination.server&&!destination.name))return 'homeSite.talos';
+  throw new Error(`Unknown deployment destination in ${file}; declare its cluster before publishing`);
+ }
++export function authenticationMode(name,protectedNames,mtlsNames=new Set()){
++ if(protectedNames.has(name))return 'access';
++ if(mtlsNames.has(name))return 'mtls';
++ throw new Error(`Declare an authentication policy for public hostname ${name}`);
++}
+ export function generateCatalog(root){
+  const rows=inventory(root),apps=[],declarations=new Map(),extensions=[],deployments=new Map(),coverage=[];
+  for(const row of rows.filter(row=>row.type==='Application')){
+   const doc=parseAllDocuments(readFileSync(resolve(root,row.file),'utf8')).map(doc=>doc.toJS()).find(doc=>doc?.kind==='Application'&&doc.metadata.name===row.name);
+   const spec=doc.spec,destination=spec.destination??{},scope=placement(row.file,destination),sources=spec.sources??[spec.source??{}];
+-  let ref=scope==='homeSite.talos'?known[row.name]:scope==='stg'&&row.name==='oci-external-secrets'?'oke.eso':scope==='prd'&&row.name==='oci-prd-external-secrets'?'reventer.platform.external_secrets':null;
++  const consumerOwned=sources.some(source=>/[:/]miutaku\/reventer(?:\.git)?$/.test(source.repoURL??''));
++  const addon={'oci-external-secrets':'oke.eso','oci-prd-external-secrets':'shared_prd.eso','oci-nginx-gateway-fabric':'oke.gateway','oci-prd-nginx-gateway-fabric':'shared_prd.gateway','oci-cert-manager':'oke.certificates','oci-prd-cert-manager':'shared_prd.certificates'};
++  let ref=consumerOwned?null:addon[row.name]??(scope==='homeSite.talos'?known[row.name]:null);
+   if(!ref){
+-   let parent=scope==='homeSite.talos'?'premises.home.apps':scope==='stg'?'oke.services':'reventer.platform';
+-   if(scope==='homeSite.talos'&&/exporter/.test(row.name))parent='premises.home.agent.exporters';
++   let parent=consumerOwned?'control.argo.workloads':scope==='homeSite.talos'?'premises.home.apps':scope==='stg'?'oke.services':'shared_prd.services';
++   if(!consumerOwned&&scope==='homeSite.talos'&&/exporter/.test(row.name))parent='premises.home.agent.exporters';
+    else if(scope==='homeSite.talos'&&/^arc-/.test(row.name))parent='control.runner';
+    else if(scope==='homeSite.talos'&&/image-updater/.test(row.name))parent='control.images';
+    else if(scope==='homeSite.talos'&&/tfc-agent/.test(row.name))parent='control.tfc_agents';
+-   else if(scope==='homeSite.talos'&&row.name==='reventer-gitops')parent='reventer.platform';
++   else if(scope==='homeSite.talos'&&row.name==='reventer-gitops')parent='control.argo.workloads';
+    else if(scope==='homeSite.talos'&&row.name==='architecture-review')parent='control.reviews';
+    else if(scope==='homeSite.talos'&&row.name==='descheduler')parent='premises.home.platform';
+    ref=`${parent}.${slug(row.name)}`;
+    declarations.set(ref,`extend ${parent} { component ${slug(row.name)} ${q(row.name)} }`);
+   }
+   const sourceText=sources.map(s=>s.path??s.chart??'').filter(Boolean).join(', ');
+-  extensions.push(`extend ${ref} { link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "Application定義" metadata { application ${q(row.name)} sourceFile ${q(row.file)} namespace ${q(destination.namespace??'default')} scope ${q(scope)} } }`);
++  extensions.push(`extend ${ref} { link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "Application定義" metadata { owner ${q(consumerOwned?'consumer':'my-infra')} application ${q(row.name)} sourceFile ${q(row.file)} namespace ${q(destination.namespace??'default')} scope ${q(scope)} } }`);
+   apps.push({...row,ref,scope,namespace:destination.namespace??'default',paths:sources.filter(s=>s.repoURL?.includes('miutaku/my-infra')&&s.path).map(s=>s.path),source:sourceText});
+   const key=`${scope}.ns_${slug(destination.namespace??'default')}`;
+   if(!deployments.has(key))deployments.set(key,{scope,namespace:destination.namespace??'default',instances:[]});
+   deployments.get(key).instances.push(`${id(row.id)} = instanceOf ${ref} { title ${q(row.name)} link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "Application定義" }`);
+-  coverage.push({...row,modelRef:ref,scope,namespace:destination.namespace??'default',deploymentRef:`${key}.${id(row.id)}`});
++  coverage.push({...row,owner:consumerOwned?'consumer':'my-infra',modelRef:ref,scope,namespace:destination.namespace??'default',deploymentRef:`${key}.${id(row.id)}`});
+  }
+  const backupJobs={'nas-backup':'nas','mariadb-backup':'db','victoria-metrics-backup':'metrics','tnlastation-recorded-backup':'recordings'};
+  const grouped=new Map();
+@@ -45,7 +52,7 @@ export function generateCatalog(root){
+   const app=apps.filter(app=>app.paths.some(path=>row.file.startsWith(path+'/'))).sort((a,b)=>Math.max(...b.paths.map(p=>p.length))-Math.max(...a.paths.map(p=>p.length)))[0];
+   let parent=app?.ref;
+   if(!parent){
+-   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/oci-observability')?'monitoring.vms':row.file.startsWith('terraform/oci/')?'oke':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.data.nas.nas01':'premises.data.nas.nas02'):row.file.startsWith('k8s/oci-prd/')?'reventer.platform':row.file.startsWith('k8s/oci/')?'oke.services':'definitions';
++   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/oci-observability')?'monitoring.vms':row.file.startsWith('terraform/oci/')?'oke':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.data.nas.nas01':'premises.data.nas.nas02'):row.file.startsWith('k8s/oci-prd/')?'shared_prd.services':row.file.startsWith('k8s/oci/')?'oke.services':'definitions';
+   }
+   const ref=`${parent}.resources.${id(row.id)}`;
+   if(!grouped.has(parent))grouped.set(parent,[]);
+@@ -60,23 +67,32 @@ export function generateCatalog(root){
+   }
+   coverage.push(record);
+  }
+- const routes=[],routeElements=[],routeLinks=[];
++ const routes=[],routeElements={protected:[],exceptions:[]},routeLinks=[];
+  const locals=readFileSync(resolve(root,'terraform/cloudflare/locals.tf'),'utf8');
+  const homeRoutes=locals.slice(locals.indexOf('home_k8s_services ='),locals.indexOf('  # Private network routes'));
+  const protectedPart=locals.match(/access_protected_subdomains\s*=\s*toset\(\[([\s\S]*?)\]\)/)?.[1]??'';
+- const protectedNames=new Set([...protectedPart.matchAll(/"([^"\n]+)"/g)].map(m=>m[1]));protectedNames.add('architecture-review');
++ const mtlsNames=new Set();
++ const protectedNames=new Set([...protectedPart.matchAll(/"([^"\n]+)"/g)].map(m=>m[1]));
++ for(const file of readdirSync(resolve(root,'terraform/cloudflare')).filter(file=>file.endsWith('.tf'))){
++  const source=readFileSync(resolve(root,'terraform/cloudflare',file),'utf8');
++  if(source.includes('resource "cloudflare_certificate_authorities_hostname_associations" "loockit_api"')&&source.includes('resource "terraform_data" "loockit_api_edge_rules"'))mtlsNames.add('loockit-api');
++  if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
++  for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
++ }
+  const targets={'architecture-review':'control.reviews.architecture_review','argocd-home-k8s':'control.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.wifi',ix2215:'premises.hardware.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
+   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
+   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
+-  const name=match[1],key=id('hostname:'+name),modelRef='external.edge.routes.'+key,kind=protectedNames.has(name)?'admin':'runtime';
+-  routeElements.push(`component ${key} ${q(name)} { description ${q(backend+' / '+(kind==='admin'?'Access保護':'個別policyは定義を参照'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" }`);
++  const name=match[1],key=id('hostname:'+name);
++  const accessMode=authenticationMode(name,protectedNames,mtlsNames);
++  const group=accessMode==='access'?'protected':'exceptions',modelRef=`external.edge.routes.${group}.${key}`;
++  const kind=/^(architecture-review|argocd-|unifi$|wifi-ap$|ix2215$|nas-|pve-|nanokvm-)/.test(name)?'admin':'runtime';
++  routeElements[group].push(`component ${key} ${q(name)} { description ${q(backend+' / '+(accessMode==='access'?'Cloudflare Access保護':'mTLS・証明書と操作パス制限'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" metadata { accessMode ${q(accessMode)} trafficKind ${q(kind)} } }`);
+   routeLinks.push(`external.edge.tunnel .${kind} ${modelRef} "hostname転送"`);
+   if(targets[name])routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
+-  if(kind==='admin')routeLinks.push(`external.edge.access .admin ${modelRef} "Access policy"`);
+-  const row={id:'hostname:'+name,type:'Tunnel hostname',name,file:'terraform/cloudflare/locals.tf',modelRef};routes.push(row);coverage.push(row);
++  const row={id:'hostname:'+name,type:'Tunnel hostname',name,file:'terraform/cloudflare/locals.tf',accessMode,trafficKind:kind,modelRef};routes.push(row);coverage.push(row);
+  }
+- const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { ${routeElements.join('\n')} } }`,...routeLinks,...[...grouped].map(([parent,items])=>`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
++ const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
+  return {dsl,coverage,apps,rows:[...rows,...routes],routeCount:routes.length};
+ }
+ if(process.argv[1]&&resolve(process.argv[1])===resolve(import.meta.filename)){
+diff --git a/docs/architecture/scripts/line-filters.mjs b/docs/architecture/scripts/line-filters.mjs
+index 959ce64..7cbe6f9 100644
+--- a/docs/architecture/scripts/line-filters.mjs
++++ b/docs/architecture/scripts/line-filters.mjs
+@@ -8,7 +8,7 @@ export function adaptLineFilters(directory){
+  let next=source.replace(pattern,(match,where,first,react)=>{
+  hooks++;
+  const boundary=match.indexOf('{let ')+1;
+- const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
++ const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true,provide:true,authenticate:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
+  return match.slice(0,boundary)+injection+match.slice(boundary);
+  });
+  // Updating the where input alone does not refresh existing React Flow edges.
+diff --git a/docs/architecture/scripts/relationship-navigation.mjs b/docs/architecture/scripts/relationship-navigation.mjs
+index 915c0a1..89347fa 100644
+--- a/docs/architecture/scripts/relationship-navigation.mjs
++++ b/docs/architecture/scripts/relationship-navigation.mjs
+@@ -5,12 +5,13 @@ export function targetView(fqn) {
+  if(fqn.startsWith('premises.hardware.ups'))return 'power';
+  if(fqn.startsWith('premises.lan')||fqn.startsWith('oke.network')||fqn.startsWith('premises.hardware.router')||fqn.startsWith('premises.home.dns')||fqn.startsWith('external.edge.warp'))return 'network';
+  if(fqn.startsWith('premises.data')||fqn==='external.idrive')return 'storage';
+- if(fqn.startsWith('premises.home.recording'))return 'media';
++ if(fqn.startsWith('external.edge')&&!fqn.startsWith('external.edge.warp'))return 'access';
+  if(fqn==='external.bws'||fqn.endsWith('.eso'))return 'secrets';
+  if(fqn==='external.github'||fqn==='external.terraform_cloud')return 'delivery';
++ if(fqn.startsWith('consumers'))return 'delivery';
+  if(fqn.startsWith('control'))return 'delivery';
+  if(fqn==='external.grafana'||fqn.startsWith('monitoring')||fqn==='premises.home.agent')return 'observability';
+- if(fqn.startsWith('premises.hardware')||fqn.startsWith('premises.data')||fqn.startsWith('oke')||fqn==='reventer')return 'placement';
++ if(fqn.startsWith('premises.hardware')||fqn.startsWith('premises.data')||fqn.startsWith('oke')||fqn.startsWith('shared_prd'))return 'placement';
+  return 'home_apps';
+ }
+ export function adaptViewer(directory) {
+diff --git a/docs/architecture/shell.html b/docs/architecture/shell.html
+index d1004ab..50d553e 100644
+--- a/docs/architecture/shell.html
++++ b/docs/architecture/shell.html
+@@ -1,7 +1,7 @@
+ <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>my-infra Architecture</title>
+ <style>*{box-sizing:border-box}body{margin:0;background:#111318;color:#edf0f7;font:14px system-ui,sans-serif}header{min-height:72px;padding:14px 22px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;border-bottom:1px solid #333846}strong{font-size:18px}small{display:block;color:#9da8bc;margin-top:3px}nav{display:flex;gap:6px;flex:1}button,select{font:inherit;color:#e4e9f2;border:1px solid #434b5c;border-radius:7px;background:#202530;padding:8px 13px;cursor:pointer}button.active{background:#384b79;border-color:#7d9de2}label{display:flex;align-items:center;gap:10px}#note{padding:10px 22px;background:#1b2230;color:#cdd9f0;font-size:13px;border-bottom:1px solid #343d4e;line-height:1.6}iframe{display:block;width:100%;height:calc(100dvh - 173px);min-height:480px;border:0;background:#fff}@media(max-width:700px){header{gap:12px;padding:12px}nav{order:3;flex-basis:100%;overflow:auto}#note{padding:8px 12px}iframe{height:calc(100dvh - 230px)}}
+ dialog{width:min(1100px,95vw);max-height:85dvh;border:1px solid #4c5871;border-radius:12px;background:#171d29;color:#edf0f7;padding:24px}dialog::backdrop{background:#000a}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;text-align:left;border-bottom:1px solid #343d4e;overflow-wrap:anywhere}td a{color:#9ec2ff}#inventoryNote{color:#b3bed1;line-height:1.6}</style><header><div><strong>my-infra Architecture</strong><small>LikeC4 · 箱から詳細へ</small></div><nav aria-label="構成図"><button data-view="index">全体</button><button data-view="home_apps">自宅サービス</button><button data-view="delivery">CI・デプロイ</button></nav><select id="perspective" aria-label="インフラの表示"><option value="" disabled>監視・秘密情報・配置</option><option value="secrets">秘密情報の管理・注入</option><option value="observability">監視の収集・保存・照会</option><option value="placement">配置・所有境界</option></select><button id="resources">リソース一覧</button><button id="up" hidden>← 全体へ戻る</button></header>
+-<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><label style="color:#9da8bc"><input type="checkbox" data-kind="network" checked>ネットワーク接続</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="power" checked>給電</label><label style="color:#79c8f7"><input type="checkbox" data-kind="connect" checked>外向き接続</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
++<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><label style="color:#9da8bc"><input type="checkbox" data-kind="network" checked>ネットワーク接続</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="power" checked>給電</label><label style="color:#79c8f7"><input type="checkbox" data-kind="connect" checked>外向き接続</label><label style="color:#9da8bc"><input type="checkbox" data-kind="provide" checked>基盤の提供</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="authenticate" checked>認証後の転送</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
+ <dialog id="inventory"><div style="display:flex;justify-content:space-between;align-items:center;gap:20px"><strong id="inventoryTitle"></strong><button id="closeInventory">閉じる</button></div><p id="inventoryNote"></p><p><a href="./resources.html" style="color:#9ec2ff">名前・種類で検索し、関連する図を見る</a></p><table><thead><tr><th>種類</th><th>名前</th><th>定義</th></tr></thead><tbody id="inventoryRows"></tbody></table></dialog>
+ <script>
+ (async()=>{
+@@ -10,7 +10,7 @@ const manifest=await fetch('./view-manifest.json').then(r=>r.json()),views=Objec
+ const perspectives=document.querySelector('#perspective');perspectives.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.disabled=true;placeholder.textContent='その他の観点';perspectives.append(placeholder);for(const id of views.filter(id=>!['index','home_apps','delivery'].includes(id))){const option=document.createElement('option');option.value=id;option.textContent=manifest[id].title;perspectives.append(option);}
+ const initial=new URLSearchParams(location.hash.slice(1));
+ let view=initial.get('view')||location.hash.match(/\/view\/([^/?]+)/)?.[1]||'index';if(!views.includes(view))view='index';
+-const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true};
++const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true,provide:true,authenticate:true};
+ window.myInfraLineFilters={...defaults};
+ try{const saved=JSON.parse(localStorage.getItem('my-infra-line-filters'));for(const kind of Object.keys(defaults))if(typeof saved?.[kind]==='boolean')window.myInfraLineFilters[kind]=saved[kind]}catch{}
+ const toggles=[...document.querySelectorAll('[data-kind]')];
+diff --git a/docs/architecture/specification.c4 b/docs/architecture/specification.c4
+index 6e80fd1..995075a 100644
+--- a/docs/architecture/specification.c4
++++ b/docs/architecture/specification.c4
+@@ -3,6 +3,8 @@ specification {
+   element system { style { color blue } }
+   element component { style { color muted } }
+   element store { style { shape storage color amber } }
++  relationship authenticate { color indigo line solid }
++  relationship provide { color gray line dashed }
+   relationship runtime { color green }
+   relationship admin { color indigo line dashed }
+   relationship deploy { color indigo line dashed }
+diff --git a/docs/architecture/tests/line-filters.test.mjs b/docs/architecture/tests/line-filters.test.mjs
+index af46dbf..09273f8 100644
+--- a/docs/architecture/tests/line-filters.test.mjs
++++ b/docs/architecture/tests/line-filters.test.mjs
+@@ -3,7 +3,7 @@ import vm from 'node:vm';
+ import assert from 'node:assert/strict';
+ import {whereOperatorAsPredicate} from '@likec4/core';
+ 
+-const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect'];
++const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect','provide','authenticate'];
+ for(const env of ['my-infra']){
+   const dir=`dist/diagram/assets`;
+   const files=fs.readdirSync(dir);
+diff --git a/docs/architecture/tests/model-coverage.test.mjs b/docs/architecture/tests/model-coverage.test.mjs
+index 90ac1aa..72f4ddc 100644
+--- a/docs/architecture/tests/model-coverage.test.mjs
++++ b/docs/architecture/tests/model-coverage.test.mjs
+@@ -2,6 +2,7 @@ import {test} from 'node:test';
+ import assert from 'node:assert/strict';
+ import {readFileSync,existsSync} from 'node:fs';
+ import {resolve} from 'node:path';
++import {authenticationMode} from '../scripts/catalog.mjs';
+ import {inventory} from '../scripts/inventory.mjs';
+ import {parseAllDocuments} from 'yaml';
+ const model=JSON.parse(readFileSync('model.json','utf8'));
+@@ -58,5 +59,43 @@ test('home storage, TrueNAS VMs and backup execution remain separate from extern
+   assert.ok(row.deploymentRef.startsWith('homeSite.talos.ns_'));
+   assert.equal(model.deployments.elements[row.deploymentRef].element,row.executionRef);
+  }
+- for(const ref of ['premises','external','premises.data.nas','premises.data.backups','external.bws','external.edge'])assert.ok(model.views.index.nodes.some(node=>node.model===ref||node.id===ref),`Missing overview boundary: ${ref}`);
++ for(const ref of ['premises','external','premises.data.nas','premises.home','external.bws','external.edge'])assert.ok(model.views.index.nodes.some(node=>node.model===ref||node.id===ref),`Missing overview boundary: ${ref}`);
++});
++
++
++test('foundation ownership never expands the consumer application and PRD addons remain provider-owned',()=>{
++ assert.ok(model.elements['consumers.reventer']);
++ assert.equal(Object.keys(model.elements).filter(ref=>ref.startsWith('consumers.reventer.')).length,0);
++ assert.equal(Object.keys(model.elements).filter(ref=>ref==='reventer'||ref.startsWith('reventer.')).length,0);
++ const consumers=coverage.records.filter(row=>row.type==='Application'&&row.owner==='consumer');
++ assert.ok(consumers.length>0);
++ for(const row of consumers)assert.ok(row.modelRef.startsWith('control.argo.workloads.'),row.name);
++ const prdEso=coverage.records.find(row=>row.type==='Application'&&row.name==='oci-prd-external-secrets');
++ assert.equal(prdEso.owner,'my-infra');assert.equal(prdEso.modelRef,'shared_prd.eso');
++ assert.ok(!model.views.index.nodes.some(node=>node.modelRef?.startsWith('control.argo.workloads.')));
++});
++
++test('public access keeps authentication separate from traffic purpose and rejects unclassified routes',()=>{
++ const routes=coverage.records.filter(row=>row.type==='Tunnel hostname');
++ assert.ok(routes.length>0);
++ for(const row of routes){
++  assert.equal(row.accessMode,row.name==='loockit-api'?'mtls':'access');
++  assert.equal(model.elements[row.modelRef].metadata.accessMode,row.accessMode);
++ }
++ assert.equal(routes.find(row=>row.name==='nextcloud').trafficKind,'runtime');
++ assert.equal(routes.find(row=>row.name==='argocd-home-k8s').trafficKind,'admin');
++ assert.throws(()=>authenticationMode('loockit-api',new Set()),/authentication policy/);
++ assert.equal(authenticationMode('loockit-api',new Set(),new Set(['loockit-api'])),'mtls');
++ assert.throws(()=>authenticationMode('new-unclassified-host',new Set()),/authentication policy/);
++ const relations=Object.values(model.relations);
++ assert.ok(relations.some(r=>r.source.model==='external.edge.access'&&r.target.model==='external.edge.tunnel'&&r.kind==='authenticate'));
++ for(const id of ['index','home_apps','access']){
++  const view=model.views[id];
++  const entrance=view.edges.filter(edge=>edge.source==='user');
++  assert.ok(entrance.length>0);
++  assert.ok(entrance.every(edge=>edge.target==='external.edge.access'),id);
++  assert.ok(!view.edges.some(edge=>edge.source==='external.edge'&&edge.target.startsWith('premises')),id);
++ }
++ assert.ok(model.views.access.nodes.some(node=>node.modelRef==='external.edge.mtls'));
++ assert.ok(!model.views.index.edges.some(edge=>['deploy','admin'].includes(edge.kind)&&edge.target==='consumers.reventer'));
+ });
+diff --git a/docs/architecture/views.c4 b/docs/architecture/views.c4
+index f9763bd..4b695da 100644
+--- a/docs/architecture/views.c4
++++ b/docs/architecture/views.c4
+@@ -1,92 +1,109 @@
+ views {
+   style * { size xs textSize md padding sm }
+-  style control, external.bws { color amber }
++  style control, external.bws, external.edge { color amber }
+   style monitoring { color green }
+-  style premises.data { color gray }
+-  style external.edge { color amber }
++  style premises.data, shared_prd { color gray }
++  style consumers { color muted }
+   view index {
+-    title '全体構成'
+-    description '自宅にはTalosとTrueNAS VM・保存・バックアップ処理をまとめ、Cloudflare・Bitwarden・Grafana・IDriveは外部サービスへ分ける。TrueNASをクリックすると保存先・処理・VM配置を確認できる。'
+-    include premises, external, user, operator, external.edge, external.edge.access, external.edge.tunnel, premises.home, premises.home.nextcloud, premises.home.agent, premises.home.eso, oke, control, control.argo, external.bws, monitoring, monitoring.vms, external.grafana, premises.data, premises.data.nas, premises.data.pbs, premises.data.backups, external.idrive
++    title 'インフラ基盤の全体'
++    description 'my-infraが提供する実行・保存・監視・運用基盤。自宅サービスの入口は原則Access → Tunnel。Re:Venterは基盤の利用側として接点のみ示す。mTLSなどの例外は入口・認証から確認。'
++    include user, operator, external.edge.access, external.edge.tunnel, external.bws, premises.home, premises.data.nas, oke, shared_prd, monitoring.vms, control, consumers.reventer
++    include external.edge.access with { navigateTo access }
++    include external.edge.tunnel with { navigateTo access }
+     include premises.home with { navigateTo home_apps }
+-    include external.edge.tunnel with { navigateTo home_apps }
+-    include control.argo with { navigateTo delivery }
++    include control with { navigateTo delivery }
+     include external.bws with { navigateTo secrets }
+-    include premises.home.eso with { navigateTo secrets }
+-    include monitoring with { navigateTo observability }
+-    include oke with { navigateTo placement }
+-    include premises.data with { navigateTo storage }
++    include monitoring.vms with { navigateTo observability }
++    include oke, shared_prd with { navigateTo placement }
+     include premises.data.nas with { navigateTo storage }
+-    include premises.data.pbs with { navigateTo storage }
+-    include premises.data.backups with { navigateTo storage }
+-    exclude * -> * where kind is deploy
+-    rank source { user, operator, external.bws }
++    exclude external.edge.routes.** -> *
++    exclude oke.eso -> consumers.reventer
++    exclude shared_prd.eso -> consumers.reventer
++    exclude premises.home.** -> premises.data.**
++    exclude * -> * where kind is not runtime and kind is not admin and kind is not authenticate and kind is not provide and kind is not secret
++    rank source { user, operator }
+     autoLayout TopBottom 100 80
+   }
+   view home_apps of premises.home {
+-    title '自宅のサービス・保存'
+-    include user, external.edge, premises.home, premises.home.nextcloud, premises.home.recording, premises.home.apps, premises.home.apps.*, premises.home.dns, premises.data, premises.data.nas, premises.data.databases
+-    include premises.data with { navigateTo storage }
+-    include premises.home.recording with { navigateTo media }
++    title '自宅基盤・利用するサービス'
++    description '共通入口と基盤の利用先。公開UIはAccess → Tunnel、内部DNS・NFS・DBは宅内の経路。アプリの処理フローとデプロイ経路は混ぜない。'
++    include user, operator, external.edge.access, external.edge.tunnel, premises.home, premises.home.nextcloud, premises.home.recording, premises.home.apps, premises.home.dns, premises.data.nas, premises.data.databases, control.argo
++    include external.edge.access with { navigateTo access }
++    include premises.data.nas with { navigateTo storage }
+     include premises.home.dns with { navigateTo network }
+-    exclude * -> * where kind is not runtime
++    include control.argo with { navigateTo delivery }
++    exclude premises.home.** -> premises.home.**
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not runtime and kind is not admin and kind is not authenticate
+     autoLayout LeftRight 80 60
+   }
++  view access {
++    title '入口・認証 / 原則Access・例外mTLS'
++    description '公開hostnameはAccessで認証してTunnelへ。loockit-apiだけは専用クライアント証明書と操作制限によるmTLS。WARP・LANの直接経路はネットワークへ。認証方式と利用・管理の線種は別。'
++    include user, operator, client, external.edge.access, external.edge.mtls, external.edge.tunnel, external.edge.routes.protected, external.edge.routes.exceptions, premises.home, premises.hardware, premises.data.nas, control.argo, control.reviews
++    include external.edge.routes.protected with { navigateTo home_apps }
++    include premises.home with { navigateTo home_apps }
++    include premises.hardware with { navigateTo placement }
++    include premises.data.nas with { navigateTo storage }
++    exclude external.edge.tunnel -> premises.**
++    exclude external.edge.tunnel -> control.**
++    exclude premises.** -> premises.**
++    exclude * -> * where kind is not runtime and kind is not admin and kind is not connect and kind is not authenticate
++    autoLayout LeftRight 100 80
++  }
+   view delivery {
+     title '変更・デプロイ'
+-    include control, control.*, external.github, external.terraform_cloud, premises.home, oke, oke.argo, oke.scale, oke.api, reventer, premises.hardware, external.edge, monitoring.vms
++    description '基盤の構成変更と、利用側の実行・同期を受託する接点。アプリの内部構成は利用側リポジトリで管理。'
++    include control.argo, control.runner, control.tfc_agents, control.ansible, control.images, control.packer, external.github, external.terraform_cloud, external.github_pages, premises.home, oke, oke.argo, oke.api, shared_prd, consumers.reventer, premises.hardware, external.edge, monitoring.vms
+     include premises.home with { navigateTo home_apps }
+     include premises.hardware with { navigateTo placement }
++    exclude external.edge.routes.** -> *
+     exclude * -> * where kind is not deploy
+     autoLayout TopBottom 80 60
+   }
+   view secrets {
+     title '秘密情報の管理・注入'
+-    include external.bws, premises.home, premises.home.eso, oke, oke.eso, reventer.platform.external_secrets, external.github, external.terraform_cloud, control.ansible, premises.data.backups
++    description 'BWSと共通ESO・SecretStoreを基盤として提供。利用側のSecret定義やアプリ設定はここでは展開しない。'
++    include external.bws, premises.home.eso, oke.eso, shared_prd.eso, consumers.reventer, external.github, external.terraform_cloud, control.ansible, premises.data.backups
++    exclude external.edge.routes.** -> *
+     exclude * -> * where kind is not secret
+     autoLayout LeftRight 80 60
+   }
+   view observability {
+     title '監視の収集・保存・照会'
+-    include operator, external.grafana, premises.hardware, premises.home.agent, premises.home.agent.collector, premises.home.agent.local_store, premises.home.agent.pdc, premises.home.agent.exporters, reventer.collectors, monitoring, monitoring.*
++    description '基盤が提供する自宅・OCIの保存先とGrafanaへの照会経路。利用側からのmetrics/logsは境界の一つの接点として扱う。'
++    include operator, external.grafana, premises.hardware, premises.home.agent, premises.home.agent.collector, premises.home.agent.local_store, premises.home.agent.pdc, premises.home.agent.exporters, consumers.reventer, monitoring, monitoring.*
++    exclude external.edge.routes.** -> *
+     exclude * -> * where kind is not observe and kind is not query and kind is not connect
+     autoLayout LeftRight 80 60
+   }
+   deployment view placement {
+-    title '配置 / 所有境界'
++    title '基盤の配置 / 管理範囲'
+     include homeSite, homeSite.x570, homeSite.x570.nas1, homeSite.x570.pbs, homeSite.b550m, homeSite.b550m.nas2, homeSite.talos, stg, prd
+     exclude * -> *
+     autoLayout TopBottom 80 60
+   }
+-  view media of premises.home.recording {
+-    title '録画・配信 / 制御・変換・保存'
+-    include premises.home.recording, premises.home.recording.*, premises.home.recording.tnlastation.*, premises.hardware.tuner_prod, premises.hardware.tuner_stg, premises.home.apps.annict_scraper, external.annict, premises.data.nas, premises.data.databases
+-    include premises.data.nas with { navigateTo storage }
+-    exclude * -> * where kind is not runtime
+-    exclude premises.home.recording.tnlastation.resources
+-    autoLayout LeftRight 80 60
+-  }
+   view network {
+-    title 'ネットワーク / LAN・Tunnel・WARP・OCI'
+-    include operator, external.edge, external.edge.*, premises.lan, premises.lan.*, premises.hardware.router, premises.hardware.wifi, premises.hardware.unifi, premises.hardware.lb, premises.home.dns, premises.home.dns.coredns, premises.home.dns.metallb, premises.home.platform.cloudflared, oke.workers, oke.network, oke.network.*, external.internet, external.oracle
+-    exclude external.edge.resources
+-    exclude * -> * where kind is not runtime and kind is not admin and kind is not network and kind is not connect
++    title 'ネットワーク / LAN・WARP・OCI'
++    description 'WARPのprivate CIDR route、LANのL3接続、OCIのpublic/private subnetと出口。公開WebのAccess認証は入口・認証で扱う。'
++    include operator, external.edge.warp, premises.lan, premises.lan.*, premises.hardware.router, premises.hardware.wifi, premises.hardware.unifi, premises.hardware.lb, premises.home.dns, premises.home.dns.coredns, premises.home.dns.metallb, oke.workers, oke.network, oke.network.*, external.internet, external.oracle
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not network and kind is not connect
+     autoLayout LeftRight 80 60
+   }
+   view storage {
+     title '保存・バックアップ / 復元元の区別'
+     include premises.home.nextcloud, premises.home.recording, premises.home.agent.local_store, premises.data, premises.data.nas, premises.data.nas.nas01, premises.data.nas.nas02, premises.data.pbs, premises.data.databases, premises.data.databases.*, premises.data.shared, premises.data.backups, premises.data.backups.*, external.idrive, premises.hardware.x570, premises.hardware.b550m
+-    include premises.data.nas.nas01 with { navigateTo placement }
+-    include premises.data.nas.nas02 with { navigateTo placement }
+-    include premises.data.pbs with { navigateTo placement }
++    include premises.data.nas.nas01, premises.data.nas.nas02, premises.data.pbs with { navigateTo placement }
++    exclude external.edge.routes.** -> *
+     exclude * -> * where kind is not runtime and kind is not backup
+     autoLayout LeftRight 80 60
+   }
+   view power {
+     title '電源・安全停止 / UPS・NUTのcross-power'
+     include premises.hardware.ups, premises.hardware.ups.*, premises.hardware.x570, premises.hardware.b550m
+-    exclude * -> * where kind is not power and kind is not network and kind is not observe and kind is not query
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not power and kind is not network and kind is not query
+     autoLayout LeftRight 80 60
+   }
+-
+ }
