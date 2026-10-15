@@ -2,39 +2,39 @@ deployment {
   site homeSite '自宅 / Proxmox2ホスト・RPi' {
     description 'CP VM3台とworker VM2台はPVE2ホストへ配置。Podの配置は動的。配置詳細はホスト・クラスタをクリックして辿る。'
     hypervisor x570 'pve-x570' {
-      instanceOf hardware.x570
+      instanceOf premises.hardware.x570
       vm cp1 'Talos controlplane01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
       vm worker1 'Talos worker01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm lb 'HAProxy / Keepalived VM10001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf hardware.lb }
-      vm pbs 'PBS VM14001 / 手動退避' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" } instanceOf data.pbs }
-      vm unifi 'UniFi OS VM13201' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" } instanceOf hardware.unifi }
-      container loockit 'LXC CT12902' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf hardware.loockit_a }
-      container tuner 'Mirakurun LXC CT12901' { metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" } instanceOf hardware.tuner_prod }
-      vm nas1 'TrueNAS nas-01' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf data.nas.nas01 }
+      vm lb 'HAProxy / Keepalived VM10001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf premises.hardware.lb }
+      vm pbs 'PBS VM14001 / 手動退避' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" } instanceOf premises.data.pbs }
+      vm unifi 'UniFi OS VM13201' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" } instanceOf premises.hardware.unifi }
+      container loockit 'LXC CT12902' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf premises.hardware.loockit_a }
+      container tuner 'Mirakurun LXC CT12901' { metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" } instanceOf premises.hardware.tuner_prod }
+      vm nas1 'TrueNAS VM69001 / nas-01' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf premises.data.nas.nas01 }
     }
     hypervisor b550m 'pve-b550m' {
-      instanceOf hardware.b550m
+      instanceOf premises.hardware.b550m
       vm cp2 'Talos controlplane02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
       vm cp3 'Talos controlplane03' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
       vm worker2 'Talos worker02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm lb 'HAProxy / Keepalived VM10002' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf hardware.lb }
-      vm dev '開発アプリVM40000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" } instanceOf hardware.dev }
-      vm kiosk 'DisplayLink kiosk VM5000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" } instanceOf hardware.kiosk }
-      container loockit 'LXC CT12903' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf hardware.loockit_b }
-      container tuner 'Mirakurun STG LXC CT12904' { metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" } instanceOf hardware.tuner_stg }
-      vm nas2 'TrueNAS nas-02' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf data.nas.nas02 }
+      vm lb 'HAProxy / Keepalived VM10002' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf premises.hardware.lb }
+      vm dev '開発アプリVM40000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" } instanceOf premises.hardware.dev }
+      vm kiosk 'DisplayLink kiosk VM5000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" } instanceOf premises.hardware.kiosk }
+      container loockit 'LXC CT12903' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf premises.hardware.loockit_b }
+      container tuner 'Mirakurun STG LXC CT12904' { metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" } instanceOf premises.hardware.tuner_stg }
+      vm nas2 'TrueNAS VM69002 / nas-02' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf premises.data.nas.nas02 }
     }
-    physical worker_pi1 'RPi Talos worker01' { instanceOf hardware.rpi_workers }
-    physical worker_pi2 'RPi Talos worker02' { instanceOf hardware.rpi_workers }
-    physical nut_pi1 'NUT Pi / .112' { instanceOf hardware.ups.pi_a }
-    physical nut_pi2 'NUT Pi / .113' { instanceOf hardware.ups.pi_b }
-    physical ups_a 'UPS A' { instanceOf hardware.ups.ups_a }
-    physical ups_b 'UPS B' { instanceOf hardware.ups.ups_b }
-    instanceOf hardware.router
-    instanceOf hardware.kvm
+    physical worker_pi1 'RPi Talos worker01' { instanceOf premises.hardware.rpi_workers }
+    physical worker_pi2 'RPi Talos worker02' { instanceOf premises.hardware.rpi_workers }
+    physical nut_pi1 'NUT Pi / .112' { instanceOf premises.hardware.ups.pi_a }
+    physical nut_pi2 'NUT Pi / .113' { instanceOf premises.hardware.ups.pi_b }
+    physical ups_a 'UPS A' { instanceOf premises.hardware.ups.ups_a }
+    physical ups_b 'UPS B' { instanceOf premises.hardware.ups.ups_b }
+    instanceOf premises.hardware.router
+    instanceOf premises.hardware.kvm
     cluster talos 'home-k8s' {
       description 'VMとRPiにまたがるクラスタ。PVEホストとクラスタを入れ子にしてPod配置を固定しない。'
-      instanceOf home
+      instanceOf premises.home
 
     }
   }
