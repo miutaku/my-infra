@@ -10,8 +10,13 @@ specification {
   relationship observe { color amber line dotted }
   relationship query { color sky }
   relationship backup { color amber }
+  relationship network { color gray line dotted }
+  relationship power { color red line solid }
+  relationship connect { color sky line dashed }
   deploymentNode site { style { color gray } }
   deploymentNode hypervisor { style { color green } }
+  deploymentNode container { style { color muted } }
+  deploymentNode physical { style { color gray } }
   deploymentNode vm { style { color muted } }
   deploymentNode cluster { style { color blue } }
   deploymentNode namespace { style { color muted } }

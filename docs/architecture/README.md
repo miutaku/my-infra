@@ -2,15 +2,15 @@
 
 公開サイト: https://miutaku.github.io/my-infra/
 
-reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。6ビューは同じモデルを使い、箱を増やす代わりに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes全定義は「リソース一覧」で検索できる。
+reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全Applicationは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
 
 | ファイル | 役割 |
 | --- | --- |
-| logical.c4 | サービス・所有境界・説明・関係・根拠リンク |
+| logical.c4 / details.c4 | サービス・所有境界・説明・関係・根拠リンク |
 | deployment.c4 | 物理ホスト・VM・クラスタ・namespaceとinstanceOf |
-| views.c4 | 6つの観点とクリックナビゲーション |
+| views.c4 | 全体・サービス・録画・デプロイ・秘密情報・監視・配置・ネットワーク・保存・電源の観点とクリックナビゲーション |
 | specification.c4 | 種類と線の意味 |
-| scripts/inventory.mjs | Terraform resource/moduleとKubernetes metadataの自動抽出 |
+| scripts/inventory.mjs / scripts/catalog.mjs | 全宣言を抽出し、Application・内部定義・namespace配置・公開hostnameをモデル化 |
 | shell.html / scripts/*navigation.mjs / scripts/line-filters.mjs | reventerと同じ標準viewer・外枠・線フィルター。構成情報のコピーを持たない |
 
 ```bash
@@ -21,11 +21,11 @@ npm test
 npm run dev
 ```
 
-Node.js 24。生成物とresource-inventory.jsonはGit管理しない。公開一覧は名前・種類・namespace・参照元だけを掲載し、Secretの内容や環境変数は抽出しない。Terraformのfor_eachインスタンス数や稼働状態の検出ではない。Ansible/Talosの実行時設定はモデルの根拠リンクから確認する。
+Node.js 24。生成物とcatalog.c4・model.json・model-coverage.json・resource-inventory.jsonはGit管理しない。公開一覧は名前・種類・namespace・参照元だけを掲載し、Secretの内容や環境変数は抽出しない。Terraformのfor_eachインスタンス数や稼働状態の検出ではない。Ansible/Talosの実行時設定はモデルの根拠リンクから確認する。
 
 ## 自動更新
 
-mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイトを再構築する。同時にPlusのCodexが現在のソースと変更差分を読んで、モデル更新が必要なら `automation/architecture-model` のPRを作成・更新する。変更不要ならPRは作らない。AIが変更できるのはlogical.c4・deployment.c4・views.c4だけ。別のGitHub-hosted runnerが許可範囲・モデル・ビルド・テストを検証してPR化する。AIがインフラ自体を変更することはない。
+mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイトを再構築する。同時にPlusのCodexが現在のソースと変更差分を読んで、モデル更新が必要なら `automation/architecture-model` のPRを作成・更新する。変更不要ならPRは作らない。AIが変更できるのはlogical.c4・details.c4・deployment.c4・views.c4だけ。別のGitHub-hosted runnerが許可範囲・モデル・ビルド・テストを検証してPR化する。AIがインフラ自体を変更することはない。
 
 サイト・PRレビューの配信はすべてGitHub Pages。AI実行だけは `arc-runner-my-infra-codex` の非特権専用Podを使用し、認証はNFS PVCの専用subPath `codex-my-infra-auth` に分離して保存する。Docker socket・ホストパス・Kubernetes tokenは持たない。Talosのユーザー名前空間制限のため、Codex自体のbubblewrapではなく専用Podを隔離境界にする。Plus枠を使い、API課金への自動切替はしない。
 
@@ -42,3 +42,9 @@ PRで変更前後の正確なコミットから全ビューを画像化し、意
 PR終了イベントと日次再照合で終了済みPRを削除し、30日を過ぎたレビューも削除する。古いURLは公開コンテンツとして他者が取得済みである可能性があり、Git履歴からの機密削除機構ではない。公開モデル・一覧に秘密情報を入れない。
 
 初回導入前のcommitにはモデルがないため比較できない。導入後のmainをbaseにして比較する。手動実行はArchitecture explorerのbase_refで指定し、Publish architecture Pagesの実行summaryに比較リンクが載る。
+
+## 網羅性の検証
+
+model-coverage.jsonは宣言ごとのモデル要素と、Applicationの配置先を記録する。テストでコンパイル後の要素・配置が実在すること、Proxmoxの全VM module・LXC宣言に物理配置と根拠があること、参照元リンクが実在することを検証する。宣言が存在することを稼働証明とはしない。未登録・共有の定義は専用グループに保持し、稼働中と推測して配置しない。
+
+自宅のvmagent→自宅VictoriaMetricsと、reventerのcollector→OCI監視VMは独立。NASのファイル、DB logical dump、metrics snapshot、PBSのVM backupは復元単位を区別する。UPSの給電、NUT状態の読み取り、各ホスト自身の停止も異なる関係として保持する。

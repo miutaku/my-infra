@@ -21,6 +21,9 @@ export function inventory(root){
     for(const doc of parseAllDocuments(readFileSync(path,'utf8'))){
      if(doc.errors.length)throw new Error(`Invalid YAML: ${file}`);
      const value=doc.toJS();
+     if(file.startsWith('ansible/truenas/host_vars/')&&Array.isArray(value?.truenas_datasets)){
+      for(const dataset of value.truenas_datasets)records.push({id:`${file}:dataset:${dataset.name}`,type:'TrueNAS dataset',name:dataset.name,file});
+     }
      if(file.startsWith('k8s/')&&value?.apiVersion&&value?.kind&&value?.metadata?.name){
       records.push({id:`${file}:${value.kind}:${value.metadata.namespace??''}:${value.metadata.name}`,type:value.kind,name:value.metadata.name,namespace:value.metadata.namespace??'',file});
      }

@@ -24,7 +24,8 @@
             "enum": [
               "docs/architecture/logical.c4",
               "docs/architecture/views.c4",
-              "docs/architecture/deployment.c4"
+              "docs/architecture/deployment.c4",
+              "docs/architecture/details.c4"
             ]
           },
           "content": {

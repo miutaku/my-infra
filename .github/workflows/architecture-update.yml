@@ -36,6 +36,9 @@ jobs:
           cache-dependency-path: docs/architecture/package-lock.json
       - run: npm ci
         working-directory: docs/architecture
+      - name: Extract current model declarations
+        working-directory: docs/architecture
+        run: npm run inventory && node scripts/catalog.mjs
       - name: Require ChatGPT account login
         run: |
           node - <<'JS'
@@ -136,6 +139,7 @@ jobs:
             docs/architecture/logical.c4
             docs/architecture/deployment.c4
             docs/architecture/views.c4
+            docs/architecture/details.c4
           commit-message: 'docs: synchronize LikeC4 with current code'
           title: 'docs: synchronize architecture model with code'
           body-path: /tmp/architecture-pr-body.md

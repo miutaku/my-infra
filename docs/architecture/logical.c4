@@ -15,7 +15,7 @@ model {
     component apps '宅内アプリ' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
     component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
     component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
-    component agent '収集agent' { description 'vmagent・exporter・PDC agent。監視保存先とは分離。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
+    component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
   }
   system oke 'OCI / STG OKE共通基盤' {
     description '東京リージョン。base workerとburst workerを使用し、AutoscalerはOKE内で動く。Re:VenterアプリとPRD OKE本体はreventerが所有。'
@@ -41,12 +41,12 @@ model {
     component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
   }
   system data '保存・バックアップ' {
-    store nas 'TrueNAS / NFS' { description 'NAS2台。Kubernetes PVCやメディアを保存。マウント・snapshot・レプリケーションとVMバックアップを区別する。' link https://github.com/miutaku/my-infra/tree/main/ansible/truenas '定義' }
+    store nas 'TrueNAS / NFS' { description 'NAS2台。Kubernetes PVCやメディアを保存。マウント・データセットとNFS share、VMバックアップを区別する。' link https://github.com/miutaku/my-infra/tree/main/ansible/truenas '定義' }
     store pbs 'Proxmox Backup Server' { description 'VMバックアップ。NFSのオンライン利用経路とは別。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs '定義' }
   }
   system monitoring '監視' {
     store vms 'OCI監視VM / STG・PRD' { description 'OKEから独立したVM2台／環境へVictoriaMetrics・VictoriaLogsを配置。STG/PRDの定義ディレクトリとアカウントは分離。' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability-stg 'STG定義' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability 'PRD定義' }
-    component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存はOCI VM側。' }
+    component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存先は自宅VictoriaMetricsとOCI監視VM。' }
   }
   user .runtime edge 'HTTPS'
   edge .runtime home 'Tunnel / 内部HTTP'
@@ -72,13 +72,9 @@ model {
   bws .secret oke.eso 'Secret注入'
   bws .secret control.git 'CI credential'
   bws .secret control.tfc 'Terraform変数'
-  home.agent .observe monitoring.vms 'metrics / logs'
-  oke .observe monitoring.vms 'metrics / logs'
-  hardware .observe home.agent 'exporter収集'
+  hardware .observe home.agent.collector 'exporter収集'
   operator .query monitoring.grafana '照会'
   monitoring.grafana .query monitoring.vms 'PDC経由'
   hardware.x570 .backup data.pbs 'VM backup'
   hardware.b550m .backup data.pbs 'VM backup'
-  hardware.ups .deploy hardware.x570 '電源断時の停止制御'
-  hardware.ups .deploy hardware.b550m '電源断時の停止制御'
 }
