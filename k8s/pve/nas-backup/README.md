@@ -1,6 +1,6 @@
-# nas-02 OCI backup
+# nas-02 IDrive e2 backup
 
-nas-02のうち再構築に必要なfile dataを、OCI Object Storageの既存`db-backup` bucket内
+nas-02のうち再構築に必要なfile dataを、IDrive e2の`miutaku-my-infra-backup` bucket内
 `nas-restic` prefixへresticで暗号化・差分backupする。
 
 ## 対象
@@ -9,19 +9,19 @@ nas-02のうち再構築に必要なfile dataを、OCI Object Storageの既存`d
 - `tnlastation` / `tnlastation-staging`
 - `thumbnail` / `drop`
 
-`recorded` / `recorded-staging`はOCI Always Free容量を守るため対象外とする。VictoriaMetricsとDB raw dataは
+`recorded` / `recorded-staging`は既存の録画専用IDrive jobで別に保護する。VictoriaMetricsとDB raw dataは
 稼働中のfile copyでは整合性を保証できないため対象外である。DBは`infra-db/mariadb-backup`のlogical dumpを
-復元元とし、VictoriaMetricsは再収集可能な監視履歴として扱う。
+復元元とし、VictoriaMetricsは専用の整合性のあるsnapshot backupで保護する。
 
 ## 運用
 
 - 毎日04:00 JST（DB logical backupの1時間後）
 - 日次7、週次4、月次3 snapshotを保持
 - restic repositoryが14 GB以上でDiscord警告、17 GB以上では新規backupを停止
-- OCI全体20 GBのうち、DB logical dump用に約1 GB以上を予約
+- 容量閾値はNASの既存予算であり、IDriveの無料枠ではない
 - backup後に`restic check`を実行
 
-資格情報はBSMの既存OCI S3 keyと`NAS_BACKUP_RESTIC_PASSWORD`からExternal Secrets Operatorが生成する。
+資格情報はBSMの`MY_INFRA_IDRIVE_S3_ACCESS_KEY` / `MY_INFRA_IDRIVE_S3_SECRET_KEY`と`NAS_BACKUP_RESTIC_PASSWORD`からExternal Secrets Operatorが生成する。
 restic passwordを失うとrepositoryは復元不能なので、BSMから削除してはならない。
 
 手動実行:
@@ -35,3 +35,4 @@ kubectl logs -n infra-backup -f job/<job-name>
 `restic restore latest --verify --exclude-xattr security.selinux --target`を実行する。元のownerとtimestampを
 復元するPodにはrootと`CHOWN`/`FOWNER` capabilityが必要である。本番NFSへ直接restoreせず、ファイル数・
 内容を確認してから別手順で戻す。
+

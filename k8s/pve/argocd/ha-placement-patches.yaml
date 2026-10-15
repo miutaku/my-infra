@@ -1,0 +1,241 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-applicationset-controller
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: argocd-applicationset-controller
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-dex-server
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: dex
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-notifications-controller
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: argocd-notifications-controller
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-redis-ha-haproxy
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: haproxy
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 512Mi
+      affinity:
+        podAntiAffinity:
+          $patch: replace
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-redis-ha-haproxy
+            topologyKey: topology.miutaku/proxmox-node
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: argocd-repo-server
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+      affinity:
+        podAntiAffinity:
+          $patch: replace
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-repo-server
+            topologyKey: topology.miutaku/proxmox-node
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-server
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: argocd-server
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 512Mi
+        env:
+        - name: ARGOCD_API_SERVER_REPLICAS
+          value: '2'
+      affinity:
+        podAntiAffinity:
+          $patch: replace
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-server
+            topologyKey: topology.miutaku/proxmox-node
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: argocd-application-controller
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/platform: pve
+        node.miutaku/role: agent
+      containers:
+      - name: argocd-application-controller
+        resources:
+          requests:
+            cpu: 100m
+            memory: 768Mi
+          limits:
+            memory: 2Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: argocd-redis-ha-server
+spec:
+  template:
+    spec:
+      priorityClassName: argocd-management
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.miutaku/role: agent
+      tolerations:
+      - key: workload.miutaku/arm64
+        operator: Equal
+        value: reviewed
+        effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - worker-01-talos-home-pve-amd64
+                - worker-02-talos-home-pve-amd64
+                - worker-04-talos-home-rpi4-arm64
+      containers:
+      - name: redis
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+      - name: sentinel
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+      - name: split-brain-fix
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 256Mi

@@ -1,0 +1,104 @@
+services:
+  metrics:
+    image: victoriametrics/victoria-metrics:v1.111.0@sha256:1676d73b39297a938eb60f0894b44b264152a6a38074fa5de99d9bdc425deb65
+    restart: unless-stopped
+    mem_limit: 448m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -storageDataPath=/storage
+    - -retentionPeriod=3
+    - -httpListenAddr=:8428
+    - -memory.allowedBytes=335544320
+    - -search.maxConcurrentRequests=2
+    - -dedup.minScrapeInterval=1ms
+    ports:
+    - 127.0.0.1:18428:8428
+    - ${PRIVATE_IP:?required}:18428:8428
+    volumes:
+    - ./data/metrics:/storage
+    user: 1000:1000
+  logs:
+    image: victoriametrics/victoria-logs:v1.50.0@sha256:ae9bea8d8a3b0fc47c7f0058bcca410e79c84b4a0acd12d4dac71b9302526590
+    restart: unless-stopped
+    mem_limit: 192m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -storageDataPath=/vlogs
+    - -retentionPeriod=30d
+    - -httpListenAddr=:9428
+    - -memory.allowedBytes=134217728
+    - -search.maxConcurrentRequests=2
+    ports:
+    - 127.0.0.1:19428:9428
+    - ${PRIVATE_IP:?required}:19428:9428
+    volumes:
+    - ./data/logs:/vlogs
+    user: 1000:1000
+  metrics-query:
+    image: victoriametrics/vmauth:v1.111.0@sha256:c2ba0e4a5d8e7b30b6edffa5ec05dac2032ee72bde52e7ea37f6e9ab1cbc7223
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 32m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -auth.config=/config/metrics.yaml
+    - -httpListenAddr=127.0.0.1:8428
+    volumes:
+    - ./config:/config:ro
+    environment:
+      PEER_METRICS_URL: ${PEER_METRICS_URL:?required}
+    user: 1000:1000
+  logs-query:
+    image: victoriametrics/vmauth:v1.111.0@sha256:c2ba0e4a5d8e7b30b6edffa5ec05dac2032ee72bde52e7ea37f6e9ab1cbc7223
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 32m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    command:
+    - -auth.config=/config/logs.yaml
+    - -httpListenAddr=127.0.0.1:9428
+    volumes:
+    - ./config:/config:ro
+    environment:
+      PEER_LOGS_URL: ${PEER_LOGS_URL:?required}
+    user: 1000:1000
+  pdc:
+    profiles:
+    - grafana
+    image: grafana/pdc-agent:${PDC_VERSION:?required}
+    restart: unless-stopped
+    network_mode: host
+    mem_limit: 64m
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    extra_hosts:
+    - victoria-metrics-${ENVIRONMENT:?required}.reventer-monitoring.svc.cluster.local:127.0.0.1
+    - victoria-logs-${ENVIRONMENT:?required}.reventer-monitoring.svc.cluster.local:127.0.0.1
+    command:
+    - -metrics-addr=127.0.0.1:8090
+    - -token
+    - ${PDC_TOKEN:-}
+    - -cluster
+    - ${PDC_CLUSTER:?required}
+    - -gcloud-hosted-grafana-id
+    - ${PDC_HOSTED_GRAFANA_ID:?required}
+    - -ssh-flag=-o PermitRemoteOpen=victoria-metrics-${ENVIRONMENT:?required}.reventer-monitoring.svc.cluster.local:8428
+      victoria-logs-${ENVIRONMENT:?required}.reventer-monitoring.svc.cluster.local:9428

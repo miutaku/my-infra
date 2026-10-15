@@ -28,3 +28,9 @@ jobs:
         run: |
           mapfile -t files < <(git ls-files '*.yaml' '*.yml')
           ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_stream(File.read(f)) }' "${files[@]}"
+
+      - name: Test shared-backup migration integrity guards
+        run: |
+          python3 -m venv "$RUNNER_TEMP/shared-backup-tests"
+          "$RUNNER_TEMP/shared-backup-tests/bin/pip" install boto3==1.40.72
+          "$RUNNER_TEMP/shared-backup-tests/bin/python" -m unittest discover -s tests -p test_shared_backup_migration.py

@@ -1,446 +1,76 @@
 # my-infra
 
-自宅ホームラボ + クラウドサービス等、インフラ全体を管理するリポジトリ。
+自宅とOCIの共通インフラを管理するリポジトリ。Terraformでリソースを管理し、AnsibleでVM・機器を設定、ArgoCDでKubernetesの状態を同期する。
 
-## アーキテクチャ概要
+## 全体構成
 
-```mermaid
-%%{init: {'themeVariables': {'lineColor': '#000000'}}}%%
-flowchart LR
-  subgraph Infrastructure[ ]
-  direction LR
-  subgraph OCI[OCI / Always Free]
-  OCI_API{{OCI API}}
-    subgraph OKE[OKE Basic cluster - 2x A1.Flex ARM64, ArgoCD GitOps]
-      ArgoCD_OCI{{ArgoCD}}
-      OCICloudflared([cloudflared])
-      OCITFCAgent([tfc-agent])
-      OCIESO([external-secrets<br/>Bitwarden BSM])
-      OCICert([cert-manager])
-      OCIIngress([ingress-nginx])
-      OCILonghorn([Longhorn])
-      OCIActionsRunner([GitHub Actions Runner])
-      OCIEnc([OCI Encord Server])
-      OCILonghorn ~~~ OCIESO ~~~ OCICert ~~~ OCIIngress
-      OCICloudflared ~~~ OCIEnc ~~~ ArgoCD_OCI ~~~ OCIActionsRunner ~~~ OCITFCAgent
-    end
-  end
+[LikeC4で構成を見る](https://miutaku.github.io/my-infra/) — 要素をクリックして、通信・デプロイ・秘密情報・監視・配置を辿れます。[全リソース一覧](https://miutaku.github.io/my-infra/resources.html)は定義から自動抽出します。
 
+| 基盤 | 現在の構成・役割 |
+| --- | --- |
+| 自宅 | Proxmox VE 2ホスト。Talos VM、TrueNAS、その他のVM/LXCを収容 |
+| home-k8s | Talos v1.14.1 / Kubernetes v1.35.7。control plane VM 3台、worker VM 2台、Raspberry Pi worker 2台 |
+| STG・PRD OKE | 東京リージョン、環境別OCIアカウント。OKE BASIC / Kubernetes v1.36.4 / Flannel |
+| OKE worker | 各環境にbase 1台＋burst 0〜1台。A1 Flex、1台あたり2 OCPU・12GB RAM・boot 50GB |
+| OCI監視基盤 | OKEから独立したE2.1.Micro VM 2台／環境 |
+| 外部サービス | Cloudflare、Terraform Cloud、GitHub、Bitwarden Secrets Manager、Grafana Cloud |
 
-  subgraph ExtSvc[External Services]
-    subgraph Cloudflare[Cloudflare]
-      direction LR
-      CF_DNS[(DNS)]
-      CF_Application[/Application/]
-      CF_Tunnel([Tunnel])
-    end
-    TFC([Terraform Cloud])
-    subgraph Grafana[Grafana Cloud]
-      GC_Grafana([Managed Grafana])
-      GC_Prometheus[(Managed Prometheus)]
-      GC_Grafana ~~~ GC_Prometheus
-    end
-    GitHub([GitHub])
-    Cloudflare ~~~ TFC ~~~ GitHub ~~~ Grafana
-  end
+自宅ではNextcloud、録画・配信、内部DNSなどのサービスと管理用agentを稼働させる。Re:Venterのアプリ構成・デプロイ手順は[Re:Venterリポジトリ](https://github.com/miutaku/reventer)で管理する。
 
-  subgraph Home[宅内]
-    direction LR
-    subgraph NW[NW]
-      direction LR
-      IX((NEC IX2215 Router<br/>main: v6プラス<br/>guest: 公開AFTR))
-      US8[/Ubiquiti US-8-60W L2 SW<br/>192.168.0.252/]
-      AP([FS.com AP])
-      IX --- US8 --- AP
-    end
+## 管理責務
 
-    subgraph PVE[Proxmox VE Cluster - 2 PVE nodes]
-      direction TB
-      PVE_API{{PVE API}}
+| 対象 | 管理する場所 |
+| --- | --- |
+| 自宅VM/LXC・Talos・ネットワーク機器 | 本リポジトリの `terraform/`、`talos/`、`ansible/` |
+| STG OKE・共通Kubernetes基盤 | `terraform/oci/`、`k8s/oci/` |
+| PRD OKE・Re:Venterアプリ定義 | Re:Venterの `infrastructure/terraform/oci-prd/`、`infrastructure/k8s/` |
+| OCI監視VM | `terraform/oci-observability-stg/`、`terraform/oci-observability/` |
+| ArgoCDのアプリ登録・Image Updater | `k8s/pve/argocd-apps/`、`k8s/pve/reventer-gitops/` |
+| 自宅向けCloudflare設定 | `terraform/cloudflare/` |
 
-      NAS[[TrueNAS Scale VMs<br/>192.168.20.191-192]]
-      UOS[[UniFi OS Server VM<br/>192.168.0.132:11443]]
+自宅ArgoCDはhome-k8sとRe:VenterのSTG・PRDを管理する。STG OKEの `argocd` は共通インフラを管理する。Re:VenterのGitOps管理は自宅ArgoCDへ集約している。
 
-      subgraph WorkEnv[Work station / Build]
-        direction LR
-        WorkWin[[Windows work station]]
-        BuildSV[[Build Server]]
-        WorkWin ~~~ BuildSV
-      end
+## 運用上の前提
 
-      subgraph HomeK8sVM[home-k8s / Talos HA VMs]
-        direction LR
-        ControlPlanes[[3x control plane VMs<br/>Talos / etcd<br/>192.168.20.137-139]]
-        Workers[[2x worker VMs<br/>Talos<br/>192.168.20.140-141]]
-        ControlPlanes ~~~ Workers
-      end
-      RPiWorkers[[2x Raspberry Pi 4 workers<br/>Talos / arm64 / VLAN 10<br/>192.168.10.107, 109]]
-      NAS ~~~ WorkEnv ~~~ HomeK8sVM ~~~ RPiWorkers ~~~ UOS
-    end
-    subgraph HomeK8s[home-k8s HA cluster]
-      ArgoCD{{ArgoCD <br/>Sync}}
-      subgraph Argo[ArgoCD App-of-Apps]
-        subgraph HomeK8s_agents[SaaS / OSS agents]
-          CFPod([cloudflared])
-          TFCAgent([tfc-agent])
-          PDC([PDC agent])
-          CFPod ~~~ PDC ~~~ TFCAgent
-        end
-        subgraph HomeK8s_system[Kubernetes system]
-          ESO([external-secrets<br/>Bitwarden BSM])
-          MetalLB([MetalLB])
-        end
-        subgraph Exporters[exporters]
-          blackboxEx([Blackbox exporter])
-          speedtestEx([Speedtest exporter])
-          pveEx([ProxmoxVE exporter])
-          snmpEx([SNMP exporter])
-          blackboxEx ~~~  speedtestEx ~~~ pveEx ~~~ snmpEx
-        end
-        subgraph Argo_Apps[Argo Apps]
-          VMetrics([VictoriaMetrics])
-          CoreDNS([CoreDNS])
-          WoL([WoL])
-          Mirakurun([Mirakurun])
-          EPGStation([EPGStation])
-          MagicMirror([MagicMirror²])
-          NextCloud([NextCloud])
-          CoreDNS ~~~ WoL ~~~ VMetrics ~~~ Mirakurun ~~~ EPGStation ~~~ MagicMirror ~~~ NextCloud
-        end
-        HomeK8s_agents ~~~ HomeK8s_system ~~~ Exporters ~~~ Argo_Apps
-      end
-      Argo ~~~ ArgoCD
-    end
-     HomeK8sVM === |Runs on …| HomeK8s
-  end
+- OKEは通常worker 1台。burstはCluster Autoscalerで増減する。Podの複数レプリカだけでは常設ノード故障への冗長化にならない。
+- OKEのAutoscalerはOKE内で稼働する。自宅の停止時もOKE上のアプリは稼働を続け、HPA・workerの自動スケールは自宅ArgoCDに依存しない。自宅ArgoCDが管理する変更の同期は停止する。
+- home-k8sのcontrol plane 3台はProxmox 2ホスト上に配置される。VMの台数と物理ホスト障害への耐性は区別する。
+- OKEのKubernetes APIは自宅固定IPv4とSTG NAT IPv4に限定。公開LBはCloudflare経由のHTTPSを許可し、自宅との拠点間VPNは使用しない。
+- OCI管理は両環境のDefaultドメインを使用し、MFA必須。Oracleが保護する生成資源には環境間の差分が残る。
+- 秘密情報はBitwarden Secrets Managerで管理。KubernetesへはExternal Secrets Operator経由で注入し、Gitに保存しない。
 
-  OCI ~~~ ExtSvc ~~~ Home
+## 自宅ネットワーク
 
-  ArgoCD_OCI -->|sync| GitHub
-  GitHub -->|API Request| OCI_API
-  ArgoCD -->|sync| GitHub  <-.->|tunnel| OCIActionsRunner
-  ArgoCD --> |apply|Argo
+| ネットワーク | 用途 |
+| --- | --- |
+| 192.168.0.0/24 | nativeネットワーク |
+| VLAN 10 / 192.168.10.0/24 | 機器管理・Raspberry Pi |
+| VLAN 20 / 192.168.20.0/24 | Talos VM・NAS・サーバ |
+| VLAN 30 / 192.168.30.0/24 | クライアント |
+| VLAN 31 / 192.168.31.0/24 | 来客用、他VLANへ接続不可 |
+| VLAN 40 / 192.168.40.0/24 | IoT |
 
-  CF_Tunnel -.->|tunnel| CFPod
-  CF_Tunnel -.->|tunnel| OCICloudflared
+`miutaku.work` はCloudflareで管理し、`miutaku.internal` はhome-k8sのCoreDNSで名前解決する。home-k8sのKubernetes APIはTalos VIP `192.168.20.228:6443`、内部DNSは `192.168.20.201`。
 
-  IX --> Internet
+## 変更・確認の入口
 
-  UOS --->|management| US8
-
-  ControlPlanes --> Workers
-
-  EPGStation --> Mirakurun
-  EPGStation -->|read / ts save| NAS
-  EPGStation -->|encode request| OCIEnc -->|save| NAS
-  NextCloud -->|External Storage / NFS RO| NAS
-  OCITFCAgent <-.->|tunnel| TFC
-  TFC <-.->|tunnel| TFCAgent -->|API request| PVE_API
-  pveEx -->|API Request| PVE
-  snmpEx -->|SNMP| IX
-  GC_Grafana <-.->|tunnel| PDC -->|query| VMetrics -->|polling| Exporters
-  end
-
-  classDef control fill:#ede9fe,stroke:#7c3aed,color:#2e1065,stroke-width:2px
-  classDef cloud fill:#e0f2fe,stroke:#0284c7,color:#082f49,stroke-width:2px
-  classDef nwDevice fill:#dcfce7,stroke:#16a34a,color:#052e16,stroke-width:2px
-  classDef vm fill:#fef3c7,stroke:#d97706,color:#451a03,stroke-width:2px
-  classDef storage fill:#fee2e2,stroke:#dc2626,color:#450a0a,stroke-width:2px
-  classDef observability fill:#fce7f3,stroke:#db2777,color:#500724,stroke-width:2px
-  classDef external fill:#f1f5f9,stroke:#475569,color:#0f172a,stroke-width:2px
-  classDef zoneCloud fill:#eff6ff,stroke:#2563eb,color:#172554,stroke-width:2px
-  classDef zoneExternal fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:2px
-  classDef zoneHome fill:#f0fdf4,stroke:#22c55e,color:#052e16,stroke-width:2px
-  classDef zoneNetwork fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:2px
-  classDef zoneVirtual fill:#fffbeb,stroke:#f59e0b,color:#451a03,stroke-width:2px
-  classDef zoneK8s fill:#f5f3ff,stroke:#8b5cf6,color:#2e1065,stroke-width:2px
-  classDef zoneApps fill:#fdf2f8,stroke:#ec4899,color:#500724,stroke-width:2px
-
-  class ArgoCD_OCI,ArgoCD,OCICert,MetalLB control
-  class OCICloudflared,OCITFCAgent,OCIIngress,OCIActionsRunner,CFPod,TFCAgent,PDC cloud
-  class IX,US8,AP nwDevice
-  class NAS,BuildSV,WorkWin,UOS,ControlPlanes,Workers vm
-  class OCIESO,OCILonghorn,ESO,VMetrics,Mirakurun,EPGStation,MagicMirror,NextCloud,WoL,CoreDNS,CF_DNS,GC_Prometheus storage
-  class blackboxEx,speedtestEx,pveEx,snmpEx,GC_Grafana observability
-  class CF_Application,CF_Tunnel,TFC,GitHub external
-  class OCI,OKE zoneCloud
-  class ExtSvc,Cloudflare,Grafana zoneExternal
-  class Home zoneHome
-  class NW zoneNetwork
-  class PVE,WorkEnv zoneVirtual
-  class HomeK8s,HomeK8sVM,Argo zoneK8s
-  class HomeK8s_agents,HomeK8s_system,Exporters,Argo_Apps zoneApps
-
-  linkStyle 33 stroke:#7c3aed,stroke-width:4px
-```
-
-## ドメイン
-
-- `miutaku.work` — Cloudflare で管理。
-- `miutaku.internal` — home-k8sのCoreDNS（MetalLB `192.168.20.201`）で内部名前解決。
-
-## ネットワーク構成
-
-| VLAN | サブネット | 用途 |
-|------|-----------|------|
-| (native) | 192.168.0.0/24 | |
-| VLAN 10 | 192.168.10.0/24 | 管理 (PVE / RPi / nanokvm / スイッチ / AP) |
-| VLAN 20 | 192.168.20.0/24 | サーバ（home-k8s / NAS / MetalLB pool: 192.168.20.200 - .192.168.20.226） |
-| VLAN 30 | 192.168.30.0/24 | クライアント (PC / ゲーム機) |
-| VLAN 31 | 192.168.31.0/24 | 来客用 / 他VLANにアクセス不可 / 公開AFTR を用いたインターネット接続 |
-| VLAN 40 | 192.168.40.0/24 | IoT / スマートホーム |
-
-## シークレット管理
-
-すべてのシークレットは **Bitwarden Secrets Manager (BSM)** で管理する。  
-k8s への注入は **External Secrets Operator (ESO)** + bitwarden-sdk-server 経由。  
-Ansible は `bws` CLI + `BWS_ACCESS_TOKEN` 環境変数で取得する。
-
-## リポジトリ構成
-
-```
-my-infra/
-├── terraform/
-│   ├── oci/            OCI OKE クラスタ (TFC workspace: my-infra)
-│   ├── pve/            Proxmox VM 全台 (TFC workspace: pve-home)
-│   └── cloudflare/     Cloudflare DNS / Tunnel / Zero Trust Access (TFC workspace: cloudflare)
-├── ansible/
-│   ├── load-balancer/  汎用HAProxy・Keepalived LB構成
-│   ├── ix2215/         IX2215 VLAN・DHCP 静的リース管理
-│   ├── uos/            UniFi OS Server 専用 VM 構成
-│   ├── monitoring/     既存 VM 向け node_exporter 補助 playbook
-│   └── pbs/            Proxmox Backup Server 構築
-├── k8s/
-│   ├── pve/            home-k8s共通アプリ (ArgoCD App-of-Apps)
-│   └── oci/            OCI OKE (ArgoCD GitOps)
-└── packer/
-    ├── ubuntu-26-04/   Proxmox テンプレート (Ubuntu 26.04 LTS)
-    └── truenas-scale/  Proxmox テンプレート (TrueNAS Scale)
-```
-
-## 作業フロー: 宅内クラスタを新規構築する順序
-
-```mermaid
-flowchart LR
-  Terraform[terraform/home-k8s<br/>Talos VM作成]
-  IX[ansible/ix2215<br/>DHCP静的リース反映]
-  Talos[talos/home-k8s<br/>Talos machine config]
-  UOS[ansible/uos<br/>UniFi OS Server VM構成]
-  Argo[k8s/pve/argocd<br/>ArgoCD Bootstrap]
-  Apps[k8s/pve/argocd-apps<br/>App-of-Apps同期]
-
-  Terraform --> IX
-  IX --> Talos --> Argo --> Apps
-  IX --> UOS
-```
-
-## 作業フロー: OKE クラスタを新規構築する順序
-
-```mermaid
-flowchart LR
-  Terraform[terraform/oci<br/>OKEクラスタ作成]
-  ArgoCD[k8s/oci/argocd<br/>ArgoCD Bootstrap]
-  Infra[k8s/oci/infrastructure<br/>ESO / cert-manager / ingress-nginx / Longhorn]
-  Apps[k8s/oci/apps<br/>cloudflared / tfc-agent / actions-runner]
-
-  Terraform --> ArgoCD --> Infra --> Apps
-```
-
-## kubectl 操作環境
-
-2 つの k8s クラスタを管理するために、kubeconfig を統合して使う。
-
-### コンテキスト一覧
-
-| コンテキスト名 | クラスタ | 接続先 |
-|---|---|---|
-| `home-k8s` | 宅内Kubernetes (Proxmox) | Talos VIP `192.168.20.228:6443` |
-| `oke-cloud` | OCI OKE | 以下のセットアップ手順で設定すると構成される |
-
-### セットアップ手順 (新規マシン)
-
-セットアップ用スクリプトを `scripts/` に用意している。
-
-**Step 1: ツール一式をインストール**
-
-`BWS_ACCESS_TOKEN` は BSMから取得しておく。
+変更するリソースの定義を更新し、Terraformのplan・対象ディレクトリの検証を確認する。Kubernetesの通常変更はGitOpsで反映する。操作前に接続先クラスタを確認する。
 
 ```bash
-echo 'export BWS_ACCESS_TOKEN="<ACCESS_TOKEN>"' >> ~/.bashrc
-bash scripts/setup-k8s-tools
-source ~/.bashrc
+kubectl --context home-k8s get nodes
+kubectl --context oke-cloud get nodes  # STG OKE
 ```
 
-インストールされるもの: `kubectl`, `kubectx`, `kubens`, `oci` (OCI CLI), `bws` (Bitwarden SM CLI)  
-OCI 認証情報 (`~/.oci/config`, `~/.oci/oci_api_key.pem`) は BSM の `OCI_*` シークレットから自動生成される。
+PRD OKEのkubeconfigはOCIのPRDプロファイルで取得し、認証のexec設定にも同プロファイルを指定する。
 
-**Step 2: kubeconfig を取得・統合**
+| 詳細 | 参照先 |
+| --- | --- |
+| Talos・VM定義 | [talos/home-k8s/](talos/home-k8s/)、[terraform/home-k8s/](terraform/home-k8s/) |
+| OKE定義 | [terraform/oci/](terraform/oci/)、[k8s/oci/](k8s/oci/) |
+| ArgoCD定義 | [k8s/pve/argocd/](k8s/pve/argocd/)、[k8s/pve/reventer-gitops/](k8s/pve/reventer-gitops/) |
+| ネットワーク | [ansible/ix2215/](ansible/ix2215/)、[terraform/cloudflare/](terraform/cloudflare/) |
+| 監視 | [k8s/pve/vmagent/](k8s/pve/vmagent/)、[terraform/oci-observability/](terraform/oci-observability/)、[terraform/oci-observability-stg/](terraform/oci-observability-stg/) |
+| UPS・ストレージ | [UPSシャットダウン](docs/ups-shutdown.md)、[TrueNAS NFS](docs/truenas-nfs-setup.md) |
+| 管理端末セットアップ | [scripts/setup-k8s-tools](scripts/setup-k8s-tools)、[scripts/setup-kubeconfig](scripts/setup-kubeconfig) |
 
-```bash
-bash scripts/setup-kubeconfig   # home-k8s + OKEを ~/.kube/config に統合
-# 個別に設定も可能:
-bash scripts/setup-kubeconfig --home-k8s-only
-bash scripts/setup-kubeconfig --oke-only
-```
-
-> **home-k8sの注意点**
-> - `talos/home-k8s/.generated/kubeconfig`をコピーして統合する
-> - 管理APIはTalos VIP `192.168.20.228:6443`を使用する
-
-> **OKE の注意点**
-> - kubeconfig の認証に `oci` コマンドを使う exec plugin が埋め込まれる
-> - `oci` が PATH 上にある必要があるため `/usr/local/bin/oci -> ~/bin/oci` のシンボリックリンクを作成する
-
-### 日常操作
-
-```bash
-kubectx              # コンテキスト一覧
-kubectx home-k8s     # 宅内Kubernetesへ切り替え
-kubectx oke-cloud    # OCI OKE  に切り替え
-kubens               # namespace 一覧
-```
-
----
-
-## 各コンポーネントの README
-
-作業前に必ず該当 README を読むこと。
-
-| コンポーネント | README | 主な内容 |
-|---|---|---|
-| OCI Terraform | [terraform/oci/README.md](./terraform/oci/README.md) | OKE 構築, TFC Variables |
-| PVE Terraform | [terraform/pve/README.md](./terraform/pve/README.md) | VM 作成, MAC/IP 管理, Ansible 自動生成 |
-| Cloudflare Terraform | [terraform/cloudflare/README.md](./terraform/cloudflare/README.md) | Tunnel, DNS, Zero Trust |
-| Load Balancer Ansible | [ansible/load-balancer/README.md](./ansible/load-balancer/README.md) | 汎用HAProxy・Keepalived LB構成 |
-| IX2215 Ansible | [ansible/ix2215/README.md](./ansible/ix2215/README.md) | VLAN・DHCP 静的リース |
-| UniFi OS Server Ansible | [ansible/uos/README.md](./ansible/uos/README.md) | 専用 VM 上の UniFi OS Server 構成 |
-| PBS Ansible | [ansible/pbs/README.md](./ansible/pbs/README.md) | Proxmox Backup Server |
-| ArgoCD Bootstrap (home-k8s) | [k8s/pve/argocd/README.md](./k8s/pve/argocd/README.md) | BSMシークレット一覧, App-of-Apps |
-| ArgoCD Bootstrap (OKE) | [k8s/oci/argocd/README.md](./k8s/oci/argocd/README.md) | BSM シークレット一覧, TLS cert 手順, sync-wave 順序 |
-| PDC Agent | [k8s/pve/pdc-agent/README.md](./k8s/pve/pdc-agent/README.md) | Grafana PDC トンネル |
-| Packer Ubuntu | [packer/ubuntu-26-04/README.md](./packer/ubuntu-26-04/README.md) | テンプレートビルド |
-| Packer TrueNAS | [packer/truenas-scale/README.md](./packer/truenas-scale/README.md) | テンプレートビルド |
-| Actions Runner (OKE) | [k8s/oci/apps/actions-runner/README.md](./k8s/oci/apps/actions-runner/README.md) | OKE 上の GitHub runner |
-
-## 監視アーキテクチャ
-
-```mermaid
-flowchart TB
-  Hosts[VM / NAS / ネットワーク機器]
-  Node[node_exporter :9100<br/>Ubuntu VMはPackerテンプレートに同梱]
-  SNMP[snmp-exporter :9116<br/>IX2215 / TrueNAS]
-  PVE[pve-exporter :9221<br/>Proxmox API]
-  Blackbox[blackbox-exporter :9115<br/>HTTP / ICMP]
-  Agent[vmagent<br/>scrape config: k8s/pve/vmagent/values.yaml]
-  VM[VictoriaMetrics<br/>home-k8s内]
-  PDC[Grafana PDC agent<br/>VictoriaMetrics query tunnel]
-
-  Hosts --> Node
-  Hosts --> SNMP
-  Hosts --> PVE
-  Hosts --> Blackbox
-  Agent --> Node
-  Agent --> SNMP
-  Agent --> PVE
-  Agent --> Blackbox
-  Agent --> VM
-  PDC --> VM
-```
-
-### メトリクス収集対象
-
-| ホスト / 機器 | IP | 収集方法 | 状態 |
-|---|---|---|---|
-| IX2215 | 192.168.0.254 | snmp-exporter (IF-MIB) | ✅ |
-| IX2215 | 192.168.0.254 | blackbox HTTP/ICMP | ✅ |
-| pve-x570 | 192.168.0.115 | pve-exporter | BSM 要設定 |
-| pve-b550m | 192.168.0.119 | pve-exporter | BSM 要設定 |
-| home-k8s nodes ×5 | 192.168.20.137-141 | node metrics | ✅ |
-| UniFi OS Server VM | 192.168.0.132 | node_exporter :9100 + blackbox HTTP/ICMP | ✅ |
-| LB ×2 | 192.168.20.135-136 | node_exporter :9100 + blackbox ICMP | ✅ |
-| dev-app-server | 192.168.20.101 | node_exporter :9100 | ✅ |
-| MagicMirror² (k8s Service) | 192.168.20.204 | blackbox HTTP | k8s app |
-| NextCloud (k8s Service) | ClusterIP (`nextcloud.app-nextcloud.svc`) | blackbox HTTP (`/status.php`) | k8s app |
-| nas-01/02 (TrueNAS) | 192.168.20.191-192 | node_exporter :9100 | 要手動インストール |
-| OKE nodes ×2 | 10.0.1.x | node metrics | scrape 設定要確認 |
-
-### node_exporter について
-
-node_exporter は **Packer テンプレート** (`packer/ubuntu-26-04/`) にベイク済み。  
-テンプレートから作成した VM は起動時点で `:9100` で node_exporter が待ち受ける。
-
-scrape は **vmagent**(Victoria Metrics Agent) が担当する。設定は [`k8s/pve/vmagent/values.yaml`](./k8s/pve/vmagent/values.yaml) で管理し、
-VictoriaMetrics へ remote_write する。
-
-既存 VM（テンプレート再ビルド前に作成済み）は、必要に応じて Ansible で一括導入する。
-
-```bash
-cd ansible/monitoring
-ansible-playbook site.yml
-```
-
-### PVE exporter の有効化（BSM シークレット登録後）
-
-Proxmox Web UI で API トークンを発行し BSM に登録:
-- `PVE_MONITORING_TOKEN_ID` — 例: `root@pam!monitoring`
-- `PVE_MONITORING_TOKEN_SECRET` — トークンシークレット
-
-### Grafana Cloud 推奨ダッシュボード
-
-| ダッシュボード | ID |
-|---|---|
-| Node Exporter Full | 1860 |
-| SNMP Interface Stats | 11169 |
-| Proxmox VE | 10347 |
-| Blackbox Exporter | 7587 |
-
----
-
-## 開発環境セットアップ
-
-クローン後に一度だけ実行する:
-
-```bash
-git config core.hooksPath .githooks
-```
-
-push 前に変更があったディレクトリのみ自動で lint が走る:
-
-| 変更パス | 実行内容 |
-|---|---|
-| `ansible/ix2215/**` | `pipenv run ansible-lint site.yml` |
-| `packer/ubuntu-26-04/**` | `packer validate` |
-| `packer/truenas-scale/**` | `packer validate` |
-
----
-
-## ドキュメント
-
-| ドキュメント | 内容 |
-|---|---|
-| [docs/ups-shutdown.md](docs/ups-shutdown.md) | UPS(APC×2 / NUT)連動の安全シャットダウン構成。実装は `ansible/nut/` |
-| [docs/truenas-nfs-setup.md](docs/truenas-nfs-setup.md) | TrueNAS NFS セットアップ |
-
-## CI / GitHub Actions
-
-| ワークフロー | トリガーパス | 内容 |
-|---|---|---|
-| `terraform_pve.yml` | `terraform/pve/**` | plan (PR) / apply (main) + Ansible inventory 自動コミット |
-| `terraform_oci.yml` | `terraform/oci/**` | plan (PR) / apply (main) |
-| `terraform_cloudflare.yml` | `terraform/cloudflare/**` | plan (PR) / apply (main) |
-| `k8s_check_pve.yml` | `k8s/pve/**` | kustomize build |
-| `k8s_check_oci.yml` | `k8s/oci/**` | kustomize build |
-| `home_k8s_validate.yml` | 全PR / push | 現役構成へのlegacy名称混入防止、shell/YAML/Terraform書式検証 |
-| `ansible_check_load_balancer.yml` | `ansible/load-balancer/**` | LB構成のlint + syntax-check |
-| `ansible_check_ix2215.yml` | `ansible/ix2215/**` | lint + syntax-check |
-| `packer.yml` | `packer/**` | packer validate (実ビルドは手動) |
-
-## 新しいノードを用意したりIPアドレスを変更する場合
-
-主に以下のファイルを修正し、反映すること。ほかにも必要に応じて修正すること。
-
-```text
-ansible/ix2215/group_vars/all.yml
-k8s/pve/coredns/Corefile
-k8s/pve/wol/appdata/db/computers.txt
-```
+READMEは現在の構成・管理責務・運用の入口を記載する。詳細な手順は対象コンポーネントで管理し、一時的な作業記録・調査ログ・TODOはREADMEに追加しない。

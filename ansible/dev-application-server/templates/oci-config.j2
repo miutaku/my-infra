@@ -1,0 +1,14 @@
+[STG]
+user={{ bws_secrets.OCI_USER_OCID }}
+fingerprint={{ bws_secrets.OCI_FINGERPRINT }}
+tenancy={{ bws_secrets.OCI_TENANCY_OCID }}
+region={{ bws_secrets.OCI_REGION }}
+key_file={{ dev_home }}/.oci/oci_stg_api_key.pem
+
+[PRD]
+user={{ bws_secrets.PRD_OCI_USER_OCID }}
+fingerprint={{ bws_secrets.PRD_OCI_FINGERPRINT }}
+tenancy={{ bws_secrets.PRD_OCI_TENANCY_OCID }}
+region={{ bws_secrets.PRD_OCI_REGION }}
+key_file={{ dev_home }}/.oci/oci_prd_api_key.pem
+

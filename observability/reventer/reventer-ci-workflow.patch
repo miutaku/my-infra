@@ -1,0 +1,11 @@
+--- a/.github/workflows/ci-k8s-manifests.yml
++++ b/.github/workflows/ci-k8s-manifests.yml
+@@ -9,0 +10,2 @@
++      - 'infrastructure/k8s/monitoring/**'
++      - 'infrastructure/k8s/monitoring-prd/**'
+@@ -16,0 +19,2 @@
++      - 'infrastructure/k8s/monitoring/**'
++      - 'infrastructure/k8s/monitoring-prd/**'
+@@ -31 +35 @@
+-          find infrastructure/k8s/stg infrastructure/k8s/prd -name kustomization.yaml \
++          find infrastructure/k8s/stg infrastructure/k8s/prd infrastructure/k8s/monitoring infrastructure/k8s/monitoring-prd -name kustomization.yaml \

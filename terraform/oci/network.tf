@@ -41,19 +41,6 @@ resource "oci_core_subnet" "oke_lb_subnet" {
   freeform_tags              = local.common_tags
 }
 
-# Private Subnet — Worker Nodes
-resource "oci_core_subnet" "oke_worker_subnet" {
-  compartment_id             = var.compartment_ocid
-  vcn_id                     = oci_core_vcn.oke_vcn.id
-  cidr_block                 = cidrsubnet(var.vcn_cidr, 8, 1) # 10.0.1.0/24
-  display_name               = "oke-worker-subnet"
-  dns_label                  = "okeworker"
-  prohibit_public_ip_on_vnic = true
-  route_table_id             = oci_core_route_table.private_rt.id
-  security_list_ids          = [oci_core_security_list.worker_sl.id]
-  freeform_tags              = local.common_tags
-}
-
 # Route Tables
 resource "oci_core_route_table" "public_rt" {
   compartment_id = var.compartment_ocid
@@ -66,22 +53,6 @@ resource "oci_core_route_table" "public_rt" {
   }
 }
 
-resource "oci_core_route_table" "private_rt" {
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.oke_vcn.id
-  display_name   = "oke-private-rt"
-  freeform_tags  = local.common_tags
-  route_rules {
-    destination       = "0.0.0.0/0"
-    network_entity_id = oci_core_nat_gateway.oke_ngw.id
-  }
-  # 自宅 LAN → DRG → IX2215 (Site-to-Site VPN)
-  route_rules {
-    destination       = var.home_lan_cidr
-    network_entity_id = oci_core_drg.home_vpn.id
-  }
-}
-
 # Security List for public subnet (API endpoint + Flex LB)
 resource "oci_core_security_list" "lb_sl" {
   compartment_id = var.compartment_ocid
@@ -89,14 +60,17 @@ resource "oci_core_security_list" "lb_sl" {
   display_name   = "oke-lb-sl"
   freeform_tags  = local.common_tags
 
-  # OKE API server (kubectl) — 家の固定 IPv4 のみ許可
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "${var.ix_public_ipv4}/32"
-    stateless = false
-    tcp_options {
-      min = 6443
-      max = 6443
+  # OKE API server — identical trusted management sources in STG and PRD
+  dynamic "ingress_security_rules" {
+    for_each = nonsensitive(var.api_management_ipv4_cidrs)
+    content {
+      protocol  = "6"
+      source    = ingress_security_rules.value
+      stateless = false
+      tcp_options {
+        min = 6443
+        max = 6443
+      }
     }
   }
 
@@ -140,25 +114,9 @@ resource "oci_core_security_list" "lb_sl" {
     destination = "0.0.0.0/0"
     stateless   = false
   }
-}
 
-# Security List for private worker subnet
-resource "oci_core_security_list" "worker_sl" {
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.oke_vcn.id
-  display_name   = "oke-worker-sl"
-  freeform_tags  = local.common_tags
-
-  # Node-to-node and LB→node communication within VCN
-  ingress_security_rules {
-    protocol  = "all"
-    source    = var.vcn_cidr
-    stateless = false
-  }
-
-  egress_security_rules {
-    protocol    = "all"
-    destination = "0.0.0.0/0"
-    stateless   = false
+  # OCI CCM owns dynamic LoadBalancer health-check and NodePort rules.
+  lifecycle {
+    ignore_changes = [ingress_security_rules, egress_security_rules]
   }
 }

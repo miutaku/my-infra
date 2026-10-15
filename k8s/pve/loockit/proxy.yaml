@@ -16,6 +16,7 @@ data:
     frontend rest
       bind :8080
       mode http
+      option httplog
       default_backend rest
     backend rest
       mode http
