@@ -3,11 +3,12 @@ specification {
   element system { style { color blue } }
   element component { style { color muted } }
   element store { style { shape storage color amber } }
-  relationship runtime { color blue }
-  relationship deploy { color amber line dashed }
+  relationship runtime { color green }
+  relationship admin { color indigo line dashed }
+  relationship deploy { color indigo line dashed }
   relationship secret { color red line dotted }
-  relationship observe { color green line dotted }
-  relationship query { color green }
+  relationship observe { color amber line dotted }
+  relationship query { color sky }
   relationship backup { color amber }
   deploymentNode site { style { color gray } }
   deploymentNode hypervisor { style { color green } }

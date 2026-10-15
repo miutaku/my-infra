@@ -2,7 +2,7 @@
 
 公開サイト: https://miutaku.github.io/my-infra/
 
-全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。6ビューは同じモデルを使い、箱を増やす代わりに説明・参照元リンク・関係・配置詳細を使う。配置ではホストやクラスタをクリックして内部を辿る。Terraform/Kubernetes全定義は「リソース一覧」で検索できる。
+reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。6ビューは同じモデルを使い、箱を増やす代わりに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes全定義は「リソース一覧」で検索できる。
 
 | ファイル | 役割 |
 | --- | --- |
@@ -11,7 +11,7 @@
 | views.c4 | 6つの観点とクリックナビゲーション |
 | specification.c4 | 種類と線の意味 |
 | scripts/inventory.mjs | Terraform resource/moduleとKubernetes metadataの自動抽出 |
-| viewer/ | LikeC4公式React UI。構成情報のコピーを持たない |
+| shell.html / scripts/*navigation.mjs / scripts/line-filters.mjs | reventerと同じ標準viewer・外枠・線フィルター。構成情報のコピーを持たない |
 
 ```bash
 cd docs/architecture

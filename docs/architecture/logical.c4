@@ -50,8 +50,8 @@ model {
   }
   user .runtime edge 'HTTPS'
   edge .runtime home 'Tunnel / 内部HTTP'
-  operator .runtime edge.access '管理認証'
-  edge.access .runtime control.argo 'Tunnel / 管理UI'
+  operator .admin edge.access '管理認証'
+  edge.access .admin control.argo 'Tunnel / 管理UI'
   home.nextcloud .runtime data.nas 'NFS / PVC'
   home.recording .runtime data.nas 'メディア保存'
   hardware.router .runtime home.dns 'LAN / 内部DNS'
