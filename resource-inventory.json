@@ -1,5 +1,71 @@
 [
   {
+    "id": "ansible/truenas/host_vars/nas-01.yml:dataset:raid1_case/arc-runner-cache",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/arc-runner-cache",
+    "file": "ansible/truenas/host_vars/nas-01.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/drop",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/drop",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-coupon-manager-data-protection-keys",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-coupon-manager-data-protection-keys",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-coupon-manager-images",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-coupon-manager-images",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-mariadb",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-mariadb",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-nextcloud-html",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-nextcloud-html",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-postgres",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-postgres",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-postgres-staging",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-postgres-staging",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/home-k8s-victoria-metrics",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/home-k8s-victoria-metrics",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/recorded",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/recorded",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
+    "id": "ansible/truenas/host_vars/nas-02.yml:dataset:raid1_case/thumbnail",
+    "type": "TrueNAS dataset",
+    "name": "raid1_case/thumbnail",
+    "file": "ansible/truenas/host_vars/nas-02.yml"
+  },
+  {
     "id": "k8s/oci-prd/argocd-apps/cert-manager-config.yaml:Application:argocd:oci-prd-cert-manager-config",
     "type": "Application",
     "name": "oci-prd-cert-manager-config",
@@ -2690,5 +2756,131 @@
     "type": "proxmox_vm_qemu",
     "name": "vm",
     "file": "terraform/pve/modules/proxmox_vm/main.tf"
+  },
+  {
+    "id": "hostname:architecture-review",
+    "type": "Tunnel hostname",
+    "name": "architecture-review",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_a6fbba4fe58063"
+  },
+  {
+    "id": "hostname:argocd-home-k8s",
+    "type": "Tunnel hostname",
+    "name": "argocd-home-k8s",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_aa7be3a36b5c48"
+  },
+  {
+    "id": "hostname:wol",
+    "type": "Tunnel hostname",
+    "name": "wol",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_9a6aa3c240035f"
+  },
+  {
+    "id": "hostname:loockit-api",
+    "type": "Tunnel hostname",
+    "name": "loockit-api",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_c4f5a55b428348"
+  },
+  {
+    "id": "hostname:epgstation",
+    "type": "Tunnel hostname",
+    "name": "epgstation",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_0ceb9e10baf1aa"
+  },
+  {
+    "id": "hostname:tnlastation",
+    "type": "Tunnel hostname",
+    "name": "tnlastation",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_ca51f2ede193bf"
+  },
+  {
+    "id": "hostname:tnlastation-staging",
+    "type": "Tunnel hostname",
+    "name": "tnlastation-staging",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_db1d338e50f41c"
+  },
+  {
+    "id": "hostname:nextcloud",
+    "type": "Tunnel hostname",
+    "name": "nextcloud",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_5495d99954175c"
+  },
+  {
+    "id": "hostname:coupon-manager",
+    "type": "Tunnel hostname",
+    "name": "coupon-manager",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_8707e543d2323c"
+  },
+  {
+    "id": "hostname:unifi",
+    "type": "Tunnel hostname",
+    "name": "unifi",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_1d844aae4872d1"
+  },
+  {
+    "id": "hostname:wifi-ap",
+    "type": "Tunnel hostname",
+    "name": "wifi-ap",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_9e7130e5c1438a"
+  },
+  {
+    "id": "hostname:ix2215",
+    "type": "Tunnel hostname",
+    "name": "ix2215",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_307b9cfe34f5c6"
+  },
+  {
+    "id": "hostname:nas-01",
+    "type": "Tunnel hostname",
+    "name": "nas-01",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_ac83613e0c48d5"
+  },
+  {
+    "id": "hostname:nas-02",
+    "type": "Tunnel hostname",
+    "name": "nas-02",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_57aad05e7dd3c0"
+  },
+  {
+    "id": "hostname:pve-x570",
+    "type": "Tunnel hostname",
+    "name": "pve-x570",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_e476f69c53182c"
+  },
+  {
+    "id": "hostname:pve-b550m",
+    "type": "Tunnel hostname",
+    "name": "pve-b550m",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_12af4e978445b6"
+  },
+  {
+    "id": "hostname:nanokvm-1",
+    "type": "Tunnel hostname",
+    "name": "nanokvm-1",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_94954bf5cdae0f"
+  },
+  {
+    "id": "hostname:nanokvm-2",
+    "type": "Tunnel hostname",
+    "name": "nanokvm-2",
+    "file": "terraform/cloudflare/locals.tf",
+    "modelRef": "edge.routes.r_bd62f81c28d3da"
   }
 ]
