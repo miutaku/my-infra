@@ -3,23 +3,22 @@ views {
   style control, bws { color amber }
   style monitoring { color green }
   style data { color gray }
+  style edge { color amber }
   view index {
-    title 'my-infra / 全体'
-    description '構成の入口。要素をクリックして詳細へ。通信・デプロイ・秘密情報・監視は、それぞれの観点で確認する。'
-    group '実行・保存' {
-      include home, oke, data
-    }
-    group '変更・運用' {
-      include control, bws, monitoring
-    }
+    title '全体構成'
+    description '利用者・管理者の入口から自宅サービス、OKE、保存、監視、秘密注入の関係。デプロイ経路はCI・デプロイへ分ける。'
+    include user, operator, edge, edge.access, edge.tunnel, home, home.nextcloud, home.agent, home.eso, oke, control, control.argo, bws, monitoring, monitoring.vms, monitoring.grafana, data, data.nas
     include home with { navigateTo home_apps }
-    include control with { navigateTo delivery }
+    include edge.tunnel with { navigateTo home_apps }
+    include control.argo with { navigateTo delivery }
     include bws with { navigateTo secrets }
+    include home.eso with { navigateTo secrets }
     include monitoring with { navigateTo observability }
     include oke with { navigateTo placement }
     include data with { navigateTo placement }
-    exclude * -> *
-    autoLayout TopBottom 70 50
+    exclude * -> * where kind is deploy or kind is backup
+    rank source { user, operator, bws }
+    autoLayout TopBottom 100 80
   }
   view home_apps of home {
     title '自宅のサービス・保存'
