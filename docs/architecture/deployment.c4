@@ -38,12 +38,12 @@ deployment {
 
     }
   }
-  cluster stg 'OCI / STG OKE共通基盤' {
-    instanceOf oke
+  cluster stg 'Re:Venter / STG OCI・OKE（参照のみ）' {
+    instanceOf consumers.reventer
 
   }
-  cluster prd '外部所有PRDクラスタ / 共通アドオンの配置先' {
-    description 'この図が管理対象として示すのは共通アドオンとApplication登録。クラスタ本体・アプリ実装はreventerが所有。'
-    instanceOf shared_prd
+  cluster prd 'Re:Venter専用PRD / 定義の対応付けのみ' {
+    description '専用構成はreventer側の図に集約。この配置はソース定義との対応付けだけに用い、my-infraの配置ビューでは展開しない。'
+    instanceOf consumers.reventer
   }
 }

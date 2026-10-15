@@ -2,7 +2,7 @@
 
 公開サイト: https://miutaku.github.io/my-infra/
 
-reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。PRD共有アドオン・監視保存先・ArgoCD・runnerはmy-infraの提供基盤として分ける。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
+reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。OCI/OKE・監視VM・Re:Venter向け変更経路・専用runner/agent・レビュー配信などは、定義がmy-infraにあってもRe:Venter専用の境界へ集約する。自宅側の共有ArgoCD・ARC制御基盤との接点だけを描き、専用側の詳細はreventerの図に委ねる。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
 
 | ファイル | 役割 |
 | --- | --- |
@@ -51,6 +51,8 @@ model-coverage.jsonは宣言ごとのモデル要素と、Applicationの配置�
 
 ## 表す責務とアクセス経路
 
-この図はインフラ基盤の提供範囲を表す。Re:Venterのアプリ・PRDクラスタ本体・アプリ固有のGateway/HTTPRouteは外部所有とし、利用側Applicationの同期登録と、実行・共通Controller・Secret注入・監視保存先の接点を示す。定義がmy-infraに存在すること、配置先、所有する責務を混同しない。
+この図はインフラ基盤の提供範囲を表す。用途の専用・共有で境界を決める。Re:Venterのアプリ・OCI/OKE全体・監視VM・GitOps/CI/Terraformによる変更経路・専用runner/agent・レビュー配信は専用側へ集約し、手動の内部構成・通信トポロジーを重複して作らない。my-infraにある専用定義は、名前・定義元・実際のnamespaceとの対応だけを自動抽出し、一覧の関連図からreventerの構成図へ進む。共有PVCは利用実態に合わせて共有側に残す。定義がある場所・実行する場所・専用用途を区別する。
 
 自宅公開hostnameの原則は利用者・管理者 → Cloudflare Access → Tunnel → 内部サービス。公開hostnameの認証方式はTerraformから生成し、用途（利用・管理）と認証（Access・mTLS）を別の属性にする。loockit-apiは専用クライアント証明書と操作制限の例外として表示する。WARP/LANのprivate経路、GitOps/CIによる変更、基盤の提供はそれぞれ別の線種・観点とする。認証方式を判定できないhostnameはビルドを失敗させる。
+
+my-infraの変更ビューは自宅基盤の構成管理に限定する。Re:Venter向けの変更経路、OCI上の管理ワークロードも利用側の図へ委ねる。OCIの名前・定義・配置対応は参照用に保持し、my-infraの配置・ネットワーク図では展開しない。

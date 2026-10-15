@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {authenticationMode} from '../scripts/catalog.mjs';
+import {isReventerDedicated} from '../scripts/ownership.mjs';
 import {inventory} from '../scripts/inventory.mjs';
 import {parseAllDocuments} from 'yaml';
 const model=JSON.parse(readFileSync('model.json','utf8'));
@@ -63,16 +64,30 @@ test('home storage, TrueNAS VMs and backup execution remain separate from extern
 });
 
 
-test('foundation ownership never expands the consumer application and PRD addons remain provider-owned',()=>{
+test('dedicated resources belong to ReVenter and every curated view shows only its boundary',()=>{
  assert.ok(model.elements['consumers.reventer']);
- assert.equal(Object.keys(model.elements).filter(ref=>ref.startsWith('consumers.reventer.')).length,0);
- assert.equal(Object.keys(model.elements).filter(ref=>ref==='reventer'||ref.startsWith('reventer.')).length,0);
- const consumers=coverage.records.filter(row=>row.type==='Application'&&row.owner==='consumer');
- assert.ok(consumers.length>0);
- for(const row of consumers)assert.ok(row.modelRef.startsWith('control.argo.workloads.'),row.name);
- const prdEso=coverage.records.find(row=>row.type==='Application'&&row.name==='oci-prd-external-secrets');
- assert.equal(prdEso.owner,'my-infra');assert.equal(prdEso.modelRef,'shared_prd.eso');
- assert.ok(!model.views.index.nodes.some(node=>node.modelRef?.startsWith('control.argo.workloads.')));
+ for(const obsolete of ['oke','control','monitoring','shared_prd','premises.management.reviews','premises.management.argo.workloads'])assert.ok(!model.elements[obsolete],obsolete);
+ const dedicated=coverage.records.filter(row=>row.owner==='reventer');
+ assert.ok(dedicated.length>0);
+ for(const row of dedicated){
+  assert.ok(row.modelRef.startsWith('consumers.reventer.definitions.'),row.file+': '+row.name);
+  assert.equal(model.elements[row.modelRef].metadata.referenceOnly,'true');
+ }
+ for(const view of Object.values(model.views)){
+  assert.ok(!view.nodes.some(node=>node.modelRef?.startsWith('consumers.reventer.')),view.id);
+ }
+ assert.ok(!model.views.placement.nodes.some(node=>['prd','stg'].some(id=>node.id===id||node.id.startsWith(id+'.'))));
+ assert.ok(!model.views.delivery.nodes.some(node=>node.modelRef==='consumers.reventer'));
+ const oci=coverage.records.filter(row=>row.file.startsWith('terraform/oci')||row.file.startsWith('k8s/oci'));
+ assert.ok(oci.length>0);assert.ok(oci.every(row=>row.owner==='reventer'));
+ const names=['reventer-tfc-agent','arc-runner-reventer','arc-runner-reventer-codex','arc-runner-reventer-review','architecture-review','oci-prd-external-secrets'];
+ for(const name of names)assert.equal(coverage.records.find(row=>row.type==='Application'&&row.name===name).owner,'reventer',name);
+ const monitoring=coverage.records.filter(row=>row.file.startsWith('terraform/oci-observability'));
+ assert.ok(monitoring.length>0);assert.ok(monitoring.every(row=>row.owner==='reventer'));
+ const cache=coverage.records.find(row=>row.file==='k8s/pve/arc-runners/reventer-cache-pvc.yaml');
+ assert.equal(cache.owner,'my-infra');
+ assert.equal(isReventerDedicated({file:cache.file,name:cache.name}),false);
+ assert.equal(coverage.records.find(row=>row.type==='Application'&&row.name==='oci-external-secrets').owner,'reventer');
 });
 
 test('public access keeps authentication separate from traffic purpose and rejects unclassified routes',()=>{
