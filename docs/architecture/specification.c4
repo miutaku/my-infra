@@ -3,6 +3,8 @@ specification {
   element system { style { color blue } }
   element component { style { color muted } }
   element store { style { shape storage color amber } }
+  relationship authenticate { color indigo line solid }
+  relationship provide { color gray line dashed }
   relationship runtime { color green }
   relationship admin { color indigo line dashed }
   relationship deploy { color indigo line dashed }

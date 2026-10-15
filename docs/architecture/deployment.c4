@@ -42,8 +42,8 @@ deployment {
     instanceOf oke
 
   }
-  cluster prd 'PRD OKE / 本体reventer所有・共通アドオンmy-infra' {
-    description '別リポジトリ管理。モデルで所有境界を維持する。'
-    instanceOf reventer
+  cluster prd '外部所有PRDクラスタ / 共通アドオンの配置先' {
+    description 'この図が管理対象として示すのは共通アドオンとApplication登録。クラスタ本体・アプリ実装はreventerが所有。'
+    instanceOf shared_prd
   }
 }
