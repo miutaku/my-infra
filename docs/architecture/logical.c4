@@ -1,0 +1,84 @@
+model {
+  actor user '利用者'
+  actor operator '管理者'
+  system edge 'Cloudflare' {
+    description 'DNS・Access・TunnelをTerraformで管理。公開経路と管理アクセスを認証ポリシーで分離。'
+    link https://github.com/miutaku/my-infra/tree/main/terraform/cloudflare '定義'
+    component tunnel 'Cloudflare Tunnel' { description '自宅とSTG OKEのcloudflaredが外向き接続を確立。公開hostnameのHTTPを内部Serviceへ転送する。' }
+    component access 'Access / 認証' { description '管理サービスをAccessで保護。WARPのprivate CIDR routeとは別の接続経路。' }
+  }
+  system home '自宅 / home-k8s' {
+    description 'Talos。CP VM3台・worker VM2台をProxmox2ホストへ配置し、RPi worker2台を追加。Podの配置は動的。'
+    link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
+    component nextcloud 'Nextcloud' { link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
+    component recording '録画・配信' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
+    component apps '宅内アプリ' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
+    component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
+    component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
+    component agent '収集agent' { description 'vmagent・exporter・PDC agent。監視保存先とは分離。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
+  }
+  system oke 'OCI / STG OKE共通基盤' {
+    description '東京リージョン。base workerとburst workerを使用し、AutoscalerはOKE内で動く。Re:VenterアプリとPRD OKE本体はreventerが所有。'
+    link https://github.com/miutaku/my-infra/tree/main/terraform/oci '共通基盤定義'
+    component argo 'OKE ArgoCD' { description 'STG OKE共通インフラを同期。Re:Venterアプリは自宅ArgoCDが同期。' link https://github.com/miutaku/my-infra/tree/main/k8s/oci/argocd '定義' }
+    component api 'OKE API / Node pools'
+    component scale 'Cluster Autoscaler' { description 'burst poolを需要で増減。自宅Talos停止に依存しない。' }
+    component eso 'External Secrets Operator'
+  }
+  system reventer 'Re:Venter / STG・PRD' { description 'アプリ・PRD OKE・アプリ用ネットワークは別リポジトリで管理。本図は所有境界と管理関係を示す。' link https://github.com/miutaku/reventer '所有リポジトリ' }
+  system control '変更・運用' {
+    component git 'GitHub / コード・Actions' { description 'Terraform・Ansible・Kubernetes定義。Actionsは検証・imageビルド・モデル更新を実行。' link https://github.com/miutaku/my-infra/tree/main/.github/workflows 'Workflows' }
+    component tfc 'Terraform Cloud' { description 'workspaceごとにplan/apply。Proxmox・Talos・OCI・Cloudflareを管理する。' }
+    component argo '自宅ArgoCD' { description 'home-k8sとRe:Venter STG・PRDを同期する。自宅停止時は同期が止まるがOKEの実行・スケールは継続する。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application定義' }
+    component ansible 'Ansible' { description 'IX2215・NAS・VM・LXC・UPSなどを構成する。' link https://github.com/miutaku/my-infra/tree/main/ansible 'Playbooks' }
+    component runner 'ARC / 専用runner' { description '実行目的ごとにrunnerを分離。構成モデルAIはPlusログイン専用Pod、公開・比較のビルドはGitHub-hosted runner。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps '定義' }
+  }
+  system bws 'Bitwarden Secrets Manager' { description 'BWS。Terraform・CI・External Secretsから利用する秘密情報の管理先。参照元の定義だけを図示し、秘密値は保持しない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets 'SecretStore定義' }
+  system hardware '物理・ネットワーク' {
+    component x570 'Proxmox / x570'
+    component b550m 'Proxmox / b550m'
+    component router 'IX2215 / VLAN' { description 'native・管理・server・client・guest・IoTを分離。guest VLANから他VLANは到達不可。' link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 '定義' }
+    component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
+  }
+  system data '保存・バックアップ' {
+    store nas 'TrueNAS / NFS' { description 'NAS2台。Kubernetes PVCやメディアを保存。マウント・snapshot・レプリケーションとVMバックアップを区別する。' link https://github.com/miutaku/my-infra/tree/main/ansible/truenas '定義' }
+    store pbs 'Proxmox Backup Server' { description 'VMバックアップ。NFSのオンライン利用経路とは別。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs '定義' }
+  }
+  system monitoring '監視' {
+    store vms 'OCI監視VM / STG・PRD' { description 'OKEから独立したVM2台／環境へVictoriaMetrics・VictoriaLogsを配置。STG/PRDの定義ディレクトリとアカウントは分離。' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability-stg 'STG定義' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability 'PRD定義' }
+    component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存はOCI VM側。' }
+  }
+  user .runtime edge 'HTTPS'
+  edge .runtime home 'Tunnel / 内部HTTP'
+  operator .runtime edge.access '管理認証'
+  edge.access .runtime control.argo 'Tunnel / 管理UI'
+  home.nextcloud .runtime data.nas 'NFS / PVC'
+  home.recording .runtime data.nas 'メディア保存'
+  hardware.router .runtime home.dns 'LAN / 内部DNS'
+  control.git .deploy control.argo 'GitOps'
+  control.git .deploy oke.argo 'GitOps'
+  control.git .deploy control.tfc 'Terraform実行'
+  control.git .deploy control.runner 'Actions job'
+  control.argo .deploy home 'manifest同期'
+  control.argo .deploy reventer 'STG・PRDアプリ同期'
+  oke.argo .deploy oke.api '共通基盤同期'
+  oke.scale .deploy oke.api 'burst pool増減'
+  control.tfc .deploy hardware 'VM / ネットワーク'
+  control.tfc .deploy oke 'OCI / OKE'
+  control.tfc .deploy edge 'DNS / Access / Tunnel'
+  control.tfc .deploy monitoring.vms '監視VM'
+  control.ansible .deploy hardware '機器設定'
+  bws .secret home.eso 'Secret注入'
+  bws .secret oke.eso 'Secret注入'
+  bws .secret control.git 'CI credential'
+  bws .secret control.tfc 'Terraform変数'
+  home.agent .observe monitoring.vms 'metrics / logs'
+  oke .observe monitoring.vms 'metrics / logs'
+  hardware .observe home.agent 'exporter収集'
+  operator .query monitoring.grafana '照会'
+  monitoring.grafana .query monitoring.vms 'PDC経由'
+  hardware.x570 .backup data.pbs 'VM backup'
+  hardware.b550m .backup data.pbs 'VM backup'
+  hardware.ups .deploy hardware.x570 '電源断時の停止制御'
+  hardware.ups .deploy hardware.b550m '電源断時の停止制御'
+}

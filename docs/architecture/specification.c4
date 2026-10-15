@@ -1,0 +1,17 @@
+specification {
+  element actor { style { shape person color green } }
+  element system { style { color blue } }
+  element component { style { color muted } }
+  element store { style { shape storage color amber } }
+  relationship runtime { color blue }
+  relationship deploy { color amber line dashed }
+  relationship secret { color red line dotted }
+  relationship observe { color green line dotted }
+  relationship query { color green }
+  relationship backup { color amber }
+  deploymentNode site { style { color gray } }
+  deploymentNode hypervisor { style { color green } }
+  deploymentNode vm { style { color muted } }
+  deploymentNode cluster { style { color blue } }
+  deploymentNode namespace { style { color muted } }
+}

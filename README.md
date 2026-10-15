@@ -4,21 +4,7 @@
 
 ## 全体構成
 
-```mermaid
-flowchart LR
-  Git[GitHub] --> HomeArgo[自宅TalosのArgoCD]
-  Git --> OKEArgo[STG OKEの共通インフラ用ArgoCD]
-  HomeArgo --> Home[home-k8s]
-  HomeArgo --> STG[STG OKE]
-  HomeArgo --> PRD[PRD OKE]
-  OKEArgo --> STG
-  TFC[Terraform Cloud] --> PVE[Proxmox VE]
-  TFC --> OCI[OCI / STG・PRD別アカウント]
-  PVE --> Home
-  CF[Cloudflare / DNS・Access・Tunnel] --> Home
-  CF --> STG
-  CF --> PRD
-```
+[LikeC4で構成を見る](https://miutaku.github.io/my-infra/) — 要素をクリックして、通信・デプロイ・秘密情報・監視・配置を辿れます。[全リソース一覧](https://miutaku.github.io/my-infra/resources.html)は定義から自動抽出します。
 
 | 基盤 | 現在の構成・役割 |
 | --- | --- |

@@ -1,0 +1,159 @@
+name: Publish architecture Pages
+on:
+  workflow_run:
+    workflows: ['Architecture explorer']
+    types: [completed]
+  pull_request_target:
+    types: [closed]
+  schedule:
+    - cron: '37 19 * * *'
+  workflow_dispatch:
+concurrency:
+  group: architecture-pages
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    outputs:
+      enabled: ${{ steps.plan.outputs.enabled }}
+      mode: ${{ steps.plan.outputs.mode }}
+      sha: ${{ steps.plan.outputs.sha }}
+      number: ${{ steps.plan.outputs.number }}
+      run_id: ${{ steps.plan.outputs.run_id }}
+      snapshot: ${{ steps.plan.outputs.snapshot }}
+      artifact: ${{ steps.plan.outputs.artifact }}
+      state_ref: ${{ steps.plan.outputs.state_ref }}
+    steps:
+      - uses: actions/github-script@v7
+        id: plan
+        with:
+          script: |
+            let mode = 'cleanup', number = '', sha = '', runId = '', snapshot = '';
+            if (context.eventName === 'workflow_run') {
+              const {data: run} = await github.rest.actions.getWorkflowRun({...context.repo, run_id: context.payload.workflow_run.id});
+              if (run.conclusion !== 'success' || run.head_repository.full_name !== context.payload.repository.full_name) return;
+              sha = run.head_sha; runId = String(run.id); snapshot = `${run.id}-${run.run_attempt}`;
+              if (run.event === 'push' && run.head_branch === 'main') {
+                const branch = await github.rest.repos.getBranch({...context.repo, branch: 'main'});
+                if (branch.data.commit.sha !== sha) return;
+                mode = 'production';
+              } else {
+                const prs = await github.rest.pulls.list({...context.repo, state: 'open', head: `${context.repo.owner}:${run.head_branch}`});
+                const pr = prs.data.find(p => p.head.sha === sha && p.head.repo.full_name === context.payload.repository.full_name);
+                if (pr) { mode = 'review'; number = String(pr.number); }
+                else if (run.event === 'workflow_dispatch' && run.head_branch === 'main') mode = 'preview';
+                else return;
+              }
+            }
+            let stateRef = 'main';
+            try { await github.rest.repos.getBranch({...context.repo, branch: 'gh-pages'}); stateRef = 'gh-pages'; }
+            catch (error) { if (error.status !== 404) throw error; if (mode !== 'production') return; }
+            for (const [key,value] of Object.entries({enabled:'true',mode,number,sha,run_id:runId,snapshot,artifact:mode === 'production' ? 'architecture-site' : 'architecture-review',state_ref:stateRef})) core.setOutput(key,value);
+
+  publish:
+    needs: plan
+    if: needs.plan.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: write
+      pages: write
+      id-token: write
+    steps:
+      # Always execute publication code from main, never from the PR artifact.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.state_ref }}
+          path: .pages-state
+      - name: Initialize generated site branch
+        if: needs.plan.outputs.state_ref == 'main'
+        working-directory: .pages-state
+        run: |
+          git checkout --orphan gh-pages
+          git rm -rf .
+      - uses: actions/download-artifact@v4
+        if: needs.plan.outputs.mode != 'cleanup'
+        with:
+          name: ${{ needs.plan.outputs.artifact }}
+          run-id: ${{ needs.plan.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/architecture-incoming
+      - name: Reconcile closed PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const dir = '.pages-state/pr';
+            if (!fs.existsSync(dir)) return;
+            for (const entry of fs.readdirSync(dir,{withFileTypes:true})) {
+              if (!entry.isDirectory() || !/^[1-9][0-9]*$/.test(entry.name)) continue;
+              const {data: pr} = await github.rest.pulls.get({...context.repo,pull_number:Number(entry.name)});
+              if (pr.state === 'closed') fs.rmSync(`${dir}/${entry.name}`,{recursive:true,force:true});
+            }
+      - name: Preserve production and publish immutable PR snapshots
+        id: state
+        env:
+          PAGES_MODE: ${{ needs.plan.outputs.mode }}
+          PAGES_SHA: ${{ needs.plan.outputs.sha }}
+          PAGES_PR: ${{ needs.plan.outputs.number }}
+          PAGES_SNAPSHOT: ${{ needs.plan.outputs.snapshot }}
+          PAGES_SOURCE: ${{ runner.temp }}/architecture-incoming
+        run: node docs/architecture/scripts/pages-state.mjs
+      - name: Save generated site state
+        working-directory: .pages-state
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish architecture site and review snapshots'
+            git push origin HEAD:gh-pages
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .pages-state
+      - uses: actions/deploy-pages@v4
+        id: deploy
+      - name: Link successful deployment
+        uses: actions/github-script@v7
+        env:
+          PAGES_URL: ${{ steps.deploy.outputs.page_url }}
+          REPORT_PATH: ${{ steps.state.outputs.path }}
+          REPORT_CHANGED: ${{ steps.state.outputs.changed }}
+          REVIEW_PR: ${{ needs.plan.outputs.number }}
+          REVIEW_SHA: ${{ needs.plan.outputs.sha }}
+        with:
+          script: |
+            const url = new URL(process.env.REPORT_PATH || './',process.env.PAGES_URL).href;
+            await core.summary.addLink('公開された構成図・レビュー',url).write();
+            if (!process.env.REVIEW_PR) return;
+            const number = Number(process.env.REVIEW_PR);
+            const {data: pr} = await github.rest.pulls.get({...context.repo,pull_number:number});
+            if (pr.state !== 'open' || pr.head.sha !== process.env.REVIEW_SHA) return;
+            const marker = '<!-- architecture-review -->';
+            const heading = process.env.REPORT_CHANGED === 'false' ? '構成図の変更なし' : '構成図の変更をレビューできます。';
+            const body = `${marker}\n${heading}\n\n[比較レポートを開く](${url}) · [変更後のLikeC4を操作する](${url}explorer/)\n\n公開のGitHub Pagesです。差分がない場合はボタンを押したときだけ比較画面が開きます。PR終了時または30日経過後に削除します。\n\n対象コミット: ${process.env.REVIEW_SHA}`;
+            const comments = await github.paginate(github.rest.issues.listComments,{...context.repo,issue_number:number});
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (existing) await github.rest.issues.updateComment({...context.repo,comment_id:existing.id,body});
+            else await github.rest.issues.createComment({...context.repo,issue_number:number,body});
