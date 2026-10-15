@@ -18,10 +18,14 @@ spec:
   target:
     name: github-automation-token-secret
     creationPolicy: Owner
+    deletionPolicy: Retain
   data:
     - secretKey: github_token
       remoteRef:
         key: GITHUB_REVENTER_RUNNER_PAT
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
 ---
 apiVersion: v1
 kind: PersistentVolume
