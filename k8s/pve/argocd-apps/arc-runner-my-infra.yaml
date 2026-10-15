@@ -26,6 +26,7 @@ spec:
         maxRunners: 1
         template:
           spec:
+            automountServiceAccountToken: false
             nodeSelector:
               kubernetes.io/arch: amd64
               kubernetes.io/os: linux
