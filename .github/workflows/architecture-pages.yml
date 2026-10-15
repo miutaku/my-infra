@@ -141,10 +141,59 @@ jobs:
           fi
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        id: site-artifact
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: .pages-state
-      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+      - name: Deploy and verify the generated site version
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         id: deploy
+        env:
+          ARTIFACT_ID: ${{ steps.site-artifact.outputs.artifact_id }}
+          REPORT_PATH: ${{ steps.state.outputs.path }}
+          EXPECTED_REVIEW_SHA: ${{ needs.plan.outputs.sha }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const {stdout} = await exec.getExecOutput('git',['-C','.pages-state','rev-parse','HEAD']);
+            const version = stdout.trim();
+            if (!/^[0-9a-f]{40}$/.test(version)) throw new Error('Invalid generated site version');
+            const idToken = await core.getIDToken();
+            core.setSecret(idToken);
+            // The generated tree changes when previews change, even if main does not.
+            const {data: deployment} = await github.request('POST /repos/{owner}/{repo}/pages/deployments',{
+              ...context.repo, artifact_id: Number(process.env.ARTIFACT_ID),
+              pages_build_version: version, oidc_token: idToken
+            });
+            const deploymentId = deployment.id || version;
+            const deadline = Date.now()+600000;
+            let succeeded = false;
+            while (Date.now()<deadline) {
+              await new Promise(resolve=>setTimeout(resolve,5000));
+              const {data} = await github.request('GET /repos/{owner}/{repo}/pages/deployments/{deploymentId}',{
+                ...context.repo, deploymentId
+              });
+              if (data.status==='succeed') { succeeded=true; break; }
+              if (['deployment_failed','errored','canceled','cancelled'].includes(data.status)) throw new Error(`Pages deployment: ${data.status}`);
+              core.info(`Pages deployment: ${data.status || 'pending'}`);
+            }
+            if (!succeeded) throw new Error('Pages deployment did not finish within 10 minutes');
+            const pageUrl = deployment.page_url;
+            if (!pageUrl) throw new Error('Missing Pages URL');
+            const checks = [];
+            if (fs.existsSync('.pages-state/build-info.json')) checks.push(['build-info.json',JSON.parse(fs.readFileSync('.pages-state/build-info.json','utf8')).head]);
+            if (process.env.REPORT_PATH) checks.push([process.env.REPORT_PATH+'changes.json',process.env.EXPECTED_REVIEW_SHA]);
+            for (const [path,expected] of checks) {
+              const url = new URL(path,pageUrl);url.searchParams.set('deployment',version);
+              let verified = false;
+              for (let attempt=0;attempt<12;attempt++) {
+                try { const response=await fetch(url,{cache:'no-store'});if(response.ok && (await response.json()).head===expected){verified=true;break;} } catch {}
+                await new Promise(resolve=>setTimeout(resolve,5000));
+              }
+              if (!verified) throw new Error(`Published content not verified: ${path}`);
+            }
+            core.setOutput('page_url',pageUrl);
+            core.info(`Verified generated site ${version}`);
       - name: Link successful deployment
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
