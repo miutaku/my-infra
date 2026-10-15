@@ -6,4 +6,3 @@ resources:
   - github-token-secret.yaml
   - github-my-infra-token-secret.yaml
   - reventer-cache-pvc.yaml
-  - public-runner-networkpolicy.yaml
