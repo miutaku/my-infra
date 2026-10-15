@@ -1,84 +1,90 @@
 views {
   style * { size xs textSize md padding sm }
-  style control, bws { color amber }
+  style control, external.bws { color amber }
   style monitoring { color green }
-  style data { color gray }
-  style edge { color amber }
+  style premises.data { color gray }
+  style external.edge { color amber }
   view index {
     title '全体構成'
-    description '利用者・管理者の入口から自宅サービス、OKE、保存、監視、秘密注入の関係。デプロイ経路はCI・デプロイへ分ける。'
-    include user, operator, edge, edge.access, edge.tunnel, home, home.nextcloud, home.agent, home.eso, oke, control, control.argo, bws, monitoring, monitoring.vms, monitoring.grafana, data, data.nas
-    include home with { navigateTo home_apps }
-    include edge.tunnel with { navigateTo home_apps }
+    description '自宅にはTalosとTrueNAS VM・保存・バックアップ処理をまとめ、Cloudflare・Bitwarden・Grafana・IDriveは外部サービスへ分ける。TrueNASをクリックすると保存先・処理・VM配置を確認できる。'
+    include premises, external, user, operator, external.edge, external.edge.access, external.edge.tunnel, premises.home, premises.home.nextcloud, premises.home.agent, premises.home.eso, oke, control, control.argo, external.bws, monitoring, monitoring.vms, external.grafana, premises.data, premises.data.nas, premises.data.pbs, premises.data.backups, external.idrive
+    include premises.home with { navigateTo home_apps }
+    include external.edge.tunnel with { navigateTo home_apps }
     include control.argo with { navigateTo delivery }
-    include bws with { navigateTo secrets }
-    include home.eso with { navigateTo secrets }
+    include external.bws with { navigateTo secrets }
+    include premises.home.eso with { navigateTo secrets }
     include monitoring with { navigateTo observability }
     include oke with { navigateTo placement }
-    include data with { navigateTo storage }
-    exclude * -> * where kind is deploy or kind is backup
-    rank source { user, operator, bws }
+    include premises.data with { navigateTo storage }
+    include premises.data.nas with { navigateTo storage }
+    include premises.data.pbs with { navigateTo storage }
+    include premises.data.backups with { navigateTo storage }
+    exclude * -> * where kind is deploy
+    rank source { user, operator, external.bws }
     autoLayout TopBottom 100 80
   }
-  view home_apps of home {
+  view home_apps of premises.home {
     title '自宅のサービス・保存'
-    include user, edge, home, home.nextcloud, home.recording, home.apps, home.apps.*, home.dns, data, data.nas, data.databases
-    include data with { navigateTo storage }
-    include home.recording with { navigateTo media }
-    include home.dns with { navigateTo network }
+    include user, external.edge, premises.home, premises.home.nextcloud, premises.home.recording, premises.home.apps, premises.home.apps.*, premises.home.dns, premises.data, premises.data.nas, premises.data.databases
+    include premises.data with { navigateTo storage }
+    include premises.home.recording with { navigateTo media }
+    include premises.home.dns with { navigateTo network }
     exclude * -> * where kind is not runtime
     autoLayout LeftRight 80 60
   }
   view delivery {
     title '変更・デプロイ'
-    include control, control.*, home, oke, oke.argo, oke.scale, oke.api, reventer, hardware, edge, monitoring.vms
-    include home with { navigateTo home_apps }
-    include hardware with { navigateTo placement }
+    include control, control.*, external.github, external.terraform_cloud, premises.home, oke, oke.argo, oke.scale, oke.api, reventer, premises.hardware, external.edge, monitoring.vms
+    include premises.home with { navigateTo home_apps }
+    include premises.hardware with { navigateTo placement }
     exclude * -> * where kind is not deploy
     autoLayout TopBottom 80 60
   }
   view secrets {
     title '秘密情報の管理・注入'
-    include bws, home, home.eso, oke, oke.eso, reventer.platform.external_secrets, control.git, control.tfc, control.ansible, data.backups
+    include external.bws, premises.home, premises.home.eso, oke, oke.eso, reventer.platform.external_secrets, external.github, external.terraform_cloud, control.ansible, premises.data.backups
     exclude * -> * where kind is not secret
     autoLayout LeftRight 80 60
   }
   view observability {
     title '監視の収集・保存・照会'
-    include operator, hardware, home.agent, home.agent.collector, home.agent.local_store, home.agent.pdc, home.agent.exporters, reventer.collectors, monitoring, monitoring.*
+    include operator, external.grafana, premises.hardware, premises.home.agent, premises.home.agent.collector, premises.home.agent.local_store, premises.home.agent.pdc, premises.home.agent.exporters, reventer.collectors, monitoring, monitoring.*
     exclude * -> * where kind is not observe and kind is not query and kind is not connect
     autoLayout LeftRight 80 60
   }
   deployment view placement {
     title '配置 / 所有境界'
-    include homeSite, stg, prd
+    include homeSite, homeSite.x570, homeSite.x570.nas1, homeSite.x570.pbs, homeSite.b550m, homeSite.b550m.nas2, homeSite.talos, stg, prd
     exclude * -> *
-    autoLayout LeftRight 80 60
+    autoLayout TopBottom 80 60
   }
-  view media of home.recording {
+  view media of premises.home.recording {
     title '録画・配信 / 制御・変換・保存'
-    include home.recording, home.recording.*, home.recording.tnlastation.*, hardware.tuner_prod, hardware.tuner_stg, home.apps.annict_scraper, external.annict, data.nas, data.databases
-    include data.nas with { navigateTo storage }
+    include premises.home.recording, premises.home.recording.*, premises.home.recording.tnlastation.*, premises.hardware.tuner_prod, premises.hardware.tuner_stg, premises.home.apps.annict_scraper, external.annict, premises.data.nas, premises.data.databases
+    include premises.data.nas with { navigateTo storage }
     exclude * -> * where kind is not runtime
-    exclude home.recording.tnlastation.resources
+    exclude premises.home.recording.tnlastation.resources
     autoLayout LeftRight 80 60
   }
   view network {
     title 'ネットワーク / LAN・Tunnel・WARP・OCI'
-    include operator, edge, edge.*, lan, lan.*, hardware.router, hardware.wifi, hardware.unifi, hardware.lb, home.dns, home.dns.coredns, home.dns.metallb, home.platform.cloudflared, oke.workers, oke.network, oke.network.*, external.internet, external.oracle
-    exclude edge.resources
+    include operator, external.edge, external.edge.*, premises.lan, premises.lan.*, premises.hardware.router, premises.hardware.wifi, premises.hardware.unifi, premises.hardware.lb, premises.home.dns, premises.home.dns.coredns, premises.home.dns.metallb, premises.home.platform.cloudflared, oke.workers, oke.network, oke.network.*, external.internet, external.oracle
+    exclude external.edge.resources
     exclude * -> * where kind is not runtime and kind is not admin and kind is not network and kind is not connect
     autoLayout LeftRight 80 60
   }
   view storage {
     title '保存・バックアップ / 復元元の区別'
-    include home.nextcloud, home.recording, home.agent.local_store, data, data.nas, data.nas.nas01, data.nas.nas02, data.pbs, data.databases, data.databases.*, data.shared, data.backups, data.backups.*, external.idrive, hardware.x570, hardware.b550m
+    include premises.home.nextcloud, premises.home.recording, premises.home.agent.local_store, premises.data, premises.data.nas, premises.data.nas.nas01, premises.data.nas.nas02, premises.data.pbs, premises.data.databases, premises.data.databases.*, premises.data.shared, premises.data.backups, premises.data.backups.*, external.idrive, premises.hardware.x570, premises.hardware.b550m
+    include premises.data.nas.nas01 with { navigateTo placement }
+    include premises.data.nas.nas02 with { navigateTo placement }
+    include premises.data.pbs with { navigateTo placement }
     exclude * -> * where kind is not runtime and kind is not backup
     autoLayout LeftRight 80 60
   }
   view power {
     title '電源・安全停止 / UPS・NUTのcross-power'
-    include hardware.ups, hardware.ups.*, hardware.x570, hardware.b550m
+    include premises.hardware.ups, premises.hardware.ups.*, premises.hardware.x570, premises.hardware.b550m
     exclude * -> * where kind is not power and kind is not network and kind is not observe and kind is not query
     autoLayout LeftRight 80 60
   }

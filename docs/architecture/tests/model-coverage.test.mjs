@@ -20,10 +20,10 @@ test('every source declaration resolves into the compiled model and every Applic
  }
 });
 test('manual details preserve independent media workers, LXC, DB, NUT and correct local monitoring storage',()=>{
- for(const ref of ['home.recording.tnlastation.encode','home.recording.tnlastation.streaming','home.recording.tnlastation.mediamtx','hardware.loockit_a','hardware.loockit_b','hardware.tuner_prod','hardware.tuner_stg','data.databases.postgres','data.databases.mariadb','data.pbs','external.idrive','hardware.ups.pi_a','hardware.ups.pi_b'])assert.ok(model.elements[ref],ref);
+ for(const ref of ['premises.home.recording.tnlastation.encode','premises.home.recording.tnlastation.streaming','premises.home.recording.tnlastation.mediamtx','premises.hardware.loockit_a','premises.hardware.loockit_b','premises.hardware.tuner_prod','premises.hardware.tuner_stg','premises.data.databases.postgres','premises.data.databases.mariadb','premises.data.pbs','external.idrive','premises.hardware.ups.pi_a','premises.hardware.ups.pi_b'])assert.ok(model.elements[ref],ref);
  const relations=Object.values(model.relations);
- assert.ok(relations.some(r=>r.source.model==='home.agent.collector'&&r.target.model==='home.agent.local_store'));
- assert.ok(!relations.some(r=>r.source.model==='home.agent'&&r.target.model==='monitoring.vms'));
+ assert.ok(relations.some(r=>r.source.model==='premises.home.agent.collector'&&r.target.model==='premises.home.agent.local_store'));
+ assert.ok(!relations.some(r=>r.source.model==='premises.home.agent'&&r.target.model==='monitoring.vms'));
  const physical=Object.values(model.deployments.elements);
  assert.equal(physical.filter(r=>r.kind==='container').length,4);
  assert.equal(physical.filter(r=>r.kind==='vm').length,13);
@@ -41,4 +41,22 @@ test('every active Proxmox module and LXC declaration has a physical placement w
   const reference=row.type==='Terraform module'?'module.'+row.name:row.type+'.'+row.name;
   assert.ok(placed.some(node=>node.metadata?.sourceFile===row.file&&node.metadata?.resourceRef===reference),`Missing physical placement for ${row.file} ${reference}`);
  }
+});
+
+
+test('home storage, TrueNAS VMs and backup execution remain separate from external services',()=>{
+ const nodes=Object.values(model.views).flatMap(view=>view.nodes);
+ for(const ref of ['external.edge','external.bws','external.grafana','external.github','external.terraform_cloud','external.idrive'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='external'),ref);
+ for(const ref of ['premises.home','premises.data','premises.hardware','premises.lan'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='premises'),ref);
+ for(const [ref,logical] of [['homeSite.x570.nas1','premises.data.nas.nas01'],['homeSite.b550m.nas2','premises.data.nas.nas02']]){
+  assert.equal(model.deployments.elements[ref].kind,'vm');
+  assert.ok(Object.values(model.deployments.elements).some(e=>e.element===logical&&e.id.startsWith(ref+'.')));
+ }
+ const jobs=coverage.records.filter(row=>row.type==='CronJob'&&row.executionRef);
+ assert.equal(jobs.length,4);
+ for(const row of jobs){
+  assert.ok(row.deploymentRef.startsWith('homeSite.talos.ns_'));
+  assert.equal(model.deployments.elements[row.deploymentRef].element,row.executionRef);
+ }
+ for(const ref of ['premises','external','premises.data.nas','premises.data.backups','external.bws','external.edge'])assert.ok(model.views.index.nodes.some(node=>node.model===ref||node.id===ref),`Missing overview boundary: ${ref}`);
 });
