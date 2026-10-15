@@ -479,6 +479,41 @@
     "file": "k8s/pve/arc-runners/reventer-cache-pvc.yaml"
   },
   {
+    "id": "k8s/pve/architecture-automation/resources.yaml:ExternalSecret:architecture-automation:github-automation-token-secret",
+    "type": "ExternalSecret",
+    "name": "github-automation-token-secret",
+    "namespace": "architecture-automation",
+    "file": "k8s/pve/architecture-automation/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-automation/resources.yaml:Namespace::architecture-automation",
+    "type": "Namespace",
+    "name": "architecture-automation",
+    "namespace": "",
+    "file": "k8s/pve/architecture-automation/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-automation/resources.yaml:NetworkPolicy:architecture-automation:credential-runner",
+    "type": "NetworkPolicy",
+    "name": "credential-runner",
+    "namespace": "architecture-automation",
+    "file": "k8s/pve/architecture-automation/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-automation/resources.yaml:PersistentVolume::architecture-automation-auth-pv",
+    "type": "PersistentVolume",
+    "name": "architecture-automation-auth-pv",
+    "namespace": "",
+    "file": "k8s/pve/architecture-automation/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/architecture-automation/resources.yaml:PersistentVolumeClaim:architecture-automation:codex-auth",
+    "type": "PersistentVolumeClaim",
+    "name": "codex-auth",
+    "namespace": "architecture-automation",
+    "file": "k8s/pve/architecture-automation/resources.yaml"
+  },
+  {
     "id": "k8s/pve/architecture-review/resources.yaml:ConfigMap:arc-runners:architecture-review-nginx",
     "type": "ConfigMap",
     "name": "architecture-review-nginx",
@@ -542,11 +577,18 @@
     "file": "k8s/pve/argocd-apps/arc-controller.yaml"
   },
   {
-    "id": "k8s/pve/argocd-apps/arc-runner-my-infra-codex.yaml:Application:argocd:arc-runner-my-infra-codex",
+    "id": "k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml:Application:argocd:arc-runner-architecture-automation",
     "type": "Application",
-    "name": "arc-runner-my-infra-codex",
+    "name": "arc-runner-architecture-automation",
     "namespace": "argocd",
-    "file": "k8s/pve/argocd-apps/arc-runner-my-infra-codex.yaml"
+    "file": "k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/arc-runner-architecture-reader.yaml:Application:argocd:arc-runner-architecture-reader",
+    "type": "Application",
+    "name": "arc-runner-architecture-reader",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-architecture-reader.yaml"
   },
   {
     "id": "k8s/pve/argocd-apps/arc-runner-my-infra.yaml:Application:argocd:arc-runner-my-infra",
@@ -554,13 +596,6 @@
     "name": "arc-runner-my-infra",
     "namespace": "argocd",
     "file": "k8s/pve/argocd-apps/arc-runner-my-infra.yaml"
-  },
-  {
-    "id": "k8s/pve/argocd-apps/arc-runner-reventer-codex.yaml:Application:argocd:arc-runner-reventer-codex",
-    "type": "Application",
-    "name": "arc-runner-reventer-codex",
-    "namespace": "argocd",
-    "file": "k8s/pve/argocd-apps/arc-runner-reventer-codex.yaml"
   },
   {
     "id": "k8s/pve/argocd-apps/arc-runner-reventer-review.yaml:Application:argocd:arc-runner-reventer-review",
@@ -582,6 +617,13 @@
     "name": "arc-runners-config",
     "namespace": "argocd",
     "file": "k8s/pve/argocd-apps/arc-runners-config.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/architecture-automation-config.yaml:Application:argocd:architecture-automation-config",
+    "type": "Application",
+    "name": "architecture-automation-config",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/architecture-automation-config.yaml"
   },
   {
     "id": "k8s/pve/argocd-apps/architecture-review.yaml:Application:argocd:architecture-review",
