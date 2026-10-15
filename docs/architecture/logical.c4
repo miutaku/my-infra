@@ -5,7 +5,7 @@ model {
       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
       component nextcloud 'Nextcloud' { link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
       component recording '録画・配信' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
-      component apps '宅内アプリ' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
+      component apps '自宅ワークロード / 基盤の利用側' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
       component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
       component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
       component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
@@ -23,10 +23,10 @@ model {
   }
   extend external {
     system edge 'Cloudflare' {
-      description 'DNS・Access・TunnelをTerraformで管理。公開経路と管理アクセスを認証ポリシーで分離。'
+      description '自宅サービスの公開入口は原則Accessで認証してTunnelへ転送。mTLS専用APIとWARP/LAN経路は別に示す。'
       link https://github.com/miutaku/my-infra/tree/main/terraform/cloudflare '定義'
       component tunnel 'Cloudflare Tunnel' { description '自宅とSTG OKEのcloudflaredが外向き接続を確立。公開hostnameのHTTPを内部Serviceへ転送する。' }
-      component access 'Access / 認証' { description '管理サービスをAccessで保護。WARPのprivate CIDR routeとは別の接続経路。' }
+      component access 'Cloudflare Access / 共通の認証入口' { description '利用・管理の公開UIを原則Accessで保護。mTLS専用API、WARPのprivate CIDR routeとは区別する。' }
     }
     system bws 'Bitwarden Secrets Manager' { description 'BWS。Terraform・CI・External Secretsから利用する秘密情報の管理先。参照元の定義だけを図示し、秘密値は保持しない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets 'SecretStore定義' }
     component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存先は自宅VictoriaMetricsとOCI監視VM。' }
@@ -44,7 +44,17 @@ model {
     component scale 'Cluster Autoscaler' { description 'burst poolを需要で増減。自宅Talos停止に依存しない。' }
     component eso 'External Secrets Operator'
   }
-  system reventer 'Re:Venter / STG・PRD' { description 'アプリ・PRD OKE・アプリ用ネットワークは別リポジトリで管理。本図は所有境界と管理関係を示す。' link https://github.com/miutaku/reventer '所有リポジトリ' }
+  system consumers '基盤の利用側 / 別リポジトリ' {
+    system reventer 'Re:Venter' { description '基盤を利用するワークロードの一つ。アプリ内部・PRDクラスタ本体・アプリ固有のGateway/HTTPRouteはreventerで管理する。' link https://github.com/miutaku/reventer '利用側の構成' link https://reventer-architecture.pages.dev/ '利用側の構成図' }
+  }
+  system shared_prd 'PRDクラスタへ提供する共通アドオン' {
+    description '外部所有クラスタに提供するControllerと共通設定。クラスタ本体や利用側のアプリ構成をmy-infraの所有として扱わない。'
+    link https://github.com/miutaku/my-infra/tree/main/k8s/oci-prd '提供するアドオン'
+    component services '共通Application'
+    component eso 'External Secrets Operator'
+    component gateway 'Gateway Controller / NGINX'
+    component certificates 'cert-manager / ClusterIssuer' { description 'Controller・Issuerを提供。証明書の要求は利用側の責務。設置と実際の発行は区別する。' }
+  }
   system control '変更・運用' {
     component tfc_agents 'Terraform Cloud agents / 自宅' { description 'クラウドのworkspaceから処理を受け取る自宅のagent。Terraform Cloudサービスとは配置を分ける。' }
 
@@ -57,17 +67,22 @@ model {
     store vms 'OCI監視VM / STG・PRD' { description 'OKEから独立したVM2台／環境へVictoriaMetrics・VictoriaLogsを配置。STG/PRDの定義ディレクトリとアカウントは分離。' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability-stg 'STG定義' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability 'PRD定義' }
 
   }
-  user .runtime external.edge 'HTTPS'
-  external.edge .runtime premises.home 'Tunnel / 内部HTTP'
-  operator .admin external.edge.access '管理認証'
-  external.edge.access .admin control.argo 'Tunnel / 管理UI'
+  user .runtime external.edge.access 'HTTPS / 利用時の認証'
+  operator .admin external.edge.access 'HTTPS / 管理時の認証'
+  external.edge.access .authenticate external.edge.tunnel 'Access認証後の転送'
+  external.edge.tunnel .runtime premises.home.nextcloud 'Access認証後 / 公開UI・サービス'
+  external.edge.tunnel .runtime premises.home.apps 'Access認証後 / 公開UI・サービス'
+  external.edge.tunnel .runtime premises.home.recording 'Access認証後 / 公開UI・サービス'
+  external.edge.tunnel .admin control.argo 'Access認証後 / 管理UI'
+  external.edge.tunnel .admin premises.hardware 'Access認証後 / 機器管理UI'
+  external.edge.tunnel .admin premises.data.nas 'Access認証後 / NAS管理UI'
   premises.hardware.router .runtime premises.home.dns 'LAN / 内部DNS'
   external.github .deploy control.argo 'GitOps'
   external.github .deploy oke.argo 'GitOps'
   external.github .deploy external.terraform_cloud 'Terraform実行'
   external.github .deploy control.runner 'Actions job'
   control.argo .deploy premises.home 'manifest同期'
-  control.argo .deploy reventer 'STG・PRDアプリ同期'
+  control.argo .deploy consumers.reventer 'STG・PRDアプリ同期'
   oke.argo .deploy oke.api '共通基盤同期'
   oke.scale .deploy oke.api 'burst pool増減'
   external.terraform_cloud .deploy control.tfc_agents 'workspace runを自宅agentで実行'
@@ -75,6 +90,11 @@ model {
   external.terraform_cloud .deploy oke 'OCI / OKE'
   external.terraform_cloud .deploy external.edge 'DNS / Access / Tunnel'
   external.terraform_cloud .deploy monitoring.vms '監視VM'
+  control .provide consumers.reventer 'GitOps・CI・Terraformの実行基盤を提供'
+  monitoring.vms .provide consumers.reventer '監視データの保存先を提供'
+  premises.data.nas .provide premises.home 'NFSストレージを提供'
+  control.runner .deploy consumers.reventer '利用側のCI jobを実行'
+  control.tfc_agents .deploy consumers.reventer '利用側workspaceの実行を受託'
   control.ansible .deploy premises.hardware '機器設定'
   external.bws .secret premises.home.eso 'Secret注入'
   external.bws .secret oke.eso 'Secret注入'

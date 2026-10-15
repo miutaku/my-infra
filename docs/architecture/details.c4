@@ -18,7 +18,9 @@ model {
     component ai 'Gemini API / OpenAI互換' { description 'Coupon ManagerのAi設定から利用。認証値は掲載しない。' }
     component github_pages 'GitHub Pages / my-infra図・レビュー'
   }
+  actor client '専用クライアント'
   extend external.edge {
+    component mtls 'mTLS / 専用APIの例外' { description 'loockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/loockit-api.tf '例外の定義' }
     component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
   }
   extend premises.home.nextcloud { store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
@@ -61,7 +63,7 @@ model {
     component reviews 'Re:Venterの一時レビュー' { description 'reventerだけTalosから非公開配信。my-infraの本番・レビューはGitHub Pages。' }
     component packer 'Packer / VM template' { link https://github.com/miutaku/my-infra/tree/main/packer '定義' }
   }
-  extend control.argo { component registry 'Application登録 / root-app' }
+  extend control.argo { component registry 'Application登録 / root-app' component workloads '利用側Applicationの登録' { description 'この基盤から同期する対象の登録だけを保持。参照先アプリの内部構成は展開しない。' } }
   extend premises.data {
     component shared '共有PV / runner cache・状態'
     component databases 'DB / アプリ共有基盤' {
@@ -105,6 +107,8 @@ model {
 
   extend oke {
     component services 'STG共通Application'
+    component gateway 'Gateway Controller / NGINX'
+    component certificates 'cert-manager / ClusterIssuer' { description 'Controller・Issuerを提供。証明書の要求は利用側で定義する。' }
     component network 'OCI network' {
       component public_api '公開API・LB subnet'
       component private_workers 'private worker subnet'
@@ -114,16 +118,18 @@ model {
     }
     component workers 'base / burst node pool' { description 'worker compartmentの権限はAutoscalerへ限定。control plane・公開APIと区別する。' }
   }
-  extend reventer {
-    component platform 'PRD共通基盤・外部所有アプリ登録' { description '共通アドオンとApplication登録はmy-infra。アプリ実装・PRDクラスタ本体の所有はreventer。' }
-    component collectors 'STG・PRD監視collector' { description 'reventer側monitoring manifestsを自宅ArgoCDが同期する。' }
-  }
-  extend reventer.platform { component external_secrets 'ESO / PRD共通基盤' }
   extend monitoring.vms {
     store stg 'STG監視VM ×2 / 専用アカウント'
     store prd 'PRD監視VM ×2 / 専用アカウント'
   }
-  external.bws .secret reventer.platform.external_secrets 'ESO / PRD Secret注入'
+  client .runtime external.edge.mtls 'クライアント証明書'
+  external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
+  oke .provide consumers.reventer 'STGの実行基盤を提供'
+  oke.gateway .provide consumers.reventer '共有Gateway Controllerを提供'
+  shared_prd.gateway .provide consumers.reventer '共有Gateway Controllerを提供'
+  oke.eso .secret consumers.reventer '利用側Secretへ注入 / STG'
+  shared_prd.eso .secret consumers.reventer '利用側Secretへ注入 / PRD'
+  external.bws .secret shared_prd.eso 'ESO / PRD Secret注入'
   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_a 'readyz / leaderのみ'
   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_b 'readyz / leaderのみ'
   premises.hardware.loockit_a .runtime premises.hardware.ble_a 'read-only D-Bus / org.bluez'
@@ -158,8 +164,8 @@ model {
   premises.home.agent.pdc .connect external.grafana '外向きPDC接続'
   external.grafana .query premises.home.agent.pdc 'PDC経由の検索'
   premises.home.agent.pdc .query premises.home.agent.local_store 'private query / :8428'
-  reventer.collectors .observe monitoring.vms.stg 'STG metrics / logs'
-  reventer.collectors .observe monitoring.vms.prd 'PRD metrics / logs'
+  consumers.reventer .observe monitoring.vms.stg 'metrics / logs / 環境別'
+  consumers.reventer .observe monitoring.vms.prd 'metrics / logs / 環境別'
   monitoring.vms .connect external.grafana 'VM側PDC agentから外向き接続'
   premises.hardware.router .network premises.lan.native 'native IF'
   premises.hardware.router .network premises.lan.management 'BVI10'
@@ -169,10 +175,6 @@ model {
   premises.hardware.router .network premises.lan.iot 'BVI40'
   premises.home.platform.cloudflared .connect external.edge.tunnel '外向きTunnel接続'
   external.edge.warp .network premises.lan.server 'private CIDR routes / WARP policy'
-  external.edge.tunnel .runtime premises.home.nextcloud '公開hostname / 内部HTTP'
-  external.edge.tunnel .runtime premises.home.recording.tnlastation.gateway '公開hostname / 内部HTTP'
-  external.edge.tunnel .runtime premises.home.apps.coupon_manager.web '公開hostname / 内部HTTP'
-  external.edge.tunnel .admin control.argo 'Access後 / 管理UI'
   premises.data.databases .runtime premises.data.nas.nas02 'DB用NFS PVC'
   premises.home.agent.local_store .runtime premises.data.nas.nas02 'metrics用NFS PVC'
   premises.data.pbs .backup external.idrive 'S3 datastore / VM backup'

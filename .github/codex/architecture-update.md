@@ -10,6 +10,8 @@ git diff "$ARCHITECTURE_BASE_SHA" HEAD を入口として現在のTerraform・Ku
 - 利用者の通信、変更・デプロイ、秘密注入、監視の収集・照会を混同しない。
 - READMEの図を写すのではなく、現在の定義を根拠に不足している構造・関係・説明を更新する。
 - 全リソースを概要の箱にしない。catalog.c4・resource-inventory.json・model-coverage.jsonはビルドで自動生成するため編集しない。全Applicationの内部要素・namespace配置・定義リンクは自動生成する。モデルが未網羅のまま一覧で代替しない。
+- my-infraは基盤の提供範囲を表す。Re:Venterはconsumers.reventerの1要素として扱い、アプリ内部を展開しない。PRD共有アドオンはshared_prdへ、利用側Applicationの同期登録はcontrol.argo.workloadsへ分ける。
+- 自宅公開入口は原則Cloudflare Access → Tunnel。用途と認証方式を混同せず、mTLS・WARP/LANを明示的な別経路にする。
 - Re:Venterのアプリ・PRD OKEは外部所有。チェックアウトから確認できない外部構成を推測しない。
 - image tag/digestや日付だけの変更、構成に影響しない変更では更新しない。
 - build/UI/認証/依存関係/workflow/インフラのコードは変更しない。
