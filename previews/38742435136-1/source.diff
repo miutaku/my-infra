@@ -1,0 +1,462 @@
+diff --git a/docs/architecture/README.md b/docs/architecture/README.md
+index f31480a..fe7ed9a 100644
+--- a/docs/architecture/README.md
++++ b/docs/architecture/README.md
+@@ -2,7 +2,7 @@
+ 
+ 公開サイト: https://miutaku.github.io/my-infra/
+ 
+-全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。6ビューは同じモデルを使い、箱を増やす代わりに説明・参照元リンク・関係・配置詳細を使う。配置ではホストやクラスタをクリックして内部を辿る。Terraform/Kubernetes全定義は「リソース一覧」で検索できる。
++reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。6ビューは同じモデルを使い、箱を増やす代わりに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes全定義は「リソース一覧」で検索できる。
+ 
+ | ファイル | 役割 |
+ | --- | --- |
+@@ -11,7 +11,7 @@
+ | views.c4 | 6つの観点とクリックナビゲーション |
+ | specification.c4 | 種類と線の意味 |
+ | scripts/inventory.mjs | Terraform resource/moduleとKubernetes metadataの自動抽出 |
+-| viewer/ | LikeC4公式React UI。構成情報のコピーを持たない |
++| shell.html / scripts/*navigation.mjs / scripts/line-filters.mjs | reventerと同じ標準viewer・外枠・線フィルター。構成情報のコピーを持たない |
+ 
+ ```bash
+ cd docs/architecture
+diff --git a/docs/architecture/logical.c4 b/docs/architecture/logical.c4
+index 88a08d3..2c26d29 100644
+--- a/docs/architecture/logical.c4
++++ b/docs/architecture/logical.c4
+@@ -50,8 +50,8 @@ model {
+   }
+   user .runtime edge 'HTTPS'
+   edge .runtime home 'Tunnel / 内部HTTP'
+-  operator .runtime edge.access '管理認証'
+-  edge.access .runtime control.argo 'Tunnel / 管理UI'
++  operator .admin edge.access '管理認証'
++  edge.access .admin control.argo 'Tunnel / 管理UI'
+   home.nextcloud .runtime data.nas 'NFS / PVC'
+   home.recording .runtime data.nas 'メディア保存'
+   hardware.router .runtime home.dns 'LAN / 内部DNS'
+diff --git a/docs/architecture/package.json b/docs/architecture/package.json
+index 98e8134..c07788b 100644
+--- a/docs/architecture/package.json
++++ b/docs/architecture/package.json
+@@ -5,11 +5,10 @@
+     "node": ">=22.22.3"
+   },
+   "scripts": {
+-    "dev": "vite",
++    "dev": "npm run build && node scripts/serve.mjs",
+     "validate": "likec4 validate",
+     "build": "node scripts/build.mjs",
+-    "preview": "vite preview",
+-    "build:standalone": "vite build --mode standalone",
++    "preview": "node scripts/serve.mjs",
+     "dev:native": "likec4 start",
+     "test": "node --test tests/*.test.mjs",
+     "inventory": "node scripts/inventory.mjs"
+diff --git a/docs/architecture/scripts/build.mjs b/docs/architecture/scripts/build.mjs
+index d13d281..efe10c3 100644
+--- a/docs/architecture/scripts/build.mjs
++++ b/docs/architecture/scripts/build.mjs
+@@ -1,8 +1,18 @@
+ import {spawnSync} from 'node:child_process';
+-import {writeFileSync,copyFileSync} from 'node:fs';
+-for(const [command,args] of [['node',['scripts/inventory.mjs']],['./node_modules/.bin/likec4',['validate']],['./node_modules/.bin/vite',['build']]]){
++import {writeFileSync,copyFileSync,rmSync} from 'node:fs';
++import {adaptViewer} from './relationship-navigation.mjs';
++import {adaptLineFilters} from './line-filters.mjs';
++rmSync('dist',{recursive:true,force:true});
++for(const [command,args] of [
++ ['node',['scripts/inventory.mjs']],
++ ['./node_modules/.bin/likec4',['validate']],
++ ['./node_modules/.bin/likec4',['build','.','-o','dist/diagram','--use-hash-history','--base','./','--title','my-infra Architecture']],
++]){
+  const result=spawnSync(command,args,{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
+ }
++adaptViewer('dist/diagram/assets');
++adaptLineFilters('dist/diagram/assets');
++copyFileSync('shell.html','dist/index.html');
+ copyFileSync('resource-inventory.json','dist/resource-inventory.json');
+ copyFileSync('resources.html','dist/resources.html');
+ writeFileSync('dist/.nojekyll','');
+diff --git a/docs/architecture/scripts/capture-views.mjs b/docs/architecture/scripts/capture-views.mjs
+index 87edc64..da737f7 100644
+--- a/docs/architecture/scripts/capture-views.mjs
++++ b/docs/architecture/scripts/capture-views.mjs
+@@ -1,3 +1,4 @@
++import {existsSync} from 'node:fs';
+ import {createServer} from 'node:http';
+ import {readFile} from 'node:fs/promises';
+ import {resolve,extname,sep,join} from 'node:path';
+@@ -20,6 +21,7 @@ export async function captureViews(directory,env,views,destination){
+  try{
+   browser=await chromium.launch({headless:true,...(process.env.ARCHITECTURE_REVIEW_BROWSER_EXECUTABLE?
+    {executablePath:process.env.ARCHITECTURE_REVIEW_BROWSER_EXECUTABLE}:{})});
++  const native=existsSync(join(root,'diagram/index.html'));
+   const context=await browser.newContext({deviceScaleFactor:1,colorScheme:'light'});
+   for(const [id,view] of Object.entries(views)){
+    if(!/^[\w.-]+$/.test(id)) throw new Error(`Unsupported view ID: ${id}`);
+@@ -27,11 +29,11 @@ export async function captureViews(directory,env,views,destination){
+    try{
+     const {width,height}=view.bounds;
+     await page.setViewportSize({width:Math.ceil(width+80),height:Math.ceil(height+180)});
+-    await page.goto(`http://127.0.0.1:${server.address().port}/#/view/${encodeURIComponent(id)}/`);
++    await page.goto(`http://127.0.0.1:${server.address().port}/`+(native?`diagram/#/export/${encodeURIComponent(id)}/?padding=20&theme=light`:`#/view/${encodeURIComponent(id)}/`));
+     await page.waitForSelector('.react-flow.initialized',{timeout:60000});
+     await page.evaluate(()=>document.fonts.ready);
+     await page.locator('img').evaluateAll(images=>Promise.all(images.map(image=>image.decode().catch(()=>{}))));
+-    const diagram=page.locator('main');
++    const diagram=native?page.getByTestId('export-page'):page.locator('main');
+     await diagram.screenshot({path:join(destination,`${id}.png`),animations:'disabled',timeout:60000});
+     console.log(`${env}/${id}: captured at native resolution`);
+    }finally{await page.close();}
+diff --git a/docs/architecture/scripts/line-filters.mjs b/docs/architecture/scripts/line-filters.mjs
+new file mode 100644
+index 0000000..29e8328
+--- /dev/null
++++ b/docs/architecture/scripts/line-filters.mjs
+@@ -0,0 +1,28 @@
++import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
++// Use the pinned viewer's native where predicate; keep nodes and layout intact.
++export function adaptLineFilters(directory){
++ let hooks=0, updates=0;
++ for(const name of readdirSync(directory).filter(n=>n.endsWith('.js'))){
++ const path=`${directory}/${name}`,source=readFileSync(path,'utf8');
++ const pattern=/where:(\w+),reactFlowProps:\w+,renderNodes:\w+,minZoom:[^,]+,maxZoom:[^,]+,children:\w+\}\)\{let (\w+)=\w+\(\),\w+=\(0,(\w+)\.useRef\)\(null\)/g;
++ let next=source.replace(pattern,(match,where,first,react)=>{
++ hooks++;
++ const boundary=match.indexOf('{let ')+1;
++ const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
++ return match.slice(0,boundary)+injection+match.slice(boundary);
++ });
++ // Updating the where input alone does not refresh existing React Flow edges.
++ // Patch that action to apply native filter visibility without changing node
++ // positions, edge geometry, viewport, selection or other interaction state.
++ const render=source.match(/function (\w+)\(\{dynamicViewVariant:\w+,\.\.\.\w+\}\)/)?.[1];
++ const updatePattern=/(\w+)=\(\)=>([\w$]+)\.assign\(\(\{event:(\w+)\}\)=>\((\w+)\(\3,`update.inputs`\),(\w+)\(\{\.\.\.\3.inputs\}\)\)\)/g;
++ next=next.replace(updatePattern,(match,name,state,event,assert,clean)=>{
++  if(!render)throw new Error('LikeC4 native edge converter not found');
++  updates++;
++  return `${name}=()=>${state}.assign(({context:__context,event:${event}})=>{${assert}(${event},\`update.inputs\`);const __inputs=${clean}({...${event}.inputs});if(!Object.prototype.hasOwnProperty.call(${event}.inputs,'where'))return __inputs;const __rendered=${render}({view:__context.view,where:__inputs.where??null,currentViewId:__context.view.id,dynamicViewVariant:__context.dynamicViewVariant,collapsedSequenceFlows:__context.collapsedSequenceFlows});const __visibility=new Map(__rendered.xyedges.map(edge=>[edge.id,edge.hidden===true]));return {...__inputs,xyedges:__context.xyedges.map(edge=>__visibility.has(edge.id)&&edge.hidden!==__visibility.get(edge.id)?{...edge,hidden:__visibility.get(edge.id)}:edge)}})`;
++ });
++ if(next!==source)writeFileSync(path,next);
++ }
++ if(updates!==1)throw new Error(`LikeC4 line filter adapter expected 1 update action, found ${updates}`);
++ if(hooks!==1)throw new Error(`LikeC4 line filter adapter expected 1 hook, found ${hooks}`);
++}
+diff --git a/docs/architecture/scripts/relationship-navigation.mjs b/docs/architecture/scripts/relationship-navigation.mjs
+new file mode 100644
+index 0000000..c5474ba
+--- /dev/null
++++ b/docs/architecture/scripts/relationship-navigation.mjs
+@@ -0,0 +1,23 @@
++import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
++// Adapt the pinned LikeC4 1.59.4 viewer: relationship actions open curated views.
++// Fail the build if the upstream API changes, rather than silently losing this behavior.
++export function targetView(fqn) {
++ if(fqn==='bws'||fqn.endsWith('.eso'))return 'secrets';
++ if(fqn.startsWith('control'))return 'delivery';
++ if(fqn.startsWith('monitoring')||fqn==='home.agent')return 'observability';
++ if(fqn.startsWith('hardware')||fqn.startsWith('data')||fqn.startsWith('oke')||fqn==='reventer')return 'placement';
++ return 'home_apps';
++}
++export function adaptViewer(directory) {
++ let replaced=0;
++ for(const name of readdirSync(directory).filter(n=>n.endsWith('.js'))){
++  const path=`${directory}/${name}`,source=readFileSync(path,'utf8');
++  const pattern=/openRelationshipsBrowser\((\w+),(\w+)\)\{this\.send\(\{type:`open\.relationshipsBrowser`,fqn:\1,\.\.\.\2&&\{scope:\2\}\}\)\}/g;
++  const next=source.replace(pattern,(_,subject)=>{
++   replaced++;
++   return `openRelationshipsBrowser(${subject}){window.location.hash='/view/'+(${targetView.toString()})(${subject});}`;
++  });
++  if(next!==source)writeFileSync(path,next);
++ }
++ if(replaced!==1)throw new Error(`LikeC4 relationship navigation adapter expected 1 hook, found ${replaced}`);
++}
+diff --git a/docs/architecture/scripts/serve.mjs b/docs/architecture/scripts/serve.mjs
+new file mode 100644
+index 0000000..4c30c80
+--- /dev/null
++++ b/docs/architecture/scripts/serve.mjs
+@@ -0,0 +1,14 @@
++import {createServer} from 'node:http';
++import {readFile} from 'node:fs/promises';
++import {resolve,sep,extname} from 'node:path';
++const root=resolve('dist');
++const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.ico':'image/x-icon'};
++const server=createServer(async(req,res)=>{
++ try{
++  const url=new URL(req.url,'http://localhost');
++  const path=resolve(root,'.'+decodeURIComponent(url.pathname)+(url.pathname.endsWith('/')?'index.html':''));
++  if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
++  res.setHeader('Content-Type',types[extname(path)]??'application/octet-stream');res.end(await readFile(path));
++ }catch{res.writeHead(404).end();}
++});
++server.listen(Number(process.env.ARCHITECTURE_PORT??4173),'127.0.0.1',()=>console.log(`Architecture: http://127.0.0.1:${server.address().port}/`));
+diff --git a/docs/architecture/shell.html b/docs/architecture/shell.html
+new file mode 100644
+index 0000000..0d3b0f5
+--- /dev/null
++++ b/docs/architecture/shell.html
+@@ -0,0 +1,32 @@
++<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>my-infra Architecture</title>
++<style>*{box-sizing:border-box}body{margin:0;background:#111318;color:#edf0f7;font:14px system-ui,sans-serif}header{min-height:72px;padding:14px 22px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;border-bottom:1px solid #333846}strong{font-size:18px}small{display:block;color:#9da8bc;margin-top:3px}nav{display:flex;gap:6px;flex:1}button,select{font:inherit;color:#e4e9f2;border:1px solid #434b5c;border-radius:7px;background:#202530;padding:8px 13px;cursor:pointer}button.active{background:#384b79;border-color:#7d9de2}label{display:flex;align-items:center;gap:10px}#note{padding:10px 22px;background:#1b2230;color:#cdd9f0;font-size:13px;border-bottom:1px solid #343d4e;line-height:1.6}iframe{display:block;width:100%;height:calc(100dvh - 173px);min-height:480px;border:0;background:#fff}@media(max-width:700px){header{gap:12px;padding:12px}nav{order:3;flex-basis:100%;overflow:auto}#note{padding:8px 12px}iframe{height:calc(100dvh - 230px)}}
++dialog{width:min(1100px,95vw);max-height:85dvh;border:1px solid #4c5871;border-radius:12px;background:#171d29;color:#edf0f7;padding:24px}dialog::backdrop{background:#000a}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;text-align:left;border-bottom:1px solid #343d4e;overflow-wrap:anywhere}td a{color:#9ec2ff}#inventoryNote{color:#b3bed1;line-height:1.6}</style><header><div><strong>my-infra Architecture</strong><small>LikeC4 · 箱から詳細へ</small></div><nav aria-label="構成図"><button data-view="index">全体</button><button data-view="home_apps">自宅サービス</button><button data-view="delivery">CI・デプロイ</button></nav><select id="perspective" aria-label="インフラの表示"><option value="" disabled>監視・秘密情報・配置</option><option value="secrets">秘密情報の管理・注入</option><option value="observability">監視の収集・保存・照会</option><option value="placement">配置・所有境界</option></select><button id="resources">リソース一覧</button><button id="up" hidden>← 全体へ戻る</button></header>
++<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
++<dialog id="inventory"><div style="display:flex;justify-content:space-between;align-items:center;gap:20px"><strong id="inventoryTitle"></strong><button id="closeInventory">閉じる</button></div><p id="inventoryNote"></p><table><thead><tr><th>種類</th><th>Terraform名</th><th>定義</th></tr></thead><tbody id="inventoryRows"></tbody></table></dialog>
++<script>
++const frame=document.querySelector('#diagram'),note=document.querySelector('#note');
++const views=['index','home_apps','delivery','secrets','observability','placement'];
++const initial=new URLSearchParams(location.hash.slice(1));
++let view=initial.get('view')||location.hash.match(/\/view\/([^/?]+)/)?.[1]||'index';if(!views.includes(view))view='index';
++const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true};
++window.myInfraLineFilters={...defaults};
++try{const saved=JSON.parse(localStorage.getItem('my-infra-line-filters'));for(const kind of Object.keys(defaults))if(typeof saved?.[kind]==='boolean')window.myInfraLineFilters[kind]=saved[kind]}catch{}
++const toggles=[...document.querySelectorAll('[data-kind]')];
++function sendFilters(){for(const input of toggles)input.checked=window.myInfraLineFilters[input.dataset.kind];try{localStorage.setItem('my-infra-line-filters',JSON.stringify(window.myInfraLineFilters))}catch{}frame.contentWindow.postMessage({type:'my-infra:line-filters',filters:window.myInfraLineFilters},location.origin)}
++for(const input of toggles)input.onchange=()=>{window.myInfraLineFilters={...window.myInfraLineFilters,[input.dataset.kind]:input.checked};sendFilters()};
++document.querySelector('#allLines').onclick=()=>{window.myInfraLineFilters={...defaults};sendFilters()};frame.addEventListener('load',sendFilters);
++const pageKinds={index:['runtime','admin','secret','observe','query'],home_apps:['runtime'],delivery:['deploy'],secrets:['secret'],observability:['observe','query'],placement:[]};
++const notes={index:'全体：利用者・管理者の入口と、Cloudflare・自宅・OKE・保存・監視・BWSの関係。箱を開くと用途別の詳細へ。デプロイは別の観点で確認します。',home_apps:'自宅サービス：Cloudflare Tunnelからアプリへ、NASへの保存と内部DNS。配置・VMの詳細は配置ビューへ。',delivery:'CI・デプロイ：GitHub・Terraform Cloud・Ansible・ArgoCD・ARCから対象基盤への変更経路。利用者通信とは分離しています。',secrets:'秘密情報：BWSからCI・Terraformと、External Secrets Operator経由でクラスタへ注入。秘密値は保持しません。',observability:'監視：exporter・collectorから保存VMへの送信と、Grafana CloudからPDC経由の照会。色と線で方向・用途を区別します。',placement:'配置：自宅の物理ホスト・VM・Talos、STG OKE、reventer所有の境界。標準ビューの要素詳細から内部配置と関係を確認できます。'};
++function update(){
++ for(const input of toggles)input.closest('label').style.display=pageKinds[view].includes(input.dataset.kind)?'flex':'none';
++ const select=document.querySelector('#perspective');select.value=['secrets','observability','placement'].includes(view)?view:'';
++ document.querySelector('#up').hidden=view==='index';
++ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
++ note.textContent=notes[view];history.replaceState(null,'',`#view=${view}`);
++}
++function show(){frame.src=`./diagram/#/view/${view}`;update()}
++document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;show()});document.querySelector('#perspective').onchange=e=>{view=e.target.value;show()};document.querySelector('#up').onclick=()=>{view='index';show()};
++document.querySelector('#closeInventory').onclick=()=>document.querySelector('#inventory').close();
++document.querySelector('#resources').onclick=async()=>{const rows=await fetch('./resource-inventory.json').then(r=>r.json());document.querySelector('#inventoryTitle').textContent=`リソース一覧 · ${rows.length} 定義`;document.querySelector('#inventoryNote').textContent='Terraform・Kubernetesから名前と定義元を自動抽出。名前・種類・ファイルは別ページでも検索できます。';const body=document.querySelector('#inventoryRows');body.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const key of ['type','name']){const td=document.createElement('td');td.textContent=r[key];tr.append(td)}const td=document.createElement('td'),a=document.createElement('a');a.href='https://github.com/miutaku/my-infra/blob/main/'+r.file;a.target='_blank';a.rel='noopener noreferrer';a.textContent=r.file;td.append(a);tr.append(td);body.append(tr)}document.querySelector('#inventory').showModal()};
++setInterval(()=>{try{const next=frame.contentWindow.location.hash.match(/\/view\/([^/?]+)/)?.[1];if(views.includes(next)&&next!==view){view=next;update()}}catch{}},400);show();sendFilters();
++</script></html>
+diff --git a/docs/architecture/specification.c4 b/docs/architecture/specification.c4
+index 768500e..78a8a9f 100644
+--- a/docs/architecture/specification.c4
++++ b/docs/architecture/specification.c4
+@@ -3,11 +3,12 @@ specification {
+   element system { style { color blue } }
+   element component { style { color muted } }
+   element store { style { shape storage color amber } }
+-  relationship runtime { color blue }
+-  relationship deploy { color amber line dashed }
++  relationship runtime { color green }
++  relationship admin { color indigo line dashed }
++  relationship deploy { color indigo line dashed }
+   relationship secret { color red line dotted }
+-  relationship observe { color green line dotted }
+-  relationship query { color green }
++  relationship observe { color amber line dotted }
++  relationship query { color sky }
+   relationship backup { color amber }
+   deploymentNode site { style { color gray } }
+   deploymentNode hypervisor { style { color green } }
+diff --git a/docs/architecture/tests/line-filters.test.mjs b/docs/architecture/tests/line-filters.test.mjs
+new file mode 100644
+index 0000000..57867d5
+--- /dev/null
++++ b/docs/architecture/tests/line-filters.test.mjs
+@@ -0,0 +1,57 @@
++import fs from 'node:fs';
++import vm from 'node:vm';
++import assert from 'node:assert/strict';
++import {whereOperatorAsPredicate} from '@likec4/core';
++
++const kinds=['runtime','admin','deploy','secret','observe','query','backup'];
++for(const env of ['my-infra']){
++  const dir=`dist/diagram/assets`;
++  const files=fs.readdirSync(dir);
++  const source=fs.readFileSync(`${dir}/${files.find(n=>/^main-.*\.js$/.test(n))}`,'utf8');
++  const data=fs.readFileSync(`${dir}/${files.find(n=>/^model-.*\.js$/.test(n))}`,'utf8');
++  const model=vm.runInNewContext(`(${data.slice(data.indexOf('var n=t(')+8,data.lastIndexOf('),{updateModel:'))})`);
++  // Execute the built viewer's native node/edge converter, not a reimplementation.
++  const convert=source.match(/function (\w+)\(e\)\{let\{view:n\}=e,r=\[\],i=\[\],a=new Map,[\s\S]+?return\{xynodes:r,xyedges:i\}\}/);
++  assert(convert,'Native converter signature changed');
++  const sandbox={
++    ey:{from:items=>({dequeue:()=>items.shift(),enqueue:item=>items.push(item)})},
++    oy:(items,min)=>items.length>=min, R:'__view_group',
++    ae:whereOperatorAsPredicate, GA:(obj,keys)=>Object.fromEntries(keys.map(k=>[k,obj[k]])),
++    d:(value)=>{assert(value);return value}, u:assert,
++    Iy:{Compound:1,Element:2,Edge:3}, sN:()=>'', cN:()=>'',
++  };
++  vm.runInNewContext(`${convert[0]};nativeConvert=${convert[1]}`,sandbox);
++  const action=source.match(/(\w+)=\(\)=>([\w$]+)\.assign\(\(\{context:__context,event:(\w+)\}\)=>\{[\s\S]+?return \{\.\.\.__inputs,xyedges:[\s\S]+?:edge\)\}\}\)/);
++  assert(action,'Patched input action missing');
++  const body=action[0];
++  const guard=body.match(/\{(\w+)\(\w+,`update.inputs`\)/)[1];
++  const clean=body.match(/const __inputs=(\w+)\(/)[1];
++  const renderer=body.match(/const __rendered=(\w+)\(/)[1];
++  const context={
++    [action[2]]:{assign:fn=>fn},[guard]:()=>{},[clean]:obj=>obj,
++    [renderer]:inputs=>sandbox.nativeConvert(inputs),
++  };
++  const update=vm.runInNewContext(`${body};${action[1]}()`,context);
++  let transitions=0;
++  for(const view of Object.values(model.views)){
++    const initial=sandbox.nativeConvert({view});
++    let state={view,xynodes:initial.xynodes,xyedges:initial.xyedges,
++      viewport:{x:30,y:40,zoom:1.25},dynamicViewVariant:'diagram',collapsedSequenceFlows:{}};
++    const nodes=state.xynodes,viewport=state.viewport;
++    // Iterate backwards and forwards so hiding AND restoring existing edges is covered.
++    for(const mask of [...Array.from({length:1<<kinds.length},(_,i)=>i),...Array.from({length:1<<kinds.length},(_,i)=>(1<<kinds.length)-1-i)]){
++      const hidden=kinds.filter((_,i)=>!(mask&(1<<i))).map(kind=>({kind:{neq:kind}}));
++      const where=hidden.length?{and:hidden}:null;
++      const result=update({context:state,event:{type:'update.inputs',inputs:{where}}});
++      state={...state,...result};
++      assert.equal(state.xynodes,nodes);assert.equal(state.viewport,viewport);
++      for(const edge of state.xyedges){
++        const original=view.edges.find(e=>e.id===edge.id);
++        assert.equal(edge.hidden,where?!whereOperatorAsPredicate(where)(original):false);
++        assert.equal(edge.data,initial.xyedges.find(e=>e.id===edge.id).data);
++      }
++      transitions++;
++    }
++  }
++  console.log(`${env}: ${transitions} filter transitions passed; nodes, geometry and viewport preserved`);
++}
+diff --git a/docs/architecture/viewer/index.html b/docs/architecture/viewer/index.html
+deleted file mode 100644
+index d14f81e..0000000
+--- a/docs/architecture/viewer/index.html
++++ /dev/null
+@@ -1,2 +0,0 @@
+-<!doctype html>
+-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>my-infra 構成</title></head><body><div id="root"></div><script type="module" src="/main.jsx"></script></body></html>
+diff --git a/docs/architecture/viewer/main.jsx b/docs/architecture/viewer/main.jsx
+deleted file mode 100644
+index 3df06e2..0000000
+--- a/docs/architecture/viewer/main.jsx
++++ /dev/null
+@@ -1,65 +0,0 @@
+-import React, { useEffect, useRef, useState } from 'react';
+-import { createRoot } from 'react-dom/client';
+-import { LikeC4ModelProvider, ReactLikeC4, useLikeC4Model } from 'likec4:react';
+-import './style.css';
+-
+-function App() {
+-  const model = useLikeC4Model();
+-  const api = useRef(null);
+-  const flow = useRef(null);
+-  const fromHash = () => location.hash.match(/view\/([^/]+)/)?.[1] || 'index';
+-  const [view, setView] = useState(fromHash);
+-  const [trail, setTrail] = useState(() => fromHash() === 'index' ? ['index'] : ['index', fromHash()]);
+-  const [deployment, setDeployment] = useState(null);
+-  useEffect(() => {
+-    const update = () => { const requested = fromHash(); const id = model.findView(requested) ? requested : 'index'; setView(id); setDeployment(null); setTrail(old => old.includes(id) ? old.slice(0, old.indexOf(id) + 1) : [...old, id]); };
+-    window.addEventListener('hashchange', update);
+-    return () => window.removeEventListener('hashchange', update);
+-  }, [model]);
+-  const navigate = (id) => {
+-    if (!model.findView(id) || id === view) return;
+-    setTrail(old => old.includes(id) ? old.slice(0, old.indexOf(id) + 1) : [...old, id]);
+-    setDeployment(null); setView(id); location.hash = `/view/${id}/`;
+-  };
+-  const title = id => model.findView(id)?.title || id;
+-  const current = model.findView(view) ? view : 'index';
+-  const click = node => {
+-    if (node.navigateTo && node.navigateTo !== current) return navigate(node.navigateTo);
+-    if (node.deploymentRef) return setDeployment(node.deploymentRef);
+-    const element = node.modelRef || node.id;
+-    if (model.findElement(element)) api.current?.openElementDetails(element, node.id);
+-  };
+-  const deployed = deployment ? model.deployment.findElement(deployment) : null;
+-  const children = deployed ? [...model.deployment.children(deployment)] : [];
+-  const raw = deployed?.$node || model.$data.deployments?.elements?.[deployment];
+-  const logical = raw?.element ? model.findElement(raw.element) : null;
+-  const description = logical?.description || deployed?.description;
+-  return <div className="shell">
+-    <header>
+-      <button className="brand" onClick={() => navigate('index')}>{model.project.id}</button>
+-      <nav aria-label="主な観点">{[['index','全体'],['delivery','運用'],['placement','配置']].map(([id,label]) =>
+-        <button key={id} aria-current={(id === 'placement' ? current === 'placement' : id === 'delivery' ? ['delivery','secrets'].includes(current) : !['delivery','secrets','placement'].includes(current)) ? 'page' : undefined} onClick={() => navigate(id)}>{label}</button>)}</nav>
+-      <a href="./resources.html">リソース一覧</a><span className="hint">要素をクリックして詳しく見る</span><button className="search" onClick={() => api.current?.openSearch()} aria-label="モデルを検索">検索 <kbd>⌘ K</kbd></button>
+-    </header>
+-    <div className="breadcrumbs"><button aria-label="前の図に戻る" disabled={current === 'index'} onClick={() => {
+-      const previous = trail.indexOf(current); navigate(previous > 0 ? trail[previous - 1] : 'index');
+-    }}>←</button>{trail.filter(id => model.findView(id)).map((id,i) => <React.Fragment key={id}>
+-      {i > 0 && <span>›</span>}<button onClick={() => navigate(id)} aria-current={id === current ? 'page' : undefined}>{title(id)}</button>
+-    </React.Fragment>)}</div>
+-    <main><ReactLikeC4 key={current} viewId={current} colorScheme="light" keepAspectRatio={false}
+-      style={{width:'100%', height:'100%'}} background="transparent"
+-      onInitialized={({diagram, xyflow}) => { api.current = diagram; flow.current = xyflow; }} onNavigateTo={navigate} onNodeClick={click}
+-      enableElementDetails enableRelationshipDetails enableRelationshipBrowser enableFocusMode enableSearch
+-      relationshipBrowserScope="view" showNavigationButtons={false} controls={false} fitView fitViewPadding={40} />
+-    </main><div className="viewport-controls"><button aria-label="拡大" onClick={() => flow.current?.zoomIn()}>＋</button><button aria-label="縮小" onClick={() => flow.current?.zoomOut()}>−</button><button aria-label="図全体を表示" onClick={() => api.current?.fitDiagram()}>⤢</button></div>
+-    {deployed && <aside aria-label="配置の詳細">
+-      <div className="drawer-heading"><span>配置の詳細</span><button aria-label="詳細を閉じる" onClick={() => setDeployment(null)}>×</button></div>
+-      <h2>{deployed.title}</h2><p>{description?.txt || description?.md || ''}</p>
+-      {logical && <button className="detail-link" onClick={() => {setDeployment(null); api.current?.openElementDetails(logical.id);}}>サービスの説明・関係を見る ↗</button>}
+-      {children.length > 0 && <><h3>この中にあるもの</h3><ul>{children.map(child => <li key={child.id}>
+-        <button onClick={() => setDeployment(child.id)}>{child.title}<span>›</span></button></li>)}</ul></>}
+-      {deployed.parent && <button className="detail-link" onClick={() => setDeployment(deployed.parent.id)}>← 一つ上の配置へ</button>}
+-    </aside>}
+-  </div>;
+-}
+-createRoot(document.getElementById('root')).render(<LikeC4ModelProvider><App /></LikeC4ModelProvider>);
+diff --git a/docs/architecture/viewer/style.css b/docs/architecture/viewer/style.css
+deleted file mode 100644
+index 2f2eabd..0000000
+--- a/docs/architecture/viewer/style.css
++++ /dev/null
+@@ -1,5 +0,0 @@
+-*{box-sizing:border-box}body{margin:0;color:#26313d;background:#fafbf9;font-family:Inter,"Noto Sans JP",system-ui,sans-serif}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #3286ed;outline-offset:4px}.shell{height:100dvh;display:flex;flex-direction:column}header{height:68px;display:flex;align-items:center;padding:0 32px;gap:44px;border-bottom:1px solid #e3e7e7;background:white}.brand{border:0;background:none;font-weight:650;font-size:19px;letter-spacing:-.5px}nav{display:flex;align-self:stretch;gap:28px}nav button{border:0;border-bottom:2px solid transparent;background:none;color:#75808b;font-size:14px;padding:0 3px}nav button[aria-current]{color:#273e55;border-color:#3286ed}.hint{margin-left:auto;font-size:12px;color:#89949e}.breadcrumbs{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 32px;font-size:12px;color:#9aa4ac}.breadcrumbs button{border:0;background:none;color:#75808b;padding:4px}.breadcrumbs button[aria-current]{color:#26313d}.breadcrumbs button:disabled{opacity:.25;cursor:default}main{flex:1;min-height:0;position:relative;margin:0 22px 18px;border-radius:16px;overflow:hidden;background:#fff}aside{position:fixed;top:112px;right:22px;bottom:18px;width:360px;max-width:calc(100vw - 44px);padding:24px;background:white;border:1px solid #e3e7e7;border-radius:16px;box-shadow:0 8px 40px #20304018;overflow:auto}.drawer-heading{display:flex;justify-content:space-between;align-items:center;color:#89949e;font-size:12px}.drawer-heading button{background:none;border:0;font-size:24px;color:#75808b}h2{font-size:20px;line-height:1.5;margin:20px 0 12px}h3{font-size:12px;color:#89949e;margin:24px 0 8px}aside p{font-size:13px;line-height:1.8;color:#65717c}aside ul{list-style:none;margin:0;padding:0}aside li button{width:100%;border:0;border-bottom:1px solid #edf0f1;background:none;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:14px 0;font-size:13px;color:#26313d}.detail-link{border:0;background:none;color:#3286ed;padding:12px 0;font-size:12px}@media(max-width:700px){header{padding:0 16px;gap:24px}.hint{display:none}nav{gap:16px}.breadcrumbs{padding:0 16px}main{margin:0 10px 10px}aside{right:10px;bottom:10px}}
+-
+-.search{border:1px solid #e3e7e7;background:white;border-radius:8px;padding:7px 10px;color:#65717c;font-size:12px}kbd{font-family:inherit;font-size:10px;color:#a0a8ae;margin-left:10px}.viewport-controls{position:fixed;bottom:34px;left:38px;display:flex;gap:2px;border:1px solid #e3e7e7;border-radius:8px;background:white;padding:2px}.viewport-controls button{border:0;background:none;width:30px;height:30px;color:#65717c}.viewport-controls button:hover{background:#f3f6f8}
+-
+-@media(max-width:700px){header{gap:16px}.brand{font-size:16px}nav{gap:12px}.search kbd{display:none}}
+diff --git a/docs/architecture/views.c4 b/docs/architecture/views.c4
+index 1fc58dc..f416136 100644
+--- a/docs/architecture/views.c4
++++ b/docs/architecture/views.c4
+@@ -3,23 +3,22 @@ views {
+   style control, bws { color amber }
+   style monitoring { color green }
+   style data { color gray }
++  style edge { color amber }
+   view index {
+-    title 'my-infra / 全体'
+-    description '構成の入口。要素をクリックして詳細へ。通信・デプロイ・秘密情報・監視は、それぞれの観点で確認する。'
+-    group '実行・保存' {
+-      include home, oke, data
+-    }
+-    group '変更・運用' {
+-      include control, bws, monitoring
+-    }
++    title '全体構成'
++    description '利用者・管理者の入口から自宅サービス、OKE、保存、監視、秘密注入の関係。デプロイ経路はCI・デプロイへ分ける。'
++    include user, operator, edge, edge.access, edge.tunnel, home, home.nextcloud, home.agent, home.eso, oke, control, control.argo, bws, monitoring, monitoring.vms, monitoring.grafana, data, data.nas
+     include home with { navigateTo home_apps }
+-    include control with { navigateTo delivery }
++    include edge.tunnel with { navigateTo home_apps }
++    include control.argo with { navigateTo delivery }
+     include bws with { navigateTo secrets }
++    include home.eso with { navigateTo secrets }
+     include monitoring with { navigateTo observability }
+     include oke with { navigateTo placement }
+     include data with { navigateTo placement }
+-    exclude * -> *
+-    autoLayout TopBottom 70 50
++    exclude * -> * where kind is deploy or kind is backup
++    rank source { user, operator, bws }
++    autoLayout TopBottom 100 80
+   }
+   view home_apps of home {
+     title '自宅のサービス・保存'
+diff --git a/docs/architecture/vite.config.mjs b/docs/architecture/vite.config.mjs
+deleted file mode 100644
+index acb7153..0000000
+--- a/docs/architecture/vite.config.mjs
++++ /dev/null
+@@ -1,12 +0,0 @@
+-import { defineConfig } from 'vite';
+-import { LikeC4VitePlugin } from 'likec4/vite-plugin';
+-import { viteSingleFile } from 'vite-plugin-singlefile';
+-import { fileURLToPath } from 'node:url';
+-const root = fileURLToPath(new URL('./viewer/', import.meta.url));
+-const workspace = fileURLToPath(new URL('./', import.meta.url));
+-export default defineConfig(({mode}) => ({
+-  root, base: './',
+-  plugins: [LikeC4VitePlugin({workspace, ai:'disabled'}), ...(mode === 'standalone' ? [viteSingleFile()] : [])],
+-  build: {outDir: mode === 'standalone' ? '../standalone' : '../dist', emptyOutDir:true},
+-  server: {host:'127.0.0.1'},
+-}));
