@@ -29,7 +29,7 @@ mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイト�
 
 サイト・PRレビューの配信はすべてGitHub Pages。宣言コードからのモデル・リソース・経路抽出は認証なしでPRごとに実行する。
 
-AIによるモデル修正は独立した非公開リポジトリ [architecture-automation](https://github.com/miutaku/architecture-automation) へ移管。専用runnerは非公開側だけに登録し、この公開リポジトリにはOpenAI認証付きrunnerを登録しない。非公開側がmainを定期取得し、データだけをAIへ渡す。ビルド検証・モデル更新PR作成は別runnerで行い、自動マージしない。構成図と比較ページの配信先は変わらない。
+AIによるモデル修正は独立した非公開リポジトリ [architecture-automation](https://github.com/miutaku/architecture-automation) へ移管。認証は専用namespaceのSecretに保持し、通常runnerのNASキャッシュには残さない。専用runnerは非公開側だけに登録し、この公開リポジトリにはOpenAI認証付きrunnerを登録しない。非公開側がmainを定期取得し、データだけをAIへ渡す。ビルド検証・モデル更新PR作成は別runnerで行い、自動マージしない。構成図と比較ページの配信先は変わらない。
 
 
 ## PRの図のレビュー

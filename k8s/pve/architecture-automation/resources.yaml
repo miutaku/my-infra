@@ -1,5 +1,5 @@
-# No OpenAI credential values are declared here. Reuse the existing auth directory
-# directly; do not copy it into Git, Secrets, artifacts, or the normal runner cache.
+# OpenAI credentials are NOT declared in Git. codex-account-auth is created
+# once during the approved migration, then refreshed by a narrowly scoped helper.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -20,65 +20,46 @@ spec:
     creationPolicy: Owner
     deletionPolicy: Retain
   data:
-    - secretKey: github_token
-      remoteRef:
-        key: GITHUB_REVENTER_RUNNER_PAT
-        conversionStrategy: Default
-        decodingStrategy: None
-        metadataPolicy: None
+  - secretKey: github_token
+    remoteRef:
+      key: GITHUB_REVENTER_RUNNER_PAT
+      conversionStrategy: Default
+      decodingStrategy: None
+      metadataPolicy: None
 ---
 apiVersion: v1
-kind: PersistentVolume
+kind: ServiceAccount
 metadata:
-  name: architecture-automation-auth-pv
-spec:
-  capacity:
-    storage: 1Gi
-  accessModes: [ReadWriteMany]
-  nfs:
-    server: 192.168.20.191
-    path: /mnt/raid1_case/arc-runner-cache/codex-architecture-auth
-  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
-  persistentVolumeReclaimPolicy: Retain
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: codex-auth
+  name: codex-auth-persist
   namespace: architecture-automation
-spec:
-  accessModes: [ReadWriteMany]
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: codex-auth-persist
+  namespace: architecture-automation
+rules:
+- apiGroups:
+  - ''
   resources:
-    requests:
-      storage: 1Gi
-  volumeName: architecture-automation-auth-pv
-  storageClassName: ""
+  - secrets
+  resourceNames:
+  - codex-account-auth
+  verbs:
+  - get
+  - update
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
-  name: credential-runner
+  name: codex-auth-persist
   namespace: architecture-automation
-spec:
-  podSelector:
-    matchLabels:
-      architecture.miutaku/credential-runner: "true"
-  policyTypes: [Ingress, Egress]
-  ingress: []
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - {protocol: UDP, port: 53}
-        - {protocol: TCP, port: 53}
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8, 100.64.0.0/10]
-      ports:
-        - {protocol: TCP, port: 443}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: codex-auth-persist
+subjects:
+- kind: ServiceAccount
+  name: codex-auth-persist
+  namespace: architecture-automation
