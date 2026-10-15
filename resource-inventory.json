@@ -465,6 +465,13 @@
     "file": "k8s/pve/arc-runners/namespace.yaml"
   },
   {
+    "id": "k8s/pve/arc-runners/public-runner-networkpolicy.yaml:NetworkPolicy:arc-runners:public-infra-runner",
+    "type": "NetworkPolicy",
+    "name": "public-infra-runner",
+    "namespace": "arc-runners",
+    "file": "k8s/pve/arc-runners/public-runner-networkpolicy.yaml"
+  },
+  {
     "id": "k8s/pve/arc-runners/reventer-cache-pvc.yaml:PersistentVolume::arc-runner-reventer-cache-pv",
     "type": "PersistentVolume",
     "name": "arc-runner-reventer-cache-pv",
