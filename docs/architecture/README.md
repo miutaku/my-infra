@@ -56,3 +56,5 @@ model-coverage.jsonは宣言ごとのモデル要素と、Applicationの配置�
 自宅公開hostnameの原則は利用者・管理者 → Cloudflare Access → Tunnel → 内部サービス。公開hostnameの認証方式はTerraformから生成し、用途（利用・管理）と認証（Access・mTLS）を別の属性にする。loockit-apiは専用クライアント証明書と操作制限の例外として表示する。WARP/LANのprivate経路、GitOps/CIによる変更、基盤の提供はそれぞれ別の線種・観点とする。認証方式を判定できないhostnameはビルドを失敗させる。
 
 my-infraの変更ビューは自宅基盤の構成管理に限定する。Re:Venter向けの変更経路、OCI上の管理ワークロードも利用側の図へ委ねる。OCIの名前・定義・配置対応は参照用に保持し、my-infraの配置・ネットワーク図では展開しない。
+
+Pages配信の識別子はmainのSHAではなく生成サイト（gh-pages）のcommitにする。同じmainに複数のPreviewを追加しても別の配信として扱い、artifact名もrun/attemptごとに分ける。配信成功後に本番build-infoと比較changes.jsonのheadをHTTPで照合し、実際のURLが確認できるまで公開リンクを通知しない。
