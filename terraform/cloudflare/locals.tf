@@ -37,6 +37,11 @@ locals {
       backend       = "http://nextcloud.app-nextcloud.svc.cluster.local:80"
       no_tls_verify = false
     }
+    # Temporary alias for the code-to-model review smoke test; do not merge.
+    "nextcloud-model-test" = {
+      backend       = "http://nextcloud.app-nextcloud.svc.cluster.local:80"
+      no_tls_verify = false
+    }
     "coupon-manager" = {
       backend       = "http://coupon-manager-web.app-coupon-manager.svc.cluster.local:80"
       no_tls_verify = false
@@ -180,7 +185,7 @@ locals {
   access_protected_subdomains = toset([
     "argocd-home-k8s", "argocd-oke", "wol",
     "epgstation", "tnlastation", "tnlastation-staging", "nextcloud",
-    "coupon-manager",
+    "coupon-manager", "nextcloud-model-test",
     "unifi", "wifi-ap",
     "ix2215",
     "nas-01", "nas-02",
