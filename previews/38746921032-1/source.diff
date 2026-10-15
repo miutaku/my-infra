@@ -1,0 +1,768 @@
+diff --git a/docs/architecture/README.md b/docs/architecture/README.md
+index fe7ed9a..266d33b 100644
+--- a/docs/architecture/README.md
++++ b/docs/architecture/README.md
+@@ -2,15 +2,15 @@
+ 
+ 公開サイト: https://miutaku.github.io/my-infra/
+ 
+-reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。6ビューは同じモデルを使い、箱を増やす代わりに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes全定義は「リソース一覧」で検索できる。
++reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全Applicationは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
+ 
+ | ファイル | 役割 |
+ | --- | --- |
+-| logical.c4 | サービス・所有境界・説明・関係・根拠リンク |
++| logical.c4 / details.c4 | サービス・所有境界・説明・関係・根拠リンク |
+ | deployment.c4 | 物理ホスト・VM・クラスタ・namespaceとinstanceOf |
+-| views.c4 | 6つの観点とクリックナビゲーション |
++| views.c4 | 全体・サービス・録画・デプロイ・秘密情報・監視・配置・ネットワーク・保存・電源の観点とクリックナビゲーション |
+ | specification.c4 | 種類と線の意味 |
+-| scripts/inventory.mjs | Terraform resource/moduleとKubernetes metadataの自動抽出 |
++| scripts/inventory.mjs / scripts/catalog.mjs | 全宣言を抽出し、Application・内部定義・namespace配置・公開hostnameをモデル化 |
+ | shell.html / scripts/*navigation.mjs / scripts/line-filters.mjs | reventerと同じ標準viewer・外枠・線フィルター。構成情報のコピーを持たない |
+ 
+ ```bash
+@@ -21,11 +21,11 @@ npm test
+ npm run dev
+ ```
+ 
+-Node.js 24。生成物とresource-inventory.jsonはGit管理しない。公開一覧は名前・種類・namespace・参照元だけを掲載し、Secretの内容や環境変数は抽出しない。Terraformのfor_eachインスタンス数や稼働状態の検出ではない。Ansible/Talosの実行時設定はモデルの根拠リンクから確認する。
++Node.js 24。生成物とcatalog.c4・model.json・model-coverage.json・resource-inventory.jsonはGit管理しない。公開一覧は名前・種類・namespace・参照元だけを掲載し、Secretの内容や環境変数は抽出しない。Terraformのfor_eachインスタンス数や稼働状態の検出ではない。Ansible/Talosの実行時設定はモデルの根拠リンクから確認する。
+ 
+ ## 自動更新
+ 
+-mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイトを再構築する。同時にPlusのCodexが現在のソースと変更差分を読んで、モデル更新が必要なら `automation/architecture-model` のPRを作成・更新する。変更不要ならPRは作らない。AIが変更できるのはlogical.c4・deployment.c4・views.c4だけ。別のGitHub-hosted runnerが許可範囲・モデル・ビルド・テストを検証してPR化する。AIがインフラ自体を変更することはない。
++mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイトを再構築する。同時にPlusのCodexが現在のソースと変更差分を読んで、モデル更新が必要なら `automation/architecture-model` のPRを作成・更新する。変更不要ならPRは作らない。AIが変更できるのはlogical.c4・details.c4・deployment.c4・views.c4だけ。別のGitHub-hosted runnerが許可範囲・モデル・ビルド・テストを検証してPR化する。AIがインフラ自体を変更することはない。
+ 
+ サイト・PRレビューの配信はすべてGitHub Pages。AI実行だけは `arc-runner-my-infra-codex` の非特権専用Podを使用し、認証はNFS PVCの専用subPath `codex-my-infra-auth` に分離して保存する。Docker socket・ホストパス・Kubernetes tokenは持たない。Talosのユーザー名前空間制限のため、Codex自体のbubblewrapではなく専用Podを隔離境界にする。Plus枠を使い、API課金への自動切替はしない。
+ 
+@@ -42,3 +42,9 @@ PRで変更前後の正確なコミットから全ビューを画像化し、意
+ PR終了イベントと日次再照合で終了済みPRを削除し、30日を過ぎたレビューも削除する。古いURLは公開コンテンツとして他者が取得済みである可能性があり、Git履歴からの機密削除機構ではない。公開モデル・一覧に秘密情報を入れない。
+ 
+ 初回導入前のcommitにはモデルがないため比較できない。導入後のmainをbaseにして比較する。手動実行はArchitecture explorerのbase_refで指定し、Publish architecture Pagesの実行summaryに比較リンクが載る。
++
++## 網羅性の検証
++
++model-coverage.jsonは宣言ごとのモデル要素と、Applicationの配置先を記録する。テストでコンパイル後の要素・配置が実在すること、Proxmoxの全VM module・LXC宣言に物理配置と根拠があること、参照元リンクが実在することを検証する。宣言が存在することを稼働証明とはしない。未登録・共有の定義は専用グループに保持し、稼働中と推測して配置しない。
++
++自宅のvmagent→自宅VictoriaMetricsと、reventerのcollector→OCI監視VMは独立。NASのファイル、DB logical dump、metrics snapshot、PBSのVM backupは復元単位を区別する。UPSの給電、NUT状態の読み取り、各ホスト自身の停止も異なる関係として保持する。
+diff --git a/docs/architecture/deployment.c4 b/docs/architecture/deployment.c4
+index dfd7cb1..21bfafc 100644
+--- a/docs/architecture/deployment.c4
++++ b/docs/architecture/deployment.c4
+@@ -3,32 +3,46 @@ deployment {
+     description 'CP VM3台とworker VM2台はPVE2ホストへ配置。Podの配置は動的。配置詳細はホスト・クラスタをクリックして辿る。'
+     hypervisor x570 'pve-x570' {
+       instanceOf hardware.x570
+-      vm cp1 'Talos controlplane01'
+-      vm worker1 'Talos worker01'
+-      vm nas1 'TrueNAS nas-01' { instanceOf data.nas }
++      vm cp1 'Talos controlplane01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
++      vm worker1 'Talos worker01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
++      vm lb 'HAProxy / Keepalived VM10001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf hardware.lb }
++      vm pbs 'PBS VM14001 / 手動退避' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" } instanceOf data.pbs }
++      vm unifi 'UniFi OS VM13201' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" } instanceOf hardware.unifi }
++      container loockit 'LXC CT12902' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf hardware.loockit_a }
++      container tuner 'Mirakurun LXC CT12901' { metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" } instanceOf hardware.tuner_prod }
++      vm nas1 'TrueNAS nas-01' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf data.nas.nas01 }
+     }
+     hypervisor b550m 'pve-b550m' {
+       instanceOf hardware.b550m
+-      vm cp2 'Talos controlplane02'
+-      vm cp3 'Talos controlplane03'
+-      vm worker2 'Talos worker02'
+-      vm nas2 'TrueNAS nas-02' { instanceOf data.nas }
++      vm cp2 'Talos controlplane02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
++      vm cp3 'Talos controlplane03' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
++      vm worker2 'Talos worker02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
++      vm lb 'HAProxy / Keepalived VM10002' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf hardware.lb }
++      vm dev '開発アプリVM40000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" } instanceOf hardware.dev }
++      vm kiosk 'DisplayLink kiosk VM5000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" } instanceOf hardware.kiosk }
++      container loockit 'LXC CT12903' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf hardware.loockit_b }
++      container tuner 'Mirakurun STG LXC CT12904' { metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" } instanceOf hardware.tuner_stg }
++      vm nas2 'TrueNAS nas-02' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf data.nas.nas02 }
+     }
++    physical worker_pi1 'RPi Talos worker01' { instanceOf hardware.rpi_workers }
++    physical worker_pi2 'RPi Talos worker02' { instanceOf hardware.rpi_workers }
++    physical nut_pi1 'NUT Pi / .112' { instanceOf hardware.ups.pi_a }
++    physical nut_pi2 'NUT Pi / .113' { instanceOf hardware.ups.pi_b }
++    physical ups_a 'UPS A' { instanceOf hardware.ups.ups_a }
++    physical ups_b 'UPS B' { instanceOf hardware.ups.ups_b }
++    instanceOf hardware.router
++    instanceOf hardware.kvm
+     cluster talos 'home-k8s' {
+       description 'VMとRPiにまたがるクラスタ。PVEホストとクラスタを入れ子にしてPod配置を固定しない。'
+       instanceOf home
+-      namespace argocd 'argocd' { instanceOf control.argo }
+-      namespace secrets 'external-secrets' { instanceOf home.eso }
+-      namespace apps '各アプリnamespace' { instanceOf home.apps instanceOf home.nextcloud instanceOf home.recording }
+-      namespace monitoring 'monitoring' { instanceOf home.agent }
++
+     }
+   }
+   cluster stg 'OCI / STG OKE共通基盤' {
+     instanceOf oke
+-    namespace argocd 'argocd / 共通基盤' { instanceOf oke.argo }
+-    namespace secrets 'external-secrets' { instanceOf oke.eso }
++
+   }
+-  site application 'reventer所有 / STG・PRDアプリ・PRD OKE' {
++  cluster prd 'PRD OKE / 本体reventer所有・共通アドオンmy-infra' {
+     description '別リポジトリ管理。モデルで所有境界を維持する。'
+     instanceOf reventer
+   }
+diff --git a/docs/architecture/details.c4 b/docs/architecture/details.c4
+new file mode 100644
+index 0000000..5486830
+--- /dev/null
++++ b/docs/architecture/details.c4
+@@ -0,0 +1,208 @@
++model {
++  system definitions '未登録・共有の定義' { description 'GitOpsのsource pathに結びつかない宣言も削除せず保持。定義が存在することと、クラスタで稼働することは区別する。' }
++  system external '外部サービス' {
++    store idrive 'IDrive e2 / S3' { description 'PBS datastore、DB logical dump、NAS restic、録画、VictoriaMetrics snapshotの保存先。用途・prefix・整合性を分ける。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs 'PBS設定' }
++    component internet 'Internet'
++    component oracle 'Oracle Services Network'
++    component annict 'Annict API'
++    component ai 'Gemini API / OpenAI互換' { description 'Coupon ManagerのAi設定から利用。認証値は掲載しない。' }
++    component github_pages 'GitHub Pages / my-infra図・レビュー'
++  }
++  extend edge {
++    component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
++  }
++  extend home.nextcloud { store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
++  extend home.dns {
++    component coredns 'CoreDNS / miutaku.internal'
++    component metallb 'MetalLB / LANのService IP'
++  }
++  extend home.eso { component config 'ClusterSecretStore / BWS' }
++  extend home { component platform 'Kubernetes基盤' { component cloudflared 'cloudflared / 自宅connector' component api 'Kubernetes API / Lease' } }
++  extend home.apps {
++    system loockit 'Loockit' { component proxy 'HAProxy / leaderへ転送' }
++    system coupon_manager 'Coupon Manager' { component web 'Web' component api 'API / AI・DB' }
++    component wol 'Wake-on-LAN'
++    component magic_mirror 'MagicMirror'
++    component annict_scraper 'Annict scraper'
++  }
++  extend home.recording {
++    component epgstation 'EPGStation'
++    system tnlastation 'TNLaStation / 共通モデル' {
++      description '本番とstagingへ同じ機能構造をinstanceOfで配置。値・imageの複製で論理モデルを増やさない。'
++      component gateway 'Gateway'
++      component frontend 'Frontend'
++      component backend 'Backend / API・録画制御'
++      component encode 'ffmpeg encode worker'
++      component streaming 'ffmpeg streaming worker'
++      component mediamtx 'MediaMTX / HLS配信'
++    }
++    component mirakurun 'Mirakurun Service / 本番LXCへの中継'
++    component mirakurun_staging 'Mirakurun Service / STG LXCへの中継'
++    component annict_sync 'Annict録画同期 / CronJob'
++  }
++  extend home.agent {
++    component collector 'vmagent / scrape・remoteWrite'
++    store local_store 'VictoriaMetrics / 自宅' { description '自宅のmetricsは自宅VictoriaMetricsに保存。OCI側VMへの送信とは別。' }
++    component pdc 'PDC agent / 自宅'
++    component exporters 'exporter群' { description 'node・PVE・SNMP・NUT・TinyTuya・blackbox・speedtest。個別Applicationを内部に保持。' }
++  }
++  extend control {
++    component images 'Image Updater'
++    component reviews 'Re:Venterの一時レビュー' { description 'reventerだけTalosから非公開配信。my-infraの本番・レビューはGitHub Pages。' }
++    component packer 'Packer / VM template' { link https://github.com/miutaku/my-infra/tree/main/packer '定義' }
++  }
++  extend control.argo { component registry 'Application登録 / root-app' }
++  extend data {
++    component shared '共有PV / runner cache・状態'
++    component databases 'DB / アプリ共有基盤' {
++      store mariadb 'MariaDB'
++      store postgres 'PostgreSQL / 本番・STG'
++    }
++    component backups 'バックアップ処理' {
++      component nas 'NAS restic / CronJob'
++      component db 'MariaDB・PostgreSQL / logical dump'
++      component metrics 'VictoriaMetrics / consistent snapshot'
++      component recordings '録画ファイル用 / 別job'
++    }
++  }
++  extend data.nas {
++    store nas01 'nas-01 / ZFS・NFS'
++    store nas02 'nas-02 / ZFS・NFS'
++  }
++  extend hardware {
++    component lb 'HAProxy / Keepalived ×2' { description 'VM10001・10002。Terraform/PVEとAnsible/load-balancerで管理。' }
++    component dev '開発アプリVM / Docker'
++    component kiosk 'DisplayLink kiosk / VLAN40'
++    component unifi 'UniFi OS Server'
++    component wifi 'Wi-Fi AP'
++    component kvm 'NanoKVM ×2'
++    component rpi_workers 'RPi worker ×2' { description 'Talos worker。UPS監視用Piとは別機器。' }
++    component loockit_a 'Loockit LXC / x570・CT12902'
++    component loockit_b 'Loockit LXC / b550m・CT12903'
++    component ble_a 'x570 BlueZ / Bluetooth'
++    component ble_b 'b550m BlueZ / Bluetooth'
++    component tuner_prod 'Mirakurun LXC / CT12901・PT3'
++    component tuner_stg 'Mirakurun STG LXC / CT12904・PX-S1UD' { description 'GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
++  }
++  extend hardware.ups {
++    component mains '商用AC'
++    component surge_a 'UPS A / サージのみ口・非backup'
++    component ups_a 'UPS A / APC RS550S 2020'
++    component ups_b 'UPS B / APC RS550S 2025'
++    component pi_a 'NUT Pi .112 / 監視A・給電B'
++    component pi_b 'NUT Pi .113 / 監視B・給電A'
++  }
++  system lan 'LAN / VLAN・経路' { link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 'IF・ACL定義'
++    component native 'native / 192.168.0.0/24'
++    component management 'VLAN10 / 192.168.10.0/24'
++    component server 'VLAN20 / 192.168.20.0/24'
++    component client 'VLAN30 / 192.168.30.0/24'
++    component guest 'VLAN31 / guest' { description '他VLANへの通信は不可。全VLAN間を到達可能として描かない。' }
++    component iot 'VLAN40 / 192.168.40.0/24'
++  }
++  extend oke {
++    component services 'STG共通Application'
++    component network 'OCI network' {
++      component public_api '公開API・LB subnet'
++      component private_workers 'private worker subnet'
++      component nat 'NAT gateway / reserved IP'
++      component igw 'Internet gateway'
++      component service_gateway 'Service Gateway / Oracle Services'
++    }
++    component workers 'base / burst node pool' { description 'worker compartmentの権限はAutoscalerへ限定。control plane・公開APIと区別する。' }
++  }
++  extend reventer {
++    component platform 'PRD共通基盤・外部所有アプリ登録' { description '共通アドオンとApplication登録はmy-infra。アプリ実装・PRDクラスタ本体の所有はreventer。' }
++    component collectors 'STG・PRD監視collector' { description 'reventer側monitoring manifestsを自宅ArgoCDが同期する。' }
++  }
++  extend reventer.platform { component external_secrets 'ESO / PRD共通基盤' }
++  extend monitoring.vms {
++    store stg 'STG監視VM ×2 / 専用アカウント'
++    store prd 'PRD監視VM ×2 / 専用アカウント'
++  }
++  bws .secret reventer.platform.external_secrets 'ESO / PRD Secret注入'
++  home.apps.loockit.proxy .runtime hardware.loockit_a 'readyz / leaderのみ'
++  home.apps.loockit.proxy .runtime hardware.loockit_b 'readyz / leaderのみ'
++  hardware.loockit_a .runtime hardware.ble_a 'read-only D-Bus / org.bluez'
++  hardware.loockit_b .runtime hardware.ble_b 'read-only D-Bus / org.bluez'
++  hardware.loockit_a .runtime home.platform.api 'Lease leader election'
++  hardware.loockit_b .runtime home.platform.api 'Lease leader election'
++  home.apps.coupon_manager.web .runtime home.apps.coupon_manager.api '内部API'
++  home.apps.coupon_manager.api .runtime data.databases.postgres 'PostgreSQL'
++  home.apps.coupon_manager.api .runtime external.ai 'AI API'
++  home.nextcloud .runtime data.databases.mariadb 'MYSQL_HOST / MariaDB'
++  home.recording.epgstation .runtime data.databases.mariadb 'EPGStation DB'
++  home.recording.tnlastation.gateway .runtime home.recording.tnlastation.frontend 'Web'
++  home.recording.tnlastation.gateway .runtime home.recording.tnlastation.backend 'API'
++  home.recording.tnlastation.gateway .runtime home.recording.tnlastation.mediamtx 'HLS'
++  home.recording.tnlastation.backend .runtime home.recording.tnlastation.encode 'encode制御'
++  home.recording.tnlastation.backend .runtime home.recording.tnlastation.streaming 'streaming制御'
++  home.recording.tnlastation.streaming .runtime home.recording.tnlastation.mediamtx '配信'
++  home.recording.tnlastation.backend .runtime data.databases.postgres 'PostgreSQL'
++  home.recording.tnlastation.encode .runtime data.databases.postgres 'encode状態'
++  home.recording.tnlastation.backend .runtime home.recording.mirakurun 'tuner API'
++  home.recording.epgstation .runtime home.recording.mirakurun 'tuner API'
++  home.recording.mirakurun .runtime hardware.tuner_prod 'EndpointSlice / 外部LXC'
++  home.recording.mirakurun_staging .runtime hardware.tuner_stg 'EndpointSlice / 外部LXC'
++  hardware.tuner_stg .runtime hardware.tuner_prod 'BS/CS TCP fallback'
++  home.recording.annict_sync .runtime home.apps.annict_scraper '番組照合'
++  home.recording.annict_sync .runtime home.recording.tnlastation.backend '録画登録API'
++  home.apps.annict_scraper .runtime external.annict 'Annict API'
++  hardware.kiosk .runtime home.apps.magic_mirror '表示'
++  home.apps.wol .runtime lan.native 'Wake-on-LAN'
++  home.agent.exporters .observe home.agent.collector 'scrape'
++  home.agent.collector .observe home.agent.local_store 'remoteWrite / :8428'
++  home.agent.pdc .connect monitoring.grafana '外向きPDC接続'
++  monitoring.grafana .query home.agent.pdc 'PDC経由の検索'
++  home.agent.pdc .query home.agent.local_store 'private query / :8428'
++  reventer.collectors .observe monitoring.vms.stg 'STG metrics / logs'
++  reventer.collectors .observe monitoring.vms.prd 'PRD metrics / logs'
++  monitoring.vms .connect monitoring.grafana 'VM側PDC agentから外向き接続'
++  hardware.router .network lan.native 'native IF'
++  hardware.router .network lan.management 'BVI10'
++  hardware.router .network lan.server 'BVI20'
++  hardware.router .network lan.client 'BVI30'
++  hardware.router .network lan.guest 'BVI31 / 他VLAN拒否'
++  hardware.router .network lan.iot 'BVI40'
++  home.platform.cloudflared .connect edge.tunnel '外向きTunnel接続'
++  edge.warp .network lan.server 'private CIDR routes / WARP policy'
++  edge.tunnel .runtime home.nextcloud '公開hostname / 内部HTTP'
++  edge.tunnel .runtime home.recording.tnlastation.gateway '公開hostname / 内部HTTP'
++  edge.tunnel .runtime home.apps.coupon_manager.web '公開hostname / 内部HTTP'
++  edge.tunnel .admin control.argo 'Access後 / 管理UI'
++  data.databases .runtime data.nas 'DB用NFS PVC'
++  home.agent.local_store .runtime data.nas 'metrics用NFS PVC'
++  data.pbs .backup external.idrive 'S3 datastore / VM backup'
++  data.nas .backup data.backups.nas '対象dataset / restic'
++  data.databases .backup data.backups.db '整合性あるlogical dump'
++  home.agent.local_store .backup data.backups.metrics 'snapshot / vmbackup'
++  home.recording .backup data.backups.recordings '録画ファイル専用job'
++  data.backups .backup external.idrive '用途別prefix / 暗号化・retention'
++  hardware.ups.mains .power hardware.ups.ups_a 'AC入力'
++  hardware.ups.mains .power hardware.ups.surge_a '非バックアップ出力'
++  hardware.ups.surge_a .power hardware.ups.ups_b 'UPS BのAC入力'
++  hardware.ups.ups_a .power hardware.x570 'バッテリー給電'
++  hardware.ups.ups_a .power hardware.ups.pi_b 'cross-power / PiBの給電元'
++  hardware.ups.ups_b .power hardware.b550m 'バッテリー給電'
++  hardware.ups.ups_b .power hardware.ups.pi_a 'cross-power / PiAの給電元'
++  hardware.ups.ups_a .network hardware.ups.pi_a 'USB監視 / ups-a'
++  hardware.ups.ups_b .network hardware.ups.pi_b 'USB監視 / ups-b'
++  hardware.x570 .query hardware.ups.pi_a 'charge-guard監視 / 80%で自身停止'
++  hardware.b550m .query hardware.ups.pi_b 'charge-guard監視 / 80%で自身停止'
++  hardware.ups.pi_b .query hardware.ups.pi_a 'ups-a監視 / LOWBATT10%で自身停止'
++  hardware.ups.pi_a .query hardware.ups.pi_b 'ups-b監視 / LOWBATT10%で自身停止'
++  control.packer .deploy hardware 'VM template'
++  control.git .deploy external.github_pages '構成図・PR比較を公開'
++  bws .secret control.ansible '機器・PBS用credential'
++  bws .secret data.backups 'ESO経由 / backup credential'
++  oke.workers .network oke.network.private_workers 'private subnet / 10.0.2.0/24'
++  oke.network.private_workers .network oke.network.nat 'default route'
++  oke.network.private_workers .network oke.network.service_gateway 'Oracle service CIDR route'
++  oke.network.nat .network external.internet 'NAT / reserved IPv4'
++  oke.network.service_gateway .network external.oracle 'Oracle Services Network'
++  external.internet .network oke.network.igw '公開API・LBへの到達'
++  oke.network.igw .network oke.network.public_api 'public route table'
++  home.recording .runtime data.nas.nas02 '録画・thumbnail・drop / NFS'
++  home.apps.coupon_manager .runtime data.nas.nas02 'images・Data Protection keys / PVC'
++
++}
+diff --git a/docs/architecture/logical.c4 b/docs/architecture/logical.c4
+index 2c26d29..488deed 100644
+--- a/docs/architecture/logical.c4
++++ b/docs/architecture/logical.c4
+@@ -15,7 +15,7 @@ model {
+     component apps '宅内アプリ' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
+     component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
+     component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
+-    component agent '収集agent' { description 'vmagent・exporter・PDC agent。監視保存先とは分離。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
++    component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
+   }
+   system oke 'OCI / STG OKE共通基盤' {
+     description '東京リージョン。base workerとburst workerを使用し、AutoscalerはOKE内で動く。Re:VenterアプリとPRD OKE本体はreventerが所有。'
+@@ -41,12 +41,12 @@ model {
+     component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
+   }
+   system data '保存・バックアップ' {
+-    store nas 'TrueNAS / NFS' { description 'NAS2台。Kubernetes PVCやメディアを保存。マウント・snapshot・レプリケーションとVMバックアップを区別する。' link https://github.com/miutaku/my-infra/tree/main/ansible/truenas '定義' }
++    store nas 'TrueNAS / NFS' { description 'NAS2台。Kubernetes PVCやメディアを保存。マウント・データセットとNFS share、VMバックアップを区別する。' link https://github.com/miutaku/my-infra/tree/main/ansible/truenas '定義' }
+     store pbs 'Proxmox Backup Server' { description 'VMバックアップ。NFSのオンライン利用経路とは別。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs '定義' }
+   }
+   system monitoring '監視' {
+     store vms 'OCI監視VM / STG・PRD' { description 'OKEから独立したVM2台／環境へVictoriaMetrics・VictoriaLogsを配置。STG/PRDの定義ディレクトリとアカウントは分離。' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability-stg 'STG定義' link https://github.com/miutaku/my-infra/tree/main/terraform/oci-observability 'PRD定義' }
+-    component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存はOCI VM側。' }
++    component grafana 'Grafana Cloud / PDC' { description 'PDC agentが外向き接続を作り、Grafanaからprivate監視データを照会する。保存先は自宅VictoriaMetricsとOCI監視VM。' }
+   }
+   user .runtime edge 'HTTPS'
+   edge .runtime home 'Tunnel / 内部HTTP'
+@@ -72,13 +72,9 @@ model {
+   bws .secret oke.eso 'Secret注入'
+   bws .secret control.git 'CI credential'
+   bws .secret control.tfc 'Terraform変数'
+-  home.agent .observe monitoring.vms 'metrics / logs'
+-  oke .observe monitoring.vms 'metrics / logs'
+-  hardware .observe home.agent 'exporter収集'
++  hardware .observe home.agent.collector 'exporter収集'
+   operator .query monitoring.grafana '照会'
+   monitoring.grafana .query monitoring.vms 'PDC経由'
+   hardware.x570 .backup data.pbs 'VM backup'
+   hardware.b550m .backup data.pbs 'VM backup'
+-  hardware.ups .deploy hardware.x570 '電源断時の停止制御'
+-  hardware.ups .deploy hardware.b550m '電源断時の停止制御'
+ }
+diff --git a/docs/architecture/resources.html b/docs/architecture/resources.html
+index 13988d8..81733b5 100644
+--- a/docs/architecture/resources.html
++++ b/docs/architecture/resources.html
+@@ -1,8 +1,8 @@
+ <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>my-infra / リソース一覧</title>
+ <style>body{font:15px system-ui;max-width:1100px;margin:30px auto;padding:0 18px}input{font:inherit;padding:10px;width:100%;box-sizing:border-box}td,th{text-align:left;padding:10px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}table{width:100%;table-layout:fixed}a{color:#2459b5}small{color:#555}</style>
+-<a href="./">← 構成図</a><h1>リソース一覧</h1><p>Terraform・Kubernetes定義から名前と参照元を自動抽出。Secretの値・環境変数・接続資格情報は掲載しません。図の箱に省略したリソースもここで検索できます。</p><input id="filter" type="search" placeholder="名前・種類・namespace・定義ファイルで検索"><p id="count"></p><table><thead><tr><th>種類</th><th>名前</th><th>定義</th></tr></thead><tbody id="rows"></tbody></table>
++<a href="./">← 構成図</a><h1>リソース一覧</h1><p>Terraform・Kubernetes・NAS dataset・Tunnel hostnameから名前と参照元を自動抽出。Secretの値・環境変数・接続資格情報は掲載しません。図の箱に省略したリソースもここで検索できます。</p><input id="filter" type="search" placeholder="名前・種類・namespace・定義ファイルで検索"><p id="count"></p><table><thead><tr><th>種類</th><th>名前</th><th>定義</th><th>関連する図</th></tr></thead><tbody id="rows"></tbody></table>
+ <script type="module">
+-const records=await(await fetch('resource-inventory.json')).json(),rows=document.getElementById('rows');
+-function render(){const query=document.getElementById('filter').value.toLowerCase(),matches=records.filter(row=>JSON.stringify(row).toLowerCase().includes(query));document.getElementById('count').textContent=`${matches.length} / ${records.length} 件`;rows.replaceChildren();for(const item of matches){const tr=document.createElement('tr');for(const text of [item.type,item.name+(item.namespace?` (${item.namespace})`:'')]){const td=document.createElement('td');td.textContent=text;tr.append(td);}const td=document.createElement('td'),a=document.createElement('a');a.href='https://github.com/miutaku/my-infra/blob/main/'+item.file;a.textContent=item.file;td.append(a);tr.append(td);rows.append(tr);}}
++const records=await(await fetch('resource-inventory.json')).json(),coverage=await(await fetch('model-coverage.json')).json(),manifest=await(await fetch('view-manifest.json')).json(),byId=new Map(coverage.records.map(row=>[row.id,row])),rows=document.getElementById('rows');
++function render(){const query=document.getElementById('filter').value.toLowerCase(),matches=records.filter(row=>JSON.stringify(row).toLowerCase().includes(query));document.getElementById('count').textContent=`${matches.length} / ${records.length} 件`;rows.replaceChildren();for(const item of matches){const tr=document.createElement('tr');for(const text of [item.type,item.name+(item.namespace?` (${item.namespace})`:'')]){const td=document.createElement('td');td.textContent=text;tr.append(td);}const td=document.createElement('td'),a=document.createElement('a');a.href='https://github.com/miutaku/my-infra/blob/main/'+item.file;a.textContent=item.file;td.append(a);tr.append(td);const context=byId.get(item.id),modelTd=document.createElement('td');if(context){const link=document.createElement('a');link.href='./#view='+encodeURIComponent(context.view);link.textContent=manifest[context.view]?.title??'構成図';modelTd.append(link);}tr.append(modelTd);rows.append(tr);}}
+ document.getElementById('filter').oninput=render;render();
+ </script></html>
+diff --git a/docs/architecture/scripts/apply-ai-update.mjs b/docs/architecture/scripts/apply-ai-update.mjs
+index 3c85250..73cec18 100644
+--- a/docs/architecture/scripts/apply-ai-update.mjs
++++ b/docs/architecture/scripts/apply-ai-update.mjs
+@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,lstatSync} from 'node:fs';
+ import {resolve} from 'node:path';
+ import {fileURLToPath} from 'node:url';
+ 
+-export const allowedPaths=new Set(["docs/architecture/logical.c4", "docs/architecture/views.c4", "docs/architecture/deployment.c4"]);
++export const allowedPaths=new Set(["docs/architecture/logical.c4", "docs/architecture/views.c4", "docs/architecture/deployment.c4", "docs/architecture/details.c4"]);
+ 
+ export function applyUpdate(root,result){
+  if(!result || typeof result.summary!=='string' || result.summary.length>20000 ||
+diff --git a/docs/architecture/scripts/build.mjs b/docs/architecture/scripts/build.mjs
+index efe10c3..ca3e213 100644
+--- a/docs/architecture/scripts/build.mjs
++++ b/docs/architecture/scripts/build.mjs
+@@ -1,18 +1,31 @@
+ import {spawnSync} from 'node:child_process';
+-import {writeFileSync,copyFileSync,rmSync} from 'node:fs';
+-import {adaptViewer} from './relationship-navigation.mjs';
++import {writeFileSync,copyFileSync,rmSync,readFileSync} from 'node:fs';
++import {adaptViewer,targetView} from './relationship-navigation.mjs';
+ import {adaptLineFilters} from './line-filters.mjs';
+ rmSync('dist',{recursive:true,force:true});
+ for(const [command,args] of [
+  ['node',['scripts/inventory.mjs']],
++ ['node',['scripts/catalog.mjs']],
+  ['./node_modules/.bin/likec4',['validate']],
++ ['./node_modules/.bin/likec4',['export','json','.','-p','my-infra','--skip-layout','-o','model.json']],
+  ['./node_modules/.bin/likec4',['build','.','-o','dist/diagram','--use-hash-history','--base','./','--title','my-infra Architecture']],
+ ]){
+  const result=spawnSync(command,args,{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
+ }
+ adaptViewer('dist/diagram/assets');
+ adaptLineFilters('dist/diagram/assets');
++const model=JSON.parse(readFileSync('model.json','utf8'));
++const manifest={};
++for(const [id,view] of Object.entries(model.views))manifest[id]={
++ title:view.title,description:view.description?.txt??view.description?.md??'',
++ kinds:[...new Set(view.edges.map(edge=>edge.kind).filter(Boolean))],
++};
++writeFileSync('dist/view-manifest.json',JSON.stringify(manifest));
++copyFileSync('model.json','dist/model.json');
+ copyFileSync('shell.html','dist/index.html');
+ copyFileSync('resource-inventory.json','dist/resource-inventory.json');
+ copyFileSync('resources.html','dist/resources.html');
++const coverage=JSON.parse(readFileSync('model-coverage.json','utf8'));
++for(const record of coverage.records)record.view=targetView(record.modelRef);
++writeFileSync('dist/model-coverage.json',JSON.stringify(coverage));
+ writeFileSync('dist/.nojekyll','');
+diff --git a/docs/architecture/scripts/catalog.mjs b/docs/architecture/scripts/catalog.mjs
+new file mode 100644
+index 0000000..ada3420
+--- /dev/null
++++ b/docs/architecture/scripts/catalog.mjs
+@@ -0,0 +1,77 @@
++import {readFileSync,writeFileSync} from 'node:fs';
++import {resolve} from 'node:path';
++import {createHash} from 'node:crypto';
++import {parseAllDocuments} from 'yaml';
++import {inventory} from './inventory.mjs';
++const q=value=>JSON.stringify(String(value));
++const id=value=>'r_'+createHash('sha256').update(value).digest('hex').slice(0,14);
++const slug=value=>value.replace(/[^a-zA-Z0-9_]/g,'_');
++const known={nextcloud:'home.nextcloud',epgstation:'home.recording.epgstation',tnlastation:'home.recording.tnlastation','tnlastation-staging':'home.recording.tnlastation',mirakurun:'home.recording.mirakurun','mirakurun-staging':'home.recording.mirakurun_staging',loockit:'home.apps.loockit','coupon-manager':'home.apps.coupon_manager',wol:'home.apps.wol','magic-mirror':'home.apps.magic_mirror','annict-scraper':'home.apps.annict_scraper','annict-rec-sync':'home.recording.annict_sync','annict-rec-sync-tnlastation':'home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'home.recording.annict_sync',mariadb:'data.databases.mariadb',postgres:'data.databases.postgres','postgres-staging':'data.databases.postgres',cloudflared:'home.platform.cloudflared',coredns:'home.dns.coredns',metallb:'home.dns.metallb','external-secrets':'home.eso','external-secrets-config':'home.eso.config',vmagent:'home.agent.collector','victoria-metrics':'home.agent.local_store','pdc-agent':'home.agent.pdc','nas-backup':'data.backups.nas','shared-state-storage':'data.shared', 'root-app':'control.argo.registry'};
++function placement(file,destination){
++ if(destination.name==='oke-prd'||file.startsWith('k8s/oci-prd/'))return 'prd';
++ if(destination.name==='oke-stg'||file.startsWith('k8s/oci/'))return 'stg';
++ if(destination.server==='https://kubernetes.default.svc'||(!destination.server&&!destination.name))return 'homeSite.talos';
++ throw new Error(`Unknown deployment destination in ${file}; declare its cluster before publishing`);
++}
++export function generateCatalog(root){
++ const rows=inventory(root),apps=[],declarations=new Map(),extensions=[],deployments=new Map(),coverage=[];
++ for(const row of rows.filter(row=>row.type==='Application')){
++  const doc=parseAllDocuments(readFileSync(resolve(root,row.file),'utf8')).map(doc=>doc.toJS()).find(doc=>doc?.kind==='Application'&&doc.metadata.name===row.name);
++  const spec=doc.spec,destination=spec.destination??{},scope=placement(row.file,destination),sources=spec.sources??[spec.source??{}];
++  let ref=scope==='homeSite.talos'?known[row.name]:scope==='stg'&&row.name==='oci-external-secrets'?'oke.eso':scope==='prd'&&row.name==='oci-prd-external-secrets'?'reventer.platform.external_secrets':null;
++  if(!ref){
++   let parent=scope==='homeSite.talos'?'home.apps':scope==='stg'?'oke.services':'reventer.platform';
++   if(scope==='homeSite.talos'&&/exporter/.test(row.name))parent='home.agent.exporters';
++   else if(scope==='homeSite.talos'&&/^arc-/.test(row.name))parent='control.runner';
++   else if(scope==='homeSite.talos'&&/image-updater/.test(row.name))parent='control.images';
++   else if(scope==='homeSite.talos'&&/tfc-agent/.test(row.name))parent='control.tfc';
++   else if(scope==='homeSite.talos'&&row.name==='reventer-gitops')parent='reventer.platform';
++   else if(scope==='homeSite.talos'&&row.name==='architecture-review')parent='control.reviews';
++   else if(scope==='homeSite.talos'&&row.name==='descheduler')parent='home.platform';
++   ref=`${parent}.${slug(row.name)}`;
++   declarations.set(ref,`extend ${parent} { component ${slug(row.name)} ${q(row.name)} }`);
++  }
++  const sourceText=sources.map(s=>s.path??s.chart??'').filter(Boolean).join(', ');
++  extensions.push(`extend ${ref} { link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "Application定義" metadata { application ${q(row.name)} sourceFile ${q(row.file)} namespace ${q(destination.namespace??'default')} scope ${q(scope)} } }`);
++  apps.push({...row,ref,scope,namespace:destination.namespace??'default',paths:sources.filter(s=>s.repoURL?.includes('miutaku/my-infra')&&s.path).map(s=>s.path),source:sourceText});
++  const key=`${scope}.ns_${slug(destination.namespace??'default')}`;
++  if(!deployments.has(key))deployments.set(key,{scope,namespace:destination.namespace??'default',instances:[]});
++  deployments.get(key).instances.push(`${id(row.id)} = instanceOf ${ref} { title ${q(row.name)} link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "Application定義" }`);
++  coverage.push({...row,modelRef:ref,scope,namespace:destination.namespace??'default',deploymentRef:`${key}.${id(row.id)}`});
++ }
++ const grouped=new Map();
++ for(const row of rows.filter(row=>row.type!=='Application')){
++  const app=apps.filter(app=>app.paths.some(path=>row.file.startsWith(path+'/'))).sort((a,b)=>Math.max(...b.paths.map(p=>p.length))-Math.max(...a.paths.map(p=>p.length)))[0];
++  let parent=app?.ref;
++  if(!parent){
++   parent=row.file.startsWith('terraform/cloudflare/')?'edge':row.file.startsWith('terraform/oci-observability')?'monitoring.vms':row.file.startsWith('terraform/oci/')?'oke':row.file.startsWith('terraform/home-k8s/')?'hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'data.nas.nas01':'data.nas.nas02'):row.file.startsWith('k8s/oci-prd/')?'reventer.platform':row.file.startsWith('k8s/oci/')?'oke.services':'definitions';
++  }
++  const ref=`${parent}.resources.${id(row.id)}`;
++  if(!grouped.has(parent))grouped.set(parent,[]);
++  grouped.get(parent).push(`component ${id(row.id)} ${q(row.name)} { description ${q(row.type+' / '+row.file+(row.namespace?' / namespace '+row.namespace:''))} link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "定義" metadata { resourceId ${q(row.id)} resourceType ${q(row.type)} sourceFile ${q(row.file)} } }`);
++  coverage.push({...row,modelRef:ref,registered:!!app});
++ }
++ const routes=[],routeElements=[],routeLinks=[];
++ const locals=readFileSync(resolve(root,'terraform/cloudflare/locals.tf'),'utf8');
++ const homeRoutes=locals.slice(locals.indexOf('home_k8s_services ='),locals.indexOf('  # Private network routes'));
++ const protectedPart=locals.match(/access_protected_subdomains\s*=\s*toset\(\[([\s\S]*?)\]\)/)?.[1]??'';
++ const protectedNames=new Set([...protectedPart.matchAll(/"([^"\n]+)"/g)].map(m=>m[1]));protectedNames.add('architecture-review');
++ const targets={'architecture-review':'control.reviews.architecture_review','argocd-home-k8s':'control.argo',wol:'home.apps.wol','loockit-api':'home.apps.loockit',epgstation:'home.recording.epgstation',tnlastation:'home.recording.tnlastation.gateway','tnlastation-staging':'home.recording.tnlastation.gateway',nextcloud:'home.nextcloud','coupon-manager':'home.apps.coupon_manager.web',unifi:'hardware.unifi','wifi-ap':'hardware.wifi',ix2215:'hardware.router','nas-01':'data.nas.nas01','nas-02':'data.nas.nas02','pve-x570':'hardware.x570','pve-b550m':'hardware.b550m','nanokvm-1':'hardware.kvm','nanokvm-2':'hardware.kvm'};
++ for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
++  const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
++  const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
++  const name=match[1],key=id('hostname:'+name),modelRef='edge.routes.'+key,kind=protectedNames.has(name)?'admin':'runtime';
++  routeElements.push(`component ${key} ${q(name)} { description ${q(backend+' / '+(kind==='admin'?'Access保護':'個別policyは定義を参照'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" }`);
++  routeLinks.push(`edge.tunnel .${kind} ${modelRef} "hostname転送"`);
++  if(targets[name])routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
++  if(kind==='admin')routeLinks.push(`edge.access .admin ${modelRef} "Access policy"`);
++  const row={id:'hostname:'+name,type:'Tunnel hostname',name,file:'terraform/cloudflare/locals.tf',modelRef};routes.push(row);coverage.push(row);
++ }
++ const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend edge { component routes \"公開hostname / 設定から抽出\" { ${routeElements.join('\n')} } }`,...routeLinks,...[...grouped].map(([parent,items])=>`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
++ return {dsl,coverage,apps,rows:[...rows,...routes],routeCount:routes.length};
++}
++if(process.argv[1]&&resolve(process.argv[1])===resolve(import.meta.filename)){
++ const {dsl,coverage,apps,rows,routeCount}=generateCatalog(resolve('../..'));
++ writeFileSync('catalog.c4',dsl+'\n');writeFileSync('resource-inventory.json',JSON.stringify(rows,null,2)+'\n');writeFileSync('model-coverage.json',JSON.stringify({applications:apps.length,definitions:coverage.length,tunnelRoutes:routeCount,records:coverage},null,2)+'\n');
++ console.log(`Catalog: ${apps.length} Applications and ${coverage.length} resource declarations mapped into the model`);
++}
+diff --git a/docs/architecture/scripts/inventory.mjs b/docs/architecture/scripts/inventory.mjs
+index 3c1ce0d..ae8cc9b 100644
+--- a/docs/architecture/scripts/inventory.mjs
++++ b/docs/architecture/scripts/inventory.mjs
+@@ -21,6 +21,9 @@ export function inventory(root){
+     for(const doc of parseAllDocuments(readFileSync(path,'utf8'))){
+      if(doc.errors.length)throw new Error(`Invalid YAML: ${file}`);
+      const value=doc.toJS();
++     if(file.startsWith('ansible/truenas/host_vars/')&&Array.isArray(value?.truenas_datasets)){
++      for(const dataset of value.truenas_datasets)records.push({id:`${file}:dataset:${dataset.name}`,type:'TrueNAS dataset',name:dataset.name,file});
++     }
+      if(file.startsWith('k8s/')&&value?.apiVersion&&value?.kind&&value?.metadata?.name){
+       records.push({id:`${file}:${value.kind}:${value.metadata.namespace??''}:${value.metadata.name}`,type:value.kind,name:value.metadata.name,namespace:value.metadata.namespace??'',file});
+      }
+diff --git a/docs/architecture/scripts/line-filters.mjs b/docs/architecture/scripts/line-filters.mjs
+index 29e8328..959ce64 100644
+--- a/docs/architecture/scripts/line-filters.mjs
++++ b/docs/architecture/scripts/line-filters.mjs
+@@ -8,7 +8,7 @@ export function adaptLineFilters(directory){
+  let next=source.replace(pattern,(match,where,first,react)=>{
+  hooks++;
+  const boundary=match.indexOf('{let ')+1;
+- const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
++ const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
+  return match.slice(0,boundary)+injection+match.slice(boundary);
+  });
+  // Updating the where input alone does not refresh existing React Flow edges.
+diff --git a/docs/architecture/scripts/relationship-navigation.mjs b/docs/architecture/scripts/relationship-navigation.mjs
+index c5474ba..57c8a16 100644
+--- a/docs/architecture/scripts/relationship-navigation.mjs
++++ b/docs/architecture/scripts/relationship-navigation.mjs
+@@ -2,6 +2,10 @@ import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
+ // Adapt the pinned LikeC4 1.59.4 viewer: relationship actions open curated views.
+ // Fail the build if the upstream API changes, rather than silently losing this behavior.
+ export function targetView(fqn) {
++ if(fqn.startsWith('hardware.ups'))return 'power';
++ if(fqn.startsWith('lan')||fqn.startsWith('oke.network')||fqn.startsWith('hardware.router')||fqn.startsWith('home.dns')||fqn.startsWith('edge.warp'))return 'network';
++ if(fqn.startsWith('data')||fqn==='external.idrive')return 'storage';
++ if(fqn.startsWith('home.recording'))return 'media';
+  if(fqn==='bws'||fqn.endsWith('.eso'))return 'secrets';
+  if(fqn.startsWith('control'))return 'delivery';
+  if(fqn.startsWith('monitoring')||fqn==='home.agent')return 'observability';
+diff --git a/docs/architecture/shell.html b/docs/architecture/shell.html
+index 0d3b0f5..d1004ab 100644
+--- a/docs/architecture/shell.html
++++ b/docs/architecture/shell.html
+@@ -1,32 +1,34 @@
+ <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>my-infra Architecture</title>
+ <style>*{box-sizing:border-box}body{margin:0;background:#111318;color:#edf0f7;font:14px system-ui,sans-serif}header{min-height:72px;padding:14px 22px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;border-bottom:1px solid #333846}strong{font-size:18px}small{display:block;color:#9da8bc;margin-top:3px}nav{display:flex;gap:6px;flex:1}button,select{font:inherit;color:#e4e9f2;border:1px solid #434b5c;border-radius:7px;background:#202530;padding:8px 13px;cursor:pointer}button.active{background:#384b79;border-color:#7d9de2}label{display:flex;align-items:center;gap:10px}#note{padding:10px 22px;background:#1b2230;color:#cdd9f0;font-size:13px;border-bottom:1px solid #343d4e;line-height:1.6}iframe{display:block;width:100%;height:calc(100dvh - 173px);min-height:480px;border:0;background:#fff}@media(max-width:700px){header{gap:12px;padding:12px}nav{order:3;flex-basis:100%;overflow:auto}#note{padding:8px 12px}iframe{height:calc(100dvh - 230px)}}
+ dialog{width:min(1100px,95vw);max-height:85dvh;border:1px solid #4c5871;border-radius:12px;background:#171d29;color:#edf0f7;padding:24px}dialog::backdrop{background:#000a}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;text-align:left;border-bottom:1px solid #343d4e;overflow-wrap:anywhere}td a{color:#9ec2ff}#inventoryNote{color:#b3bed1;line-height:1.6}</style><header><div><strong>my-infra Architecture</strong><small>LikeC4 · 箱から詳細へ</small></div><nav aria-label="構成図"><button data-view="index">全体</button><button data-view="home_apps">自宅サービス</button><button data-view="delivery">CI・デプロイ</button></nav><select id="perspective" aria-label="インフラの表示"><option value="" disabled>監視・秘密情報・配置</option><option value="secrets">秘密情報の管理・注入</option><option value="observability">監視の収集・保存・照会</option><option value="placement">配置・所有境界</option></select><button id="resources">リソース一覧</button><button id="up" hidden>← 全体へ戻る</button></header>
+-<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
+-<dialog id="inventory"><div style="display:flex;justify-content:space-between;align-items:center;gap:20px"><strong id="inventoryTitle"></strong><button id="closeInventory">閉じる</button></div><p id="inventoryNote"></p><table><thead><tr><th>種類</th><th>Terraform名</th><th>定義</th></tr></thead><tbody id="inventoryRows"></tbody></table></dialog>
++<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><label style="color:#9da8bc"><input type="checkbox" data-kind="network" checked>ネットワーク接続</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="power" checked>給電</label><label style="color:#79c8f7"><input type="checkbox" data-kind="connect" checked>外向き接続</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
++<dialog id="inventory"><div style="display:flex;justify-content:space-between;align-items:center;gap:20px"><strong id="inventoryTitle"></strong><button id="closeInventory">閉じる</button></div><p id="inventoryNote"></p><p><a href="./resources.html" style="color:#9ec2ff">名前・種類で検索し、関連する図を見る</a></p><table><thead><tr><th>種類</th><th>名前</th><th>定義</th></tr></thead><tbody id="inventoryRows"></tbody></table></dialog>
+ <script>
++(async()=>{
+ const frame=document.querySelector('#diagram'),note=document.querySelector('#note');
+-const views=['index','home_apps','delivery','secrets','observability','placement'];
++const manifest=await fetch('./view-manifest.json').then(r=>r.json()),views=Object.keys(manifest);
++const perspectives=document.querySelector('#perspective');perspectives.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.disabled=true;placeholder.textContent='その他の観点';perspectives.append(placeholder);for(const id of views.filter(id=>!['index','home_apps','delivery'].includes(id))){const option=document.createElement('option');option.value=id;option.textContent=manifest[id].title;perspectives.append(option);}
+ const initial=new URLSearchParams(location.hash.slice(1));
+ let view=initial.get('view')||location.hash.match(/\/view\/([^/?]+)/)?.[1]||'index';if(!views.includes(view))view='index';
+-const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true};
++const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true};
+ window.myInfraLineFilters={...defaults};
+ try{const saved=JSON.parse(localStorage.getItem('my-infra-line-filters'));for(const kind of Object.keys(defaults))if(typeof saved?.[kind]==='boolean')window.myInfraLineFilters[kind]=saved[kind]}catch{}
+ const toggles=[...document.querySelectorAll('[data-kind]')];
+ function sendFilters(){for(const input of toggles)input.checked=window.myInfraLineFilters[input.dataset.kind];try{localStorage.setItem('my-infra-line-filters',JSON.stringify(window.myInfraLineFilters))}catch{}frame.contentWindow.postMessage({type:'my-infra:line-filters',filters:window.myInfraLineFilters},location.origin)}
+ for(const input of toggles)input.onchange=()=>{window.myInfraLineFilters={...window.myInfraLineFilters,[input.dataset.kind]:input.checked};sendFilters()};
+ document.querySelector('#allLines').onclick=()=>{window.myInfraLineFilters={...defaults};sendFilters()};frame.addEventListener('load',sendFilters);
+-const pageKinds={index:['runtime','admin','secret','observe','query'],home_apps:['runtime'],delivery:['deploy'],secrets:['secret'],observability:['observe','query'],placement:[]};
+-const notes={index:'全体：利用者・管理者の入口と、Cloudflare・自宅・OKE・保存・監視・BWSの関係。箱を開くと用途別の詳細へ。デプロイは別の観点で確認します。',home_apps:'自宅サービス：Cloudflare Tunnelからアプリへ、NASへの保存と内部DNS。配置・VMの詳細は配置ビューへ。',delivery:'CI・デプロイ：GitHub・Terraform Cloud・Ansible・ArgoCD・ARCから対象基盤への変更経路。利用者通信とは分離しています。',secrets:'秘密情報：BWSからCI・Terraformと、External Secrets Operator経由でクラスタへ注入。秘密値は保持しません。',observability:'監視：exporter・collectorから保存VMへの送信と、Grafana CloudからPDC経由の照会。色と線で方向・用途を区別します。',placement:'配置：自宅の物理ホスト・VM・Talos、STG OKE、reventer所有の境界。標準ビューの要素詳細から内部配置と関係を確認できます。'};
++const pageKinds=Object.fromEntries(views.map(id=>[id,manifest[id].kinds]));
+ function update(){
+  for(const input of toggles)input.closest('label').style.display=pageKinds[view].includes(input.dataset.kind)?'flex':'none';
+- const select=document.querySelector('#perspective');select.value=['secrets','observability','placement'].includes(view)?view:'';
++ const select=document.querySelector('#perspective');select.value=!['index','home_apps','delivery'].includes(view)?view:'';
+  document.querySelector('#up').hidden=view==='index';
+  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+- note.textContent=notes[view];history.replaceState(null,'',`#view=${view}`);
++ note.textContent=manifest[view].description||manifest[view].title;history.replaceState(null,'',`#view=${view}`);
+ }
+ function show(){frame.src=`./diagram/#/view/${view}`;update()}
+ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;show()});document.querySelector('#perspective').onchange=e=>{view=e.target.value;show()};document.querySelector('#up').onclick=()=>{view='index';show()};
+ document.querySelector('#closeInventory').onclick=()=>document.querySelector('#inventory').close();
+ document.querySelector('#resources').onclick=async()=>{const rows=await fetch('./resource-inventory.json').then(r=>r.json());document.querySelector('#inventoryTitle').textContent=`リソース一覧 · ${rows.length} 定義`;document.querySelector('#inventoryNote').textContent='Terraform・Kubernetesから名前と定義元を自動抽出。名前・種類・ファイルは別ページでも検索できます。';const body=document.querySelector('#inventoryRows');body.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const key of ['type','name']){const td=document.createElement('td');td.textContent=r[key];tr.append(td)}const td=document.createElement('td'),a=document.createElement('a');a.href='https://github.com/miutaku/my-infra/blob/main/'+r.file;a.target='_blank';a.rel='noopener noreferrer';a.textContent=r.file;td.append(a);tr.append(td);body.append(tr)}document.querySelector('#inventory').showModal()};
+ setInterval(()=>{try{const next=frame.contentWindow.location.hash.match(/\/view\/([^/?]+)/)?.[1];if(views.includes(next)&&next!==view){view=next;update()}}catch{}},400);show();sendFilters();
++})().catch(error=>{document.querySelector('#note').textContent='構成図を読み込めませんでした。ページを再読み込みしてください。';console.error(error)});
+ </script></html>
+diff --git a/docs/architecture/specification.c4 b/docs/architecture/specification.c4
+index 78a8a9f..6e80fd1 100644
+--- a/docs/architecture/specification.c4
++++ b/docs/architecture/specification.c4
+@@ -10,8 +10,13 @@ specification {
+   relationship observe { color amber line dotted }
+   relationship query { color sky }
+   relationship backup { color amber }
++  relationship network { color gray line dotted }
++  relationship power { color red line solid }
++  relationship connect { color sky line dashed }
+   deploymentNode site { style { color gray } }
+   deploymentNode hypervisor { style { color green } }
++  deploymentNode container { style { color muted } }
++  deploymentNode physical { style { color gray } }
+   deploymentNode vm { style { color muted } }
+   deploymentNode cluster { style { color blue } }
+   deploymentNode namespace { style { color muted } }
+diff --git a/docs/architecture/tests/line-filters.test.mjs b/docs/architecture/tests/line-filters.test.mjs
+index 57867d5..af46dbf 100644
+--- a/docs/architecture/tests/line-filters.test.mjs
++++ b/docs/architecture/tests/line-filters.test.mjs
+@@ -3,7 +3,7 @@ import vm from 'node:vm';
+ import assert from 'node:assert/strict';
+ import {whereOperatorAsPredicate} from '@likec4/core';
+ 
+-const kinds=['runtime','admin','deploy','secret','observe','query','backup'];
++const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect'];
+ for(const env of ['my-infra']){
+   const dir=`dist/diagram/assets`;
+   const files=fs.readdirSync(dir);
+diff --git a/docs/architecture/tests/model-coverage.test.mjs b/docs/architecture/tests/model-coverage.test.mjs
+new file mode 100644
+index 0000000..c860a35
+--- /dev/null
++++ b/docs/architecture/tests/model-coverage.test.mjs
+@@ -0,0 +1,44 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {readFileSync,existsSync} from 'node:fs';
++import {resolve} from 'node:path';
++import {inventory} from '../scripts/inventory.mjs';
++import {parseAllDocuments} from 'yaml';
++const model=JSON.parse(readFileSync('model.json','utf8'));
++const coverage=JSON.parse(readFileSync('model-coverage.json','utf8'));
++test('every source declaration resolves into the compiled model and every Application into its actual namespace/cluster',()=>{
++ for(const row of coverage.records){
++  assert.ok(model.elements[row.modelRef],`Missing model element for ${row.file}: ${row.name}`);
++  if(row.type==='Application'){
++   const deployed=model.deployments.elements[row.deploymentRef];
++   assert.ok(deployed,`Missing deployment for ${row.name}`);assert.equal(deployed.element,row.modelRef);
++   const source=parseAllDocuments(readFileSync(resolve('../..',row.file),'utf8')).map(d=>d.toJS()).find(d=>d?.kind==='Application'&&d.metadata.name===row.name);
++   assert.equal(row.namespace,source.spec.destination.namespace??'default');
++   if(source.spec.destination.name==='oke-prd')assert.equal(row.scope,'prd');
++   if(source.spec.destination.name==='oke-stg')assert.equal(row.scope,'stg');
++  }
++ }
++});
++test('manual details preserve independent media workers, LXC, DB, NUT and correct local monitoring storage',()=>{
++ for(const ref of ['home.recording.tnlastation.encode','home.recording.tnlastation.streaming','home.recording.tnlastation.mediamtx','hardware.loockit_a','hardware.loockit_b','hardware.tuner_prod','hardware.tuner_stg','data.databases.postgres','data.databases.mariadb','data.pbs','external.idrive','hardware.ups.pi_a','hardware.ups.pi_b'])assert.ok(model.elements[ref],ref);
++ const relations=Object.values(model.relations);
++ assert.ok(relations.some(r=>r.source.model==='home.agent.collector'&&r.target.model==='home.agent.local_store'));
++ assert.ok(!relations.some(r=>r.source.model==='home.agent'&&r.target.model==='monitoring.vms'));
++ const physical=Object.values(model.deployments.elements);
++ assert.equal(physical.filter(r=>r.kind==='container').length,4);
++ assert.equal(physical.filter(r=>r.kind==='vm').length,13);
++ for(const element of Object.values(model.elements))for(const link of element.links??[]){
++  const prefix='https://github.com/miutaku/my-infra/';if(!link.url.startsWith(prefix))continue;
++  const path=link.url.replace(/^https:\/\/github.com\/miutaku\/my-infra\/(blob|tree)\/main\//,'');
++  assert.ok(existsSync(resolve('../..',decodeURI(path))),`Broken definition link ${link.url}`);
++ }
++});
++
++test('every active Proxmox module and LXC declaration has a physical placement with source evidence',()=>{
++ const declared=inventory(resolve('../..')).filter(row=>row.file==='terraform/pve/main.tf'&&row.type==='Terraform module'||row.type==='proxmox_virtual_environment_container');
++ const placed=Object.values(model.deployments.elements);
++ for(const row of declared){
++  const reference=row.type==='Terraform module'?'module.'+row.name:row.type+'.'+row.name;
++  assert.ok(placed.some(node=>node.metadata?.sourceFile===row.file&&node.metadata?.resourceRef===reference),`Missing physical placement for ${row.file} ${reference}`);
++ }
++});
+diff --git a/docs/architecture/views.c4 b/docs/architecture/views.c4
+index f416136..52ff595 100644
+--- a/docs/architecture/views.c4
++++ b/docs/architecture/views.c4
+@@ -15,15 +15,17 @@ views {
+     include home.eso with { navigateTo secrets }
+     include monitoring with { navigateTo observability }
+     include oke with { navigateTo placement }
+-    include data with { navigateTo placement }
++    include data with { navigateTo storage }
+     exclude * -> * where kind is deploy or kind is backup
+     rank source { user, operator, bws }
+     autoLayout TopBottom 100 80
+   }
+   view home_apps of home {
+     title '自宅のサービス・保存'
+-    include user, edge, home, home.nextcloud, home.recording, home.apps, home.dns, data, data.nas
+-    include data with { navigateTo placement }
++    include user, edge, home, home.nextcloud, home.recording, home.apps, home.apps.*, home.dns, data, data.nas, data.databases
++    include data with { navigateTo storage }
++    include home.recording with { navigateTo media }
++    include home.dns with { navigateTo network }
+     exclude * -> * where kind is not runtime
+     autoLayout LeftRight 80 60
+   }
+@@ -37,20 +39,48 @@ views {
+   }
+   view secrets {
+     title '秘密情報の管理・注入'
+-    include bws, home, home.eso, oke, oke.eso, control.git, control.tfc
++    include bws, home, home.eso, oke, oke.eso, reventer.platform.external_secrets, control.git, control.tfc, control.ansible, data.backups
+     exclude * -> * where kind is not secret
+     autoLayout LeftRight 80 60
+   }
+   view observability {
+     title '監視の収集・保存・照会'
+-    include operator, hardware, home.agent, oke, monitoring, monitoring.*
+-    exclude * -> * where kind is not observe and kind is not query
++    include operator, hardware, home.agent, home.agent.collector, home.agent.local_store, home.agent.pdc, home.agent.exporters, reventer.collectors, monitoring, monitoring.*
++    exclude * -> * where kind is not observe and kind is not query and kind is not connect
+     autoLayout LeftRight 80 60
+   }
+   deployment view placement {
+     title '配置 / 所有境界'
+-    include homeSite, stg, application
++    include homeSite, stg, prd
+     exclude * -> *
+     autoLayout LeftRight 80 60
+   }
++  view media of home.recording {
++    title '録画・配信 / 制御・変換・保存'
++    include home.recording, home.recording.*, home.recording.tnlastation.*, hardware.tuner_prod, hardware.tuner_stg, home.apps.annict_scraper, external.annict, data.nas, data.databases
++    include data.nas with { navigateTo storage }
++    exclude * -> * where kind is not runtime
++    exclude home.recording.tnlastation.resources
++    autoLayout LeftRight 80 60
++  }
++  view network {
++    title 'ネットワーク / LAN・Tunnel・WARP・OCI'
++    include operator, edge, edge.*, lan, lan.*, hardware.router, hardware.wifi, hardware.unifi, hardware.lb, home.dns, home.dns.coredns, home.dns.metallb, home.platform.cloudflared, oke.workers, oke.network, oke.network.*, external.internet, external.oracle
++    exclude edge.resources
++    exclude * -> * where kind is not runtime and kind is not admin and kind is not network and kind is not connect
++    autoLayout LeftRight 80 60
++  }
++  view storage {
++    title '保存・バックアップ / 復元元の区別'
++    include home.nextcloud, home.recording, home.agent.local_store, data, data.nas, data.nas.nas01, data.nas.nas02, data.pbs, data.databases, data.databases.*, data.shared, data.backups, data.backups.*, external.idrive, hardware.x570, hardware.b550m
++    exclude * -> * where kind is not runtime and kind is not backup
++    autoLayout LeftRight 80 60
++  }
++  view power {
++    title '電源・安全停止 / UPS・NUTのcross-power'
++    include hardware.ups, hardware.ups.*, hardware.x570, hardware.b550m
++    exclude * -> * where kind is not power and kind is not network and kind is not observe and kind is not query
++    autoLayout LeftRight 80 60
++  }
++
+ }
