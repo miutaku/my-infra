@@ -1,0 +1,208 @@
+model {
+  system definitions '未登録・共有の定義' { description 'GitOpsのsource pathに結びつかない宣言も削除せず保持。定義が存在することと、クラスタで稼働することは区別する。' }
+  system external '外部サービス' {
+    store idrive 'IDrive e2 / S3' { description 'PBS datastore、DB logical dump、NAS restic、録画、VictoriaMetrics snapshotの保存先。用途・prefix・整合性を分ける。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs 'PBS設定' }
+    component internet 'Internet'
+    component oracle 'Oracle Services Network'
+    component annict 'Annict API'
+    component ai 'Gemini API / OpenAI互換' { description 'Coupon ManagerのAi設定から利用。認証値は掲載しない。' }
+    component github_pages 'GitHub Pages / my-infra図・レビュー'
+  }
+  extend edge {
+    component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
+  }
+  extend home.nextcloud { store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
+  extend home.dns {
+    component coredns 'CoreDNS / miutaku.internal'
+    component metallb 'MetalLB / LANのService IP'
+  }
+  extend home.eso { component config 'ClusterSecretStore / BWS' }
+  extend home { component platform 'Kubernetes基盤' { component cloudflared 'cloudflared / 自宅connector' component api 'Kubernetes API / Lease' } }
+  extend home.apps {
+    system loockit 'Loockit' { component proxy 'HAProxy / leaderへ転送' }
+    system coupon_manager 'Coupon Manager' { component web 'Web' component api 'API / AI・DB' }
+    component wol 'Wake-on-LAN'
+    component magic_mirror 'MagicMirror'
+    component annict_scraper 'Annict scraper'
+  }
+  extend home.recording {
+    component epgstation 'EPGStation'
+    system tnlastation 'TNLaStation / 共通モデル' {
+      description '本番とstagingへ同じ機能構造をinstanceOfで配置。値・imageの複製で論理モデルを増やさない。'
+      component gateway 'Gateway'
+      component frontend 'Frontend'
+      component backend 'Backend / API・録画制御'
+      component encode 'ffmpeg encode worker'
+      component streaming 'ffmpeg streaming worker'
+      component mediamtx 'MediaMTX / HLS配信'
+    }
+    component mirakurun 'Mirakurun Service / 本番LXCへの中継'
+    component mirakurun_staging 'Mirakurun Service / STG LXCへの中継'
+    component annict_sync 'Annict録画同期 / CronJob'
+  }
+  extend home.agent {
+    component collector 'vmagent / scrape・remoteWrite'
+    store local_store 'VictoriaMetrics / 自宅' { description '自宅のmetricsは自宅VictoriaMetricsに保存。OCI側VMへの送信とは別。' }
+    component pdc 'PDC agent / 自宅'
+    component exporters 'exporter群' { description 'node・PVE・SNMP・NUT・TinyTuya・blackbox・speedtest。個別Applicationを内部に保持。' }
+  }
+  extend control {
+    component images 'Image Updater'
+    component reviews 'Re:Venterの一時レビュー' { description 'reventerだけTalosから非公開配信。my-infraの本番・レビューはGitHub Pages。' }
+    component packer 'Packer / VM template' { link https://github.com/miutaku/my-infra/tree/main/packer '定義' }
+  }
+  extend control.argo { component registry 'Application登録 / root-app' }
+  extend data {
+    component shared '共有PV / runner cache・状態'
+    component databases 'DB / アプリ共有基盤' {
+      store mariadb 'MariaDB'
+      store postgres 'PostgreSQL / 本番・STG'
+    }
+    component backups 'バックアップ処理' {
+      component nas 'NAS restic / CronJob'
+      component db 'MariaDB・PostgreSQL / logical dump'
+      component metrics 'VictoriaMetrics / consistent snapshot'
+      component recordings '録画ファイル用 / 別job'
+    }
+  }
+  extend data.nas {
+    store nas01 'nas-01 / ZFS・NFS'
+    store nas02 'nas-02 / ZFS・NFS'
+  }
+  extend hardware {
+    component lb 'HAProxy / Keepalived ×2' { description 'VM10001・10002。Terraform/PVEとAnsible/load-balancerで管理。' }
+    component dev '開発アプリVM / Docker'
+    component kiosk 'DisplayLink kiosk / VLAN40'
+    component unifi 'UniFi OS Server'
+    component wifi 'Wi-Fi AP'
+    component kvm 'NanoKVM ×2'
+    component rpi_workers 'RPi worker ×2' { description 'Talos worker。UPS監視用Piとは別機器。' }
+    component loockit_a 'Loockit LXC / x570・CT12902'
+    component loockit_b 'Loockit LXC / b550m・CT12903'
+    component ble_a 'x570 BlueZ / Bluetooth'
+    component ble_b 'b550m BlueZ / Bluetooth'
+    component tuner_prod 'Mirakurun LXC / CT12901・PT3'
+    component tuner_stg 'Mirakurun STG LXC / CT12904・PX-S1UD' { description 'GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
+  }
+  extend hardware.ups {
+    component mains '商用AC'
+    component surge_a 'UPS A / サージのみ口・非backup'
+    component ups_a 'UPS A / APC RS550S 2020'
+    component ups_b 'UPS B / APC RS550S 2025'
+    component pi_a 'NUT Pi .112 / 監視A・給電B'
+    component pi_b 'NUT Pi .113 / 監視B・給電A'
+  }
+  system lan 'LAN / VLAN・経路' { link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 'IF・ACL定義'
+    component native 'native / 192.168.0.0/24'
+    component management 'VLAN10 / 192.168.10.0/24'
+    component server 'VLAN20 / 192.168.20.0/24'
+    component client 'VLAN30 / 192.168.30.0/24'
+    component guest 'VLAN31 / guest' { description '他VLANへの通信は不可。全VLAN間を到達可能として描かない。' }
+    component iot 'VLAN40 / 192.168.40.0/24'
+  }
+  extend oke {
+    component services 'STG共通Application'
+    component network 'OCI network' {
+      component public_api '公開API・LB subnet'
+      component private_workers 'private worker subnet'
+      component nat 'NAT gateway / reserved IP'
+      component igw 'Internet gateway'
+      component service_gateway 'Service Gateway / Oracle Services'
+    }
+    component workers 'base / burst node pool' { description 'worker compartmentの権限はAutoscalerへ限定。control plane・公開APIと区別する。' }
+  }
+  extend reventer {
+    component platform 'PRD共通基盤・外部所有アプリ登録' { description '共通アドオンとApplication登録はmy-infra。アプリ実装・PRDクラスタ本体の所有はreventer。' }
+    component collectors 'STG・PRD監視collector' { description 'reventer側monitoring manifestsを自宅ArgoCDが同期する。' }
+  }
+  extend reventer.platform { component external_secrets 'ESO / PRD共通基盤' }
+  extend monitoring.vms {
+    store stg 'STG監視VM ×2 / 専用アカウント'
+    store prd 'PRD監視VM ×2 / 専用アカウント'
+  }
+  bws .secret reventer.platform.external_secrets 'ESO / PRD Secret注入'
+  home.apps.loockit.proxy .runtime hardware.loockit_a 'readyz / leaderのみ'
+  home.apps.loockit.proxy .runtime hardware.loockit_b 'readyz / leaderのみ'
+  hardware.loockit_a .runtime hardware.ble_a 'read-only D-Bus / org.bluez'
+  hardware.loockit_b .runtime hardware.ble_b 'read-only D-Bus / org.bluez'
+  hardware.loockit_a .runtime home.platform.api 'Lease leader election'
+  hardware.loockit_b .runtime home.platform.api 'Lease leader election'
+  home.apps.coupon_manager.web .runtime home.apps.coupon_manager.api '内部API'
+  home.apps.coupon_manager.api .runtime data.databases.postgres 'PostgreSQL'
+  home.apps.coupon_manager.api .runtime external.ai 'AI API'
+  home.nextcloud .runtime data.databases.mariadb 'MYSQL_HOST / MariaDB'
+  home.recording.epgstation .runtime data.databases.mariadb 'EPGStation DB'
+  home.recording.tnlastation.gateway .runtime home.recording.tnlastation.frontend 'Web'
+  home.recording.tnlastation.gateway .runtime home.recording.tnlastation.backend 'API'
+  home.recording.tnlastation.gateway .runtime home.recording.tnlastation.mediamtx 'HLS'
+  home.recording.tnlastation.backend .runtime home.recording.tnlastation.encode 'encode制御'
+  home.recording.tnlastation.backend .runtime home.recording.tnlastation.streaming 'streaming制御'
+  home.recording.tnlastation.streaming .runtime home.recording.tnlastation.mediamtx '配信'
+  home.recording.tnlastation.backend .runtime data.databases.postgres 'PostgreSQL'
+  home.recording.tnlastation.encode .runtime data.databases.postgres 'encode状態'
+  home.recording.tnlastation.backend .runtime home.recording.mirakurun 'tuner API'
+  home.recording.epgstation .runtime home.recording.mirakurun 'tuner API'
+  home.recording.mirakurun .runtime hardware.tuner_prod 'EndpointSlice / 外部LXC'
+  home.recording.mirakurun_staging .runtime hardware.tuner_stg 'EndpointSlice / 外部LXC'
+  hardware.tuner_stg .runtime hardware.tuner_prod 'BS/CS TCP fallback'
+  home.recording.annict_sync .runtime home.apps.annict_scraper '番組照合'
+  home.recording.annict_sync .runtime home.recording.tnlastation.backend '録画登録API'
+  home.apps.annict_scraper .runtime external.annict 'Annict API'
+  hardware.kiosk .runtime home.apps.magic_mirror '表示'
+  home.apps.wol .runtime lan.native 'Wake-on-LAN'
+  home.agent.exporters .observe home.agent.collector 'scrape'
+  home.agent.collector .observe home.agent.local_store 'remoteWrite / :8428'
+  home.agent.pdc .connect monitoring.grafana '外向きPDC接続'
+  monitoring.grafana .query home.agent.pdc 'PDC経由の検索'
+  home.agent.pdc .query home.agent.local_store 'private query / :8428'
+  reventer.collectors .observe monitoring.vms.stg 'STG metrics / logs'
+  reventer.collectors .observe monitoring.vms.prd 'PRD metrics / logs'
+  monitoring.vms .connect monitoring.grafana 'VM側PDC agentから外向き接続'
+  hardware.router .network lan.native 'native IF'
+  hardware.router .network lan.management 'BVI10'
+  hardware.router .network lan.server 'BVI20'
+  hardware.router .network lan.client 'BVI30'
+  hardware.router .network lan.guest 'BVI31 / 他VLAN拒否'
+  hardware.router .network lan.iot 'BVI40'
+  home.platform.cloudflared .connect edge.tunnel '外向きTunnel接続'
+  edge.warp .network lan.server 'private CIDR routes / WARP policy'
+  edge.tunnel .runtime home.nextcloud '公開hostname / 内部HTTP'
+  edge.tunnel .runtime home.recording.tnlastation.gateway '公開hostname / 内部HTTP'
+  edge.tunnel .runtime home.apps.coupon_manager.web '公開hostname / 内部HTTP'
+  edge.tunnel .admin control.argo 'Access後 / 管理UI'
+  data.databases .runtime data.nas 'DB用NFS PVC'
+  home.agent.local_store .runtime data.nas 'metrics用NFS PVC'
+  data.pbs .backup external.idrive 'S3 datastore / VM backup'
+  data.nas .backup data.backups.nas '対象dataset / restic'
+  data.databases .backup data.backups.db '整合性あるlogical dump'
+  home.agent.local_store .backup data.backups.metrics 'snapshot / vmbackup'
+  home.recording .backup data.backups.recordings '録画ファイル専用job'
+  data.backups .backup external.idrive '用途別prefix / 暗号化・retention'
+  hardware.ups.mains .power hardware.ups.ups_a 'AC入力'
+  hardware.ups.mains .power hardware.ups.surge_a '非バックアップ出力'
+  hardware.ups.surge_a .power hardware.ups.ups_b 'UPS BのAC入力'
+  hardware.ups.ups_a .power hardware.x570 'バッテリー給電'
+  hardware.ups.ups_a .power hardware.ups.pi_b 'cross-power / PiBの給電元'
+  hardware.ups.ups_b .power hardware.b550m 'バッテリー給電'
+  hardware.ups.ups_b .power hardware.ups.pi_a 'cross-power / PiAの給電元'
+  hardware.ups.ups_a .network hardware.ups.pi_a 'USB監視 / ups-a'
+  hardware.ups.ups_b .network hardware.ups.pi_b 'USB監視 / ups-b'
+  hardware.x570 .query hardware.ups.pi_a 'charge-guard監視 / 80%で自身停止'
+  hardware.b550m .query hardware.ups.pi_b 'charge-guard監視 / 80%で自身停止'
+  hardware.ups.pi_b .query hardware.ups.pi_a 'ups-a監視 / LOWBATT10%で自身停止'
+  hardware.ups.pi_a .query hardware.ups.pi_b 'ups-b監視 / LOWBATT10%で自身停止'
+  control.packer .deploy hardware 'VM template'
+  control.git .deploy external.github_pages '構成図・PR比較を公開'
+  bws .secret control.ansible '機器・PBS用credential'
+  bws .secret data.backups 'ESO経由 / backup credential'
+  oke.workers .network oke.network.private_workers 'private subnet / 10.0.2.0/24'
+  oke.network.private_workers .network oke.network.nat 'default route'
+  oke.network.private_workers .network oke.network.service_gateway 'Oracle service CIDR route'
+  oke.network.nat .network external.internet 'NAT / reserved IPv4'
+  oke.network.service_gateway .network external.oracle 'Oracle Services Network'
+  external.internet .network oke.network.igw '公開API・LBへの到達'
+  oke.network.igw .network oke.network.public_api 'public route table'
+  home.recording .runtime data.nas.nas02 '録画・thumbnail・drop / NFS'
+  home.apps.coupon_manager .runtime data.nas.nas02 'images・Data Protection keys / PVC'
+
+}

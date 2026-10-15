@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,lstatSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-export const allowedPaths=new Set(["docs/architecture/logical.c4", "docs/architecture/views.c4", "docs/architecture/deployment.c4"]);
+export const allowedPaths=new Set(["docs/architecture/logical.c4", "docs/architecture/views.c4", "docs/architecture/deployment.c4", "docs/architecture/details.c4"]);
 
 export function applyUpdate(root,result){
  if(!result || typeof result.summary!=='string' || result.summary.length>20000 ||
