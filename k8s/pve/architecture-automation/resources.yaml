@@ -1,0 +1,80 @@
+# No OpenAI credential values are declared here. Reuse the existing auth directory
+# directly; do not copy it into Git, Secrets, artifacts, or the normal runner cache.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: architecture-automation
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: github-automation-token-secret
+  namespace: architecture-automation
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: bitwarden
+    kind: ClusterSecretStore
+  target:
+    name: github-automation-token-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: github_token
+      remoteRef:
+        key: GITHUB_REVENTER_RUNNER_PAT
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: architecture-automation-auth-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: [ReadWriteMany]
+  nfs:
+    server: 192.168.20.191
+    path: /mnt/raid1_case/arc-runner-cache/codex-architecture-auth
+  mountOptions: [nfsvers=4.1, hard, timeo=600, retrans=3]
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: codex-auth
+  namespace: architecture-automation
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: architecture-automation-auth-pv
+  storageClassName: ""
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: credential-runner
+  namespace: architecture-automation
+spec:
+  podSelector:
+    matchLabels:
+      architecture.miutaku/credential-runner: "true"
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8, 100.64.0.0/10]
+      ports:
+        - {protocol: TCP, port: 443}

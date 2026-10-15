@@ -27,9 +27,10 @@ Node.js 24。生成物とcatalog.c4・model.json・model-coverage.json・resourc
 
 mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイトを再構築する。同時にPlusのCodexが現在のソースと変更差分を読んで、モデル更新が必要なら `automation/architecture-model` のPRを作成・更新する。変更不要ならPRは作らない。AIが変更できるのはlogical.c4・details.c4・deployment.c4・views.c4だけ。別のGitHub-hosted runnerが許可範囲・モデル・ビルド・テストを検証してPR化する。AIがインフラ自体を変更することはない。
 
-サイト・PRレビューの配信はすべてGitHub Pages。AI実行だけは `arc-runner-my-infra-codex` の非特権専用Podを使用し、認証はNFS PVCの専用subPath `codex-my-infra-auth` に分離して保存する。Docker socket・ホストパス・Kubernetes tokenは持たない。Talosのユーザー名前空間制限のため、Codex自体のbubblewrapではなく専用Podを隔離境界にする。Plus枠を使い、API課金への自動切替はしない。
+サイト・PRレビューの配信はすべてGitHub Pages。宣言コードからのモデル・リソース・経路抽出は認証なしでPRごとに実行する。
 
-初回ログイン確認後にActions variable `ARCHITECTURE_CODEX_ENABLED=true` でAI更新を有効化する。認証準備中はサイト・レビューだけ動作する。初回や認証切れは、専用runner内の `/home/runner/.codex/bootstrap/codex login --device-auth` でログインする。認証ファイルをGit・artifact・Pagesへコピーしない。OpenAI Docs: https://developers.openai.com/codex/auth/
+AIによるモデル修正は独立した非公開リポジトリ [architecture-automation](https://github.com/miutaku/architecture-automation) へ移管。専用runnerは非公開側だけに登録し、この公開リポジトリにはOpenAI認証付きrunnerを登録しない。非公開側がmainを定期取得し、データだけをAIへ渡す。ビルド検証・モデル更新PR作成は別runnerで行い、自動マージしない。構成図と比較ページの配信先は変わらない。
+
 
 ## PRの図のレビュー
 
