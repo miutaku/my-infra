@@ -1,0 +1,3122 @@
+{
+  "base": "371fcba4983df8539a0ad8958aabdba8c85006c4",
+  "head": "3fed2c495a9326464ec38255b20b13e1cf492f1a",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [
+          {
+            "id": "deployment:homeSite.lan.client",
+            "status": "changed",
+            "before": {
+              "id": "homeSite.lan.client",
+              "element": "premises.lan.client",
+              "style": {}
+            },
+            "after": {
+              "style": {
+                "color": "blue"
+              },
+              "kind": "cluster",
+              "title": "VLAN30 / 192.168.30.0/24",
+              "id": "homeSite.lan.client",
+              "tags": null,
+              "links": null,
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "gateway": "192.168.30.254/24",
+                "routeInterface": "BVI30",
+                "dhcpRange": "192.168.30.1 192.168.30.200",
+                "dhcpReservations": "[{\"ip\":\"192.168.30.210\"},{\"ip\":\"192.168.30.211\"},{\"ip\":\"192.168.30.222\"},{\"ip\":\"192.168.30.223\"},{\"ip\":\"192.168.30.224\"},{\"ip\":\"192.168.30.250\"}]"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.client.client",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.client.client",
+              "element": "premises.lan.client",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.client.physical_clients",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "192.168.30.210 / 192.168.30.222 / 192.168.30.223 / 192.168.30.224"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.30.210,192.168.30.222,192.168.30.223,192.168.30.224"
+              },
+              "title": "PC・クライアント端末",
+              "id": "homeSite.lan.client.physical_clients"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.client.pve",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.client.pve",
+              "element": "premises.pve",
+              "title": "Windows / 作業環境",
+              "description": {
+                "txt": "デスクトップ"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "docs/architecture/deployment.c4",
+                "drillDown": "placement",
+                "placementRefs": "homeSite.pve.desktop.windows",
+                "guestCount": "1"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.client.wol",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "192.168.30.250"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.30.250"
+              },
+              "title": "WoL relay / Raspberry Pi",
+              "id": "homeSite.lan.client.wol"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.guest",
+            "status": "changed",
+            "before": {
+              "id": "homeSite.lan.guest",
+              "element": "premises.lan.guest",
+              "style": {}
+            },
+            "after": {
+              "style": {
+                "color": "blue"
+              },
+              "kind": "cluster",
+              "title": "VLAN31 / 192.168.31.0/24",
+              "id": "homeSite.lan.guest",
+              "tags": null,
+              "links": null,
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "gateway": "192.168.31.254/24",
+                "routeInterface": "BVI31",
+                "dhcpRange": "192.168.31.1 192.168.31.254",
+                "dhcpReservations": "[]"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.guest.clients",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "他VLANへの横断を拒否"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "DHCP"
+              },
+              "title": "来客端末 / DHCP",
+              "id": "homeSite.lan.guest.clients"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.guest.guest",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.guest.guest",
+              "element": "premises.lan.guest",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.iot",
+            "status": "changed",
+            "before": {
+              "id": "homeSite.lan.iot",
+              "element": "premises.lan.iot",
+              "style": {}
+            },
+            "after": {
+              "style": {
+                "color": "blue"
+              },
+              "kind": "cluster",
+              "title": "VLAN40 / 192.168.40.0/24",
+              "id": "homeSite.lan.iot",
+              "tags": null,
+              "links": null,
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "gateway": "192.168.40.254/24",
+                "routeInterface": "BVI4",
+                "dhcpRange": "192.168.40.1 192.168.40.100",
+                "dhcpReservations": "[{\"ip\":\"192.168.40.111\"},{\"ip\":\"192.168.40.110\"},{\"ip\":\"192.168.40.120\"},{\"ip\":\"192.168.40.121\"},{\"ip\":\"192.168.40.141\"},{\"ip\":\"192.168.40.228\"},{\"ip\":\"192.168.40.229\"},{\"ip\":\"192.168.40.230\"},{\"ip\":\"192.168.40.231\"},{\"ip\":\"192.168.40.232\"},{\"ip\":\"192.168.40.233\"},{\"ip\":\"192.168.40.234\"},{\"ip\":\"192.168.40.235\"},{\"ip\":\"192.168.40.236\"},{\"ip\":\"192.168.40.237\"},{\"ip\":\"192.168.40.250\"}]"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.iot.av",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "192.168.40.111 / 192.168.40.120 / 192.168.40.121 / 192.168.40.141"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.40.111,192.168.40.120,192.168.40.121,192.168.40.141"
+              },
+              "title": "TV・ゲーム機",
+              "id": "homeSite.lan.iot.av"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.iot.iot",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.iot.iot",
+              "element": "premises.lan.iot",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.iot.pve",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.iot.pve",
+              "element": "premises.pve",
+              "title": "MagicMirror / 表示端末",
+              "description": {
+                "txt": "表示端末"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "docs/architecture/deployment.c4",
+                "drillDown": "placement",
+                "placementRefs": "homeSite.pve.display.kiosk",
+                "guestCount": "1"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.iot.smart_home",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "照明・リモコン・カメラ\nSESAME・プラグ・センサー"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.40.228,192.168.40.229,192.168.40.230,192.168.40.231,192.168.40.232,192.168.40.233,192.168.40.234,192.168.40.235,192.168.40.236,192.168.40.237,192.168.40.250"
+              },
+              "title": "スマートホーム",
+              "id": "homeSite.lan.iot.smart_home"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.management",
+            "status": "changed",
+            "before": {
+              "id": "homeSite.lan.management",
+              "element": "premises.lan.management",
+              "style": {}
+            },
+            "after": {
+              "style": {
+                "color": "blue"
+              },
+              "kind": "cluster",
+              "title": "VLAN10 / 192.168.10.0/24",
+              "id": "homeSite.lan.management",
+              "tags": null,
+              "links": null,
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "gateway": "192.168.10.254/24",
+                "routeInterface": "BVI10",
+                "dhcpRange": "192.168.10.1 192.168.10.50",
+                "dhcpReservations": "[{\"ip\":\"192.168.10.107\"},{\"ip\":\"192.168.10.108\"},{\"ip\":\"192.168.10.109\"},{\"ip\":\"192.168.10.110\"},{\"ip\":\"192.168.10.112\"},{\"ip\":\"192.168.10.113\"},{\"ip\":\"192.168.10.117\"},{\"ip\":\"192.168.10.118\"},{\"ip\":\"192.168.10.140\"},{\"ip\":\"192.168.10.240\"},{\"ip\":\"192.168.10.241\"},{\"ip\":\"192.168.10.252\"}]"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.management.kvm",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.management.kvm",
+              "element": "premises.hardware.kvm",
+              "title": "NanoKVM ×2",
+              "description": {
+                "txt": "192.168.10.240 / 192.168.10.241"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.10.240,192.168.10.241",
+                "drillDown": "placement"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.management.management",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.management.management",
+              "element": "premises.lan.management",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.management.management_clients",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "192.168.10.117 / 192.168.10.118 / 192.168.10.140"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.10.117,192.168.10.118,192.168.10.140"
+              },
+              "title": "管理端末 / NUCBox・NIC",
+              "id": "homeSite.lan.management.management_clients"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.management.nut",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "192.168.10.112 / 192.168.10.113"
+              },
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.10.112,192.168.10.113",
+                "drillDown": "power"
+              },
+              "title": "NUT Pi / UPS監視",
+              "id": "homeSite.lan.management.nut"
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.management.rpi_workers",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.management.rpi_workers",
+              "element": "premises.hardware.rpi_workers",
+              "title": "Raspberry Pi / worker03・04",
+              "description": {
+                "txt": "192.168.10.107 / 192.168.10.109"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "talos/home-k8s/scripts/label-nodes",
+                "drillDown": "home_apps",
+                "canonicalRef": "homeSite.workers",
+                "addresses": "192.168.10.107,192.168.10.109"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.native",
+            "status": "changed",
+            "before": {
+              "id": "homeSite.lan.native",
+              "element": "premises.lan.native",
+              "style": {}
+            },
+            "after": {
+              "style": {
+                "color": "blue"
+              },
+              "kind": "cluster",
+              "title": "native1 / 192.168.0.0/24",
+              "id": "homeSite.lan.native",
+              "tags": null,
+              "links": null,
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "gateway": "192.168.0.254/24",
+                "routeInterface": "GigaEthernet2.0",
+                "dhcpRange": "192.168.0.1 192.168.0.50",
+                "dhcpReservations": "[{\"ip\":\"192.168.0.115\"},{\"ip\":\"192.168.0.119\"},{\"ip\":\"192.168.0.132\"},{\"ip\":\"192.168.0.252\"},{\"ip\":\"192.168.0.253\"}]"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.native.ap",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.native.ap",
+              "element": "premises.hardware.network.ap",
+              "title": "FS AP / 管理IP",
+              "description": {
+                "txt": "192.168.0.253"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.0.253",
+                "drillDown": "network"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.native.native",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.native.native",
+              "element": "premises.lan.native",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.native.pve",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.native.pve",
+              "element": "premises.pve",
+              "title": "UniFi OS",
+              "description": {
+                "txt": "ネットワーク管理"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "docs/architecture/deployment.c4",
+                "drillDown": "placement",
+                "placementRefs": "homeSite.pve.network_management.unifi",
+                "guestCount": "1"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.native.pve_management",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.native.pve_management",
+              "element": "premises.pve",
+              "title": "Proxmox VE / 2ノード管理",
+              "description": {
+                "txt": "192.168.0.115 / 192.168.0.119"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.0.115,192.168.0.119",
+                "drillDown": "placement"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.native.switch",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.native.switch",
+              "element": "premises.hardware.network.switch",
+              "title": "US-8-60W / 管理IP",
+              "description": {
+                "txt": "192.168.0.252"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "addresses": "192.168.0.252",
+                "drillDown": "network"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.server",
+            "status": "changed",
+            "before": {
+              "id": "homeSite.lan.server",
+              "element": "premises.lan.server",
+              "style": {}
+            },
+            "after": {
+              "style": {
+                "color": "blue"
+              },
+              "kind": "cluster",
+              "title": "VLAN20 / 192.168.20.0/24",
+              "id": "homeSite.lan.server",
+              "tags": null,
+              "links": null,
+              "metadata": {
+                "sourceFile": "ansible/ix2215/group_vars/all.yml",
+                "gateway": "192.168.20.254/24",
+                "routeInterface": "BVI20",
+                "dhcpRange": "192.168.20.1 192.168.20.50",
+                "dhcpReservations": "[{\"ip\":\"192.168.20.101\"},{\"ip\":\"192.168.20.132\"},{\"ip\":\"192.168.20.133\"},{\"ip\":\"192.168.20.135\"},{\"ip\":\"192.168.20.136\"},{\"ip\":\"192.168.20.137\"},{\"ip\":\"192.168.20.138\"},{\"ip\":\"192.168.20.139\"},{\"ip\":\"192.168.20.140\"},{\"ip\":\"192.168.20.141\"},{\"ip\":\"192.168.20.142\"},{\"ip\":\"192.168.20.191\"},{\"ip\":\"192.168.20.192\"},{\"ip\":\"192.168.20.250\"}]"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.server.pve",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.server.pve",
+              "element": "premises.pve",
+              "title": "Proxmox / サーバ基盤",
+              "description": {
+                "txt": "home-k8s・LB・NAS・PBS\nLoockit・Mirakurun・開発"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "docs/architecture/deployment.c4",
+                "drillDown": "placement",
+                "placementRefs": "homeSite.pve.controlplanes.cp1,homeSite.pve.controlplanes.cp2,homeSite.pve.controlplanes.cp3,homeSite.pve.workers.worker1,homeSite.pve.workers.worker2,homeSite.pve.loadbalancers.lb1,homeSite.pve.loadbalancers.lb2,homeSite.pve.storage.nas1,homeSite.pve.storage.nas2,homeSite.pve.storage.pbs,homeSite.pve.smartlocks.loockit1,homeSite.pve.smartlocks.loockit2,homeSite.pve.tuners.tuner_prod,homeSite.pve.tuners.tuner_stg,homeSite.pve.development.dev",
+                "guestCount": "15"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.server.server",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.server.server",
+              "element": "premises.lan.server",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.server.service_ips",
+            "status": "added",
+            "after": {
+              "id": "homeSite.lan.server.service_ips",
+              "element": "premises.home.dns.metallb",
+              "title": "MetalLB / Service IP",
+              "description": {
+                "txt": "192.168.20.200-192.168.20.226"
+              },
+              "style": {},
+              "metadata": {
+                "sourceFile": "k8s/pve/metallb/metallb.yaml",
+                "drillDown": "platform"
+              }
+            }
+          },
+          {
+            "id": "deployment:homeSite.lan.server.vips",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "gray",
+                "size": "sm",
+                "textSize": "md",
+                "padding": "sm"
+              },
+              "kind": "networkGroup",
+              "description": {
+                "txt": "Kubernetes API: 192.168.20.228\nHAProxy: 192.168.20.227"
+              },
+              "metadata": {
+                "sourceFile": "talos/home-k8s/patches/controlplane-vip.yaml",
+                "lbSource": "ansible/load-balancer/group_vars/all",
+                "drillDown": "platform"
+              },
+              "title": "API・ロードバランサー VIP",
+              "id": "homeSite.lan.server.vips"
+            }
+          },
+          {
+            "id": "deployment:providers.warp",
+            "status": "added",
+            "after": {
+              "id": "providers.warp",
+              "element": "external.edge.warp",
+              "title": "Cloudflare WARP",
+              "style": {},
+              "metadata": {
+                "drillDown": "network"
+              }
+            }
+          }
+        ],
+        "relations": [],
+        "views": [
+          {
+            "id": "vlans",
+            "status": "changed",
+            "before": {
+              "_type": "deployment",
+              "tags": null,
+              "links": null,
+              "_stage": "computed",
+              "sourcePath": "views.c4",
+              "description": {
+                "txt": "PVE内に役割別の枠とVM・LXCを表示。接続は各枠から所属VLANへ1本に集約。IX2215がセグメント間のルーティングとACLを制御。guestは他VLAN向け通信を拒否。"
+              },
+              "title": "VLAN / native・タグ・経路",
+              "id": "vlans",
+              "autoLayout": {
+                "direction": "LR",
+                "nodeSep": 45,
+                "rankSep": 70
+              },
+              "edges": [
+                {
+                  "id": "fz7yit",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.native",
+                  "label": "native IF",
+                  "relations": [
+                    "m0oiqf"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "mx7hoh",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.server",
+                  "label": "BVI20",
+                  "relations": [
+                    "14im8if"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "cv09st",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.client",
+                  "label": "BVI30",
+                  "relations": [
+                    "15yzdca"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "6c0192",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.iot",
+                  "label": "BVI4 / tag40",
+                  "relations": [
+                    "147vmhv"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "1ut1wfr",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.management",
+                  "label": "BVI10",
+                  "relations": [
+                    "ppxaq1"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "6rv9is",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.guest",
+                  "label": "BVI31",
+                  "relations": [
+                    "s3frq8"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "10ltia7",
+                  "parent": null,
+                  "source": "providers.cloudflare",
+                  "target": "homeSite.lan.server",
+                  "label": "WARP / private CIDR routes・policy",
+                  "relations": [
+                    "m4nyo"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "v3q9n",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.controlplanes",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "m00bq5"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "winldo",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.workers",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "15w5nlr"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "1l5b4c8",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.loadbalancers",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "1v9owb8"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "1rjwc74",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.storage",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "1ngx81j"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "2jfho8",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.smartlocks",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "qlb2cq"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "ilaeeq",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.tuners",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "e129bj"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "1814o6n",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.network_management",
+                  "target": "homeSite.lan.native",
+                  "label": null,
+                  "relations": [
+                    "1xksz4p"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "3m5xd6",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.development",
+                  "target": "homeSite.lan.server",
+                  "label": null,
+                  "relations": [
+                    "4y2mxq"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "7e7luf",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.desktop",
+                  "target": "homeSite.lan.client",
+                  "label": null,
+                  "relations": [
+                    "1pbiwyt"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "k1xto4",
+                  "parent": "homeSite",
+                  "source": "homeSite.pve.display",
+                  "target": "homeSite.lan.iot",
+                  "label": null,
+                  "relations": [
+                    "1nkc6tg"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                }
+              ],
+              "nodes": [
+                {
+                  "id": "homeSite",
+                  "parent": null,
+                  "level": 0,
+                  "children": [
+                    "homeSite.pve",
+                    "homeSite.ix2215",
+                    "homeSite.lan"
+                  ],
+                  "inEdges": [
+                    "10ltia7"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite",
+                  "title": "自宅",
+                  "kind": "site",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "Proxmox VEクラスタとRaspberry Pi。"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 3
+                },
+                {
+                  "id": "homeSite.pve",
+                  "parent": "homeSite",
+                  "level": 1,
+                  "children": [
+                    "homeSite.pve.controlplanes",
+                    "homeSite.pve.workers",
+                    "homeSite.pve.loadbalancers",
+                    "homeSite.pve.storage",
+                    "homeSite.pve.smartlocks",
+                    "homeSite.pve.tuners",
+                    "homeSite.pve.network_management",
+                    "homeSite.pve.development",
+                    "homeSite.pve.desktop",
+                    "homeSite.pve.display"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "v3q9n",
+                    "winldo",
+                    "1l5b4c8",
+                    "1rjwc74",
+                    "2jfho8",
+                    "ilaeeq",
+                    "1814o6n",
+                    "3m5xd6",
+                    "7e7luf",
+                    "k1xto4"
+                  ],
+                  "deploymentRef": "homeSite.pve",
+                  "title": "Proxmox VEクラスタ（2ノード構成）",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "pve-x570（192.168.0.115）・pve-b550m（192.168.0.119）。VM14台・LXC4台。"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 2
+                },
+                {
+                  "id": "homeSite.pve.controlplanes",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.controlplanes.cp1",
+                    "homeSite.pve.controlplanes.cp2",
+                    "homeSite.pve.controlplanes.cp3"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "v3q9n"
+                  ],
+                  "deploymentRef": "homeSite.pve.controlplanes",
+                  "title": "home-k8s コントロールプレーン",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.controlplanes.cp1",
+                  "parent": "homeSite.pve.controlplanes",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.controlplanes.cp1",
+                  "title": "コントロールプレーン01 / VM13001 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.home.platform.controlplane",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.controlplanes.cp2",
+                  "parent": "homeSite.pve.controlplanes",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.controlplanes.cp2",
+                  "title": "コントロールプレーン02 / VM13002 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.home.platform.controlplane",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.controlplanes.cp3",
+                  "parent": "homeSite.pve.controlplanes",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.controlplanes.cp3",
+                  "title": "コントロールプレーン03 / VM13003 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.home.platform.controlplane",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.workers",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.workers.worker1",
+                    "homeSite.pve.workers.worker2"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "winldo"
+                  ],
+                  "deploymentRef": "homeSite.pve.workers",
+                  "title": "home-k8s ワーカー",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.workers.worker1",
+                  "parent": "homeSite.pve.workers",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.workers.worker1",
+                  "title": "home-k8s worker01 / VM13004 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.home.platform.worker",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.workers.worker2",
+                  "parent": "homeSite.pve.workers",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.workers.worker2",
+                  "title": "home-k8s worker02 / VM13005 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.home.platform.worker",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.loadbalancers",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.loadbalancers.lb1",
+                    "homeSite.pve.loadbalancers.lb2"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "1l5b4c8"
+                  ],
+                  "deploymentRef": "homeSite.pve.loadbalancers",
+                  "title": "ロードバランサー",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.loadbalancers.lb1",
+                  "parent": "homeSite.pve.loadbalancers",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.loadbalancers.lb1",
+                  "title": "HAProxy / Keepalived VM10001 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.lb",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.loadbalancers.lb2",
+                  "parent": "homeSite.pve.loadbalancers",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.loadbalancers.lb2",
+                  "title": "HAProxy / Keepalived VM10002 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.lb",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.storage",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.storage.nas1",
+                    "homeSite.pve.storage.nas2",
+                    "homeSite.pve.storage.pbs"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "1rjwc74"
+                  ],
+                  "deploymentRef": "homeSite.pve.storage",
+                  "title": "ストレージ・バックアップ",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.storage.nas1",
+                  "parent": "homeSite.pve.storage",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.storage.nas1",
+                  "title": "nas-01 / TrueNAS VM69001 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "storage",
+                  "modelRef": "premises.pve.nas01",
+                  "description": {
+                    "txt": "runner cache用NFS / pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null,
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/ansible/truenas/host_vars/nas-01.yml",
+                      "title": "dataset定義"
+                    }
+                  ],
+                  "notation": null
+                },
+                {
+                  "id": "homeSite.pve.storage.nas2",
+                  "parent": "homeSite.pve.storage",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.storage.nas2",
+                  "title": "nas-02 / TrueNAS VM69002 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "storage",
+                  "modelRef": "premises.pve.nas02",
+                  "description": {
+                    "txt": "アプリ・DB・録画データ用NFS / pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null,
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/ansible/truenas/host_vars/nas-02.yml",
+                      "title": "dataset定義"
+                    }
+                  ],
+                  "notation": null
+                },
+                {
+                  "id": "homeSite.pve.storage.pbs",
+                  "parent": "homeSite.pve.storage",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.storage.pbs",
+                  "title": "PBS VM14001 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "storage",
+                  "modelRef": "premises.pve.pbs",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null,
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/tree/main/ansible/pbs",
+                      "title": "定義"
+                    }
+                  ],
+                  "notation": null
+                },
+                {
+                  "id": "homeSite.pve.smartlocks",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.smartlocks.loockit1",
+                    "homeSite.pve.smartlocks.loockit2"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "2jfho8"
+                  ],
+                  "deploymentRef": "homeSite.pve.smartlocks",
+                  "title": "Loockit / Bluetooth制御",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.smartlocks.loockit1",
+                  "parent": "homeSite.pve.smartlocks",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.smartlocks.loockit1",
+                  "title": "Loockit 01 / CT12902 / VLAN20",
+                  "kind": "container",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.loockit_a",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.smartlocks.loockit2",
+                  "parent": "homeSite.pve.smartlocks",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.smartlocks.loockit2",
+                  "title": "Loockit 02 / CT12903 / VLAN20",
+                  "kind": "container",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.loockit_b",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.tuners",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.tuners.tuner_stg",
+                    "homeSite.pve.tuners.tuner_prod"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "ilaeeq"
+                  ],
+                  "deploymentRef": "homeSite.pve.tuners",
+                  "title": "Mirakurun / チューナー",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.tuners.tuner_stg",
+                  "parent": "homeSite.pve.tuners",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.tuners.tuner_stg",
+                  "title": "Mirakurun STG / CT12904・PX-S1UD / VLAN20",
+                  "kind": "container",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.tuner_stg",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.tuners.tuner_prod",
+                  "parent": "homeSite.pve.tuners",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.tuners.tuner_prod",
+                  "title": "Mirakurun本番 / CT12901・PT3 / VLAN20",
+                  "kind": "container",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.tuner_prod",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.network_management",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.network_management.unifi"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "1814o6n"
+                  ],
+                  "deploymentRef": "homeSite.pve.network_management",
+                  "title": "ネットワーク管理",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.unifi",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.network_management.unifi",
+                  "parent": "homeSite.pve.network_management",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.network_management.unifi",
+                  "title": "UniFi OS VM13201 / native1",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.unifi",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.development",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.development.dev"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "3m5xd6"
+                  ],
+                  "deploymentRef": "homeSite.pve.development",
+                  "title": "開発環境",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.dev",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.development.dev",
+                  "parent": "homeSite.pve.development",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.development.dev",
+                  "title": "開発用Docker / VM40000 / VLAN20",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.dev",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "homeSite.pve.desktop",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.desktop.windows"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "7e7luf"
+                  ],
+                  "deploymentRef": "homeSite.pve.desktop",
+                  "title": "デスクトップ",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.windows",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.desktop.windows",
+                  "parent": "homeSite.pve.desktop",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.desktop.windows",
+                  "title": "Windows / VM60000 / VLAN30",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.windows",
+                  "description": {
+                    "txt": "pve-x570"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null,
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/pve-runtime.json",
+                      "title": "稼働確認"
+                    }
+                  ]
+                },
+                {
+                  "id": "homeSite.pve.display",
+                  "parent": "homeSite.pve",
+                  "level": 2,
+                  "children": [
+                    "homeSite.pve.display.kiosk"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "k1xto4"
+                  ],
+                  "deploymentRef": "homeSite.pve.display",
+                  "title": "表示端末",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.kiosk",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.pve.display.kiosk",
+                  "parent": "homeSite.pve.display",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.pve.display.kiosk",
+                  "title": "MagicMirror表示 / VM5000 / VLAN40",
+                  "kind": "vm",
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "modelRef": "premises.pve.kiosk",
+                  "description": {
+                    "txt": "pve-b550m"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "xs",
+                    "padding": "sm",
+                    "textSize": "md"
+                  },
+                  "technology": null
+                },
+                {
+                  "id": "providers",
+                  "parent": null,
+                  "level": 0,
+                  "children": [
+                    "providers.cloudflare"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "10ltia7"
+                  ],
+                  "deploymentRef": "providers",
+                  "title": "外部サービス",
+                  "kind": "site",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "providers.cloudflare",
+                  "parent": "providers",
+                  "level": 1,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [
+                    "10ltia7"
+                  ],
+                  "kind": "instance",
+                  "title": "Cloudflare",
+                  "description": {
+                    "txt": "Cloudflare Accessで認証し、Tunnelで自宅サービスへ転送。mTLS APIとWARPも提供。"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/tree/main/terraform/cloudflare",
+                      "title": "定義"
+                    }
+                  ],
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "providers.cloudflare",
+                  "modelRef": "external.edge"
+                },
+                {
+                  "id": "homeSite.ix2215",
+                  "parent": "homeSite",
+                  "level": 1,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [
+                    "fz7yit",
+                    "mx7hoh",
+                    "cv09st",
+                    "6c0192",
+                    "1ut1wfr",
+                    "6rv9is"
+                  ],
+                  "kind": "instance",
+                  "title": "IX2215 / ルーター・VLAN間ACL",
+                  "description": {
+                    "txt": "GigaEthernet2: native1、tagged10/20/30/31/40。guestの他VLAN横断は拒否。IoTのIF名はGigaEthernet2.4/BVI4だがタグは40。"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml",
+                      "title": "VLAN・ACL定義"
+                    }
+                  ],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.ix2215",
+                  "modelRef": "premises.hardware.network.router"
+                },
+                {
+                  "id": "homeSite.lan",
+                  "parent": "homeSite",
+                  "level": 1,
+                  "children": [
+                    "homeSite.lan.native",
+                    "homeSite.lan.server",
+                    "homeSite.lan.client",
+                    "homeSite.lan.iot",
+                    "homeSite.lan.management",
+                    "homeSite.lan.guest"
+                  ],
+                  "inEdges": [
+                    "v3q9n",
+                    "winldo",
+                    "1l5b4c8",
+                    "1rjwc74",
+                    "2jfho8",
+                    "ilaeeq",
+                    "1814o6n",
+                    "3m5xd6",
+                    "7e7luf",
+                    "k1xto4",
+                    "fz7yit",
+                    "mx7hoh",
+                    "cv09st",
+                    "6c0192",
+                    "1ut1wfr",
+                    "6rv9is",
+                    "10ltia7"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan",
+                  "title": "VLANセグメント",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.native",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [],
+                  "inEdges": [
+                    "1814o6n",
+                    "fz7yit"
+                  ],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "native / 192.168.0.0/24",
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.native",
+                  "modelRef": "premises.lan.native"
+                },
+                {
+                  "id": "homeSite.lan.server",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [],
+                  "inEdges": [
+                    "v3q9n",
+                    "winldo",
+                    "1l5b4c8",
+                    "1rjwc74",
+                    "2jfho8",
+                    "ilaeeq",
+                    "3m5xd6",
+                    "mx7hoh",
+                    "10ltia7"
+                  ],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "VLAN20 / 192.168.20.0/24",
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.server",
+                  "modelRef": "premises.lan.server"
+                },
+                {
+                  "id": "homeSite.lan.client",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [],
+                  "inEdges": [
+                    "7e7luf",
+                    "cv09st"
+                  ],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "VLAN30 / 192.168.30.0/24",
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.client",
+                  "modelRef": "premises.lan.client"
+                },
+                {
+                  "id": "homeSite.lan.iot",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [],
+                  "inEdges": [
+                    "k1xto4",
+                    "6c0192"
+                  ],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "VLAN40 / 192.168.40.0/24",
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.iot",
+                  "modelRef": "premises.lan.iot"
+                },
+                {
+                  "id": "homeSite.lan.management",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [],
+                  "inEdges": [
+                    "1ut1wfr"
+                  ],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "VLAN10 / 192.168.10.0/24",
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.management",
+                  "modelRef": "premises.lan.management"
+                },
+                {
+                  "id": "homeSite.lan.guest",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [],
+                  "inEdges": [
+                    "6rv9is"
+                  ],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "VLAN31 / guest",
+                  "description": {
+                    "txt": "他VLANへの通信は不可。全VLAN間を到達可能として描かない。"
+                  },
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.guest",
+                  "modelRef": "premises.lan.guest"
+                }
+              ],
+              "hash": "lZZ3J82sZ7vlcx_zqHlMTCreXLGNFFIyUCY3AWD8omM",
+              "hasManualLayout": true
+            },
+            "after": {
+              "_type": "deployment",
+              "tags": null,
+              "links": null,
+              "_stage": "computed",
+              "sourcePath": "views.c4",
+              "description": {
+                "txt": "枠の内側が同じVLAN。物理機器・端末・Service IPと、集約したPVE利用側を表示。PVEをクリックして全VM・CTへ。DHCP予約は設定上の割当であり、接続中端末の一覧ではありません。"
+              },
+              "title": "VLAN / native・タグ・経路",
+              "id": "vlans",
+              "autoLayout": {
+                "direction": "TB",
+                "nodeSep": 40,
+                "rankSep": 60
+              },
+              "edges": [
+                {
+                  "id": "mx7hoh",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.server",
+                  "label": "BVI20",
+                  "relations": [
+                    "qwnjsg"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "fz7yit",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.native",
+                  "label": "native IF",
+                  "relations": [
+                    "1ows9tk"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "cv09st",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.client",
+                  "label": "BVI30",
+                  "relations": [
+                    "9q9mi7"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "6c0192",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.iot",
+                  "label": "BVI4 / tag40",
+                  "relations": [
+                    "1r2fnze"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "1ut1wfr",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.management",
+                  "label": "BVI10",
+                  "relations": [
+                    "2f8suf"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "6rv9is",
+                  "parent": "homeSite",
+                  "source": "homeSite.ix2215",
+                  "target": "homeSite.lan.guest",
+                  "label": "BVI31",
+                  "relations": [
+                    "moez53"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                },
+                {
+                  "id": "13e5hkm",
+                  "parent": null,
+                  "source": "providers.warp",
+                  "target": "homeSite.lan.server",
+                  "label": "WARP / private CIDR routes・policy",
+                  "relations": [
+                    "14eb80x"
+                  ],
+                  "color": "gray",
+                  "line": "dotted",
+                  "head": "normal",
+                  "kind": "network",
+                  "tags": [
+                    "vlan"
+                  ]
+                }
+              ],
+              "nodes": [
+                {
+                  "id": "homeSite",
+                  "parent": null,
+                  "level": 0,
+                  "children": [
+                    "homeSite.lan",
+                    "homeSite.ix2215"
+                  ],
+                  "inEdges": [
+                    "13e5hkm"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite",
+                  "title": "自宅",
+                  "kind": "site",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "Proxmox VEクラスタとRaspberry Pi。"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 3
+                },
+                {
+                  "id": "homeSite.lan",
+                  "parent": "homeSite",
+                  "level": 1,
+                  "children": [
+                    "homeSite.lan.native",
+                    "homeSite.lan.management",
+                    "homeSite.lan.server",
+                    "homeSite.lan.client",
+                    "homeSite.lan.guest",
+                    "homeSite.lan.iot"
+                  ],
+                  "inEdges": [
+                    "mx7hoh",
+                    "fz7yit",
+                    "cv09st",
+                    "6c0192",
+                    "1ut1wfr",
+                    "6rv9is",
+                    "13e5hkm"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan",
+                  "title": "VLANセグメント",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 2
+                },
+                {
+                  "id": "homeSite.lan.native",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [
+                    "homeSite.lan.native.pve",
+                    "homeSite.lan.native.pve_management",
+                    "homeSite.lan.native.switch",
+                    "homeSite.lan.native.ap"
+                  ],
+                  "inEdges": [
+                    "fz7yit"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.native",
+                  "title": "native1 / 192.168.0.0/24",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.native.pve",
+                  "parent": "homeSite.lan.native",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "UniFi OS",
+                  "description": {
+                    "txt": "ネットワーク管理"
+                  },
+                  "tags": [],
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.native.pve",
+                  "modelRef": "premises.pve"
+                },
+                {
+                  "id": "homeSite.lan.native.pve_management",
+                  "parent": "homeSite.lan.native",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "Proxmox VE / 2ノード管理",
+                  "description": {
+                    "txt": "192.168.0.115 / 192.168.0.119"
+                  },
+                  "tags": [],
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.native.pve_management",
+                  "modelRef": "premises.pve"
+                },
+                {
+                  "id": "homeSite.lan.native.switch",
+                  "parent": "homeSite.lan.native",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "US-8-60W / 管理IP",
+                  "description": {
+                    "txt": "192.168.0.252"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/network.md",
+                      "title": "稼働確認・根拠"
+                    }
+                  ],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.native.switch",
+                  "modelRef": "premises.hardware.network.switch"
+                },
+                {
+                  "id": "homeSite.lan.native.ap",
+                  "parent": "homeSite.lan.native",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "FS AP / 管理IP",
+                  "description": {
+                    "txt": "192.168.0.253"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml",
+                      "title": "DHCP・AP trunk定義"
+                    }
+                  ],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.native.ap",
+                  "modelRef": "premises.hardware.network.ap"
+                },
+                {
+                  "id": "homeSite.lan.management",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [
+                    "homeSite.lan.management.rpi_workers",
+                    "homeSite.lan.management.nut",
+                    "homeSite.lan.management.kvm",
+                    "homeSite.lan.management.management_clients"
+                  ],
+                  "inEdges": [
+                    "1ut1wfr"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.management",
+                  "title": "VLAN10 / 192.168.10.0/24",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.management.rpi_workers",
+                  "parent": "homeSite.lan.management",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "Raspberry Pi / worker03・04",
+                  "description": {
+                    "txt": "192.168.10.107 / 192.168.10.109"
+                  },
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.management.rpi_workers",
+                  "modelRef": "premises.hardware.rpi_workers"
+                },
+                {
+                  "id": "homeSite.lan.management.nut",
+                  "parent": "homeSite.lan.management",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.management.nut",
+                  "title": "NUT Pi / UPS監視",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "192.168.10.112 / 192.168.10.113"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.management.kvm",
+                  "parent": "homeSite.lan.management",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "NanoKVM ×2",
+                  "description": {
+                    "txt": "192.168.10.240 / 192.168.10.241"
+                  },
+                  "tags": [],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.management.kvm",
+                  "modelRef": "premises.hardware.kvm"
+                },
+                {
+                  "id": "homeSite.lan.management.management_clients",
+                  "parent": "homeSite.lan.management",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.management.management_clients",
+                  "title": "管理端末 / NUCBox・NIC",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "192.168.10.117 / 192.168.10.118 / 192.168.10.140"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.server",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [
+                    "homeSite.lan.server.pve",
+                    "homeSite.lan.server.service_ips",
+                    "homeSite.lan.server.vips"
+                  ],
+                  "inEdges": [
+                    "mx7hoh",
+                    "13e5hkm"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.server",
+                  "title": "VLAN20 / 192.168.20.0/24",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.server.pve",
+                  "parent": "homeSite.lan.server",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "Proxmox / サーバ基盤",
+                  "description": {
+                    "txt": "home-k8s・LB・NAS・PBS\nLoockit・Mirakurun・開発"
+                  },
+                  "tags": [],
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.server.pve",
+                  "modelRef": "premises.pve"
+                },
+                {
+                  "id": "homeSite.lan.server.service_ips",
+                  "parent": "homeSite.lan.server",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "MetalLB / Service IP",
+                  "description": {
+                    "txt": "192.168.20.200-192.168.20.226"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/metallb.yaml",
+                      "title": "Application定義"
+                    }
+                  ],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.server.service_ips",
+                  "modelRef": "premises.home.dns.metallb"
+                },
+                {
+                  "id": "homeSite.lan.server.vips",
+                  "parent": "homeSite.lan.server",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.server.vips",
+                  "title": "API・ロードバランサー VIP",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "Kubernetes API: 192.168.20.228\nHAProxy: 192.168.20.227"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.client",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [
+                    "homeSite.lan.client.pve",
+                    "homeSite.lan.client.physical_clients",
+                    "homeSite.lan.client.wol"
+                  ],
+                  "inEdges": [
+                    "cv09st"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.client",
+                  "title": "VLAN30 / 192.168.30.0/24",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.client.pve",
+                  "parent": "homeSite.lan.client",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "Windows / 作業環境",
+                  "description": {
+                    "txt": "デスクトップ"
+                  },
+                  "tags": [],
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.client.pve",
+                  "modelRef": "premises.pve"
+                },
+                {
+                  "id": "homeSite.lan.client.physical_clients",
+                  "parent": "homeSite.lan.client",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.client.physical_clients",
+                  "title": "PC・クライアント端末",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "192.168.30.210 / 192.168.30.222 / 192.168.30.223 / 192.168.30.224"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.client.wol",
+                  "parent": "homeSite.lan.client",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.client.wol",
+                  "title": "WoL relay / Raspberry Pi",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "192.168.30.250"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.guest",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [
+                    "homeSite.lan.guest.clients"
+                  ],
+                  "inEdges": [
+                    "6rv9is"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.guest",
+                  "title": "VLAN31 / 192.168.31.0/24",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.guest.clients",
+                  "parent": "homeSite.lan.guest",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.guest.clients",
+                  "title": "来客端末 / DHCP",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "他VLANへの横断を拒否"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.iot",
+                  "parent": "homeSite.lan",
+                  "level": 2,
+                  "children": [
+                    "homeSite.lan.iot.pve",
+                    "homeSite.lan.iot.av",
+                    "homeSite.lan.iot.smart_home"
+                  ],
+                  "inEdges": [
+                    "6c0192"
+                  ],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.iot",
+                  "title": "VLAN40 / 192.168.40.0/24",
+                  "kind": "cluster",
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "homeSite.lan.iot.pve",
+                  "parent": "homeSite.lan.iot",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "kind": "instance",
+                  "title": "MagicMirror / 表示端末",
+                  "description": {
+                    "txt": "表示端末"
+                  },
+                  "tags": [],
+                  "color": "blue",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.lan.iot.pve",
+                  "modelRef": "premises.pve"
+                },
+                {
+                  "id": "homeSite.lan.iot.av",
+                  "parent": "homeSite.lan.iot",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.iot.av",
+                  "title": "TV・ゲーム機",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "192.168.40.111 / 192.168.40.120 / 192.168.40.121 / 192.168.40.141"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.lan.iot.smart_home",
+                  "parent": "homeSite.lan.iot",
+                  "level": 3,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [],
+                  "deploymentRef": "homeSite.lan.iot.smart_home",
+                  "title": "スマートホーム",
+                  "kind": "networkGroup",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "description": {
+                    "txt": "照明・リモコン・カメラ\nSESAME・プラグ・センサー"
+                  },
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "sm",
+                    "padding": "sm",
+                    "textSize": "md"
+                  }
+                },
+                {
+                  "id": "homeSite.ix2215",
+                  "parent": "homeSite",
+                  "level": 1,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [
+                    "mx7hoh",
+                    "fz7yit",
+                    "cv09st",
+                    "6c0192",
+                    "1ut1wfr",
+                    "6rv9is"
+                  ],
+                  "kind": "instance",
+                  "title": "IX2215 / ルーター・VLAN間ACL",
+                  "description": {
+                    "txt": "GigaEthernet2: native1、tagged10/20/30/31/40。guestの他VLAN横断は拒否。IoTのIF名はGigaEthernet2.4/BVI4だがタグは40。"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml",
+                      "title": "VLAN・ACL定義"
+                    }
+                  ],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "homeSite.ix2215",
+                  "modelRef": "premises.hardware.network.router"
+                },
+                {
+                  "id": "providers",
+                  "parent": null,
+                  "level": 0,
+                  "children": [
+                    "providers.warp"
+                  ],
+                  "inEdges": [],
+                  "outEdges": [
+                    "13e5hkm"
+                  ],
+                  "deploymentRef": "providers",
+                  "title": "外部サービス",
+                  "kind": "site",
+                  "color": "gray",
+                  "shape": "rectangle",
+                  "tags": [],
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "depth": 1
+                },
+                {
+                  "id": "providers.warp",
+                  "parent": "providers",
+                  "level": 1,
+                  "children": [],
+                  "inEdges": [],
+                  "outEdges": [
+                    "13e5hkm"
+                  ],
+                  "kind": "instance",
+                  "title": "Cloudflare WARP",
+                  "description": {
+                    "txt": "Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。"
+                  },
+                  "tags": [],
+                  "links": [
+                    {
+                      "url": "https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf",
+                      "title": "設定"
+                    }
+                  ],
+                  "color": "muted",
+                  "shape": "rectangle",
+                  "style": {
+                    "opacity": 15,
+                    "size": "md"
+                  },
+                  "deploymentRef": "providers.warp",
+                  "modelRef": "external.edge.warp"
+                }
+              ],
+              "hash": "3CU3Ic_iFBuw1TIvyed7efLqoFMDdY12-JxqXcxfMrA",
+              "hasManualLayout": true
+            }
+          }
+        ],
+        "specification": [
+          {
+            "id": "deployments",
+            "status": "changed",
+            "before": {
+              "site": {
+                "style": {
+                  "color": "gray"
+                }
+              },
+              "hypervisor": {
+                "style": {
+                  "color": "green"
+                }
+              },
+              "container": {
+                "style": {
+                  "color": "muted",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "physical": {
+                "style": {
+                  "color": "gray"
+                }
+              },
+              "workload": {
+                "style": {
+                  "color": "muted",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "os": {
+                "style": {
+                  "color": "blue",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "vm": {
+                "style": {
+                  "color": "muted",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "cluster": {
+                "style": {
+                  "color": "blue"
+                }
+              },
+              "namespace": {
+                "style": {
+                  "color": "muted"
+                }
+              }
+            },
+            "after": {
+              "site": {
+                "style": {
+                  "color": "gray"
+                }
+              },
+              "hypervisor": {
+                "style": {
+                  "color": "green"
+                }
+              },
+              "container": {
+                "style": {
+                  "color": "muted",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "physical": {
+                "style": {
+                  "color": "gray"
+                }
+              },
+              "workload": {
+                "style": {
+                  "color": "muted",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "os": {
+                "style": {
+                  "color": "blue",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "vm": {
+                "style": {
+                  "color": "muted",
+                  "size": "xs",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "cluster": {
+                "style": {
+                  "color": "blue"
+                }
+              },
+              "networkGroup": {
+                "style": {
+                  "color": "gray",
+                  "size": "sm",
+                  "textSize": "md",
+                  "padding": "sm"
+                }
+              },
+              "namespace": {
+                "style": {
+                  "color": "muted"
+                }
+              }
+            }
+          },
+          {
+            "id": "metadataKeys",
+            "status": "changed",
+            "before": [
+              "accessMode",
+              "application",
+              "bridge",
+              "definitionRepository",
+              "host",
+              "hosts",
+              "managedBy",
+              "namespace",
+              "owner",
+              "referenceOnly",
+              "resourceId",
+              "resourceRef",
+              "resourceType",
+              "scope",
+              "sourceFile",
+              "trafficKind",
+              "vlan",
+              "vmId"
+            ],
+            "after": [
+              "accessMode",
+              "addresses",
+              "application",
+              "bridge",
+              "canonicalRef",
+              "definitionRepository",
+              "dhcpRange",
+              "dhcpReservations",
+              "drillDown",
+              "gateway",
+              "guestCount",
+              "host",
+              "hosts",
+              "lbSource",
+              "managedBy",
+              "namespace",
+              "owner",
+              "placementRefs",
+              "referenceOnly",
+              "resourceId",
+              "resourceRef",
+              "resourceType",
+              "routeInterface",
+              "scope",
+              "sourceFile",
+              "trafficKind",
+              "vlan",
+              "vmId"
+            ]
+          }
+        ],
+        "inventory": []
+      },
+      "views": {
+        "access": {
+          "title": "入口・認証 / 原則Access・例外mTLS",
+          "before": true,
+          "after": true
+        },
+        "delivery": {
+          "title": "自宅基盤の変更・同期",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "home-k8sのサービスと接続",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "自宅インフラの全体",
+          "before": true,
+          "after": true
+        },
+        "loockit": {
+          "title": "Loockit / HAProxy → LXC → Bluetooth",
+          "before": true,
+          "after": true
+        },
+        "network": {
+          "title": "ネットワーク機器 / ルーター・SW・AP",
+          "before": true,
+          "after": true
+        },
+        "nextcloud": {
+          "title": "Nextcloud / DB・ロック・ファイル保存",
+          "before": true,
+          "after": true
+        },
+        "nfs": {
+          "title": "NFSの利用経路 / nas-01・nas-02",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "Proxmox VEクラスタ / 全VM・LXC",
+          "before": true,
+          "after": true
+        },
+        "platform": {
+          "title": "home-k8s / クラスタ基盤",
+          "before": true,
+          "after": true
+        },
+        "power": {
+          "title": "電源・安全停止 / UPS・NUTのcross-power",
+          "before": true,
+          "after": true
+        },
+        "recording": {
+          "title": "録画・配信 / PRD・STG",
+          "before": true,
+          "after": true
+        },
+        "recording_prd": {
+          "title": "TNLaStation PRD / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "recording_stg": {
+          "title": "TNLaStation STG / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        },
+        "storage": {
+          "title": "保存・バックアップ / 復元元の区別",
+          "before": true,
+          "after": true
+        },
+        "vlans": {
+          "title": "VLAN / native・タグ・経路",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}
