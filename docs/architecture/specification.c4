@@ -1,5 +1,6 @@
 specification {
   tag overview
+  tag topology
   element actor { style { shape person color green } }
   element system { style { color blue } }
   element component { style { color muted } }

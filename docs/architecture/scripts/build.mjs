@@ -3,11 +3,14 @@ import {writeFileSync,copyFileSync,rmSync,readFileSync} from 'node:fs';
 import {targetView,deploymentTarget} from './relationship-navigation.mjs';
 import {adaptLineFilters} from './line-filters.mjs';
 rmSync('dist',{recursive:true,force:true});
+// Generated snapshots belong to the previous model; remove before validation.
+rmSync('.likec4',{recursive:true,force:true});
 for(const [command,args] of [
  ['node',['scripts/inventory.mjs']],
  ['node',['scripts/catalog.mjs']],
  ['./node_modules/.bin/likec4',['validate']],
  ['./node_modules/.bin/likec4',['export','json','.','-p','my-infra','--skip-layout','-o','model.json']],
+ ['node',['scripts/containment-layout.mjs']],
  ['./node_modules/.bin/likec4',['build','.','-o','dist/diagram','--use-hash-history','--base','./','--title','my-infra Architecture']],
 ]){
  const result=spawnSync(command,args,{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
