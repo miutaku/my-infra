@@ -1,6 +1,6 @@
 model {
   extend premises {
-    system lan 'LAN / VLAN・経路' { link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 'IF・ACL定義'
+    system lan 'VLANセグメント' { link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 'IF・ACL定義'
       component native 'native / 192.168.0.0/24'
       component management 'VLAN10 / 192.168.10.0/24'
       component server 'VLAN20 / 192.168.20.0/24'
@@ -69,8 +69,8 @@ model {
       component streaming 'ffmpeg streaming worker'
       component mediamtx 'MediaMTX / HLS配信'
     }
-    component mirakurun 'Mirakurun Service / 本番LXCへの中継'
-    component mirakurun_staging 'Mirakurun Service / STG LXCへの中継'
+    component mirakurun 'Mirakurun PRD / Kubernetes Service' { description 'selectorなしLoadBalancer Service。mirakurun.app-mirakurun.svc.cluster.local:40772をEndpointSliceの192.168.20.132:40772へ転送する。' }
+    component mirakurun_staging 'Mirakurun STG / Kubernetes Service' { description 'selectorなしClusterIP Service。mirakurun.app-mirakurun-staging.svc.cluster.local:40772をEndpointSliceの192.168.20.142:40772へ転送する。' }
     component annict_sync 'Annict録画同期 / CronJob'
   }
   extend premises.home.agent {
@@ -108,8 +108,8 @@ model {
     component unifi 'UniFi OS / VM13201' { description '192.168.0.132:11443 / native1。US-8-60Wの構成・監視を管理。' }
     component loockit_a 'Loockit 01 / CT12902' { description '192.168.20.133:8080 / :50051。x570のUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
     component loockit_b 'Loockit 02 / CT12903' { description '192.168.20.134:8080 / :50051。b550mのUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
-    component tuner_prod 'Mirakurun本番 / CT12901・PT3' { description '192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。' }
-    component tuner_stg 'Mirakurun STG / CT12904・PX-S1UD' { description 'GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
+    component tuner_prod 'Mirakurun PRD / LXC12901' { description '192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。' }
+    component tuner_stg 'Mirakurun STG / LXC12904' { description '192.168.20.142:40772 / PX-S1UD。GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
   }
   extend premises.hardware {
     component kvm 'NanoKVM ×2'
@@ -160,10 +160,10 @@ model {
   premises.home.recording.tnlastation.streaming .runtime premises.home.recording.tnlastation.mediamtx '配信'
   premises.home.recording.tnlastation.backend .runtime premises.home.databases.postgres 'PostgreSQL'
   premises.home.recording.tnlastation.encode .runtime premises.home.databases.postgres 'encode状態'
-  premises.home.recording.tnlastation.backend .runtime premises.home.recording.mirakurun 'tuner API'
-  premises.home.recording.epgstation .runtime premises.home.recording.mirakurun 'tuner API'
-  premises.home.recording.mirakurun .runtime premises.pve.tuner_prod 'EndpointSlice / 外部LXC'
-  premises.home.recording.mirakurun_staging .runtime premises.pve.tuner_stg 'EndpointSlice / 外部LXC'
+  premises.home.recording.tnlastation.backend .runtime premises.pve.tuner_prod 'Service名で接続 / PRD :40772'
+  premises.home.recording.epgstation .runtime premises.pve.tuner_prod 'Service名で接続 / PRD :40772'
+  premises.home.recording.mirakurun .network premises.pve.tuner_prod 'EndpointSlice / 外部LXC'
+  premises.home.recording.mirakurun_staging .network premises.pve.tuner_stg 'EndpointSlice / 外部LXC'
   premises.pve.tuner_stg .runtime premises.pve.tuner_prod 'BS/CS TCP fallback'
   premises.home.recording.annict_sync .runtime premises.home.apps.annict_scraper '番組照合'
   premises.home.recording.annict_sync .runtime premises.home.recording.tnlastation.backend '録画登録API'
@@ -256,5 +256,5 @@ model {
   premises.home.recording.tnlastation_staging.streaming .runtime premises.home.recording.tnlastation_staging.mediamtx '配信'
   premises.home.recording.tnlastation_staging.backend .runtime premises.home.databases.postgres_staging 'PostgreSQL'
   premises.home.recording.tnlastation_staging.encode .runtime premises.home.databases.postgres_staging 'encode状態'
-  premises.home.recording.tnlastation_staging.backend .runtime premises.home.recording.mirakurun_staging 'tuner API'
+  premises.home.recording.tnlastation_staging.backend .runtime premises.pve.tuner_stg 'Service名で接続 / STG :40772'
 }

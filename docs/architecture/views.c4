@@ -22,6 +22,7 @@ views {
   view home_apps of premises.home {
     title 'home-k8sのサービスと接続'
     description 'home-k8s内のサービス・DB・監視・運用基盤。チューナーとLoockitの実機制御はPVEのLXC、MagicMirror表示は専用VM。サービスをクリックすると内部へ。'
+    include premises.pve
     include external.edge, premises.home, premises.home.platform, premises.home.agent, premises.home.management, premises.home.eso, premises.home.dns, premises.home.nextcloud, premises.home.recording, premises.home.apps.loockit, premises.home.apps.coupon_manager, premises.home.apps.magic_mirror, premises.home.apps.wol, premises.home.apps.annict_scraper, premises.home.databases, premises.pve.nas02, premises.pve.kiosk, external.annict
     include premises.home.agent with { navigateTo observability }
     include premises.home.management with { navigateTo delivery }
@@ -95,9 +96,10 @@ views {
 
   view network of premises.hardware.network {
     title 'ネットワーク機器 / ルーター・SW・AP'
-    description 'IX2215の配下に宅内Ethernet・SW・AP。PVEはnativeで管理し、VMごとに802.1Q tagを設定。線はLAN接続を表す。VLANをクリックしてセグメントへ。'
-    include premises, external.internet, premises.hardware.network, premises.hardware.network.*, premises.pve.x570, premises.pve.x570.bridge, premises.pve.b550m, premises.pve.b550m.bridge, premises.pve.unifi, premises.lan
-    include premises.lan with { navigateTo vlans }
+    description 'IX2215の配下に宅内Ethernet・SW・AP。PVEはnativeで管理し、VMごとに802.1Q tagを設定。線はLAN接続を表す。ルーターをクリックしてセグメント・ACLへ。'
+    include premises.pve
+    include premises, external.internet, premises.hardware.network, premises.hardware.network.*, premises.pve.x570, premises.pve.x570.bridge, premises.pve.b550m, premises.pve.b550m.bridge, premises.pve.unifi
+    include premises.hardware.network.router with { navigateTo vlans }
     include premises.pve.x570 with { navigateTo placement }
     include premises.pve.b550m with { navigateTo placement }
     exclude external.edge.routes.** -> *
@@ -107,6 +109,7 @@ views {
   view vlans of premises.lan {
     title 'VLAN / native・タグ・経路'
     description 'native1とtag10/20/30/31/40。PVEはゲストNICごとにtagを設定。guestの他VLAN向け通信は拒否。IoTのBVI名は4だがタグ40。'
+    include premises.pve
     include premises, premises.lan, premises.lan.*, premises.hardware.network.router, premises.hardware.network.switch, premises.pve.x570.bridge, premises.pve.b550m.bridge, external.edge.warp, premises.home.dns
     include premises.hardware.network.router, premises.hardware.network.switch with { navigateTo network }
     include premises.home.dns with { navigateTo platform }
@@ -130,6 +133,7 @@ views {
   view loockit of premises.home.apps.loockit {
     title 'Loockit / HAProxy → LXC → Bluetooth'
     description '外部APIはmTLS。Pod内HAProxyはreadyzでactiveだけを選択し、LXC 12902/12903のREST/gRPCへ転送。LXCがPVE上のBlueZを使い、Leaseでleaderを選ぶ。'
+    include premises.pve
     include client, external.edge.mtls, external.edge.tunnel, premises.home.apps.loockit.proxy, premises.pve.loockit_a, premises.pve.loockit_b, premises.pve.x570.bluez, premises.pve.b550m.bluez, premises.home.platform.api
     include premises.home.platform.api with { navigateTo platform }
     include premises.pve.loockit_a with { navigateTo placement }
@@ -139,8 +143,9 @@ views {
   }
   view recording of premises.home.recording {
     title '録画・配信 / PRD・STG'
-    description 'TNLaStationはPRD/STGそれぞれ専用のMirakurun Service・LXCとPostgreSQLに接続。STG MirakurunのBS/CSはPRDへのfallback。録画領域はnas-02上で分離。'
-    include premises.home, premises.home.recording, premises.home.recording.epgstation, premises.home.recording.tnlastation, premises.home.recording.tnlastation_staging, premises.home.recording.mirakurun, premises.home.recording.mirakurun_staging, premises.pve.tuner_prod, premises.pve.tuner_stg
+    description 'TNLaStation・EPGStationはKubernetes Service名でMirakurun LXCへ接続。PRDは192.168.20.132、STGは192.168.20.142。STG MirakurunのBS/CSはPRDへのfallback。録画領域はnas-02上で分離。'
+    include premises.pve
+    include premises.home, premises.home.recording, premises.home.recording.epgstation, premises.home.recording.tnlastation, premises.home.recording.tnlastation_staging, premises.pve.tuner_prod, premises.pve.tuner_stg
     include premises.home.recording.tnlastation with { navigateTo recording_prd }
     include premises.home.recording.tnlastation_staging with { navigateTo recording_stg }
     include premises.pve.tuner_prod, premises.pve.tuner_stg with { navigateTo placement }
@@ -151,6 +156,7 @@ views {
   view nextcloud of premises.home.nextcloud {
     title 'Nextcloud / DB・ロック・ファイル保存'
     description 'Access認証後のHTTPをNextcloudへ。MariaDBはメタデータ、Redisはlocking/cache、ファイルはnas-02のNFS PVC。オンライン保存とバックアップは保存図で分ける。'
+    include premises.pve
     include external.edge, premises.home.nextcloud, premises.home.nextcloud.*, premises.home.databases.mariadb, premises.pve.nas02
     include premises.pve.nas02 with { navigateTo storage }
     exclude external.edge.routes.** -> *
@@ -160,6 +166,7 @@ views {
 
   view storage {
     title '保存・バックアップ / 復元元の区別'
+    include premises.pve
     include premises.home.nextcloud, premises.home.recording, premises.home.agent.local_store, premises.pve, premises.pve.nas01, premises.pve.nas02, premises.pve.pbs, premises.home.databases, premises.home.databases.*, premises.home.shared, premises.home.backups, premises.home.backups.*, external.idrive, premises.pve.x570, premises.pve.b550m
     include premises.pve.nas01, premises.pve.nas02, premises.pve.pbs with { navigateTo placement }
     exclude external.edge.routes.** -> *
@@ -168,6 +175,7 @@ views {
   }
   view power {
     title '電源・安全停止 / UPS・NUTのcross-power'
+    include premises.pve
     include premises.hardware.ups, premises.hardware.ups.*, premises.pve.x570, premises.pve.b550m, premises.hardware.network
     exclude external.edge.routes.** -> *
     exclude * -> * where kind is not power and kind is not network and kind is not query
@@ -177,7 +185,8 @@ views {
   view recording_prd of premises.home.recording.tnlastation {
     title 'TNLaStation PRD / 制御・エンコード・配信'
     description 'GatewayからWeb・API・HLSへ。APIが録画とffmpeg workerを制御し、専用DBとnas-02の録画領域を使用。'
-    include premises.home, premises.home.recording.tnlastation, premises.home.recording.tnlastation.*, premises.home.recording.mirakurun, premises.home.databases.postgres, premises.pve.nas02
+    include premises.pve
+    include premises.home, premises.home.recording.tnlastation, premises.home.recording.tnlastation.*, premises.pve.tuner_prod, premises.home.databases.postgres, premises.pve.nas02
     include premises.pve.nas02 with { navigateTo storage }
     exclude external.edge.routes.** -> *
     exclude * -> * where kind is not runtime
@@ -186,7 +195,8 @@ views {
   view recording_stg of premises.home.recording.tnlastation_staging {
     title 'TNLaStation STG / 制御・エンコード・配信'
     description 'GatewayからWeb・API・HLSへ。APIが録画とffmpeg workerを制御し、専用DBとnas-02の録画領域を使用。'
-    include premises.home, premises.home.recording.tnlastation_staging, premises.home.recording.tnlastation_staging.*, premises.home.recording.mirakurun_staging, premises.home.databases.postgres_staging, premises.pve.nas02
+    include premises.pve
+    include premises.home, premises.home.recording.tnlastation_staging, premises.home.recording.tnlastation_staging.*, premises.pve.tuner_stg, premises.home.databases.postgres_staging, premises.pve.nas02
     include premises.pve.nas02 with { navigateTo storage }
     exclude external.edge.routes.** -> *
     exclude * -> * where kind is not runtime
