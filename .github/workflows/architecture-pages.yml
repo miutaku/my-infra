@@ -16,8 +16,25 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  dispatch-cleanup:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      # github-pages accepts main only; closed PR events use refs/pull/*/merge.
+      # Dispatch the trusted main workflow instead of deploying from the PR ref.
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              ...context.repo, workflow_id: 'architecture-pages.yml', ref: 'main',
+              inputs: {}
+            });
+
   plan:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
