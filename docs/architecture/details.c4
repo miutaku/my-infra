@@ -1,6 +1,6 @@
 model {
   extend premises {
-    system lan 'LAN / VLAN・経路' { link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 'IF・ACL定義'
+    system lan 'VLANセグメント' { link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 'IF・ACL定義'
       component native 'native / 192.168.0.0/24'
       component management 'VLAN10 / 192.168.10.0/24'
       component server 'VLAN20 / 192.168.20.0/24'
@@ -11,8 +11,9 @@ model {
   }
   system definitions '未登録・共有の定義' { description 'GitOpsのsource pathに結びつかない宣言も削除せず保持。定義が存在することと、クラスタで稼働することは区別する。' }
   system external '外部サービス / SaaS・公開サービス' {
-    store idrive 'IDrive e2 / S3' { description 'PBS datastore、DB logical dump、NAS restic、録画、VictoriaMetrics snapshotの保存先。用途・prefix・整合性を分ける。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs 'PBS設定' }
+    store idrive 'IDrive e2（S3互換）' { description 'S3互換の保存先。PBS・DB・NAS・録画・監視のバックアップを保存。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs 'PBS設定' }
     component internet 'Internet'
+    component public_dns 'Public DNS / 1.1.1.1・8.8.8.8'
     component oracle 'Oracle Services Network'
     component annict 'Annict API'
     component ai 'Gemini API / OpenAI互換' { description 'Coupon ManagerのAi設定から利用。認証値は掲載しない。' }
@@ -23,24 +24,35 @@ model {
     component mtls 'mTLS / 専用APIの例外' { description 'loockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/loockit-api.tf '例外の定義' }
     component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
   }
-  extend premises.home.nextcloud { store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
+  extend premises.home.nextcloud { component web 'Nextcloud / PHP・HTTP :80' store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
   extend premises.home.dns {
     component coredns 'CoreDNS / miutaku.internal'
     component metallb 'MetalLB / LANのService IP'
   }
   extend premises.home.eso { component config 'ClusterSecretStore / BWS' }
-  extend premises.home { component platform 'Kubernetes基盤' { component cloudflared 'cloudflared / 自宅connector' component api 'Kubernetes API / Lease' } }
-  extend premises.home.apps {
-    system loockit 'Loockit' { component proxy 'HAProxy / leaderへ転送' }
-    system coupon_manager 'Coupon Manager' { component web 'Web' component api 'API / AI・DB' }
-    component wol 'Wake-on-LAN'
-    component magic_mirror 'MagicMirror'
-    component annict_scraper 'Annict scraper'
+  extend premises.home { component platform 'home-k8s クラスタ基盤' {
+    description 'ArgoCD Application以外のbootstrapも含む。クラスタDNSと宅内DNS、metrics-serverと監視保存基盤は区別する。'
+    component cloudflared 'cloudflared / 自宅connector'
+    component api 'Kubernetes API / Lease'
+    component controlplane 'home-k8s control-plane' { description 'Talos Linux上のAPI server・etcd・scheduler・controller-manager。3 VMで構成。' }
+    component worker 'home-k8s worker' { description 'Talos Linux上のkubelet・containerd。2 VMと2 RPi。' }
+    component cluster_dns 'CoreDNS / cluster.local' { description 'クラスタDNS。app-corednsのmiutaku.internalとは別。' }
+    component flannel 'Flannel / CNI'
+    component kube_proxy 'kube-proxy / Service routing'
+    component metrics_server 'metrics-server / Metrics API' { description 'kubeletのmetricsをMetrics APIとして提供する。' }
+    component cert_approver 'kubelet-serving-cert-approver' { description 'kubelet serving証明書のCSRを承認する。' }
+  } }
+  extend premises.home {
+    system loockit 'Loockit / BLEスマートロック' { description 'KubernetesのHAProxyが2台のLXCのreadyzを監視しactiveへ転送。APIはmTLS、実機のBLE操作はLXC/BlueZが担当。' component proxy 'HAProxy / :8080・:50051' }
+    system coupon_manager 'Coupon Manager' { description 'Web → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。' component web 'Web / :80' component api 'API / :8080' }
+    component wol 'Wake-on-LAN' { description 'app-gptwol。LANにMagic Packetを送信して対象PCを起動する。' }
+    component magic_mirror 'MagicMirror / ダッシュボード' { description 'app-magic-mirror / HTTP:8080。VLAN40のDisplayLink kiosk VM5000で表示。' }
+    component annict_scraper 'Annict scraper / 番組照合' { description 'Annict APIを照会して録画同期CronJobへ番組情報を提供。' }
   }
   extend premises.home.recording {
     component epgstation 'EPGStation'
-    system tnlastation 'TNLaStation / 共通モデル' {
-      description '本番とstagingへ同じ機能構造をinstanceOfで配置。値・imageの複製で論理モデルを増やさない。'
+    system tnlastation 'TNLaStation PRD' {
+      description 'app-tnlastation。PRDのMirakurun・PostgreSQLと録画領域を使用。'
       component gateway 'Gateway'
       component frontend 'Frontend'
       component backend 'Backend / API・録画制御'
@@ -48,8 +60,17 @@ model {
       component streaming 'ffmpeg streaming worker'
       component mediamtx 'MediaMTX / HLS配信'
     }
-    component mirakurun 'Mirakurun Service / 本番LXCへの中継'
-    component mirakurun_staging 'Mirakurun Service / STG LXCへの中継'
+    system tnlastation_staging 'TNLaStation STG' {
+      description 'app-tnlastation-staging。STGのMirakurun・PostgreSQLと録画領域を使用。'
+      component gateway 'Gateway'
+      component frontend 'Frontend'
+      component backend 'Backend / API・録画制御'
+      component encode 'ffmpeg encode worker'
+      component streaming 'ffmpeg streaming worker'
+      component mediamtx 'MediaMTX / HLS配信'
+    }
+    component mirakurun 'Mirakurun PRD / Kubernetes Service' { description 'selectorなしLoadBalancer Service。mirakurun.app-mirakurun.svc.cluster.local:40772をEndpointSliceの192.168.20.132:40772へ転送する。' }
+    component mirakurun_staging 'Mirakurun STG / Kubernetes Service' { description 'selectorなしClusterIP Service。mirakurun.app-mirakurun-staging.svc.cluster.local:40772をEndpointSliceの192.168.20.142:40772へ転送する。' }
     component annict_sync 'Annict録画同期 / CronJob'
   }
   extend premises.home.agent {
@@ -58,128 +79,176 @@ model {
     component pdc 'PDC agent / 自宅'
     component exporters 'exporter群' { description 'node・PVE・SNMP・NUT・TinyTuya・blackbox・speedtest。個別Applicationを内部に保持。' }
   }
+  extend premises.home.management.runner { component config 'ARC 共通設定 / cache' component automation_config '非公開モデル更新 / namespace・認証保管' }
+  extend premises.home.management { component images 'Image Updater' }
   extend premises.management {
-    component images 'Image Updater'
 
     component packer 'Packer / VM template' { link https://github.com/miutaku/my-infra/tree/main/packer '定義' }
   }
-  extend premises.management.argo { component registry 'Application登録 / root-app' }
-  extend premises.data {
+  extend premises.home.management.argo { component registry 'Application登録 / root-app' }
+  extend premises.home {
     component shared '共有PV / runner cache・状態'
     component databases 'DB / アプリ共有基盤' {
       store mariadb 'MariaDB'
-      store postgres 'PostgreSQL / 本番・STG'
+      store postgres 'PostgreSQL PRD'
+      store postgres_staging 'PostgreSQL STG'
     }
     component backups 'バックアップ処理' {
-      component nas 'NAS restic / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/cronjob.yaml '実行定義' }
-      component db 'DB logical dump / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/mariadb/backup-cronjob.yaml '実行定義' }
-      component metrics 'metrics snapshot / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/victoria-metrics/backup-cronjob.yaml '実行定義' }
-      component recordings '録画 / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/tnlastation-recorded-cronjob.yaml '実行定義' }
+      component nas 'NAS restic / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/cronjob.yaml '実行定義' }
+      component db 'DB logical dump / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/mariadb/backup-cronjob.yaml '実行定義' }
+      component metrics 'metrics snapshot / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/victoria-metrics/backup-cronjob.yaml '実行定義' }
+      component recordings '録画 / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/tnlastation-recorded-cronjob.yaml '実行定義' }
     }
   }
-  extend premises.data.nas {
-    store nas01 'TrueNAS VM69001 / nas-01' { description 'pve-x570のVM。USB disk passthrough上のZFS datasetをNFS公開。runner cacheを保存。' link https://github.com/miutaku/my-infra/blob/main/terraform/pve/main.tf 'VM定義' }
-    store nas02 'TrueNAS VM69002 / nas-02' { description 'pve-b550mのVM。USB disk passthrough上のZFS datasetをNFS公開。アプリ・DB・監視のデータを保存。' link https://github.com/miutaku/my-infra/blob/main/terraform/pve/main.tf 'VM定義' }
+
+  extend premises.pve {
+    component bluez 'BlueZ / Bluetooth（2ノード）' { description '各ノードのUSB BluetoothをLoockit LXCからread-only D-Busで利用。' }
+    component lb 'HAProxy / Keepalived ×2' { description 'VM10001・10002。Terraform/PVEとAnsible/load-balancerで管理。' }
+    component dev '開発アプリ / VM40000・Docker' { description '192.168.20.101 / VLAN20。開発環境用のDocker実行VM。' }
+    component kiosk 'MagicMirror表示 / VM5000' { description 'VLAN40のDisplayLink kiosk。MagicMirrorのHTTP画面を表示。' }
+    component unifi 'UniFi OS / VM13201' { description '192.168.0.132:11443 / native1。US-8-60Wの構成・監視を管理。' }
+    component loockit_a 'Loockit 01 / CT12902' { description '192.168.20.133:8080 / :50051。x570のUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
+    component loockit_b 'Loockit 02 / CT12903' { description '192.168.20.134:8080 / :50051。b550mのUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
+    component tuner_prod 'Mirakurun PRD / LXC12901' { description '192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。' }
+    component tuner_stg 'Mirakurun STG / LXC12904' { description '192.168.20.142:40772 / PX-S1UD。GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
   }
   extend premises.hardware {
-    component lb 'HAProxy / Keepalived ×2' { description 'VM10001・10002。Terraform/PVEとAnsible/load-balancerで管理。' }
-    component dev '開発アプリVM / Docker'
-    component kiosk 'DisplayLink kiosk / VLAN40'
-    component unifi 'UniFi OS Server'
-    component wifi 'Wi-Fi AP'
     component kvm 'NanoKVM ×2'
-    component rpi_workers 'RPi worker ×2' { description 'Talos worker。UPS監視用Piとは別機器。' }
-    component loockit_a 'Loockit LXC / x570・CT12902'
-    component loockit_b 'Loockit LXC / b550m・CT12903'
-    component ble_a 'x570 BlueZ / Bluetooth'
-    component ble_b 'b550m BlueZ / Bluetooth'
-    component tuner_prod 'Mirakurun LXC / CT12901・PT3'
-    component tuner_stg 'Mirakurun STG LXC / CT12904・PX-S1UD' { description 'GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
+    component rpi_workers 'Raspberry Pi / home-k8s worker ×2' { description 'home-k8sのworker03・04。UPS監視用Piとは別機器。' }
   }
+  extend premises.hardware.network {
+    component router 'IX2215 / ルーター・VLAN間ACL' { description 'GigaEthernet2: native1、tagged10/20/30/31/40。guestの他VLAN横断は拒否。IoTのIF名はGigaEthernet2.4/BVI4だがタグは40。' link https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml 'VLAN・ACL定義' }
+    component switch 'US-8-60W / 管理スイッチ' { description 'Port4はnative VLAN30、Port5/6/7はnative VLAN10でtaggedを遮断。uplinkはnative1とtagged VLANを運ぶ。管理IPは192.168.0.252。' link https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/network.md '稼働確認・根拠' }
+    component ap 'FS Wi-Fi AP' { description '管理はnative VLAN1 / 192.168.0.253。' link https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml 'DHCP・AP trunk定義' }
+    component ethernet '宅内Ethernet / VLAN trunk' { description 'native VLAN1と802.1QタグVLANを運ぶ宅内LAN。' }
+  }
+  extend premises.pve.x570 { component bridge 'enp7s0 / vmbr0' { description 'PVE管理はnative1。ゲストNICはtag20/30。vmbr0v20/v30/v40のサブインターフェースを利用。' } }
+  extend premises.pve.b550m { component bridge 'enp6s0 / vmbr0' { description 'PVE管理はnative1。ゲストNICはtag20/40。vmbr0v20/v30/v40のサブインターフェースを利用。' } }
+  extend premises.pve { component windows 'Windows作業VM60000 / IaC管理外' { description 'pve-x570のWindows VM。VLAN30。' link https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/pve-runtime.json '稼働確認' } }
   extend premises.hardware.ups {
     component mains '商用AC'
     component surge_a 'UPS A / サージのみ口・非backup'
     component ups_a 'UPS A / APC RS550S 2020'
     component ups_b 'UPS B / APC RS550S 2025'
-    component pi_a 'NUT Pi .112 / 監視A・給電B'
-    component pi_b 'NUT Pi .113 / 監視B・給電A'
+    component pi_a 'NUT Pi 01 / 192.168.10.112' { description 'upsd・usbhid-ups・upsmon。USB接続のUPS Aをprimary監視し、給電元UPS B（ups-b@192.168.10.113）をsecondary監視。UPS Bの残量10%で停止。' }
+    component pi_b 'NUT Pi 02 / 192.168.10.113' { description 'upsd・usbhid-ups・upsmon。USB接続のUPS Bをprimary監視し、給電元UPS A（ups-a@192.168.10.112）をsecondary監視。UPS Aの残量10%で停止。' }
   }
 
   extend consumers.reventer { component definitions '専用定義の参照 / 詳細はreventer側' { metadata { owner "reventer" referenceOnly "true" } description 'my-infraにある専用リソースの名前・参照元だけを自動抽出。構成図・通信トポロジーは重複して作らない。' link https://reventer-architecture.pages.dev/ 'Re:Venterの構成図' } }
 
 
+  premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
   client .runtime external.edge.mtls 'クライアント証明書'
   external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
-  premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_a 'readyz / leaderのみ'
-  premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_b 'readyz / leaderのみ'
-  premises.hardware.loockit_a .runtime premises.hardware.ble_a 'read-only D-Bus / org.bluez'
-  premises.hardware.loockit_b .runtime premises.hardware.ble_b 'read-only D-Bus / org.bluez'
-  premises.hardware.loockit_a .runtime premises.home.platform.api 'Lease leader election'
-  premises.hardware.loockit_b .runtime premises.home.platform.api 'Lease leader election'
-  premises.home.apps.coupon_manager.web .runtime premises.home.apps.coupon_manager.api '内部API'
-  premises.home.apps.coupon_manager.api .runtime premises.data.databases.postgres 'PostgreSQL'
-  premises.home.apps.coupon_manager.api .runtime external.ai 'AI API'
-  premises.home.nextcloud .runtime premises.data.databases.mariadb 'MYSQL_HOST / MariaDB'
-  premises.home.recording.epgstation .runtime premises.data.databases.mariadb 'EPGStation DB'
+  premises.home.loockit.proxy .runtime premises.pve.loockit_a 'readyz / leaderのみ'
+  premises.home.loockit.proxy .runtime premises.pve.loockit_b 'readyz / leaderのみ'
+  premises.pve.loockit_a .runtime premises.pve.bluez 'pve-x570 / read-only D-Bus'
+  premises.pve.loockit_b .runtime premises.pve.bluez 'pve-b550m / read-only D-Bus'
+  premises.pve.loockit_a .runtime premises.home.platform.api 'Lease leader election'
+  premises.pve.loockit_b .runtime premises.home.platform.api 'Lease leader election'
+  premises.home.coupon_manager.web .runtime premises.home.coupon_manager.api '内部API'
+  premises.home.coupon_manager.api .runtime premises.home.databases.postgres 'PostgreSQL'
+  premises.home.coupon_manager.api .runtime external.ai 'AI API'
+  premises.home.nextcloud.web .runtime premises.home.databases.mariadb 'MYSQL_HOST / MariaDB'
+  premises.home.recording.epgstation .runtime premises.home.databases.mariadb 'EPGStation DB'
   premises.home.recording.tnlastation.gateway .runtime premises.home.recording.tnlastation.frontend 'Web'
   premises.home.recording.tnlastation.gateway .runtime premises.home.recording.tnlastation.backend 'API'
   premises.home.recording.tnlastation.gateway .runtime premises.home.recording.tnlastation.mediamtx 'HLS'
   premises.home.recording.tnlastation.backend .runtime premises.home.recording.tnlastation.encode 'encode制御'
   premises.home.recording.tnlastation.backend .runtime premises.home.recording.tnlastation.streaming 'streaming制御'
   premises.home.recording.tnlastation.streaming .runtime premises.home.recording.tnlastation.mediamtx '配信'
-  premises.home.recording.tnlastation.backend .runtime premises.data.databases.postgres 'PostgreSQL'
-  premises.home.recording.tnlastation.encode .runtime premises.data.databases.postgres 'encode状態'
-  premises.home.recording.tnlastation.backend .runtime premises.home.recording.mirakurun 'tuner API'
-  premises.home.recording.epgstation .runtime premises.home.recording.mirakurun 'tuner API'
-  premises.home.recording.mirakurun .runtime premises.hardware.tuner_prod 'EndpointSlice / 外部LXC'
-  premises.home.recording.mirakurun_staging .runtime premises.hardware.tuner_stg 'EndpointSlice / 外部LXC'
-  premises.hardware.tuner_stg .runtime premises.hardware.tuner_prod 'BS/CS TCP fallback'
-  premises.home.recording.annict_sync .runtime premises.home.apps.annict_scraper '番組照合'
+  premises.home.recording.tnlastation.backend .runtime premises.home.databases.postgres 'PostgreSQL'
+  premises.home.recording.tnlastation.encode .runtime premises.home.databases.postgres 'encode状態'
+  premises.home.recording.tnlastation.backend .runtime premises.pve.tuner_prod 'Service名で接続 / PRD :40772'
+  premises.home.recording.epgstation .runtime premises.pve.tuner_prod 'Service名で接続 / PRD :40772'
+  premises.home.recording.mirakurun .network premises.pve.tuner_prod 'EndpointSlice / 外部LXC'
+  premises.home.recording.mirakurun_staging .network premises.pve.tuner_stg 'EndpointSlice / 外部LXC'
+  premises.pve.tuner_stg .runtime premises.pve.tuner_prod 'BS/CS TCP fallback'
+  premises.home.recording.annict_sync .runtime premises.home.annict_scraper '番組照合'
   premises.home.recording.annict_sync .runtime premises.home.recording.tnlastation.backend '録画登録API'
-  premises.home.apps.annict_scraper .runtime external.annict 'Annict API'
-  premises.hardware.kiosk .runtime premises.home.apps.magic_mirror '表示'
-  premises.home.apps.wol .runtime premises.lan.native 'Wake-on-LAN'
+  premises.home.annict_scraper .runtime external.annict 'Annict API'
+  premises.pve.kiosk .runtime premises.home.magic_mirror '表示'
+  premises.home.wol .runtime premises.lan.native 'Wake-on-LAN'
   premises.home.agent.exporters .observe premises.home.agent.collector 'scrape'
   premises.home.agent.collector .observe premises.home.agent.local_store 'remoteWrite / :8428'
-  premises.home.agent.pdc .connect external.grafana '外向きPDC接続'
   external.grafana .query premises.home.agent.pdc 'PDC経由の検索'
   premises.home.agent.pdc .query premises.home.agent.local_store 'private query / :8428'
-  premises.hardware.router .network premises.lan.native 'native IF'
-  premises.hardware.router .network premises.lan.management 'BVI10'
-  premises.hardware.router .network premises.lan.server 'BVI20'
-  premises.hardware.router .network premises.lan.client 'BVI30'
-  premises.hardware.router .network premises.lan.guest 'BVI31 / 他VLAN拒否'
-  premises.hardware.router .network premises.lan.iot 'BVI40'
+  premises.hardware.network.ethernet .network premises.pve 'native1 / tag20・30・40'
+  external.internet .network premises.hardware.network.router 'WAN / GigaEthernet0'
+  premises.hardware.network.router .network premises.hardware.network.ethernet 'GigaEthernet2 / native1 + tag10,20,30,31,40'
+  premises.hardware.network.ethernet .network premises.hardware.network.switch '802.1Q / uplink'
+  premises.hardware.network.ethernet .network premises.hardware.network.ap 'AP trunk'
+  premises.pve.unifi .admin premises.hardware.network.switch '構成・監視を管理'
+  premises.hardware.network.router .network premises.lan.native 'native IF'
+  premises.hardware.network.router .network premises.lan.management 'BVI10'
+  premises.hardware.network.router .network premises.lan.server 'BVI20'
+  premises.hardware.network.router .network premises.lan.client 'BVI30'
+  premises.hardware.network.router .network premises.lan.guest 'BVI31 / 他VLAN拒否'
+  premises.hardware.network.router .network premises.lan.iot 'BVI4 / tag40'
   premises.home.platform.cloudflared .connect external.edge.tunnel '外向きTunnel接続'
   external.edge.warp .network premises.lan.server 'private CIDR routes / WARP policy'
-  premises.data.databases .runtime premises.data.nas.nas02 'DB用NFS PVC'
-  premises.home.agent.local_store .runtime premises.data.nas.nas02 'metrics用NFS PVC'
-  premises.data.pbs .backup external.idrive 'S3 datastore / VM backup'
-  premises.data.nas.nas02 .backup premises.data.backups.nas '対象dataset / restic'
-  premises.data.databases .backup premises.data.backups.db '整合性あるlogical dump'
-  premises.home.agent.local_store .backup premises.data.backups.metrics 'snapshot / vmbackup'
-  premises.home.recording .backup premises.data.backups.recordings '録画ファイル専用job'
-  premises.data.backups .backup external.idrive '用途別prefix / 暗号化・retention'
+  premises.home.databases .runtime premises.pve.nas02 'DB用NFS PVC' { #nfs }
+  premises.home.agent.local_store .runtime premises.pve.nas02 'metrics用NFS PVC' { #nfs }
+  premises.pve.pbs .backup external.idrive 'S3 datastore / VM backup'
+  premises.pve.nas02 .backup premises.home.backups.nas '対象dataset / restic'
+  premises.home.databases .backup premises.home.backups.db '整合性あるlogical dump'
+  premises.home.agent.local_store .backup premises.home.backups.metrics 'snapshot / vmbackup'
+  premises.home.recording .backup premises.home.backups.recordings '録画ファイル専用job'
+  premises.home.backups .backup external.idrive '用途別prefix / 暗号化・retention'
   premises.hardware.ups.mains .power premises.hardware.ups.ups_a 'AC入力'
   premises.hardware.ups.mains .power premises.hardware.ups.surge_a '非バックアップ出力'
   premises.hardware.ups.surge_a .power premises.hardware.ups.ups_b 'UPS BのAC入力'
-  premises.hardware.ups.ups_a .power premises.hardware.x570 'バッテリー給電'
-  premises.hardware.ups.ups_a .power premises.hardware.ups.pi_b 'cross-power / PiBの給電元'
-  premises.hardware.ups.ups_b .power premises.hardware.b550m 'バッテリー給電'
-  premises.hardware.ups.ups_b .power premises.hardware.ups.pi_a 'cross-power / PiAの給電元'
-  premises.hardware.ups.ups_a .network premises.hardware.ups.pi_a 'USB監視 / ups-a'
-  premises.hardware.ups.ups_b .network premises.hardware.ups.pi_b 'USB監視 / ups-b'
-  premises.hardware.x570 .query premises.hardware.ups.pi_a 'charge-guard監視 / 80%で自身停止'
-  premises.hardware.b550m .query premises.hardware.ups.pi_b 'charge-guard監視 / 80%で自身停止'
-  premises.hardware.ups.pi_b .query premises.hardware.ups.pi_a 'ups-a監視 / LOWBATT10%で自身停止'
-  premises.hardware.ups.pi_a .query premises.hardware.ups.pi_b 'ups-b監視 / LOWBATT10%で自身停止'
-  premises.management.packer .deploy premises.hardware 'VM template'
+  premises.hardware.ups.ups_a .power premises.pve.x570 'pve-x570へ給電'
+  premises.hardware.ups.ups_a .power premises.hardware.ups.pi_b 'Pi 02へ給電'
+  premises.hardware.ups.ups_b .power premises.pve.b550m 'pve-b550mへ給電'
+  premises.hardware.ups.ups_b .power premises.hardware.network 'NW機器へ給電'
+  premises.hardware.ups.ups_b .power premises.hardware.ups.pi_a 'Pi 01へ給電'
+  premises.hardware.ups.ups_a .network premises.hardware.ups.pi_a 'USB / ups-a'
+  premises.hardware.ups.ups_b .network premises.hardware.ups.pi_b 'USB / ups-b'
+  premises.pve.x570 .query premises.hardware.ups.pi_a 'pve-x570 / 残量80%で停止'
+  premises.pve.b550m .query premises.hardware.ups.pi_b 'pve-b550m / 残量80%で停止'
+  premises.hardware.ups.pi_b .query premises.hardware.ups.pi_a 'ups-a@192.168.10.112 / 給電元Aを監視'
+  premises.hardware.ups.pi_a .query premises.hardware.ups.pi_b 'ups-b@192.168.10.113 / 給電元Bを監視'
+  premises.management.packer .deploy premises.pve 'VM template'
   external.github .deploy external.github_pages '構成図・PR比較を公開'
   external.bws .secret premises.management.ansible '機器・PBS用credential'
-  external.bws .secret premises.data.backups 'ESO経由 / backup credential'
-  premises.data.shared .runtime premises.data.nas.nas01 'runner cache / NFS'
-  premises.home.nextcloud .runtime premises.data.nas.nas02 'html・data / NFS'
-  premises.home.recording .runtime premises.data.nas.nas02 '録画・thumbnail・drop / NFS'
-  premises.home.apps.coupon_manager .runtime premises.data.nas.nas02 'images・Data Protection keys / PVC'
+  external.bws .secret premises.home.backups 'ESO経由 / backup credential'
+  premises.home.shared .runtime premises.pve.nas01 'runner cache / NFS' { #nfs }
+  premises.home.nextcloud.web .runtime premises.pve.nas02 'html・data / NFS' { #nfs }
+  premises.home.recording.epgstation .runtime premises.pve.nas02 'recorded・thumbnail・drop / NFS' { #nfs }
+  premises.home.recording.tnlastation .runtime premises.pve.nas02 'recorded・tnlastation / NFS' { #nfs }
+  premises.home.recording.tnlastation_staging .runtime premises.pve.nas02 'recorded-staging・tnlastation-staging / NFS' { #nfs }
+  premises.home.coupon_manager .runtime premises.pve.nas02 'images・Data Protection keys / PVC' { #nfs }
 
+
+  premises.hardware.network.ethernet .network premises.hardware.rpi_workers 'VLAN10 / arm64 worker'
+  premises.home .provide consumers.reventer '共有ArgoCD・ARCを提供 / 専用構成は利用側へ'
+  premises.home.platform.controlplane .provide premises.home.platform.api 'API server :6443 / etcd'
+  premises.home.platform.worker .admin premises.home.platform.api 'kubelet / Pod・Serviceのwatch'
+  premises.home.platform.api .deploy premises.home.platform.worker 'Podの実行を制御'
+  premises.home.platform.flannel .network premises.home.platform.worker 'CNI / Podネットワーク'
+  premises.home.platform.kube_proxy .network premises.home.platform.worker 'Service / ClusterIP転送'
+  premises.home.platform.worker .runtime premises.home.platform.cluster_dns 'Podの名前解決 / :53'
+  premises.home.platform.metrics_server .query premises.home.platform.worker 'kubelet metrics / :10250'
+  premises.home.platform.cert_approver .admin premises.home.platform.api 'kubelet serving CSRの承認'
+  premises.home.platform.descheduler .admin premises.home.platform.api 'Podのeviction / 配置再調整'
+  premises.home.eso .secret premises.home.platform.api 'Kubernetes Secretを同期'
+  premises.home.management.argo .deploy premises.home.platform.api 'manifest同期 / Kubernetes API'
+  premises.home.management.runner .deploy premises.home.platform.api 'runner Podの作成・削除'
+  premises.home.dns.metallb .network premises.lan.server 'L2広告 / Service IP .200-.226'
+
+
+  premises.home.dns.metallb .admin premises.home.platform.api 'ServiceのIP割当 / controller'
+  premises.home.dns.metallb .provide premises.home.dns.coredns 'LAN向けDNS / LoadBalancer IP .201'
+  premises.home.dns.coredns .runtime external.public_dns '非internal名をforward / DNS :53'
+
+  premises.home.recording.tnlastation_staging.gateway .runtime premises.home.recording.tnlastation_staging.frontend 'Web'
+  premises.home.recording.tnlastation_staging.gateway .runtime premises.home.recording.tnlastation_staging.backend 'API'
+  premises.home.recording.tnlastation_staging.gateway .runtime premises.home.recording.tnlastation_staging.mediamtx 'HLS'
+  premises.home.recording.tnlastation_staging.backend .runtime premises.home.recording.tnlastation_staging.encode 'encode制御'
+  premises.home.recording.tnlastation_staging.backend .runtime premises.home.recording.tnlastation_staging.streaming 'streaming制御'
+  premises.home.recording.tnlastation_staging.streaming .runtime premises.home.recording.tnlastation_staging.mediamtx '配信'
+  premises.home.recording.tnlastation_staging.backend .runtime premises.home.databases.postgres_staging 'PostgreSQL'
+  premises.home.recording.tnlastation_staging.encode .runtime premises.home.databases.postgres_staging 'encode状態'
+  premises.home.recording.tnlastation_staging.backend .runtime premises.pve.tuner_stg 'Service名で接続 / STG :40772'
 }
