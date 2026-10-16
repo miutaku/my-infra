@@ -69,3 +69,6 @@ __pycache__/
 /docs/architecture/catalog.c4
 /docs/architecture/model-coverage.json
 /docs/architecture/model.json
+
+# LikeC4 placement snapshots are regenerated from the current model on every build.
+/docs/architecture/.likec4/

@@ -13,9 +13,13 @@ $('commits').textContent=`変更前 ${data.base} → 変更後 ${data.head}`;
 function setViews(){
  const current=data.environments[$('env').value],changed=new Set(current.changes.views.map(v=>v.id));
  $('view').replaceChildren();
- for(const [id,view] of Object.entries(current.views).sort(([a],[b])=>Number(changed.has(b))-Number(changed.has(a)))){
+ const preferred=['index','placement','home_apps'];
+ const priority=id=>preferred.includes(id)?preferred.indexOf(id):preferred.length;
+ for(const [id,view] of Object.entries(current.views).sort(([a],[b])=>Number(changed.has(b))-Number(changed.has(a))||priority(a)-priority(b))){
   const option=document.createElement('option');option.value=id;option.textContent=`${changed.has(id)?'● 変更あり · ':''}${view.title} (${id})`;$('view').append(option);
  }
+ const requested=new URL(location.href).searchParams.get('view');
+ if(requested&&current.views[requested])$('view').value=requested;
  render();
 }
 function render(){

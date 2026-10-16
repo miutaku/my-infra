@@ -27,7 +27,7 @@ Argo CD Image Updaterはmutableな`staging` tagをdigest strategyで監視し、
 | 録画領域 | `/mnt/raid1_case/recorded-staging` |
 | URL | `https://tnlastation-staging.miutaku.work` |
 
-Mirakurunだけはproductionと同じServiceを参照します。staging DBは空で開始するため、
+Mirakurunは`app-mirakurun-staging`のServiceを通してSTG用LXC（192.168.20.142）へ接続します。staging DBは空で開始するため、
 productionの予約や録画情報は共有されません。
 
 TrueNAS側で次のdirectoryを事前に作成してください。
