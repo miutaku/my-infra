@@ -1,3 +1,4 @@
+import {layoutPvePools} from './pve-layout.mjs';
 import {layoutVlans} from './vlan-layout.mjs';
 import {spawnSync} from 'node:child_process';
 import {readFileSync,writeFileSync,mkdirSync,rmSync} from 'node:fs';
@@ -32,16 +33,7 @@ function grid(view,parent,columns=3){
 }
 const placement=model.views.placement,map=byId(placement),root=map.get('homeSite.pve');
 if(placement.edges.length)throw new Error('Containment grid must not discard communication routes');
-const controlplanes=map.get('homeSite.pve.controlplanes');
-const guests=root.children.filter(id=>id!==controlplanes.id).sort((a,b)=>Number(model.deployments.elements[a].metadata.vmId)-Number(model.deployments.elements[b].metadata.vmId));
-grid(placement,controlplanes);
-const pool={x:0,y:0,children:guests};grid(placement,pool,4);
-root.x=8;root.y=8;root.width=Math.max(pool.width,controlplanes.width)+48;
-translate(placement,controlplanes,root.x+(root.width-controlplanes.width)/2,root.y+52);
-const guestY=controlplanes.y+controlplanes.height+24;
-const dx=root.x+(root.width-pool.width)/2,dy=guestY;
-for(const id of guests){const node=map.get(id);translate(placement,node,node.x+dx,node.y+dy);}
-root.height=guestY+pool.height-root.y+24;
+root.x=8;root.y=8;layoutPvePools(placement,translate,grid);
 placement.bounds={x:0,y:0,width:root.width+16,height:root.height+16};
 save(placement);
 

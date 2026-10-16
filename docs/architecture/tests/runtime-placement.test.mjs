@@ -29,7 +29,7 @@ test('recorded running Proxmox guests are represented inside one cluster with ac
 test('one PVE view contains every VM and LXC, with Talos nested in each VM and no cluster-membership arrows',()=>{
  const members=['cp1','worker1','cp2','cp3','worker2'];
  for(const vm of members){
-  const parent=vm.startsWith('cp')?'homeSite.pve.controlplanes':'homeSite.pve';
+  const parent=vm.startsWith('cp')?'homeSite.pve.controlplanes':'homeSite.pve.workers';
   const ref=`${parent}.${vm}.talos`;
   assert.equal(model.deployments.elements[ref].kind,'os');
   assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===`${parent}.${vm}`));
@@ -38,7 +38,7 @@ test('one PVE view contains every VM and LXC, with Talos nested in each VM and n
   const guests=Object.values(model.deployments.elements).filter(n=>n.kind===kind);
   for(const guest of guests){
    const node=model.views.placement.nodes.find(n=>n.id===guest.id);
-   assert.ok(node,guest.id);assert.equal(node.parent,/\.cp[123]$/.test(node.id)?'homeSite.pve.controlplanes':'homeSite.pve');
+   assert.ok(node,guest.id);assert.equal(model.views.placement.nodes.find(n=>n.id===node.parent).parent,'homeSite.pve');
    assert.ok(node.title.includes(guest.metadata.vlan==='native1'?'native1':'VLAN'+guest.metadata.vlan));
   }
  }

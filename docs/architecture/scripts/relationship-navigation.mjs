@@ -23,6 +23,7 @@ export function targetView(fqn) {
 // LikeC4 1.59.4 drops deployment-node navigateTo while compiling views.
 // Keep the host drill-down usable in the shell until native deployment navigation works.
 export function deploymentTarget(ref){
+ if(/^homeSite\.pve\.[^.]+$/.test(ref))return 'placement';
  if(/\.(cp[123]|worker[12])(?:\.talos)?$/.test(ref)||/\.worker_pi[12](?:\.talos)?$/.test(ref))return 'home_apps';
  if(/\.loockit[12]?(?:\.app)?$/.test(ref))return 'loockit';
  if(/\.tuner(?:_prod|_stg)?(?:\.app)?$/.test(ref))return 'recording';

@@ -109,13 +109,22 @@ export function generateCatalog(root){
  const guestConnections=[];
  const deploymentSource=readFileSync(resolve(root,'docs/architecture/deployment.c4'),'utf8');
  const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'};
- for(const match of deploymentSource.matchAll(/(?:vm|container) (\w+) '[^'\n]+' \{[^\n]*?metadata \{ ([^}]+) \}/g)){
-  const attributes=Object.fromEntries([...match[2].matchAll(/(\w+) "([^"]+)"/g)].map(m=>[m[1],m[2]]));
-  const segment=segments[attributes.vlan];if(!segment)throw new Error(`Unknown guest VLAN ${attributes.vlan}`);
-  const parent=/^cp[0-9]+$/.test(match[1])?'controlplanes.':'';
-  if(!attributes.host)throw new Error(`Missing placement host for ${match[1]}`);
-  guestConnections.push(`homeSite.pve.${parent}${match[1]} .network homeSite.lan.${segment} ${q('')} { #vlan }`);
+ // Role pools contain the individual NIC facts. The curated VLAN view uses
+ // one summary relation per pool, while the model retains every guest NIC.
+ let mappedGuests=0;
+ for(const pool of deploymentSource.matchAll(/^ {6}cluster (\w+) '[^'\n]+' \{([\s\S]*?)^ {6}\}/gm)){
+  const subnets=new Set();
+  for(const match of pool[2].matchAll(/(?:vm|container) (\w+) '[^'\n]+' \{[^\n]*?metadata \{ ([^}]+) \}/g)){
+   const attributes=Object.fromEntries([...match[2].matchAll(/(\w+) "([^"]+)"/g)].map(m=>[m[1],m[2]]));
+   const segment=segments[attributes.vlan];if(!segment)throw new Error(`Unknown guest VLAN ${attributes.vlan}`);
+   if(!attributes.host)throw new Error(`Missing placement host for ${match[1]}`);
+   mappedGuests++;subnets.add(segment);
+   guestConnections.push(`homeSite.pve.${pool[1]}.${match[1]} .network homeSite.lan.${segment} "" { #nic }`);
+  }
+  if(subnets.size!==1)throw new Error(`Role pool ${pool[1]} must have one common NIC VLAN`);
+  guestConnections.push(`homeSite.pve.${pool[1]} .network homeSite.lan.${[...subnets][0]} "" { #vlan }`);
  }
+ if(mappedGuests!==[...deploymentSource.matchAll(/(?:vm|container) \w+ '/g)].length)throw new Error('Every PVE guest must belong to a role pool');
  guestConnections.push('providers.cloudflare .network homeSite.lan.server "WARP / private CIDR routes・policy" { #vlan }');
  for(const [tag,segment]of Object.entries(segments))guestConnections.push(`homeSite.ix2215 .network homeSite.lan.${segment} ${q(tag==='native1'?'native IF':tag==='40'?'BVI4 / tag40':'BVI'+tag)} { #vlan }`);
  const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...guestConnections,...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');

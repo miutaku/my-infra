@@ -8,7 +8,7 @@ const relation=(source,target,kind)=>Object.values(model.relations).some(r=>r.so
 const hasEdge=(view,source,target)=>model.views[view].edges.some(e=>e.source===source&&e.target===target);
 test('overview has one PVE cluster containing Talos, both distinct NAS VMs and PBS, with only summary links',()=>{
  const view=model.views.index;
- for(const ref of ['homeSite.pve.controlplanes.cp1','homeSite.pve.worker1','homeSite.pve.controlplanes.cp2','homeSite.pve.controlplanes.cp3','homeSite.pve.worker2','homeSite.pve.nas1','homeSite.pve.nas2','homeSite.pve.pbs']){
+ for(const ref of ['homeSite.pve.controlplanes.cp1','homeSite.pve.workers.worker1','homeSite.pve.controlplanes.cp2','homeSite.pve.controlplanes.cp3','homeSite.pve.workers.worker2','homeSite.pve.storage.nas1','homeSite.pve.storage.nas2','homeSite.pve.storage.pbs']){
   assert.equal(view.nodes.find(n=>n.id===ref)?.parent,'homeSite.pve',ref);
  }
  assert.ok(!view.nodes.some(n=>['homeSite.pve.x570','homeSite.pve.b550m','homeSite.talos'].includes(n.id)));
@@ -29,10 +29,10 @@ test('services, their databases and operation controllers belong inside home-k8s
 test('drill-down reaches services and a single complete PVE inventory, with Docker nested inside meaningful CTs',()=>{
  for(const [ref,view] of [['premises.home.nextcloud','nextcloud'],['premises.home.recording','recording'],['premises.home.loockit','loockit'],['premises.home.platform','platform']])assert.equal(manifest.home_apps.deploymentNavigation[ref],view);
  for(const [host,ref]of [['loockit1','loockit_a'],['loockit2','loockit_b']]){
-  const ct=model.deployments.elements[`homeSite.pve.${host}`];
+  const ct=model.deployments.elements[`homeSite.pve.smartlocks.${host}`];
   assert.match(ct.title,/Loockit/);
-  assert.equal(model.deployments.elements[`homeSite.pve.${host}.app`].kind,'workload');
-  assert.ok(Object.values(model.deployments.elements).some(n=>n.id.startsWith(`homeSite.pve.${host}.app.`)&&n.element===`premises.pve.${ref}`));
+  assert.equal(model.deployments.elements[`homeSite.pve.smartlocks.${host}.app`].kind,'workload');
+  assert.ok(Object.values(model.deployments.elements).some(n=>n.id.startsWith(`homeSite.pve.smartlocks.${host}.app.`)&&n.element===`premises.pve.${ref}`));
  }
  for(const view of ['pve_x570','pve_b550m','coupon'])assert.ok(!model.views[view],view);
  assert.ok(!Object.values(model.deployments.elements).some(n=>/^LXC CT\d+$/.test(n.title??'')));
@@ -101,17 +101,22 @@ test('Raspberry Pi workers are summarized, while services and control-plane VMs 
   assert.equal(node.parent,'homeSite.pve.controlplanes');assert.match(node.title,/コントロールプレーン/);assert.doesNotMatch(node.title,/\bCP/);
  }
 });
-test('every VM and LXC points to the subnet that matches its NIC tag',()=>{
+test('VLAN routes start once at each role pool, while every guest and NIC fact remains available',()=>{
  const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'};
+ const view=model.views.vlans,pools=new Set();
  for(const guest of Object.values(model.deployments.elements).filter(n=>['vm','container'].includes(n.kind))){
-  assert.ok(model.views.vlans.nodes.some(n=>n.id===guest.id),guest.id);
-  const nic=model.views.vlans.edges.filter(e=>e.source===guest.id);assert.equal(nic.length,1,guest.id);
-  assert.equal(nic[0].target,`homeSite.lan.${segments[guest.metadata.vlan]}`,guest.id);
+  const node=view.nodes.find(n=>n.id===guest.id);assert.ok(node,guest.id);
+  const pool=view.nodes.find(n=>n.id===node.parent);assert.equal(pool.parent,'homeSite.pve');pools.add(pool.id);
+  assert.ok(!view.edges.some(e=>e.source===guest.id),guest.id);
+  const edges=view.edges.filter(e=>e.source===pool.id);assert.equal(edges.length,1,pool.id);
+  const expected=`homeSite.lan.${segments[guest.metadata.vlan]}`;assert.equal(edges[0].target,expected,guest.id);
+  const nic=Object.values(model.deployments.relations).filter(r=>r.tags?.includes('nic')&&r.source.deployment===guest.id);
+  assert.equal(nic.length,1,guest.id);assert.equal(nic[0].target.deployment,expected);
+  assert.equal(model.views.placement.nodes.find(n=>n.id===guest.id).parent,pool.id);
  }
- for(const segment of Object.values(segments)){
-  const node=model.views.vlans.nodes.find(n=>n.id===`homeSite.lan.${segment}`);
-  assert.equal(node.modelRef,`premises.lan.${segment}`);
- }
+ assert.equal(view.edges.filter(e=>e.source.startsWith('homeSite.pve.')).length,pools.size);
+ for(const segment of Object.values(segments))assert.equal(view.nodes.find(n=>n.id===`homeSite.lan.${segment}`).modelRef,`premises.lan.${segment}`);
+ const workerPool=view.nodes.find(n=>n.id==='homeSite.pve.workers');assert.equal(workerPool.children.length,2);
 });
 test('restore sources and online NFS use are separate views of the same model',()=>{
  assert.ok(model.views.storage.edges.length>0);assert.ok(model.views.storage.edges.every(e=>e.kind==='backup'));
