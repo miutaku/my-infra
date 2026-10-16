@@ -22,7 +22,7 @@ test('every source declaration resolves into the compiled model and every Applic
  }
 });
 test('manual details preserve independent media workers, LXC, DB, NUT and correct local monitoring storage',()=>{
- for(const ref of ['premises.home.recording.tnlastation.encode','premises.home.recording.tnlastation.streaming','premises.home.recording.tnlastation.mediamtx','premises.hardware.loockit_a','premises.hardware.loockit_b','premises.hardware.tuner_prod','premises.hardware.tuner_stg','premises.data.databases.postgres','premises.data.databases.mariadb','premises.data.pbs','external.idrive','premises.hardware.ups.pi_a','premises.hardware.ups.pi_b'])assert.ok(model.elements[ref],ref);
+ for(const ref of ['premises.home.recording.tnlastation.encode','premises.home.recording.tnlastation.streaming','premises.home.recording.tnlastation.mediamtx','premises.pve.loockit_a','premises.pve.loockit_b','premises.pve.tuner_prod','premises.pve.tuner_stg','premises.home.databases.postgres','premises.home.databases.mariadb','premises.pve.pbs','external.idrive','premises.hardware.ups.pi_a','premises.hardware.ups.pi_b'])assert.ok(model.elements[ref],ref);
  const relations=Object.values(model.relations);
  assert.ok(relations.some(r=>r.source.model==='premises.home.agent.collector'&&r.target.model==='premises.home.agent.local_store'));
  assert.ok(!relations.some(r=>r.source.model==='premises.home.agent'&&r.target.model==='monitoring.vms'));
@@ -49,8 +49,8 @@ test('every active Proxmox module and LXC declaration has a physical placement w
 test('home storage, TrueNAS VMs and backup execution remain separate from external services',()=>{
  const nodes=Object.values(model.views).flatMap(view=>view.nodes);
  for(const ref of ['external.edge','external.bws','external.grafana','external.github','external.terraform_cloud','external.idrive'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='external'),ref);
- for(const ref of ['premises.home','premises.data','premises.hardware','premises.lan'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='premises'),ref);
- for(const [ref,logical] of [['homeSite.x570.nas1','premises.data.nas.nas01'],['homeSite.b550m.nas2','premises.data.nas.nas02']]){
+ for(const ref of ['premises.home','premises.pve','premises.hardware','premises.lan'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='premises'),ref);
+ for(const [ref,logical] of [['homeSite.pve.x570.nas1','premises.pve.nas01'],['homeSite.pve.b550m.nas2','premises.pve.nas02']]){
   assert.equal(model.deployments.elements[ref].kind,'vm');
   assert.ok(Object.values(model.deployments.elements).some(e=>e.element===logical&&e.id.startsWith(ref+'.')));
  }
@@ -60,13 +60,13 @@ test('home storage, TrueNAS VMs and backup execution remain separate from extern
   assert.ok(row.deploymentRef.startsWith('homeSite.talos.ns_'));
   assert.equal(model.deployments.elements[row.deploymentRef].element,row.executionRef);
  }
- for(const ref of ['premises','external','premises.data.nas','premises.home','external.bws','external.edge'])assert.ok(model.views.index.nodes.some(node=>node.model===ref||node.id===ref),`Missing overview boundary: ${ref}`);
+ for(const ref of ['homeSite','providers','homeSite.pve'])assert.ok(model.views.index.nodes.some(node=>node.id===ref),`Missing overview boundary: ${ref}`);
 });
 
 
 test('dedicated resources belong to ReVenter and every curated view shows only its boundary',()=>{
  assert.ok(model.elements['consumers.reventer']);
- for(const obsolete of ['oke','control','monitoring','shared_prd','premises.management.reviews','premises.management.argo.workloads'])assert.ok(!model.elements[obsolete],obsolete);
+ for(const obsolete of ['oke','control','monitoring','shared_prd','premises.management.reviews','premises.home.management.argo.workloads'])assert.ok(!model.elements[obsolete],obsolete);
  const dedicated=coverage.records.filter(row=>row.owner==='reventer');
  assert.ok(dedicated.length>0);
  for(const row of dedicated){
@@ -106,7 +106,7 @@ test('public access keeps authentication separate from traffic purpose and rejec
  assert.throws(()=>authenticationMode('new-unclassified-host',new Set()),/authentication policy/);
  const relations=Object.values(model.relations);
  assert.ok(relations.some(r=>r.source.model==='external.edge.access'&&r.target.model==='external.edge.tunnel'&&r.kind==='authenticate'));
- for(const id of ['index','access']){
+ for(const id of ['access']){
   const view=model.views[id];
   const entrance=view.edges.filter(edge=>edge.source==='user');
   assert.ok(entrance.length>0);

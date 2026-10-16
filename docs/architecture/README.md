@@ -76,17 +76,19 @@ ArgoCD本体と、クラスタbootstrapとして稼働するcluster.local用Core
 
 PVE2ホストの全非templateゲスト18件（VM14 / LXC4）を稼働configと照合し、`evidence/pve-runtime.json` に残す。Windows VM60000はTerraform管理外だが省略しない。`npm run audit:pve` は既存SSH接続を使う読み取り専用の調査で、ゲスト名・ID・状態・bridge/tagのみ保存する。
 
-物理配置はPVE → VM → Talos OS。home-k8sは3 CP VM・2 worker VM・2 RPiにまたがるため、クラスタをいずれか1VMの子にはしない。所属線で結び、namespace/サービスの配置はクラスタ側で保持する。Podを特定PVE/VMへ固定した描写にしない。ホスト別・VLAN別の詳細はクリックで開き、トップの観点選択には増やさない。
+包含は線ではなく境界で表す。PVEは共通クラスタとして、その中にVM/LXC、さらにTalos LinuxやDockerを入れる。VMの物理ホストはモデルの親とmetadata、VLANは各ゲストの属性に保持し、配置図は全14 VM・4 LXCを一ページにまとめる。home-k8sのサービス・DB・監視・運用基盤もクラスタ内に入れる。全体は要約した接続だけを表示し、通信・保存先の詳細は要素を開いて確認する。調査状況や未確認事項は証跡に残し、図のラベルへ入れない。TrueNASはrunner cache用nas-01とアプリデータ用nas-02を分け、TNLaStationはPRD/STGごとにチューナー・DB・NFSパスを対応させる。
 
 ネットワーク機器からIX2215・US-8-60W・FS APとPVEの接続、VLANを開ける。native1とtag10/20/30/31/40、VMのNIC tag、guest ACLを区別する。PVEはvmbr0とVLAN subinterface/bridgeを使用し、vlan-aware設定があるとは記載しない。設定上のDHCP予約を現在の管理IPと混同しない。正確なケーブルポートとAPのSSID別VLAN割当は未確認として残す。根拠と限界は `evidence/network.md`。
 
 ## 全体から接続先・内部構造へ
 
-最初の図はインフラ全体。LAN/PVE/RPiがTalosやTrueNAS/PBSをどう支えるか、Cloudflare・BWS・Grafana・IDriveがどこに接続するかを示す。ホストの実行基盤、通信、バックアップは線種で分け、運用・アプリ内部は次の階層へ進む。分類名だけのカード一覧にはしない。
+最初の図はPVEクラスタ内のhome-k8s VM・TrueNAS・PBSと、宅内ネットワーク・RPi・外部サービスを示す。包含は入れ子、線は公開入口・秘密情報・バックアップ・LAN接続だけを表示する。監視の詳細は監視ビュー、VM/LXCの全件は共通の配置ビューから開く。
 
 - PVE → Loockit/MirakurunのLXC → Dockerサービス。CT名には用途を含め、VMIDだけの表示にしない。
-- Talos → 各サービス → Web/API・DB・NFS・外部API。LoockitはHAProxy→LXC→BlueZ/Lease、録画はAPI/encode/streaming/HLS/チューナーへ。
-- Talosのクラスタ基盤 → API・worker・CNI・Service・DNSと、CSR承認/metrics/ESO/ArgoCD/ARCの実際の接点。
+- home-k8s → 各サービス → Web/API・DB・NFS・外部API。LoockitはHAProxy→LXC→BlueZ/Lease、録画はAPI/encode/streaming/HLS/チューナーへ。
+- home-k8sのクラスタ基盤 → API・worker・CNI・Service・DNSと、CSR承認/metrics/ESO/ArgoCD/ARCの実際の接点。
 - ネットワーク機器 → ルーター/SW/AP/トランク → VLAN。配線が未確認の部分は引き続き断定しない。
 
 LikeC4標準の要素詳細と関係ブラウザは置き換えず使用する。明示的なビュー遷移はクリックで行い、ホスト詳細などの補助ビューはトップの観点選択に並べない。比較レポートは変更のある全体/配置/サービスを優先し、`?view=loockit` のような直接選択もできる。
+
+包含だけの配置図は`containment-layout.mjs`で、その時点のモデルをLikeC4標準の`.likec4.snap`へ整列する。全体は6本の接続を保持したままVMを段組みし、PVE詳細ではホスト内の全VM/LXCを整列する。生成スナップショットはGit管理せず、毎回のビルドで作り直す。整列のための架空の通信線は追加しない。

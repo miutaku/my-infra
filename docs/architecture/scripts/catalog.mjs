@@ -8,7 +8,7 @@ import {isReventerDedicated} from './ownership.mjs';
 const q=value=>JSON.stringify(String(value));
 const id=value=>'r_'+createHash('sha256').update(value).digest('hex').slice(0,14);
 const slug=value=>value.replace(/[^a-zA-Z0-9_]/g,'_');
-const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.data.databases.mariadb',postgres:'premises.data.databases.postgres','postgres-staging':'premises.data.databases.postgres',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.data.backups.nas','shared-state-storage':'premises.data.shared', 'root-app':'premises.management.argo.registry','arc-runners-config':'premises.management.runner.config','architecture-automation-config':'premises.management.runner.automation_config'};
+const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation_staging',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.home.databases.mariadb',postgres:'premises.home.databases.postgres','postgres-staging':'premises.home.databases.postgres_staging',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.home.backups.nas','shared-state-storage':'premises.home.shared', 'root-app':'premises.home.management.argo.registry','arc-runners-config':'premises.home.management.runner.config','architecture-automation-config':'premises.home.management.runner.automation_config'};
 function placement(file,destination){
  if(destination.name==='oke-prd'||file.startsWith('k8s/oci-prd/'))return 'prd';
  if(destination.name==='oke-stg'||file.startsWith('k8s/oci/'))return 'stg';
@@ -33,9 +33,9 @@ export function generateCatalog(root){
   }else if(!ref){
    let parent='premises.home.apps';
    if(scope==='homeSite.talos'&&/exporter/.test(row.name))parent='premises.home.agent.exporters';
-   else if(scope==='homeSite.talos'&&/^arc-/.test(row.name))parent='premises.management.runner';
-   else if(scope==='homeSite.talos'&&/image-updater/.test(row.name))parent='premises.management.images';
-   else if(scope==='homeSite.talos'&&/tfc-agent/.test(row.name))parent='premises.management.tfc_agents';
+   else if(scope==='homeSite.talos'&&/^arc-/.test(row.name))parent='premises.home.management.runner';
+   else if(scope==='homeSite.talos'&&/image-updater/.test(row.name))parent='premises.home.management.images';
+   else if(scope==='homeSite.talos'&&/tfc-agent/.test(row.name))parent='premises.home.management.tfc_agents';
    else if(scope==='homeSite.talos'&&row.name==='descheduler')parent='premises.home.platform';
    ref=`${parent}.${slug(row.name)}`;
    declarations.set(ref,`extend ${parent} { component ${slug(row.name)} ${q(row.name)} }`);
@@ -55,7 +55,7 @@ export function generateCatalog(root){
   const dedicated=isReventerDedicated(row)||app?.owner==='reventer';
   let parent=dedicated?'consumers.reventer':app?.ref;
   if(!parent){
-   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.data.nas.nas01':'premises.data.nas.nas02'):'definitions';
+   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.pve.nas01':'premises.pve.nas02'):'definitions';
   }
   const ref=dedicated?`consumers.reventer.definitions.${id(row.id)}`:`${parent}.resources.${id(row.id)}`;
   if(dedicated)parent='consumers.reventer.definitions';
@@ -65,7 +65,7 @@ export function generateCatalog(root){
   if(row.type==='CronJob'&&backupJobs[row.name]&&app?.scope==='homeSite.talos'){
    const namespace=row.namespace||app.namespace,key=`${app.scope}.ns_${slug(namespace)}`;
    if(!deployments.has(key))deployments.set(key,{scope:app.scope,namespace,instances:[]});
-   const executionRef=`premises.data.backups.${backupJobs[row.name]}`;
+   const executionRef=`premises.home.backups.${backupJobs[row.name]}`;
    deployments.get(key).instances.push(`${id(row.id)} = instanceOf ${executionRef} { title ${q(row.name+' / CronJob')} link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "CronJob定義" }`);
    Object.assign(record,{executionRef,deploymentRef:`${key}.${id(row.id)}`,namespace,scope:app.scope});
   }
@@ -88,7 +88,7 @@ export function generateCatalog(root){
   if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
   for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
  }
- const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit.proxy',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+ const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.home.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit.proxy',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation_staging.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.pve.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.pve.nas01','nas-02':'premises.pve.nas02','pve-x570':'premises.pve.x570','pve-b550m':'premises.pve.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');

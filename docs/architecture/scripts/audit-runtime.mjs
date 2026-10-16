@@ -10,7 +10,7 @@ const bootstrap=Object.fromEntries(bootstrapWorkloads.map(w=>[`${w.namespace}/${
 const workloads=get('deployments,statefulsets,daemonsets,cronjobs').map(w=>{
  const namespace=w.metadata.namespace,key=`${namespace}/${w.kind}/${w.metadata.name}`;
  const app=apps.find(a=>(a.status?.resources??[]).some(r=>r.kind===w.kind&&r.name===w.metadata.name&&(r.namespace??a.spec.destination.namespace)===namespace));
- const modelRef=app?declarations.get(app.metadata.name)?.modelRef:bootstrap[key]??(namespace==='argocd'&&/^(argocd-)/.test(w.metadata.name)?'premises.management.argo':null);
+ const modelRef=app?declarations.get(app.metadata.name)?.modelRef:bootstrap[key]??(namespace==='argocd'&&/^(argocd-)/.test(w.metadata.name)?'premises.home.management.argo':null);
  return {namespace,kind:w.kind,name:w.metadata.name,application:app?.metadata.name??null,modelRef:modelRef??null,origin:app?'ArgoCD':modelRef?'cluster-bootstrap':'unmapped'};
 });
 const report={checkedAt:new Date().toISOString(),context:'home-k8s',
