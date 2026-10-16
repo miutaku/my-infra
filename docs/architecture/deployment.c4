@@ -31,7 +31,7 @@ deployment {
     physical nut_pi2 'NUT Pi / .113' { instanceOf premises.hardware.ups.pi_b }
     physical ups_a 'UPS A' { instanceOf premises.hardware.ups.ups_a }
     physical ups_b 'UPS B' { instanceOf premises.hardware.ups.ups_b }
-    instanceOf premises.hardware.network.router
+    physical network 'ネットワーク機器 / IX2215・SW・AP' { instanceOf premises.hardware.network }
     instanceOf premises.hardware.kvm
     cluster talos 'home-k8s' {
       description '左のPVE → VM → Talos OSとRPi上のTalos OSの計7ノードで構成。namespaceはクラスタ所属であり、物理ホストへ固定配置するものではない。'
