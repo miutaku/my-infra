@@ -29,7 +29,7 @@ mainのコード変更で、GitHub-hosted runnerが一覧を抽出しサイト�
 
 サイト・PRレビューの配信はすべてGitHub Pages。宣言コードからのモデル・リソース・経路抽出は認証なしでPRごとに実行する。
 
-AIによるモデル修正は独立した非公開リポジトリ [architecture-automation](https://github.com/miutaku/architecture-automation) へ移管。認証は専用namespaceのSecretに保持し、通常runnerのNASキャッシュには残さない。専用runnerは非公開側だけに登録し、この公開リポジトリにはOpenAI認証付きrunnerを登録しない。非公開側がmainを定期取得し、データだけをAIへ渡す。ビルド検証・モデル更新PR作成は別runnerで行い、自動マージしない。構成図と比較ページの配信先は変わらない。
+AIによるモデル修正は独立した非公開リポジトリ [architecture-automation](https://github.com/miutaku/architecture-automation) へ移管。認証は専用namespaceのSecretに保持し、通常runnerのNASキャッシュには残さない。専用runnerは非公開側だけに登録し、この公開リポジトリにはOpenAI認証付きrunnerを登録しない。mainのコード変更をGitHub OIDCで通知し、非公開側が現在のmainを取得してデータだけをAIへ渡す。公開側に操作用tokenは置かない。ビルド検証・モデル更新PR作成は別runnerで行い、自動マージしない。構成図と比較ページの配信先は変わらない。
 
 
 ## PRの図のレビュー
@@ -59,3 +59,5 @@ model-coverage.jsonは宣言ごとのモデル要素と、Applicationの配置�
 my-infraの変更ビューは自宅基盤の構成管理に限定する。Re:Venter向けの変更経路、OCI上の管理ワークロードも利用側の図へ委ねる。OCIの名前・定義・配置対応は参照用に保持し、my-infraの配置・ネットワーク図では展開しない。
 
 Pages配信の識別子はmainのSHAではなく生成サイト（gh-pages）のcommitにする。同じmainに複数のPreviewを追加しても別の配信として扱い、artifact名もrun/attemptごとに分ける。配信成功後に本番build-infoと比較changes.jsonのheadをHTTPで照合し、実際のURLが確認できるまで公開リンクを通知しない。
+
+通知経路は `architecture-notify.yml` → Cloudflare OIDC受信Worker → Queue → HTTP非公開consumer → 非公開Actions。通知は署名・固定repo ID・main・固定workflowを検証する。OpenAI認証はこの経路に渡さない。通知失敗時は「Notify architecture automation」を再実行する。通知済みの処理が失敗した場合は非公開Actionsでtargetを選び手動実行する。ドキュメントだけの変更では通知しない。
