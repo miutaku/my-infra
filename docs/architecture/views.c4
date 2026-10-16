@@ -7,7 +7,7 @@ views {
   deployment view index {
     title '自宅インフラの全体'
     description 'Proxmox VEクラスタにhome-k8sのVM・TrueNAS・PBSを配置。Raspberry Piもhome-k8sのworker。クラスタから全VM/LXC、ネットワーク機器から配線・VLAN、各サービスから内部構成へ進めます。'
-    include homeSite, homeSite.pve, homeSite.pve.controlplanes.cp1, homeSite.pve.workers.worker1, homeSite.pve.controlplanes.cp2, homeSite.pve.controlplanes.cp3, homeSite.pve.workers.worker2, homeSite.pve.storage.nas1, homeSite.pve.storage.nas2, homeSite.pve.storage.pbs, homeSite.workers, homeSite.network, providers, providers.*
+    include homeSite, homeSite.pve, homeSite.pve.controlplanes.cp1, homeSite.pve.workers.worker1, homeSite.pve.controlplanes.cp2, homeSite.pve.controlplanes.cp3, homeSite.pve.workers.worker2, homeSite.pve.storage.nas1, homeSite.pve.storage.nas2, homeSite.pve.storage.pbs, homeSite.workers, homeSite.network, providers, providers.cloudflare, providers.bitwarden, providers.idrive
     include providers.cloudflare with { description 'Access・Tunnel / 公開入口' }
     include providers.bitwarden with { description '秘密情報の管理・配布' }
     include providers.idrive with { description 'S3互換のバックアップ保存先' }
@@ -106,15 +106,14 @@ views {
   }
   deployment view vlans {
     title 'VLAN / native・タグ・経路'
-    description 'PVE内に役割別の枠とVM・LXCを表示。接続は各枠から所属VLANへ1本に集約。IX2215がセグメント間のルーティングとACLを制御。guestは他VLAN向け通信を拒否。'
-    include homeSite.pve, homeSite.pve.controlplanes, homeSite.pve.controlplanes.*, homeSite.pve.workers, homeSite.pve.workers.*, homeSite.pve.loadbalancers, homeSite.pve.loadbalancers.*, homeSite.pve.storage, homeSite.pve.storage.*, homeSite.pve.smartlocks, homeSite.pve.smartlocks.*, homeSite.pve.tuners, homeSite.pve.tuners.*, homeSite.pve.network_management, homeSite.pve.network_management.*, homeSite.pve.development, homeSite.pve.development.*, homeSite.pve.desktop, homeSite.pve.desktop.*, homeSite.pve.display, homeSite.pve.display.*, homeSite.lan, homeSite.lan.*, homeSite.ix2215, providers.cloudflare
-    exclude homeSite.pve.bluez1, homeSite.pve.bluez2
-    include homeSite.pve.tuners.tuner_prod with { title 'Mirakurun PRD / CT12901 / VLAN20' }
-    include homeSite.pve.tuners.tuner_stg with { title 'Mirakurun STG / CT12904 / VLAN20' }
+    description '枠の内側が同じVLAN。物理機器・端末・Service IPと、集約したPVE利用側を表示。PVEをクリックして全VM・CTへ。DHCP予約は設定上の割当であり、接続中端末の一覧ではありません。'
+    include homeSite.lan, homeSite.lan.*, homeSite.lan.native.pve, homeSite.lan.native.pve_management, homeSite.lan.native.switch, homeSite.lan.native.ap, homeSite.lan.management.rpi_workers, homeSite.lan.management.nut, homeSite.lan.management.kvm, homeSite.lan.management.management_clients, homeSite.lan.server.pve, homeSite.lan.server.service_ips, homeSite.lan.server.vips, homeSite.lan.client.pve, homeSite.lan.client.physical_clients, homeSite.lan.client.wol, homeSite.lan.guest.clients, homeSite.lan.iot.pve, homeSite.lan.iot.av, homeSite.lan.iot.smart_home, homeSite.ix2215, providers.warp
+    exclude homeSite.lan.native.native, homeSite.lan.management.management, homeSite.lan.server.server, homeSite.lan.client.client, homeSite.lan.guest.guest, homeSite.lan.iot.iot
     include homeSite.ix2215 with { navigateTo network }
     exclude * -> * where tag is not #vlan
-    autoLayout LeftRight 70 45
+    autoLayout TopBottom 60 40
   }
+
   view platform of premises.home.platform {
     title 'home-k8s / クラスタ基盤'
     description 'control-planeのAPIがworkerを制御し、CNI・Service転送・DNSがPodを支える。metrics-server・CSR承認・descheduler、ArgoCD/ARC/ESOがAPIへ働きかける。内部DNSとクラスタDNSは別。'

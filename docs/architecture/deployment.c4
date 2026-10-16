@@ -55,12 +55,12 @@ deployment {
     physical ups_b 'UPS B' { instanceOf premises.hardware.ups.ups_b }
     ix2215 = instanceOf premises.hardware.network.router
     cluster lan 'VLANセグメント' {
-      native = instanceOf premises.lan.native
-      management = instanceOf premises.lan.management
-      server = instanceOf premises.lan.server
-      client = instanceOf premises.lan.client
-      guest = instanceOf premises.lan.guest
-      iot = instanceOf premises.lan.iot
+      cluster native 'native1 / 192.168.0.0/24' { instanceOf premises.lan.native }
+      cluster management 'VLAN10 / 192.168.10.0/24' { instanceOf premises.lan.management }
+      cluster server 'VLAN20 / 192.168.20.0/24' { instanceOf premises.lan.server }
+      cluster client 'VLAN30 / 192.168.30.0/24' { instanceOf premises.lan.client }
+      cluster guest 'VLAN31 / 192.168.31.0/24' { instanceOf premises.lan.guest }
+      cluster iot 'VLAN40 / 192.168.40.0/24' { instanceOf premises.lan.iot }
     }
     physical network 'ネットワーク機器 / IX2215・SW・AP' { instanceOf premises.hardware.network }
     instanceOf premises.hardware.kvm

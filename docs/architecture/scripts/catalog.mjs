@@ -2,6 +2,7 @@ import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {parseAllDocuments} from 'yaml';
+import {networkMemberships} from './network-memberships.mjs';
 import {inventory} from './inventory.mjs';
 import {bootstrapWorkloads} from './runtime-scope.mjs';
 import {isReventerDedicated} from './ownership.mjs';
@@ -109,8 +110,9 @@ export function generateCatalog(root){
  const guestConnections=[];
  const deploymentSource=readFileSync(resolve(root,'docs/architecture/deployment.c4'),'utf8');
  const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'};
- // Role pools contain the individual NIC facts. The curated VLAN view uses
- // one summary relation per pool, while the model retains every guest NIC.
+ // Preserve guest NIC facts and role aggregates. Network memberships project
+ // these same guest identities inside the corresponding VLAN boundaries.
+ const guests=[];
  let mappedGuests=0;
  for(const pool of deploymentSource.matchAll(/^ {6}cluster (\w+) '[^'\n]+' \{([\s\S]*?)^ {6}\}/gm)){
   const subnets=new Set();
@@ -119,15 +121,16 @@ export function generateCatalog(root){
    const segment=segments[attributes.vlan];if(!segment)throw new Error(`Unknown guest VLAN ${attributes.vlan}`);
    if(!attributes.host)throw new Error(`Missing placement host for ${match[1]}`);
    mappedGuests++;subnets.add(segment);
+   guests.push({ref:`homeSite.pve.${pool[1]}.${match[1]}`,poolTitle:pool[0].match(/^ {6}cluster \w+ '([^']+)'/)[1],segment});
    guestConnections.push(`homeSite.pve.${pool[1]}.${match[1]} .network homeSite.lan.${segment} "" { #nic }`);
   }
   if(subnets.size!==1)throw new Error(`Role pool ${pool[1]} must have one common NIC VLAN`);
   guestConnections.push(`homeSite.pve.${pool[1]} .network homeSite.lan.${[...subnets][0]} "" { #vlan }`);
  }
  if(mappedGuests!==[...deploymentSource.matchAll(/(?:vm|container) \w+ '/g)].length)throw new Error('Every PVE guest must belong to a role pool');
- guestConnections.push('providers.cloudflare .network homeSite.lan.server "WARP / private CIDR routes・policy" { #vlan }');
+ guestConnections.push('providers.warp .network homeSite.lan.server "WARP / private CIDR routes・policy" { #vlan }');
  for(const [tag,segment]of Object.entries(segments))guestConnections.push(`homeSite.ix2215 .network homeSite.lan.${segment} ${q(tag==='native1'?'native IF':tag==='40'?'BVI4 / tag40':'BVI'+tag)} { #vlan }`);
- const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...guestConnections,...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
+ const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',networkMemberships(root,guests),...guestConnections,...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
  return {dsl,coverage,apps,rows:[...rows,...routes],routeCount:routes.length};
 }
 if(process.argv[1]&&resolve(process.argv[1])===resolve(import.meta.filename)){

@@ -1,49 +1,34 @@
-import {layoutPvePools} from './pve-layout.mjs';
-// Keep the full NIC inventory readable without inventing network hops.
-export function layoutVlans(view,translate,grid){
- const nodes=new Map(view.nodes.map(n=>[n.id,n]));
- const home=nodes.get('homeSite'),pve=nodes.get('homeSite.pve');
- for(const node of view.nodes.filter(n=>n.id.startsWith('homeSite.pve.')&&n.children.length===0))Object.assign(node,{width:260,height:96});
- pve.x=352;pve.y=80;layoutPvePools(view,translate,grid);
- const lan=nodes.get('homeSite.lan'),router=nodes.get('homeSite.ix2215');
- lan.x=pve.x+pve.width+224;lan.y=232;lan.width=368;
- Object.assign(router,{x:lan.x+24,y:80,width:320,height:144});
- let segmentY=lan.y+52;
- for(const name of ['native','server','client','iot','management','guest']){
-  const node=nodes.get(`homeSite.lan.${name}`);Object.assign(node,{x:lan.x+24,y:segmentY,width:320,height:name==='server'?200:104});segmentY+=node.height+24;
+// Membership is shown by VLAN containment. Only routing crosses boundaries;
+// six ordered fan-out curves and a separate WARP route never cross boxes.
+export function layoutVlans(view,translate){
+ const nodes=new Map(view.nodes.map(n=>[n.id,n])),lan=nodes.get('homeSite.lan'),home=nodes.get('homeSite');
+ const columns=['native','management','server','client','guest','iot'].map(id=>nodes.get(`homeSite.lan.${id}`));
+ const width=360,gap=24,leafWidth=312,leafHeight=120;
+ Object.assign(lan,{x:32,y:232,width:columns.length*(width+gap)-gap+48});
+ const height=Math.max(...columns.map(n=>n.children.length))*(leafHeight+20)+64;
+ for(const [i,column]of columns.entries()){
+  Object.assign(column,{x:lan.x+24+i*(width+gap),y:lan.y+52,width,height});
+  column.children.forEach((id,row)=>Object.assign(nodes.get(id),{x:column.x+24,y:column.y+64+row*(leafHeight+20),width:leafWidth,height:leafHeight}));
  }
- lan.height=segmentY-lan.y;
- home.x=328;home.y=24;home.width=lan.x+lan.width+148-home.x;home.height=Math.max(pve.y+pve.height,segmentY)-home.y+24;
- // Graphviz cubic point format; straight sections follow the clear row gaps.
- function path(corners){
-  return corners.flatMap((b,i)=>{
-   if(i===0)return [b];const a=corners[i-1];
-   return [[a[0]+(b[0]-a[0])/3,a[1]+(b[1]-a[1])/3],[a[0]+2*(b[0]-a[0])/3,a[1]+2*(b[1]-a[1])/3],b];
-  });
- }
- const providers=nodes.get('providers'),cloudflare=nodes.get('providers.cloudflare');
- Object.assign(providers,{x:8,y:24,width:300,height:190});Object.assign(cloudflare,{x:24,y:76,width:268,height:120});
- const warp=view.edges.find(e=>e.source===cloudflare.id);
- if(warp){
-  const target=nodes.get(warp.target),start=[cloudflare.x+cloudflare.width,cloudflare.y+cloudflare.height/2],bus=lan.x-12,end=[target.x,target.y+8];
-  warp.points=path([start,[312,start[1]],[312,48],[bus,48],[bus,end[1]],end]);delete warp.controlPoints;
-  Object.assign(warp.labelBBox,{x:home.x+80,y:44,width:360,height:22});
- }
- const guestEdges=view.edges.filter(e=>e.source.startsWith('homeSite.pve.'));
- const ports=new Map();let lane=0;
- for(const edge of guestEdges){
-  const source=nodes.get(edge.source),target=nodes.get(edge.target);
-  const count=guestEdges.filter(e=>e.target===edge.target).length,port=(ports.get(edge.target)??0)+1;ports.set(edge.target,port);
-  const end=[target.x,target.y+target.height*port/(count+1)],start=[source.x+source.width,source.y+source.height/2];
-  const rowGap=source.y+source.height+8+(lane%4)*4,bus=pve.x+pve.width+24+lane++*7;
-  edge.points=path([start,[start[0]+10,start[1]],[start[0]+10,rowGap],[bus,rowGap],[bus,end[1]],end]);delete edge.controlPoints;
- }
- let routerLane=0;
+ lan.height=height+76;
+ const router=nodes.get('homeSite.ix2215');Object.assign(router,{x:lan.x+lan.width/2-360,y:48,width:720,height:120});
+ Object.assign(home,{x:8,y:8,width:lan.x+lan.width+16,height:lan.y+lan.height+16});
  for(const edge of view.edges.filter(e=>e.source===router.id)){
-  const target=nodes.get(edge.target),start=[router.x+router.width,router.y+router.height/2],end=[target.x+target.width,target.y+target.height/2],bus=lan.x+lan.width+18+routerLane++*12;
-  edge.points=path([start,[bus,start[1]],[bus,end[1]],end]);delete edge.controlPoints;
-  Object.assign(edge.labelBBox,{x:lan.x+lan.width+18,y:end[1]-26,width:108,height:22});
+  const target=nodes.get(edge.target),i=columns.indexOf(target);
+  if(i<0)throw new Error(`Unexpected VLAN route ${edge.target}`);
+  const start=[router.x+router.width*(i+1)/(columns.length+1),router.y+router.height],end=[target.x+target.width/2,target.y];
+  edge.points=[start,[start[0],start[1]+52],[end[0],end[1]-52],end];delete edge.controlPoints;
+  Object.assign(edge.labelBBox,{x:end[0]-62,y:end[1]-28,width:124,height:22});
  }
- view.bounds={x:0,y:0,width:home.x+home.width+16,height:home.y+home.height+16};
+ const server=nodes.get('homeSite.lan.server'),providers=nodes.get('providers'),warp=nodes.get('providers.warp');
+ Object.assign(providers,{x:server.x-16,y:home.y+home.height+96,width:392,height:176});
+ Object.assign(warp,{x:server.x+24,y:providers.y+52,width:312,height:104});
+ const route=view.edges.find(e=>e.source===warp.id);
+ if(!route)throw new Error('WARP private route is missing');
+ const start=[warp.x+warp.width/2,warp.y],end=[server.x+server.width/2,server.y+server.height];
+ route.points=[start,[start[0],start[1]-32],[end[0],end[1]+32],end];delete route.controlPoints;
+ Object.assign(route.labelBBox,{x:end[0]+12,y:home.y+home.height+24,width:260,height:44});
+ if(view.edges.length!==7)throw new Error('VLAN view must contain only six router interfaces and WARP');
+ view.bounds={x:0,y:0,width:home.x+home.width+16,height:providers.y+providers.height+16};
  return view;
 }
