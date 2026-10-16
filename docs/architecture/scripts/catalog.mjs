@@ -3,11 +3,12 @@ import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {parseAllDocuments} from 'yaml';
 import {inventory} from './inventory.mjs';
+import {bootstrapWorkloads} from './runtime-scope.mjs';
 import {isReventerDedicated} from './ownership.mjs';
 const q=value=>JSON.stringify(String(value));
 const id=value=>'r_'+createHash('sha256').update(value).digest('hex').slice(0,14);
 const slug=value=>value.replace(/[^a-zA-Z0-9_]/g,'_');
-const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.data.databases.mariadb',postgres:'premises.data.databases.postgres','postgres-staging':'premises.data.databases.postgres',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.data.backups.nas','shared-state-storage':'premises.data.shared', 'root-app':'premises.management.argo.registry'};
+const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.data.databases.mariadb',postgres:'premises.data.databases.postgres','postgres-staging':'premises.data.databases.postgres',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.data.backups.nas','shared-state-storage':'premises.data.shared', 'root-app':'premises.management.argo.registry','arc-runners-config':'premises.management.runner.config','architecture-automation-config':'premises.management.runner.automation_config'};
 function placement(file,destination){
  if(destination.name==='oke-prd'||file.startsWith('k8s/oci-prd/'))return 'prd';
  if(destination.name==='oke-stg'||file.startsWith('k8s/oci/'))return 'stg';
@@ -70,6 +71,11 @@ export function generateCatalog(root){
   }
   coverage.push(record);
  }
+ for(const workload of bootstrapWorkloads){
+  const key=`homeSite.talos.ns_${slug(workload.namespace)}`;
+  if(!deployments.has(key))deployments.set(key,{scope:'homeSite.talos',namespace:workload.namespace,instances:[]});
+  deployments.get(key).instances.push(`${id('bootstrap:'+workload.namespace+'/'+workload.name)} = instanceOf ${workload.modelRef} { title ${q(workload.name)} }`);
+ }
  const routes=[],routeElements={protected:[],exceptions:[],dedicated:[]},routeLinks=[];
  const locals=readFileSync(resolve(root,'terraform/cloudflare/locals.tf'),'utf8');
  const homeRoutes=locals.slice(locals.indexOf('home_k8s_services ='),locals.indexOf('  # Private network routes'));
@@ -82,7 +88,7 @@ export function generateCatalog(root){
   if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
   for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
  }
- const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.wifi',ix2215:'premises.hardware.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+ const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
