@@ -80,7 +80,7 @@ views {
   deployment view placement {
     title '基盤の配置 / PVE → VM → Talos'
     description 'PVEホストをクリックしてVM/LXCとその内側のTalos OSを見る。点線はクラスタ所属で、通信経路ではない。Podの配置先VMは固定しない。'
-    include homeSite, homeSite.x570, homeSite.b550m, homeSite.worker_pi1, homeSite.worker_pi2, homeSite.talos
+    include homeSite, homeSite.x570, homeSite.b550m, homeSite.worker_pi1, homeSite.worker_pi2, homeSite.talos, homeSite.network
     include homeSite.x570 with { navigateTo pve_x570 }
     include homeSite.b550m with { navigateTo pve_b550m }
     include homeSite.talos with { navigateTo home_apps }

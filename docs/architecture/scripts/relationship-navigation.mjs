@@ -22,7 +22,7 @@ export function targetView(fqn) {
 // LikeC4 1.59.4 drops deployment-node navigateTo while compiling views.
 // Keep the host drill-down usable in the shell until native deployment navigation works.
 export function deploymentTarget(ref){
- return {'homeSite.x570':'pve_x570','homeSite.b550m':'pve_b550m','homeSite.talos':'home_apps'}[ref]??null;
+ return {'homeSite.x570':'pve_x570','homeSite.b550m':'pve_b550m','homeSite.talos':'home_apps','homeSite.network':'network'}[ref]??null;
 }
 export function adaptViewer(directory) {
  let replaced=0;

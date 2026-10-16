@@ -41,6 +41,7 @@ test('Talos OS is nested in each VM or RPi and membership targets a multi-host c
 test('physical network and VLAN details retain switches, AP, tagged PVE guests and isolated guest VLAN',()=>{
  const refs=model.views.network.nodes.map(n=>n.modelRef);
  for(const ref of ['premises.hardware.network.router','premises.hardware.network.switch','premises.hardware.network.ap','premises.hardware.x570.bridge','premises.hardware.b550m.bridge'])assert.ok(refs.includes(ref),ref);
+ assert.equal(JSON.parse(readFileSync('dist/view-manifest.json','utf8')).placement.deploymentNavigation['homeSite.network'],'network');
  assert.equal(model.views.network.nodes.find(n=>n.modelRef==='premises.lan').navigateTo,'vlans');
  assert.ok(Object.values(model.relations).some(r=>r.source.model==='premises.hardware.b550m.bridge'&&r.target.model==='premises.lan.iot'&&r.title.includes('40')));
  assert.ok(model.elements['premises.lan.guest'].description.txt.includes('不可'));
