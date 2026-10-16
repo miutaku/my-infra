@@ -1,4 +1,4 @@
-import {readFileSync} from 'node:fs';
+import {readFileSync,realpathSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {request} from 'node:https';
 import {createServer} from 'node:http';
@@ -26,7 +26,8 @@ export function createPersister({read,readSecret,writeSecret}){
   busy=next.catch(()=>{});return next;
  };
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+export const isMain=(url,path)=>Boolean(path)&&url===pathToFileURL(realpathSync(path)).href;
+if(isMain(import.meta.url,process.argv[1])){
  const auth='/state/auth.json',identity='/var/run/private-service-account';
  const url='https://kubernetes.default.svc/api/v1/namespaces/architecture-automation/secrets/codex-account-auth';
  const call=(method,body)=>new Promise((resolve,reject)=>{
