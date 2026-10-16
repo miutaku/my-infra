@@ -7,12 +7,12 @@ views {
   deployment view index {
     title '自宅インフラの全体'
     description 'Proxmox VEクラスタにhome-k8sのVM・TrueNAS・PBSを配置。Raspberry Piもhome-k8sのworker。クラスタから全VM/LXC、ネットワーク機器から配線・VLAN、各サービスから内部構成へ進めます。'
-    include homeSite, homeSite.pve, homeSite.pve.controlplanes.cp1, homeSite.pve.worker1, homeSite.pve.controlplanes.cp2, homeSite.pve.controlplanes.cp3, homeSite.pve.worker2, homeSite.pve.nas1, homeSite.pve.nas2, homeSite.pve.pbs, homeSite.workers, homeSite.network, providers, providers.*
+    include homeSite, homeSite.pve, homeSite.pve.controlplanes.cp1, homeSite.pve.workers.worker1, homeSite.pve.controlplanes.cp2, homeSite.pve.controlplanes.cp3, homeSite.pve.workers.worker2, homeSite.pve.storage.nas1, homeSite.pve.storage.nas2, homeSite.pve.storage.pbs, homeSite.workers, homeSite.network, providers, providers.*
     include providers.cloudflare with { description 'Access・Tunnel / 公開入口' }
     include providers.bitwarden with { description '秘密情報の管理・配布' }
     include providers.idrive with { description 'S3互換のバックアップ保存先' }
-    include homeSite.pve.nas1 with { title 'nas-01 / TrueNAS VM69001' description 'runner cache用NFS / VLAN20' }
-    include homeSite.pve.nas2 with { title 'nas-02 / TrueNAS VM69002' description 'アプリ・録画データ用NFS / VLAN20' }
+    include homeSite.pve.storage.nas1 with { title 'nas-01 / TrueNAS VM69001' description 'runner cache用NFS / VLAN20' }
+    include homeSite.pve.storage.nas2 with { title 'nas-02 / TrueNAS VM69002' description 'アプリ・録画データ用NFS / VLAN20' }
     include homeSite.workers with { description 'Talos Linux / arm64' }
     include homeSite.pve with { navigateTo placement }
     include homeSite.network with { navigateTo network }
@@ -86,8 +86,8 @@ views {
   }
   deployment view placement {
     title 'Proxmox VEクラスタ / 全VM・LXC'
-    description 'pve-x570・pve-b550mの共通クラスタ。各VM/LXCにVLANを記載し、詳細に配置ホストを保持。home-k8s VM内はTalos Linux、LXC内はDockerサービス。'
-    include homeSite.pve, homeSite.pve.controlplanes, homeSite.pve.controlplanes.cp1, homeSite.pve.worker1, homeSite.pve.lb1, homeSite.pve.pbs, homeSite.pve.unifi, homeSite.pve.loockit1, homeSite.pve.tuner_prod, homeSite.pve.windows, homeSite.pve.nas1, homeSite.pve.controlplanes.cp2, homeSite.pve.controlplanes.cp3, homeSite.pve.worker2, homeSite.pve.lb2, homeSite.pve.dev, homeSite.pve.kiosk, homeSite.pve.loockit2, homeSite.pve.tuner_stg, homeSite.pve.nas2, homeSite.pve.controlplanes.cp1.talos, homeSite.pve.worker1.talos, homeSite.pve.controlplanes.cp2.talos, homeSite.pve.controlplanes.cp3.talos, homeSite.pve.worker2.talos, homeSite.pve.loockit1.app, homeSite.pve.loockit2.app, homeSite.pve.tuner_prod.app, homeSite.pve.tuner_stg.app, homeSite.pve.unifi.app
+    description '2ノードの共通クラスタ内でVM/LXCを役割別に分類。各ゲストにVLANを記載し、詳細に配置ホストを保持。home-k8s VM内はTalos Linux、LXC内はDockerサービス。'
+    include homeSite.pve, homeSite.pve.controlplanes, homeSite.pve.workers, homeSite.pve.loadbalancers, homeSite.pve.storage, homeSite.pve.smartlocks, homeSite.pve.tuners, homeSite.pve.network_management, homeSite.pve.development, homeSite.pve.desktop, homeSite.pve.display, homeSite.pve.controlplanes.cp1, homeSite.pve.controlplanes.cp2, homeSite.pve.controlplanes.cp3, homeSite.pve.workers.worker1, homeSite.pve.workers.worker2, homeSite.pve.loadbalancers.lb1, homeSite.pve.loadbalancers.lb2, homeSite.pve.storage.nas1, homeSite.pve.storage.nas2, homeSite.pve.storage.pbs, homeSite.pve.smartlocks.loockit1, homeSite.pve.smartlocks.loockit2, homeSite.pve.tuners.tuner_prod, homeSite.pve.tuners.tuner_stg, homeSite.pve.network_management.unifi, homeSite.pve.development.dev, homeSite.pve.desktop.windows, homeSite.pve.display.kiosk, homeSite.pve.controlplanes.cp1.talos, homeSite.pve.controlplanes.cp2.talos, homeSite.pve.controlplanes.cp3.talos, homeSite.pve.workers.worker1.talos, homeSite.pve.workers.worker2.talos, homeSite.pve.smartlocks.loockit1.app, homeSite.pve.smartlocks.loockit2.app, homeSite.pve.tuners.tuner_prod.app, homeSite.pve.tuners.tuner_stg.app, homeSite.pve.network_management.unifi.app
     exclude homeSite.pve.bluez1, homeSite.pve.bluez2
     exclude * -> *
     autoLayout TopBottom 45 35
@@ -106,9 +106,11 @@ views {
   }
   deployment view vlans {
     title 'VLAN / native・タグ・経路'
-    description 'PVEクラスタ内の各VM・LXCから、そのNICが属するVLANへ接続。IX2215がセグメント間のルーティングとACLを制御。guestは他VLAN向け通信を拒否。'
-    include homeSite.pve, homeSite.pve.controlplanes.*, homeSite.pve.*, homeSite.lan, homeSite.lan.*, homeSite.ix2215, providers.cloudflare
+    description 'PVE内に役割別の枠とVM・LXCを表示。接続は各枠から所属VLANへ1本に集約。IX2215がセグメント間のルーティングとACLを制御。guestは他VLAN向け通信を拒否。'
+    include homeSite.pve, homeSite.pve.controlplanes, homeSite.pve.controlplanes.*, homeSite.pve.workers, homeSite.pve.workers.*, homeSite.pve.loadbalancers, homeSite.pve.loadbalancers.*, homeSite.pve.storage, homeSite.pve.storage.*, homeSite.pve.smartlocks, homeSite.pve.smartlocks.*, homeSite.pve.tuners, homeSite.pve.tuners.*, homeSite.pve.network_management, homeSite.pve.network_management.*, homeSite.pve.development, homeSite.pve.development.*, homeSite.pve.desktop, homeSite.pve.desktop.*, homeSite.pve.display, homeSite.pve.display.*, homeSite.lan, homeSite.lan.*, homeSite.ix2215, providers.cloudflare
     exclude homeSite.pve.bluez1, homeSite.pve.bluez2
+    include homeSite.pve.tuners.tuner_prod with { title 'Mirakurun PRD / CT12901 / VLAN20' }
+    include homeSite.pve.tuners.tuner_stg with { title 'Mirakurun STG / CT12904 / VLAN20' }
     include homeSite.ix2215 with { navigateTo network }
     exclude * -> * where tag is not #vlan
     autoLayout LeftRight 70 45

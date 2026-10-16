@@ -1,17 +1,10 @@
+import {layoutPvePools} from './pve-layout.mjs';
 // Keep the full NIC inventory readable without inventing network hops.
 export function layoutVlans(view,translate,grid){
  const nodes=new Map(view.nodes.map(n=>[n.id,n]));
  const home=nodes.get('homeSite'),pve=nodes.get('homeSite.pve');
- const cp=nodes.get('homeSite.pve.controlplanes');
- const guests=pve.children.filter(id=>id!==cp.id);
- for(const node of view.nodes.filter(n=>n.id.startsWith('homeSite.pve.')&&n.children.length===0))Object.assign(node,{width:300,height:104});
- grid(view,cp,3);
- const pool={x:0,y:0,children:guests};grid(view,pool,4);
- pve.x=352;pve.y=80;pve.width=Math.max(pool.width,cp.width)+48;
- translate(view,cp,pve.x+(pve.width-cp.width)/2,pve.y+52);
- const guestY=cp.y+cp.height+24,dx=pve.x+(pve.width-pool.width)/2;
- for(const id of guests){const node=nodes.get(id);translate(view,node,node.x+dx,node.y+guestY);}
- pve.height=guestY+pool.height-pve.y+24;
+ for(const node of view.nodes.filter(n=>n.id.startsWith('homeSite.pve.')&&n.children.length===0))Object.assign(node,{width:260,height:96});
+ pve.x=352;pve.y=80;layoutPvePools(view,translate,grid);
  const lan=nodes.get('homeSite.lan'),router=nodes.get('homeSite.ix2215');
  lan.x=pve.x+pve.width+224;lan.y=232;lan.width=368;
  Object.assign(router,{x:lan.x+24,y:80,width:320,height:144});
