@@ -39,7 +39,13 @@ function update(){
  const select=document.querySelector('#perspective');select.value=!['index','home_apps','placement'].includes(view)?view:'';
  document.querySelector('#up').hidden=view==='index';
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
- note.textContent=manifest[view].description||manifest[view].title;history.replaceState(null,'',`#view=${view}`);
+ note.textContent=manifest[view].description||manifest[view].title;
+ if(view==='storage'||view==='nfs'){
+  const target=view==='storage'?'nfs':'storage',link=document.createElement('button');
+  link.textContent=view==='storage'?'NFSの利用経路を見る':'バックアップ・復元元を見る';link.style.cssText='margin-left:12px;padding:3px 9px';
+  link.onclick=()=>{view=target;show()};note.append(link);
+ }
+ history.replaceState(null,'',`#view=${view}`);
 }
 function show(){frame.src=`./diagram/#/view/${view}`;update()}
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;show()});document.querySelector('#perspective').onchange=e=>{view=e.target.value;show()};document.querySelector('#up').onclick=()=>{view='index';show()};

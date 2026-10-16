@@ -8,11 +8,11 @@ const relation=(source,target,kind)=>Object.values(model.relations).some(r=>r.so
 const hasEdge=(view,source,target)=>model.views[view].edges.some(e=>e.source===source&&e.target===target);
 test('overview has one PVE cluster containing Talos, both distinct NAS VMs and PBS, with only summary links',()=>{
  const view=model.views.index;
- for(const ref of ['homeSite.pve.x570.cp1','homeSite.pve.x570.worker1','homeSite.pve.b550m.cp2','homeSite.pve.b550m.cp3','homeSite.pve.b550m.worker2','homeSite.pve.x570.nas1','homeSite.pve.b550m.nas2','homeSite.pve.x570.pbs']){
+ for(const ref of ['homeSite.pve.controlplanes.cp1','homeSite.pve.worker1','homeSite.pve.controlplanes.cp2','homeSite.pve.controlplanes.cp3','homeSite.pve.worker2','homeSite.pve.nas1','homeSite.pve.nas2','homeSite.pve.pbs']){
   assert.equal(view.nodes.find(n=>n.id===ref)?.parent,'homeSite.pve',ref);
  }
  assert.ok(!view.nodes.some(n=>['homeSite.pve.x570','homeSite.pve.b550m','homeSite.talos'].includes(n.id)));
- assert.equal(view.edges.length,6);
+ assert.equal(view.edges.length,5);
  assert.ok(!view.edges.some(e=>['host','member','connect','observe','query'].includes(e.kind)));
  assert.ok(!view.nodes.some(n=>n.modelRef==='external.grafana'));
  assert.equal(model.elements['external.idrive'].title,'IDrive e2（S3互換）');
@@ -27,19 +27,19 @@ test('services, their databases and operation controllers belong inside home-k8s
  }
 });
 test('drill-down reaches services and a single complete PVE inventory, with Docker nested inside meaningful CTs',()=>{
- for(const [ref,view] of [['premises.home.nextcloud','nextcloud'],['premises.home.recording','recording'],['premises.home.apps.loockit','loockit'],['premises.home.platform','platform']])assert.equal(manifest.home_apps.deploymentNavigation[ref],view);
- for(const [host,ref]of [['x570','loockit_a'],['b550m','loockit_b']]){
-  const ct=model.deployments.elements[`homeSite.pve.${host}.loockit`];
+ for(const [ref,view] of [['premises.home.nextcloud','nextcloud'],['premises.home.recording','recording'],['premises.home.loockit','loockit'],['premises.home.platform','platform']])assert.equal(manifest.home_apps.deploymentNavigation[ref],view);
+ for(const [host,ref]of [['loockit1','loockit_a'],['loockit2','loockit_b']]){
+  const ct=model.deployments.elements[`homeSite.pve.${host}`];
   assert.match(ct.title,/Loockit/);
-  assert.equal(model.deployments.elements[`homeSite.pve.${host}.loockit.app`].kind,'workload');
-  assert.ok(Object.values(model.deployments.elements).some(n=>n.id.startsWith(`homeSite.pve.${host}.loockit.app.`)&&n.element===`premises.pve.${ref}`));
+  assert.equal(model.deployments.elements[`homeSite.pve.${host}.app`].kind,'workload');
+  assert.ok(Object.values(model.deployments.elements).some(n=>n.id.startsWith(`homeSite.pve.${host}.app.`)&&n.element===`premises.pve.${ref}`));
  }
  for(const view of ['pve_x570','pve_b550m','coupon'])assert.ok(!model.views[view],view);
  assert.ok(!Object.values(model.deployments.elements).some(n=>/^LXC CT\d+$/.test(n.title??'')));
 });
 test('Loockit proxy checks readiness while its LXC backends own Kubernetes Lease and Bluetooth access',()=>{
- const proxy='premises.home.apps.loockit.proxy',api='premises.home.platform.api';
- for(const [node,ble]of [['loockit_a','x570.bluez'],['loockit_b','b550m.bluez']]){
+ const proxy='premises.home.loockit.proxy',api='premises.home.platform.api';
+ for(const [node,ble]of [['loockit_a','bluez'],['loockit_b','bluez']]){
   assert.ok(relation(proxy,`premises.pve.${node}`,'runtime'));
   assert.ok(relation(`premises.pve.${node}`,api,'runtime'));
   assert.ok(relation(`premises.pve.${node}`,`premises.pve.${ble}`,'runtime'));
@@ -88,4 +88,36 @@ test('visible PVE guests stay inside the shared PVE boundary in service and netw
    assert.ok(parent?.id==='premises.pve'||parent?.id.startsWith('premises.pve.'),`${view.id}: ${node.id}`);
   }
  }
+});
+
+test('Raspberry Pi workers are summarized, while services and control-plane VMs have the requested boundaries',()=>{
+ const workers=model.views.index.nodes.filter(n=>n.id.startsWith('homeSite.workers'));
+ assert.equal(workers.length,1);assert.match(workers[0].title,/03・04/);
+ for(const id of ['worker_pi1','worker_pi2'])assert.ok(model.deployments.elements[`homeSite.workers.${id}.talos`]);
+ assert.ok(!model.elements['premises.home.apps']);
+ for(const id of ['loockit','coupon_manager','wol','magic_mirror','annict_scraper'])assert.equal(model.views.home_apps.nodes.find(n=>n.id===`premises.home.${id}`).parent,'premises.home');
+ for(const id of ['cp1','cp2','cp3']){
+  const node=model.views.placement.nodes.find(n=>n.id===`homeSite.pve.controlplanes.${id}`);
+  assert.equal(node.parent,'homeSite.pve.controlplanes');assert.match(node.title,/コントロールプレーン/);assert.doesNotMatch(node.title,/\bCP/);
+ }
+});
+test('every VM and LXC points to the subnet that matches its NIC tag',()=>{
+ const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'};
+ for(const guest of Object.values(model.deployments.elements).filter(n=>['vm','container'].includes(n.kind))){
+  assert.ok(model.views.vlans.nodes.some(n=>n.id===guest.id),guest.id);
+  const nic=model.views.vlans.edges.filter(e=>e.source===guest.id);assert.equal(nic.length,1,guest.id);
+  assert.equal(nic[0].target,`homeSite.lan.${segments[guest.metadata.vlan]}`,guest.id);
+ }
+ for(const segment of Object.values(segments)){
+  const node=model.views.vlans.nodes.find(n=>n.id===`homeSite.lan.${segment}`);
+  assert.equal(node.modelRef,`premises.lan.${segment}`);
+ }
+});
+test('restore sources and online NFS use are separate views of the same model',()=>{
+ assert.ok(model.views.storage.edges.length>0);assert.ok(model.views.storage.edges.every(e=>e.kind==='backup'));
+ assert.ok(model.views.nfs.edges.length>0);assert.ok(model.views.nfs.edges.every(e=>e.kind==='runtime'));
+ const nasTargets=new Set(model.views.nfs.edges.map(e=>e.target));
+ for(const id of ['nas01','nas02'])assert.ok(nasTargets.has(`premises.pve.${id}`));
+ for(const edge of model.views.nfs.edges)for(const id of edge.relations)assert.ok(model.relations[id].tags.includes('nfs'));
+ for(const relation of Object.values(model.relations).filter(r=>r.kind==='runtime'&&/^premises\.pve\.nas0[12]$/.test(r.target.model)))assert.ok(relation.tags.includes('nfs'));
 });

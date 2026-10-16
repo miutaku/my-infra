@@ -75,7 +75,7 @@ replica数・一時Job/runner Pod・各アプリの内部実装を個別サー�
 
 Windows VM60000はTerraform管理外だが省略しない。`npm run audit:pve` は既存SSH接続を使う読み取り専用の調査で、ゲスト名・ID・状態・bridge/tagのみ保存する。
 
-包含は線ではなく境界で表す。PVEは共通クラスタとして、その中にVM/LXC、さらにTalos LinuxやDockerを入れる。VMの物理ホストはモデルの親とmetadata、VLANは各ゲストの属性に保持し、配置図は全14 VM・4 LXCを一ページにまとめる。home-k8sのサービス・DB・監視・運用基盤もクラスタ内に入れる。全体は要約した接続だけを表示し、通信・保存先の詳細は要素を開いて確認する。TrueNASはrunner cache用nas-01とアプリデータ用nas-02を分け、TNLaStationはPRD/STGごとにチューナー・DB・NFSパスを対応させる。
+包含は線ではなく境界で表す。PVEは共通クラスタとして、その中にVM/LXC、さらにTalos LinuxやDockerを入れる。VMの物理ホストはmetadata、VLANは各ゲストの属性に保持し、配置図は全14 VM・4 LXCを一ページにまとめる。home-k8sのサービス・DB・監視・運用基盤もクラスタ内に入れる。全体は要約した接続だけを表示し、通信・保存先の詳細は要素を開いて確認する。TrueNASはrunner cache用nas-01とアプリデータ用nas-02を分け、TNLaStationはPRD/STGごとにチューナー・DB・NFSパスを対応させる。
 
 ネットワーク機器からIX2215・US-8-60W・FS APとPVEの接続、VLANを開ける。native1とtag10/20/30/31/40、VMのNIC tag、guest ACLを区別する。PVEはvmbr0とVLAN subinterface/bridgeを使用し、vlan-aware設定があるとは記載しない。設定上のDHCP予約を現在の管理IPと混同しない。正確なケーブルポートとAPのSSID別VLAN割当は未確認として残す。根拠と限界は `evidence/network.md`。
 
@@ -90,6 +90,8 @@ Windows VM60000はTerraform管理外だが省略しない。`npm run audit:pve` 
 
 LikeC4標準の要素詳細と関係ブラウザは置き換えず使用する。明示的なビュー遷移はクリックで行い、ホスト詳細などの補助ビューはトップの観点選択に並べない。比較レポートは変更のある全体/配置/サービスを優先し、`?view=loockit` のような直接選択もできる。
 
-包含だけの配置図は`containment-layout.mjs`で、その時点のモデルをLikeC4標準の`.likec4.snap`へ整列する。全体は6本の接続を保持したままVMを段組みし、PVE詳細ではホスト内の全VM/LXCを整列する。生成スナップショットはGit管理せず、毎回のビルドで作り直す。整列のための架空の通信線は追加しない。
+包含だけの配置図は`containment-layout.mjs`で、その時点のモデルをLikeC4標準の`.likec4.snap`へ整列する。全体は5本の接続を保持したままVMを段組みし、PVE詳細ではコントロールプレーン3 VMを一つの枠にまとめ、ほかのVM/LXCを同じクラスタ枠内に整列する。どのビューも物理ホスト別の枠は設けず、クラスタに2ノード構成と記載し、配置ホストは各ゲストのmetadataに保持する。生成スナップショットはGit管理せず、毎回のビルドで作り直す。整列のための架空の通信線は追加しない。
 
 録画図の通信先はMirakurun LXCとし、Service名で接続することを線に記す。Kubernetes Serviceはselectorなし・EndpointSliceでLXCを指定する設定であり、中継プロセスを追加した箱にはしない。ネットワーク機器図の`LAN / VLAN・経路`という抽象ノードは表示せず、VLANセグメントとACLはIX2215から開く。
+
+全体図のRaspberry Pi worker03/04は一つに集約し、詳細モデルには2台の実体を保持する。home-k8sのサービスはクラスタ直下に置く。VLAN図のVM/LXC接続は配置メタデータのhost/vlanから生成する。復元元の図はバックアップ経路のみとし、NFSのオンライン利用は専用ビューに分け、両者を相互リンクする。

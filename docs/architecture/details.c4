@@ -42,7 +42,7 @@ model {
     component metrics_server 'metrics-server / Metrics API' { description 'kubeletのmetricsをMetrics APIとして提供する。' }
     component cert_approver 'kubelet-serving-cert-approver' { description 'kubelet serving証明書のCSRを承認する。' }
   } }
-  extend premises.home.apps {
+  extend premises.home {
     system loockit 'Loockit / BLEスマートロック' { description 'KubernetesのHAProxyが2台のLXCのreadyzを監視しactiveへ転送。APIはmTLS、実機のBLE操作はLXC/BlueZが担当。' component proxy 'HAProxy / :8080・:50051' }
     system coupon_manager 'Coupon Manager' { description 'Web → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。' component web 'Web / :80' component api 'API / :8080' }
     component wol 'Wake-on-LAN' { description 'app-gptwol。LANにMagic Packetを送信して対象PCを起動する。' }
@@ -102,6 +102,7 @@ model {
   }
 
   extend premises.pve {
+    component bluez 'BlueZ / Bluetooth（2ノード）' { description '各ノードのUSB BluetoothをLoockit LXCからread-only D-Busで利用。' }
     component lb 'HAProxy / Keepalived ×2' { description 'VM10001・10002。Terraform/PVEとAnsible/load-balancerで管理。' }
     component dev '開発アプリ / VM40000・Docker' { description '192.168.20.101 / VLAN20。開発環境用のDocker実行VM。' }
     component kiosk 'MagicMirror表示 / VM5000' { description 'VLAN40のDisplayLink kiosk。MagicMirrorのHTTP画面を表示。' }
@@ -115,8 +116,6 @@ model {
     component kvm 'NanoKVM ×2'
     component rpi_workers 'Raspberry Pi / home-k8s worker ×2' { description 'home-k8sのworker03・04。UPS監視用Piとは別機器。' }
   }
-  extend premises.pve.x570 { component bluez 'BlueZ / USB Bluetooth' }
-  extend premises.pve.b550m { component bluez 'BlueZ / USB Bluetooth' }
   extend premises.hardware.network {
     component router 'IX2215 / ルーター・VLAN間ACL' { description 'GigaEthernet2: native1、tagged10/20/30/31/40。guestの他VLAN横断は拒否。IoTのIF名はGigaEthernet2.4/BVI4だがタグは40。' link https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml 'VLAN・ACL定義' }
     component switch 'US-8-60W / 管理スイッチ' { description 'Port4はnative VLAN30、Port5/6/7はnative VLAN10でtaggedを遮断。uplinkはnative1とtagged VLANを運ぶ。管理IPは192.168.0.252。' link https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/network.md '稼働確認・根拠' }
@@ -141,15 +140,15 @@ model {
   premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
   client .runtime external.edge.mtls 'クライアント証明書'
   external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
-  premises.home.apps.loockit.proxy .runtime premises.pve.loockit_a 'readyz / leaderのみ'
-  premises.home.apps.loockit.proxy .runtime premises.pve.loockit_b 'readyz / leaderのみ'
-  premises.pve.loockit_a .runtime premises.pve.x570.bluez 'read-only D-Bus / org.bluez'
-  premises.pve.loockit_b .runtime premises.pve.b550m.bluez 'read-only D-Bus / org.bluez'
+  premises.home.loockit.proxy .runtime premises.pve.loockit_a 'readyz / leaderのみ'
+  premises.home.loockit.proxy .runtime premises.pve.loockit_b 'readyz / leaderのみ'
+  premises.pve.loockit_a .runtime premises.pve.bluez 'pve-x570 / read-only D-Bus'
+  premises.pve.loockit_b .runtime premises.pve.bluez 'pve-b550m / read-only D-Bus'
   premises.pve.loockit_a .runtime premises.home.platform.api 'Lease leader election'
   premises.pve.loockit_b .runtime premises.home.platform.api 'Lease leader election'
-  premises.home.apps.coupon_manager.web .runtime premises.home.apps.coupon_manager.api '内部API'
-  premises.home.apps.coupon_manager.api .runtime premises.home.databases.postgres 'PostgreSQL'
-  premises.home.apps.coupon_manager.api .runtime external.ai 'AI API'
+  premises.home.coupon_manager.web .runtime premises.home.coupon_manager.api '内部API'
+  premises.home.coupon_manager.api .runtime premises.home.databases.postgres 'PostgreSQL'
+  premises.home.coupon_manager.api .runtime external.ai 'AI API'
   premises.home.nextcloud.web .runtime premises.home.databases.mariadb 'MYSQL_HOST / MariaDB'
   premises.home.recording.epgstation .runtime premises.home.databases.mariadb 'EPGStation DB'
   premises.home.recording.tnlastation.gateway .runtime premises.home.recording.tnlastation.frontend 'Web'
@@ -165,26 +164,21 @@ model {
   premises.home.recording.mirakurun .network premises.pve.tuner_prod 'EndpointSlice / 外部LXC'
   premises.home.recording.mirakurun_staging .network premises.pve.tuner_stg 'EndpointSlice / 外部LXC'
   premises.pve.tuner_stg .runtime premises.pve.tuner_prod 'BS/CS TCP fallback'
-  premises.home.recording.annict_sync .runtime premises.home.apps.annict_scraper '番組照合'
+  premises.home.recording.annict_sync .runtime premises.home.annict_scraper '番組照合'
   premises.home.recording.annict_sync .runtime premises.home.recording.tnlastation.backend '録画登録API'
-  premises.home.apps.annict_scraper .runtime external.annict 'Annict API'
-  premises.pve.kiosk .runtime premises.home.apps.magic_mirror '表示'
-  premises.home.apps.wol .runtime premises.lan.native 'Wake-on-LAN'
+  premises.home.annict_scraper .runtime external.annict 'Annict API'
+  premises.pve.kiosk .runtime premises.home.magic_mirror '表示'
+  premises.home.wol .runtime premises.lan.native 'Wake-on-LAN'
   premises.home.agent.exporters .observe premises.home.agent.collector 'scrape'
   premises.home.agent.collector .observe premises.home.agent.local_store 'remoteWrite / :8428'
   external.grafana .query premises.home.agent.pdc 'PDC経由の検索'
   premises.home.agent.pdc .query premises.home.agent.local_store 'private query / :8428'
+  premises.hardware.network.ethernet .network premises.pve 'native1 / tag20・30・40'
   external.internet .network premises.hardware.network.router 'WAN / GigaEthernet0'
   premises.hardware.network.router .network premises.hardware.network.ethernet 'GigaEthernet2 / native1 + tag10,20,30,31,40'
   premises.hardware.network.ethernet .network premises.hardware.network.switch '802.1Q / uplink'
   premises.hardware.network.ethernet .network premises.hardware.network.ap 'AP trunk'
-  premises.hardware.network.ethernet .network premises.pve.x570.bridge 'native1管理 / ゲストtag20・30'
-  premises.hardware.network.ethernet .network premises.pve.b550m.bridge 'native1管理 / ゲストtag20・40'
   premises.pve.unifi .admin premises.hardware.network.switch '構成・監視を管理'
-  premises.pve.x570.bridge .network premises.lan.server 'VM・LXC tag20'
-  premises.pve.x570.bridge .network premises.lan.client 'Windows VM tag30'
-  premises.pve.b550m.bridge .network premises.lan.server 'VM・LXC tag20'
-  premises.pve.b550m.bridge .network premises.lan.iot 'kiosk VM tag40'
   premises.hardware.network.router .network premises.lan.native 'native IF'
   premises.hardware.network.router .network premises.lan.management 'BVI10'
   premises.hardware.network.router .network premises.lan.server 'BVI20'
@@ -193,8 +187,8 @@ model {
   premises.hardware.network.router .network premises.lan.iot 'BVI4 / tag40'
   premises.home.platform.cloudflared .connect external.edge.tunnel '外向きTunnel接続'
   external.edge.warp .network premises.lan.server 'private CIDR routes / WARP policy'
-  premises.home.databases .runtime premises.pve.nas02 'DB用NFS PVC'
-  premises.home.agent.local_store .runtime premises.pve.nas02 'metrics用NFS PVC'
+  premises.home.databases .runtime premises.pve.nas02 'DB用NFS PVC' { #nfs }
+  premises.home.agent.local_store .runtime premises.pve.nas02 'metrics用NFS PVC' { #nfs }
   premises.pve.pbs .backup external.idrive 'S3 datastore / VM backup'
   premises.pve.nas02 .backup premises.home.backups.nas '対象dataset / restic'
   premises.home.databases .backup premises.home.backups.db '整合性あるlogical dump'
@@ -204,27 +198,27 @@ model {
   premises.hardware.ups.mains .power premises.hardware.ups.ups_a 'AC入力'
   premises.hardware.ups.mains .power premises.hardware.ups.surge_a '非バックアップ出力'
   premises.hardware.ups.surge_a .power premises.hardware.ups.ups_b 'UPS BのAC入力'
-  premises.hardware.ups.ups_a .power premises.pve.x570 'バッテリー給電'
+  premises.hardware.ups.ups_a .power premises.pve.x570 'pve-x570へ給電'
   premises.hardware.ups.ups_a .power premises.hardware.ups.pi_b 'Pi 02へ給電'
-  premises.hardware.ups.ups_b .power premises.pve.b550m 'バッテリー給電'
+  premises.hardware.ups.ups_b .power premises.pve.b550m 'pve-b550mへ給電'
   premises.hardware.ups.ups_b .power premises.hardware.network 'NW機器へ給電'
   premises.hardware.ups.ups_b .power premises.hardware.ups.pi_a 'Pi 01へ給電'
   premises.hardware.ups.ups_a .network premises.hardware.ups.pi_a 'USB / ups-a'
   premises.hardware.ups.ups_b .network premises.hardware.ups.pi_b 'USB / ups-b'
-  premises.pve.x570 .query premises.hardware.ups.pi_a 'charge-guard監視 / 80%で自身停止'
-  premises.pve.b550m .query premises.hardware.ups.pi_b 'charge-guard監視 / 80%で自身停止'
+  premises.pve.x570 .query premises.hardware.ups.pi_a 'pve-x570 / 残量80%で停止'
+  premises.pve.b550m .query premises.hardware.ups.pi_b 'pve-b550m / 残量80%で停止'
   premises.hardware.ups.pi_b .query premises.hardware.ups.pi_a 'ups-a@192.168.10.112 / 給電元Aを監視'
   premises.hardware.ups.pi_a .query premises.hardware.ups.pi_b 'ups-b@192.168.10.113 / 給電元Bを監視'
   premises.management.packer .deploy premises.pve 'VM template'
   external.github .deploy external.github_pages '構成図・PR比較を公開'
   external.bws .secret premises.management.ansible '機器・PBS用credential'
   external.bws .secret premises.home.backups 'ESO経由 / backup credential'
-  premises.home.shared .runtime premises.pve.nas01 'runner cache / NFS'
-  premises.home.nextcloud.web .runtime premises.pve.nas02 'html・data / NFS'
-  premises.home.recording.epgstation .runtime premises.pve.nas02 'recorded・thumbnail・drop / NFS'
-  premises.home.recording.tnlastation .runtime premises.pve.nas02 'recorded・tnlastation / NFS'
-  premises.home.recording.tnlastation_staging .runtime premises.pve.nas02 'recorded-staging・tnlastation-staging / NFS'
-  premises.home.apps.coupon_manager .runtime premises.pve.nas02 'images・Data Protection keys / PVC'
+  premises.home.shared .runtime premises.pve.nas01 'runner cache / NFS' { #nfs }
+  premises.home.nextcloud.web .runtime premises.pve.nas02 'html・data / NFS' { #nfs }
+  premises.home.recording.epgstation .runtime premises.pve.nas02 'recorded・thumbnail・drop / NFS' { #nfs }
+  premises.home.recording.tnlastation .runtime premises.pve.nas02 'recorded・tnlastation / NFS' { #nfs }
+  premises.home.recording.tnlastation_staging .runtime premises.pve.nas02 'recorded-staging・tnlastation-staging / NFS' { #nfs }
+  premises.home.coupon_manager .runtime premises.pve.nas02 'images・Data Protection keys / PVC' { #nfs }
 
 
   premises.hardware.network.ethernet .network premises.hardware.rpi_workers 'VLAN10 / arm64 worker'

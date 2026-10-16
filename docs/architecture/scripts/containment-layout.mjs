@@ -1,3 +1,4 @@
+import {layoutVlans} from './vlan-layout.mjs';
 import {spawnSync} from 'node:child_process';
 import {readFileSync,writeFileSync,mkdirSync,rmSync} from 'node:fs';
 
@@ -31,15 +32,20 @@ function grid(view,parent,columns=3){
 }
 const placement=model.views.placement,map=byId(placement),root=map.get('homeSite.pve');
 if(placement.edges.length)throw new Error('Containment grid must not discard communication routes');
-const hosts=root.children.map(id=>map.get(id));
-for(const host of hosts)grid(placement,host);
-root.x=8;root.y=8;let x=root.x+24;
-for(const host of hosts){translate(placement,host,x,root.y+52);x+=host.width+36;}
-root.width=x-root.x-12;root.height=Math.max(...hosts.map(n=>n.height))+76;
+const controlplanes=map.get('homeSite.pve.controlplanes');
+const guests=root.children.filter(id=>id!==controlplanes.id).sort((a,b)=>Number(model.deployments.elements[a].metadata.vmId)-Number(model.deployments.elements[b].metadata.vmId));
+grid(placement,controlplanes);
+const pool={x:0,y:0,children:guests};grid(placement,pool,4);
+root.x=8;root.y=8;root.width=Math.max(pool.width,controlplanes.width)+48;
+translate(placement,controlplanes,root.x+(root.width-controlplanes.width)/2,root.y+52);
+const guestY=controlplanes.y+controlplanes.height+24;
+const dx=root.x+(root.width-pool.width)/2,dy=guestY;
+for(const id of guests){const node=map.get(id);translate(placement,node,node.x+dx,node.y+dy);}
+root.height=guestY+pool.height-root.y+24;
 placement.bounds={x:0,y:0,width:root.width+16,height:root.height+16};
 save(placement);
 
-// The infrastructure overview has only six summary links. Keep the PVE's
+// The infrastructure overview has only five summary links. Keep the PVE's
 // VM containment grid compact while external providers stay beside the site.
 const overview=model.views.index,nodes=byId(overview);
 const pve=nodes.get('homeSite.pve');
@@ -47,7 +53,7 @@ for(const id of pve.children){const n=nodes.get(id);n.width=300;n.height=112;}
 pve.x=500;pve.y=280;grid(overview,pve);
 const home=nodes.get('homeSite');home.x=476;home.y=24;home.width=pve.width+48;home.height=pve.height+280;
 const network=nodes.get('homeSite.network');Object.assign(network,{x:home.x+24,y:home.y+56,width:300,height:120});
-for(const [i,id]of ['homeSite.worker_pi1','homeSite.worker_pi2'].entries())Object.assign(nodes.get(id),{x:home.x+348+i*324,y:home.y+56,width:300,height:120});
+Object.assign(nodes.get('homeSite.workers'),{x:home.x+348,y:home.y+56,width:624,height:120});
 const providers=nodes.get('providers');Object.assign(providers,{x:16,y:24,width:332,height:home.height});
 for(const [i,id]of ['providers.cloudflare','providers.bitwarden','providers.idrive'].entries())Object.assign(nodes.get(id),{x:32,y:120+i*210,width:300,height:120});
 const left=n=>[n.x,n.y+n.height/2],right=n=>[n.x+n.width,n.y+n.height/2],top=n=>[n.x+n.width/2,n.y],bottom=n=>[n.x+n.width/2,n.y+n.height];
@@ -66,13 +72,12 @@ for(const edge of overview.edges){
  }else if(edge.target==='homeSite.pve'){
   const a=bottom(source),b=[a[0],pve.y];
   route(edge,[a,[a[0],a[1]+20],[b[0],b[1]-20],b],[a[0]+8,a[1]+26]);
- }else if(edge.target==='homeSite.worker_pi1'){
+ }else if(edge.target==='homeSite.workers'){
   const a=right(source),b=left(target);
   route(edge,[a,[a[0]+8,a[1]],[b[0]-8,b[1]],b],[a[0]-15,a[1]-26]);
- }else if(edge.target==='homeSite.worker_pi2'){
-  const a=top(source),b=top(target),y=home.y+35;
-  route(edge,[a,[a[0],y],[b[0],y],b],[a[0]+360,y-24]);
  }else throw new Error(`Unplaced overview route ${edge.source} -> ${edge.target}`);
 }
 overview.bounds={x:0,y:0,width:home.x+home.width+16,height:home.y+home.height+16};
 save(overview);
+
+save(layoutVlans(model.views.vlans,translate,grid));

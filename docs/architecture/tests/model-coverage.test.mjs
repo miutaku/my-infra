@@ -49,8 +49,8 @@ test('every active Proxmox module and LXC declaration has a physical placement w
 test('home storage, TrueNAS VMs and backup execution remain separate from external services',()=>{
  const nodes=Object.values(model.views).flatMap(view=>view.nodes);
  for(const ref of ['external.edge','external.bws','external.grafana','external.github','external.terraform_cloud','external.idrive'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='external'),ref);
- for(const ref of ['premises.home','premises.pve','premises.hardware','premises.lan'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='premises'),ref);
- for(const [ref,logical] of [['homeSite.pve.x570.nas1','premises.pve.nas01'],['homeSite.pve.b550m.nas2','premises.pve.nas02']]){
+ for(const ref of ['premises.home','premises.pve','premises.hardware'])assert.ok(nodes.some(node=>node.modelRef===ref&&node.parent==='premises'),ref);
+ for(const [ref,logical] of [['homeSite.pve.nas1','premises.pve.nas01'],['homeSite.pve.nas2','premises.pve.nas02']]){
   assert.equal(model.deployments.elements[ref].kind,'vm');
   assert.ok(Object.values(model.deployments.elements).some(e=>e.element===logical&&e.id.startsWith(ref+'.')));
  }
