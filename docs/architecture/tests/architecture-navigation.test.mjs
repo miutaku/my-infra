@@ -50,15 +50,22 @@ test('TNLaStation PRD and STG each use their own tuner and DB as declared in Kus
  const base=parse(readFileSync('../../k8s/pve/tnlastation/configmap.yaml','utf8'));
  const stg=parse(readFileSync('../../k8s/pve/tnlastation-staging/kustomization.yaml','utf8'));
  assert.match(base.data['config.yml'],/mirakurun\.app-mirakurun\.svc/);
+ for(const [folder,file,endpoint,ref]of [['mirakurun','mirakurun-endpointslice.yaml','192.168.20.132','tuner_prod'],['mirakurun-staging','endpointslice.yaml','192.168.20.142','tuner_stg']]){
+  const slice=parse(readFileSync(`../../k8s/pve/${folder}/${file}`,'utf8'));
+  assert.equal(slice.endpoints[0].addresses[0],endpoint);
+  assert.ok(model.elements[`premises.pve.${ref}`].description.txt.includes(endpoint));
+ }
  assert.ok(stg.configMapGenerator[0].literals.some(l=>l.includes('mirakurun.app-mirakurun-staging.svc')));
- for(const [app,tuner,db]of [['tnlastation','mirakurun','postgres'],['tnlastation_staging','mirakurun_staging','postgres_staging']]){
-  const source=`premises.home.recording.${app}`,target=`premises.home.recording.${tuner}`;
+ for(const [app,tuner,db]of [['tnlastation','tuner_prod','postgres'],['tnlastation_staging','tuner_stg','postgres_staging']]){
+  const source=`premises.home.recording.${app}`,target=`premises.pve.${tuner}`;
   assert.ok(relation(source+'.backend',target,'runtime'));
   assert.ok(hasEdge('recording',source,target));
   assert.ok(relation(source+'.backend',`premises.home.databases.${db}`,'runtime'));
  }
- assert.ok(!relation('premises.home.recording.tnlastation.backend','premises.home.recording.mirakurun_staging','runtime'));
- assert.ok(!relation('premises.home.recording.tnlastation_staging.backend','premises.home.recording.mirakurun','runtime'));
+ assert.ok(!relation('premises.home.recording.tnlastation.backend','premises.pve.tuner_stg','runtime'));
+ assert.ok(!relation('premises.home.recording.tnlastation_staging.backend','premises.pve.tuner_prod','runtime'));
+ assert.ok(relation('premises.home.recording.epgstation','premises.pve.tuner_prod','runtime'));
+ assert.ok(!model.views.recording.nodes.some(n=>n.id==='premises.home.recording.mirakurun'||n.id==='premises.home.recording.mirakurun_staging'));
 });
 test('NUT Pi identities and cross-power monitoring match both Ansible host_vars, with UniFi managing the switch',()=>{
  for(const [suffix,ref]of [['112','pi_a'],['113','pi_b']]){
@@ -72,4 +79,13 @@ test('NUT Pi identities and cross-power monitoring match both Ansible host_vars,
  assert.ok(relation('premises.pve.unifi','premises.hardware.network.switch','admin'));
  assert.ok(!relation('premises.hardware.network.switch','premises.pve.unifi','admin'));
  for(const node of Object.values(model.elements))assert.ok(!/未確定|未確認|固定配置を意味しない/.test((node.title??'')+' '+(node.description?.txt??'')),node.id);
+});
+
+test('visible PVE guests stay inside the shared PVE boundary in service and network views too',()=>{
+ for(const view of Object.values(model.views)){
+  for(const node of view.nodes.filter(n=>n.id===n.modelRef&&/^premises\.pve\./.test(n.modelRef??''))){
+   const parent=view.nodes.find(n=>n.id===node.parent);
+   assert.ok(parent?.id==='premises.pve'||parent?.id.startsWith('premises.pve.'),`${view.id}: ${node.id}`);
+  }
+ }
 });
