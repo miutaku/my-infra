@@ -1,0 +1,273 @@
+{
+  "checkedAt": "2026-10-16T08:52:25.932807+00:00",
+  "hosts": [
+    {
+      "name": "pve-x570",
+      "guests": [
+        {
+          "id": 10001,
+          "name": "lb-01-haproxy-keepalived-ubuntu-26-04-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 14001,
+          "name": "pbs-01-debian-13-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 13001,
+          "name": "controlplane-01-talos-home-pve-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 13004,
+          "name": "worker-01-talos-home-pve-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 60000,
+          "name": "work-windows-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 30
+            }
+          ]
+        },
+        {
+          "id": 69001,
+          "name": "nas-01-truenas-scale-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 13201,
+          "name": "unifi-os-01-server-ubuntu-26-04-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": null
+            }
+          ]
+        },
+        {
+          "id": 12901,
+          "name": "mirakurun-01-ubuntu-26-04-home-lxc-amd64",
+          "kind": "lxc",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ],
+          "runtimeContainers": [
+            {
+              "name": "mirakurun",
+              "image": "ghcr.io/miutaku/mirakurun:e47c455"
+            }
+          ]
+        },
+        {
+          "id": 12902,
+          "name": "loockit-01-ubuntu-26-04-home-lxc-amd64",
+          "kind": "lxc",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ],
+          "runtimeContainers": [
+            {
+              "name": "loockit",
+              "image": "ghcr.io/miutaku/loockit:0.1.19"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pve-b550m",
+      "guests": [
+        {
+          "id": 13005,
+          "name": "worker-02-talos-home-pve-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 40000,
+          "name": "dev-application-server-01-docker-ubuntu-26-04-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 10002,
+          "name": "lb-02-haproxy-keepalived-ubuntu-26-04-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 13003,
+          "name": "controlplane-03-talos-home-pve-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 69002,
+          "name": "nas-02-truenas-scale-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 13002,
+          "name": "controlplane-02-talos-home-pve-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ]
+        },
+        {
+          "id": 5000,
+          "name": "smart-display-01-ubuntu-26-04-home-amd64",
+          "kind": "qemu",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 40
+            }
+          ]
+        },
+        {
+          "id": 12904,
+          "name": "mirakurun-staging-01-ubuntu-26-04-home-lxc-amd64",
+          "kind": "lxc",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ],
+          "runtimeContainers": [
+            {
+              "name": "mirakurun-staging",
+              "image": "ghcr.io/miutaku/mirakurun:e47c455"
+            }
+          ]
+        },
+        {
+          "id": 12903,
+          "name": "loockit-02-ubuntu-26-04-home-lxc-amd64",
+          "kind": "lxc",
+          "status": "running",
+          "network": [
+            {
+              "interface": "net0",
+              "bridge": "vmbr0",
+              "tag": 20
+            }
+          ],
+          "runtimeContainers": [
+            {
+              "name": "loockit",
+              "image": "ghcr.io/miutaku/loockit:0.1.19"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

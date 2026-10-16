@@ -1,0 +1,989 @@
+{
+  "checkedAt": "2026-10-16T08:06:50.369Z",
+  "context": "home-k8s",
+  "applications": [
+    {
+      "name": "annict-rec-sync",
+      "namespace": "app-annict-rec-sync",
+      "modelRef": "premises.home.recording.annict_sync",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "annict-rec-sync-tnlastation",
+      "namespace": "app-annict-rec-sync-tnlastation",
+      "modelRef": "premises.home.recording.annict_sync",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "annict-rec-sync-tnlastation-staging",
+      "namespace": "app-annict-rec-sync-tnlastation-staging",
+      "modelRef": "premises.home.recording.annict_sync",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "annict-scraper",
+      "namespace": "app-annict-scraper",
+      "modelRef": "premises.home.annict_scraper",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-controller",
+      "namespace": "arc-systems",
+      "modelRef": "premises.home.management.runner.arc_controller",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-runner-architecture-automation",
+      "namespace": "architecture-automation",
+      "modelRef": "premises.home.management.runner.arc_runner_architecture_automation",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-runner-architecture-reader",
+      "namespace": "architecture-automation",
+      "modelRef": "premises.home.management.runner.arc_runner_architecture_reader",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-runner-my-infra",
+      "namespace": "arc-runners",
+      "modelRef": "premises.home.management.runner.arc_runner_my_infra",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-runner-reventer",
+      "namespace": "arc-runners",
+      "modelRef": "consumers.reventer.definitions.r_92f1248bed164d",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-runner-reventer-review",
+      "namespace": "arc-runners",
+      "modelRef": "consumers.reventer.definitions.r_e44db286b73b5e",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "arc-runners-config",
+      "namespace": "arc-runners",
+      "modelRef": "premises.home.management.runner.config",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "architecture-automation-config",
+      "namespace": "architecture-automation",
+      "modelRef": "premises.home.management.runner.automation_config",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "architecture-review",
+      "namespace": "arc-runners",
+      "modelRef": "consumers.reventer.definitions.r_921011558c39aa",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "argocd-image-updater",
+      "namespace": "argocd",
+      "modelRef": "premises.home.management.images.argocd_image_updater",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "blackbox-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.blackbox_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "cloudflared",
+      "namespace": "cloudflared",
+      "modelRef": "premises.home.platform.cloudflared",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "coredns",
+      "namespace": "app-coredns",
+      "modelRef": "premises.home.dns.coredns",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "coupon-manager",
+      "namespace": "app-coupon-manager",
+      "modelRef": "premises.home.coupon_manager",
+      "health": "Progressing",
+      "sync": "Synced"
+    },
+    {
+      "name": "descheduler",
+      "namespace": "kube-system",
+      "modelRef": "premises.home.platform.descheduler",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "epgstation",
+      "namespace": "app-epgstation",
+      "modelRef": "premises.home.recording.epgstation",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "external-secrets",
+      "namespace": "external-secrets",
+      "modelRef": "premises.home.eso",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "external-secrets-config",
+      "namespace": "external-secrets",
+      "modelRef": "premises.home.eso.config",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "loockit",
+      "namespace": "app-loockit",
+      "modelRef": "premises.home.loockit",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "magic-mirror",
+      "namespace": "app-magic-mirror",
+      "modelRef": "premises.home.magic_mirror",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "mariadb",
+      "namespace": "infra-db",
+      "modelRef": "premises.home.databases.mariadb",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "metallb",
+      "namespace": "metallb-system",
+      "modelRef": "premises.home.dns.metallb",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "mirakurun",
+      "namespace": "app-mirakurun",
+      "modelRef": "premises.home.recording.mirakurun",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "mirakurun-staging",
+      "namespace": "app-mirakurun-staging",
+      "modelRef": "premises.home.recording.mirakurun_staging",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "nas-backup",
+      "namespace": "infra-backup",
+      "modelRef": "premises.home.backups.nas",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "nextcloud",
+      "namespace": "app-nextcloud",
+      "modelRef": "premises.home.nextcloud",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "nut-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.nut_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "pdc-agent",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.pdc",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "postgres",
+      "namespace": "infra-db",
+      "modelRef": "premises.home.databases.postgres",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "postgres-staging",
+      "namespace": "infra-db-staging",
+      "modelRef": "premises.home.databases.postgres_staging",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "prometheus-node-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.prometheus_node_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "pve-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.pve_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "reventer-gitops",
+      "namespace": "argocd",
+      "modelRef": "consumers.reventer.definitions.r_8c8f91db8f7cea",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "reventer-tfc-agent",
+      "namespace": "reventer-tfc-agent",
+      "modelRef": "consumers.reventer.definitions.r_ea213c3cfe71ad",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "root-app",
+      "namespace": "argocd",
+      "modelRef": "premises.home.management.argo.registry",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "shared-state-storage",
+      "namespace": "default",
+      "modelRef": "premises.home.shared",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "snmp-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.snmp_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "speedtest-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.speedtest_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "tfc-agent",
+      "namespace": "tfc-agent",
+      "modelRef": "premises.home.management.tfc_agents.tfc_agent",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "tinytuya-exporter",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "tnlastation",
+      "namespace": "app-tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "tnlastation-staging",
+      "namespace": "app-tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "victoria-metrics",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.local_store",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "vmagent",
+      "namespace": "monitoring",
+      "modelRef": "premises.home.agent.collector",
+      "health": "Healthy",
+      "sync": "Synced"
+    },
+    {
+      "name": "wol",
+      "namespace": "app-gptwol",
+      "modelRef": "premises.home.wol",
+      "health": "Healthy",
+      "sync": "Synced"
+    }
+  ],
+  "nodes": [
+    {
+      "name": "controlplane-01-talos-home-pve-amd64",
+      "ip": "192.168.20.137",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    },
+    {
+      "name": "controlplane-02-talos-home-pve-amd64",
+      "ip": "192.168.20.138",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    },
+    {
+      "name": "controlplane-03-talos-home-pve-amd64",
+      "ip": "192.168.20.139",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    },
+    {
+      "name": "worker-01-talos-home-pve-amd64",
+      "ip": "192.168.20.140",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    },
+    {
+      "name": "worker-02-talos-home-pve-amd64",
+      "ip": "192.168.20.141",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    },
+    {
+      "name": "worker-03-talos-home-rpi4-arm64",
+      "ip": "192.168.10.107",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    },
+    {
+      "name": "worker-04-talos-home-rpi4-arm64",
+      "ip": "192.168.10.109",
+      "os": "Talos (v1.14.1)",
+      "ready": true
+    }
+  ],
+  "workloads": [
+    {
+      "namespace": "app-annict-scraper",
+      "kind": "Deployment",
+      "name": "annict-scraper",
+      "application": "annict-scraper",
+      "modelRef": "premises.home.annict_scraper",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-coredns",
+      "kind": "Deployment",
+      "name": "coredns-deployment",
+      "application": "coredns",
+      "modelRef": "premises.home.dns.coredns",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-coupon-manager",
+      "kind": "Deployment",
+      "name": "coupon-manager-api",
+      "application": "coupon-manager",
+      "modelRef": "premises.home.coupon_manager",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-coupon-manager",
+      "kind": "Deployment",
+      "name": "coupon-manager-web",
+      "application": "coupon-manager",
+      "modelRef": "premises.home.coupon_manager",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-epgstation",
+      "kind": "Deployment",
+      "name": "epgstation",
+      "application": "epgstation",
+      "modelRef": "premises.home.recording.epgstation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-gptwol",
+      "kind": "Deployment",
+      "name": "gptwol-deployment",
+      "application": "wol",
+      "modelRef": "premises.home.wol",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-loockit",
+      "kind": "Deployment",
+      "name": "loockit-proxy",
+      "application": "loockit",
+      "modelRef": "premises.home.loockit",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-magic-mirror",
+      "kind": "Deployment",
+      "name": "magic-mirror",
+      "application": "magic-mirror",
+      "modelRef": "premises.home.magic_mirror",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-nextcloud",
+      "kind": "Deployment",
+      "name": "nextcloud",
+      "application": "nextcloud",
+      "modelRef": "premises.home.nextcloud",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-nextcloud",
+      "kind": "Deployment",
+      "name": "nextcloud-redis",
+      "application": "nextcloud",
+      "modelRef": "premises.home.nextcloud",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation-staging",
+      "kind": "Deployment",
+      "name": "backend",
+      "application": "tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation-staging",
+      "kind": "Deployment",
+      "name": "ffmpeg-worker-encode",
+      "application": "tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation-staging",
+      "kind": "Deployment",
+      "name": "frontend",
+      "application": "tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation-staging",
+      "kind": "Deployment",
+      "name": "gateway",
+      "application": "tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation-staging",
+      "kind": "Deployment",
+      "name": "mediamtx",
+      "application": "tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation",
+      "kind": "Deployment",
+      "name": "backend",
+      "application": "tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation",
+      "kind": "Deployment",
+      "name": "ffmpeg-worker-encode",
+      "application": "tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation",
+      "kind": "Deployment",
+      "name": "frontend",
+      "application": "tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation",
+      "kind": "Deployment",
+      "name": "gateway",
+      "application": "tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation",
+      "kind": "Deployment",
+      "name": "mediamtx",
+      "application": "tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "arc-runners",
+      "kind": "Deployment",
+      "name": "architecture-review",
+      "application": "architecture-review",
+      "modelRef": "consumers.reventer.definitions.r_921011558c39aa",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "arc-systems",
+      "kind": "Deployment",
+      "name": "arc-systems-gha-rs-controller",
+      "application": "arc-controller",
+      "modelRef": "premises.home.management.runner.arc_controller",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-applicationset-controller",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-dex-server",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-image-updater-controller",
+      "application": "argocd-image-updater",
+      "modelRef": "premises.home.management.images.argocd_image_updater",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-notifications-controller",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-redis",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-redis-ha-haproxy",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-repo-server",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "Deployment",
+      "name": "argocd-server",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "cloudflared",
+      "kind": "Deployment",
+      "name": "cloudflared",
+      "application": "cloudflared",
+      "modelRef": "premises.home.platform.cloudflared",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "external-secrets",
+      "kind": "Deployment",
+      "name": "bitwarden-sdk-server",
+      "application": "external-secrets",
+      "modelRef": "premises.home.eso",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "external-secrets",
+      "kind": "Deployment",
+      "name": "external-secrets",
+      "application": "external-secrets",
+      "modelRef": "premises.home.eso",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "external-secrets",
+      "kind": "Deployment",
+      "name": "external-secrets-cert-controller",
+      "application": "external-secrets",
+      "modelRef": "premises.home.eso",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "external-secrets",
+      "kind": "Deployment",
+      "name": "external-secrets-webhook",
+      "application": "external-secrets",
+      "modelRef": "premises.home.eso",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "Deployment",
+      "name": "coredns",
+      "application": null,
+      "modelRef": "premises.home.platform.cluster_dns",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "Deployment",
+      "name": "metrics-server",
+      "application": null,
+      "modelRef": "premises.home.platform.metrics_server",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "kubelet-serving-cert-approver",
+      "kind": "Deployment",
+      "name": "kubelet-serving-cert-approver",
+      "application": null,
+      "modelRef": "premises.home.platform.cert_approver",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "metallb-system",
+      "kind": "Deployment",
+      "name": "metallb-controller",
+      "application": "metallb",
+      "modelRef": "premises.home.dns.metallb",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "blackbox-exporter-prometheus-blackbox-exporter",
+      "application": "blackbox-exporter",
+      "modelRef": "premises.home.agent.exporters.blackbox_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "nut-exporter",
+      "application": "nut-exporter",
+      "modelRef": "premises.home.agent.exporters.nut_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "pdc-agent",
+      "application": "pdc-agent",
+      "modelRef": "premises.home.agent.pdc",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "pve-exporter",
+      "application": "pve-exporter",
+      "modelRef": "premises.home.agent.exporters.pve_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "snmp-exporter-prometheus-snmp-exporter",
+      "application": "snmp-exporter",
+      "modelRef": "premises.home.agent.exporters.snmp_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "speedtest-exporter",
+      "application": "speedtest-exporter",
+      "modelRef": "premises.home.agent.exporters.speedtest_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "tinytuya-exporter",
+      "application": "tinytuya-exporter",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "tinytuya-exporter-bedside",
+      "application": "tinytuya-exporter",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "tinytuya-exporter-desk",
+      "application": "tinytuya-exporter",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "tinytuya-exporter-entrance",
+      "application": "tinytuya-exporter",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "tinytuya-exporter-refrigerator",
+      "application": "tinytuya-exporter",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "tinytuya-exporter-washing-machine",
+      "application": "tinytuya-exporter",
+      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "Deployment",
+      "name": "vmagent-victoria-metrics-agent",
+      "application": "vmagent",
+      "modelRef": "premises.home.agent.collector",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "reventer-tfc-agent",
+      "kind": "Deployment",
+      "name": "reventer-tfc-agent",
+      "application": "reventer-tfc-agent",
+      "modelRef": "consumers.reventer.definitions.r_ea213c3cfe71ad",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "tfc-agent",
+      "kind": "Deployment",
+      "name": "tfc-agent",
+      "application": "tfc-agent",
+      "modelRef": "premises.home.management.tfc_agents.tfc_agent",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation-staging",
+      "kind": "StatefulSet",
+      "name": "ffmpeg-worker-streaming",
+      "application": "tnlastation-staging",
+      "modelRef": "premises.home.recording.tnlastation_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-tnlastation",
+      "kind": "StatefulSet",
+      "name": "ffmpeg-worker-streaming",
+      "application": "tnlastation",
+      "modelRef": "premises.home.recording.tnlastation",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "StatefulSet",
+      "name": "argocd-application-controller",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "argocd",
+      "kind": "StatefulSet",
+      "name": "argocd-redis-ha-server",
+      "application": null,
+      "modelRef": "premises.home.management.argo",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "infra-db-staging",
+      "kind": "StatefulSet",
+      "name": "postgres",
+      "application": "postgres-staging",
+      "modelRef": "premises.home.databases.postgres_staging",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "infra-db",
+      "kind": "StatefulSet",
+      "name": "mariadb",
+      "application": "mariadb",
+      "modelRef": "premises.home.databases.mariadb",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "infra-db",
+      "kind": "StatefulSet",
+      "name": "postgres",
+      "application": "postgres",
+      "modelRef": "premises.home.databases.postgres",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "StatefulSet",
+      "name": "victoria-metrics",
+      "application": "victoria-metrics",
+      "modelRef": "premises.home.agent.local_store",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "DaemonSet",
+      "name": "kube-flannel",
+      "application": null,
+      "modelRef": "premises.home.platform.flannel",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "DaemonSet",
+      "name": "kube-proxy",
+      "application": null,
+      "modelRef": "premises.home.platform.kube_proxy",
+      "origin": "cluster-bootstrap"
+    },
+    {
+      "namespace": "metallb-system",
+      "kind": "DaemonSet",
+      "name": "metallb-speaker",
+      "application": "metallb",
+      "modelRef": "premises.home.dns.metallb",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "DaemonSet",
+      "name": "node-exporter-prometheus-node-exporter",
+      "application": "prometheus-node-exporter",
+      "modelRef": "premises.home.agent.exporters.prometheus_node_exporter",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-annict-rec-sync-tnlastation-staging",
+      "kind": "CronJob",
+      "name": "annict-rec-sync-tnlastation",
+      "application": "annict-rec-sync-tnlastation-staging",
+      "modelRef": "premises.home.recording.annict_sync",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-annict-rec-sync-tnlastation",
+      "kind": "CronJob",
+      "name": "annict-rec-sync-tnlastation",
+      "application": "annict-rec-sync-tnlastation",
+      "modelRef": "premises.home.recording.annict_sync",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "app-annict-rec-sync",
+      "kind": "CronJob",
+      "name": "annict-rec-sync",
+      "application": "annict-rec-sync",
+      "modelRef": "premises.home.recording.annict_sync",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "infra-backup",
+      "kind": "CronJob",
+      "name": "nas-backup",
+      "application": "nas-backup",
+      "modelRef": "premises.home.backups.nas",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "infra-backup",
+      "kind": "CronJob",
+      "name": "tnlastation-recorded-backup",
+      "application": "nas-backup",
+      "modelRef": "premises.home.backups.nas",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "infra-db",
+      "kind": "CronJob",
+      "name": "mariadb-backup",
+      "application": "mariadb",
+      "modelRef": "premises.home.databases.mariadb",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "CronJob",
+      "name": "descheduler",
+      "application": "descheduler",
+      "modelRef": "premises.home.platform.descheduler",
+      "origin": "ArgoCD"
+    },
+    {
+      "namespace": "monitoring",
+      "kind": "CronJob",
+      "name": "victoria-metrics-backup",
+      "application": "victoria-metrics",
+      "modelRef": "premises.home.agent.local_store",
+      "origin": "ArgoCD"
+    }
+  ],
+  "unmapped": [],
+  "missingApplicationDefinitions": []
+}

@@ -1,39 +1,71 @@
 deployment {
-  site homeSite '自宅 / Proxmox2ホスト・RPi' {
-    description 'CP VM3台とworker VM2台はPVE2ホストへ配置。Podの配置は動的。配置詳細はホスト・クラスタをクリックして辿る。'
-    hypervisor x570 'pve-x570' {
-      instanceOf premises.hardware.x570
-      vm cp1 'Talos controlplane01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm worker1 'Talos worker01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm lb 'HAProxy / Keepalived VM10001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf premises.hardware.lb }
-      vm pbs 'PBS VM14001 / 手動退避' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" } instanceOf premises.data.pbs }
-      vm unifi 'UniFi OS VM13201' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" } instanceOf premises.hardware.unifi }
-      container loockit 'LXC CT12902' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf premises.hardware.loockit_a }
-      container tuner 'Mirakurun LXC CT12901' { metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" } instanceOf premises.hardware.tuner_prod }
-      vm nas1 'TrueNAS VM69001 / nas-01' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf premises.data.nas.nas01 }
+  site homeSite '自宅' {
+    description 'Proxmox VEクラスタとRaspberry Pi。'
+    cluster pve 'Proxmox VEクラスタ（2ノード構成）' {
+      description 'pve-x570（192.168.0.115）・pve-b550m（192.168.0.119）。VM14台・LXC4台。'
+      cluster controlplanes 'home-k8s コントロールプレーン' {
+        vm cp1 'コントロールプレーン01 / VM13001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13001" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
+        vm cp2 'コントロールプレーン02 / VM13002 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13002" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
+        vm cp3 'コントロールプレーン03 / VM13003 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13003" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
+      }
+      cluster workers 'home-k8s ワーカー' {
+        vm worker1 'home-k8s worker01 / VM13004 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13004" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.worker } }
+        vm worker2 'home-k8s worker02 / VM13005 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13005" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.worker } }
+      }
+      cluster loadbalancers 'ロードバランサー' {
+        vm lb1 'HAProxy / Keepalived VM10001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" vmId "10001" vlan "20" bridge "vmbr0" host "pve-x570" } instanceOf premises.pve.lb }
+        vm lb2 'HAProxy / Keepalived VM10002 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" vmId "10002" vlan "20" bridge "vmbr0" host "pve-b550m" } instanceOf premises.pve.lb }
+      }
+      cluster storage 'ストレージ・バックアップ' {
+        vm nas1 'nas-01 / TrueNAS VM69001 / VLAN20' { description 'runner cache用NFS / pve-x570' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" vmId "69001" vlan "20" bridge "vmbr0" host "pve-x570" } instanceOf premises.pve.nas01 }
+        vm nas2 'nas-02 / TrueNAS VM69002 / VLAN20' { description 'アプリ・DB・録画データ用NFS / pve-b550m' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" vmId "69002" vlan "20" bridge "vmbr0" host "pve-b550m" } instanceOf premises.pve.nas02 }
+        vm pbs 'PBS VM14001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" vmId "14001" vlan "20" bridge "vmbr0" host "pve-x570" } instanceOf premises.pve.pbs }
+      }
+      cluster smartlocks 'Loockit / Bluetooth制御' {
+        container loockit1 'Loockit 01 / CT12902 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" vmId "12902" vlan "20" bridge "vmbr0" host "pve-x570" } workload app 'Docker / Loockit REST・gRPC' { instanceOf premises.pve.loockit_a } }
+        container loockit2 'Loockit 02 / CT12903 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" vmId "12903" vlan "20" bridge "vmbr0" host "pve-b550m" } workload app 'Docker / Loockit REST・gRPC' { instanceOf premises.pve.loockit_b } }
+      }
+      cluster tuners 'Mirakurun / チューナー' {
+        container tuner_prod 'Mirakurun本番 / CT12901・PT3 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" vmId "12901" vlan "20" bridge "vmbr0" host "pve-x570" } workload app 'Docker / Mirakurun / PT3' { instanceOf premises.pve.tuner_prod } }
+        container tuner_stg 'Mirakurun STG / CT12904・PX-S1UD / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" vmId "12904" vlan "20" bridge "vmbr0" host "pve-b550m" } workload app 'Docker / Mirakurun / PX-S1UD' { instanceOf premises.pve.tuner_stg } }
+      }
+      cluster network_management 'ネットワーク管理' {
+        vm unifi 'UniFi OS VM13201 / native1' { description 'pve-x570' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" vmId "13201" vlan "native1" bridge "vmbr0" host "pve-x570" } workload app 'Podman / UniFi OS・Network' { instanceOf premises.pve.unifi } }
+      }
+      cluster development '開発環境' {
+        vm dev '開発用Docker / VM40000 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" vmId "40000" vlan "20" bridge "vmbr0" host "pve-b550m" } instanceOf premises.pve.dev }
+      }
+      cluster desktop 'デスクトップ' {
+        vm windows 'Windows / VM60000 / VLAN30' { description 'pve-x570' metadata { sourceFile "docs/architecture/evidence/pve-runtime.json" vmId "60000" vlan "30" managedBy "observed-only" host "pve-x570" } instanceOf premises.pve.windows }
+      }
+      cluster display '表示端末' {
+        vm kiosk 'MagicMirror表示 / VM5000 / VLAN40' { description 'pve-b550m' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" vmId "5000" vlan "40" bridge "vmbr0" host "pve-b550m" } instanceOf premises.pve.kiosk }
+      }
+      workload bluez1 'BlueZ / USB Bluetooth' { instanceOf premises.pve.bluez }
+      workload bluez2 'BlueZ / USB Bluetooth' { instanceOf premises.pve.bluez }
     }
-    hypervisor b550m 'pve-b550m' {
-      instanceOf premises.hardware.b550m
-      vm cp2 'Talos controlplane02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm cp3 'Talos controlplane03' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm worker2 'Talos worker02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
-      vm lb 'HAProxy / Keepalived VM10002' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf premises.hardware.lb }
-      vm dev '開発アプリVM40000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" } instanceOf premises.hardware.dev }
-      vm kiosk 'DisplayLink kiosk VM5000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" } instanceOf premises.hardware.kiosk }
-      container loockit 'LXC CT12903' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf premises.hardware.loockit_b }
-      container tuner 'Mirakurun STG LXC CT12904' { metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" } instanceOf premises.hardware.tuner_stg }
-      vm nas2 'TrueNAS VM69002 / nas-02' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf premises.data.nas.nas02 }
+    cluster workers 'Raspberry Pi / home-k8s worker03・04 / VLAN10' {
+      description 'Talos Linux（arm64）/ 2台'
+      physical worker_pi1 'Raspberry Pi / home-k8s worker03 / VLAN10' { description 'Raspberry Pi / Talos Linux（arm64）'  os talos 'Talos Linux / arm64' { instanceOf premises.home.platform.worker } }
+      physical worker_pi2 'Raspberry Pi / home-k8s worker04 / VLAN10' { description 'Raspberry Pi / Talos Linux（arm64）'  os talos 'Talos Linux / arm64' { instanceOf premises.home.platform.worker } }
     }
-    physical worker_pi1 'RPi Talos worker01' { instanceOf premises.hardware.rpi_workers }
-    physical worker_pi2 'RPi Talos worker02' { instanceOf premises.hardware.rpi_workers }
-    physical nut_pi1 'NUT Pi / .112' { instanceOf premises.hardware.ups.pi_a }
-    physical nut_pi2 'NUT Pi / .113' { instanceOf premises.hardware.ups.pi_b }
+    physical nut_pi1 'NUT Pi 01 / 192.168.10.112' { instanceOf premises.hardware.ups.pi_a }
+    physical nut_pi2 'NUT Pi 02 / 192.168.10.113' { instanceOf premises.hardware.ups.pi_b }
     physical ups_a 'UPS A' { instanceOf premises.hardware.ups.ups_a }
     physical ups_b 'UPS B' { instanceOf premises.hardware.ups.ups_b }
-    instanceOf premises.hardware.router
+    ix2215 = instanceOf premises.hardware.network.router
+    cluster lan 'VLANセグメント' {
+      cluster native 'native1 / 192.168.0.0/24' { instanceOf premises.lan.native }
+      cluster management 'VLAN10 / 192.168.10.0/24' { instanceOf premises.lan.management }
+      cluster server 'VLAN20 / 192.168.20.0/24' { instanceOf premises.lan.server }
+      cluster client 'VLAN30 / 192.168.30.0/24' { instanceOf premises.lan.client }
+      cluster guest 'VLAN31 / 192.168.31.0/24' { instanceOf premises.lan.guest }
+      cluster iot 'VLAN40 / 192.168.40.0/24' { instanceOf premises.lan.iot }
+    }
+    physical network 'ネットワーク機器 / IX2215・SW・AP' { instanceOf premises.hardware.network }
     instanceOf premises.hardware.kvm
     cluster talos 'home-k8s' {
-      description 'VMとRPiにまたがるクラスタ。PVEホストとクラスタを入れ子にしてPod配置を固定しない。'
+      description 'Talos Linuxの7ノード。namespace単位でサービスを配置。'
       instanceOf premises.home
 
     }
@@ -46,4 +78,18 @@ deployment {
     description '専用構成はreventer側の図に集約。この配置はソース定義との対応付けだけに用い、my-infraの配置ビューでは展開しない。'
     instanceOf consumers.reventer
   }
+
+}
+
+deployment {
+  site providers '外部サービス' {
+    cloudflare = instanceOf external.edge
+    bitwarden = instanceOf external.bws
+    idrive = instanceOf external.idrive
+  }
+  providers.cloudflare .runtime homeSite 'Access・Tunnel' { #topology }
+  providers.bitwarden .secret homeSite 'Secret同期' { #topology }
+  homeSite .backup providers.idrive 'バックアップ' { #topology }
+  homeSite.network .network homeSite.pve '宅内LAN' { #topology }
+  homeSite.network .network homeSite.workers 'VLAN10' { #topology }
 }

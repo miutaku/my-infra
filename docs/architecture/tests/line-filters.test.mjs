@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {whereOperatorAsPredicate} from '@likec4/core';
 
-const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect','provide','authenticate'];
+const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect','provide','authenticate','member','host'];
 for(const env of ['my-infra']){
   const dir=`dist/diagram/assets`;
   const files=fs.readdirSync(dir);

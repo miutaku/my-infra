@@ -2,12 +2,14 @@ import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {parseAllDocuments} from 'yaml';
+import {networkMemberships} from './network-memberships.mjs';
 import {inventory} from './inventory.mjs';
+import {bootstrapWorkloads} from './runtime-scope.mjs';
 import {isReventerDedicated} from './ownership.mjs';
 const q=value=>JSON.stringify(String(value));
 const id=value=>'r_'+createHash('sha256').update(value).digest('hex').slice(0,14);
 const slug=value=>value.replace(/[^a-zA-Z0-9_]/g,'_');
-const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.data.databases.mariadb',postgres:'premises.data.databases.postgres','postgres-staging':'premises.data.databases.postgres',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.data.backups.nas','shared-state-storage':'premises.data.shared', 'root-app':'premises.management.argo.registry'};
+const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation_staging',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.loockit','coupon-manager':'premises.home.coupon_manager',wol:'premises.home.wol','magic-mirror':'premises.home.magic_mirror','annict-scraper':'premises.home.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.home.databases.mariadb',postgres:'premises.home.databases.postgres','postgres-staging':'premises.home.databases.postgres_staging',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.home.backups.nas','shared-state-storage':'premises.home.shared', 'root-app':'premises.home.management.argo.registry','arc-runners-config':'premises.home.management.runner.config','architecture-automation-config':'premises.home.management.runner.automation_config'};
 function placement(file,destination){
  if(destination.name==='oke-prd'||file.startsWith('k8s/oci-prd/'))return 'prd';
  if(destination.name==='oke-stg'||file.startsWith('k8s/oci/'))return 'stg';
@@ -30,11 +32,11 @@ export function generateCatalog(root){
   if(consumerOwned){
    declarations.set(ref,`extend consumers.reventer.definitions { component ${id(row.id)} ${q(row.name)} }`);
   }else if(!ref){
-   let parent='premises.home.apps';
+   let parent='premises.home';
    if(scope==='homeSite.talos'&&/exporter/.test(row.name))parent='premises.home.agent.exporters';
-   else if(scope==='homeSite.talos'&&/^arc-/.test(row.name))parent='premises.management.runner';
-   else if(scope==='homeSite.talos'&&/image-updater/.test(row.name))parent='premises.management.images';
-   else if(scope==='homeSite.talos'&&/tfc-agent/.test(row.name))parent='premises.management.tfc_agents';
+   else if(scope==='homeSite.talos'&&/^arc-/.test(row.name))parent='premises.home.management.runner';
+   else if(scope==='homeSite.talos'&&/image-updater/.test(row.name))parent='premises.home.management.images';
+   else if(scope==='homeSite.talos'&&/tfc-agent/.test(row.name))parent='premises.home.management.tfc_agents';
    else if(scope==='homeSite.talos'&&row.name==='descheduler')parent='premises.home.platform';
    ref=`${parent}.${slug(row.name)}`;
    declarations.set(ref,`extend ${parent} { component ${slug(row.name)} ${q(row.name)} }`);
@@ -54,7 +56,7 @@ export function generateCatalog(root){
   const dedicated=isReventerDedicated(row)||app?.owner==='reventer';
   let parent=dedicated?'consumers.reventer':app?.ref;
   if(!parent){
-   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.data.nas.nas01':'premises.data.nas.nas02'):'definitions';
+   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.pve.nas01':'premises.pve.nas02'):'definitions';
   }
   const ref=dedicated?`consumers.reventer.definitions.${id(row.id)}`:`${parent}.resources.${id(row.id)}`;
   if(dedicated)parent='consumers.reventer.definitions';
@@ -64,11 +66,16 @@ export function generateCatalog(root){
   if(row.type==='CronJob'&&backupJobs[row.name]&&app?.scope==='homeSite.talos'){
    const namespace=row.namespace||app.namespace,key=`${app.scope}.ns_${slug(namespace)}`;
    if(!deployments.has(key))deployments.set(key,{scope:app.scope,namespace,instances:[]});
-   const executionRef=`premises.data.backups.${backupJobs[row.name]}`;
+   const executionRef=`premises.home.backups.${backupJobs[row.name]}`;
    deployments.get(key).instances.push(`${id(row.id)} = instanceOf ${executionRef} { title ${q(row.name+' / CronJob')} link ${'https://github.com/miutaku/my-infra/blob/main/'+encodeURI(row.file)} "CronJob定義" }`);
    Object.assign(record,{executionRef,deploymentRef:`${key}.${id(row.id)}`,namespace,scope:app.scope});
   }
   coverage.push(record);
+ }
+ for(const workload of bootstrapWorkloads){
+  const key=`homeSite.talos.ns_${slug(workload.namespace)}`;
+  if(!deployments.has(key))deployments.set(key,{scope:'homeSite.talos',namespace:workload.namespace,instances:[]});
+  deployments.get(key).instances.push(`${id('bootstrap:'+workload.namespace+'/'+workload.name)} = instanceOf ${workload.modelRef} { title ${q(workload.name)} }`);
  }
  const routes=[],routeElements={protected:[],exceptions:[],dedicated:[]},routeLinks=[];
  const locals=readFileSync(resolve(root,'terraform/cloudflare/locals.tf'),'utf8');
@@ -82,7 +89,7 @@ export function generateCatalog(root){
   if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
   for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
  }
- const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.wifi',ix2215:'premises.hardware.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+ const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.home.management.argo',wol:'premises.home.wol','loockit-api':'premises.home.loockit.proxy',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation_staging.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.coupon_manager.web',unifi:'premises.pve.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.pve.nas01','nas-02':'premises.pve.nas02','pve-x570':'premises.pve.x570','pve-b550m':'premises.pve.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
@@ -93,10 +100,37 @@ export function generateCatalog(root){
   const kind=/^(architecture-review|argocd-|unifi$|wifi-ap$|ix2215$|nas-|pve-|nanokvm-)/.test(name)?'admin':'runtime';
   routeElements[dedicated?'dedicated':group].push(`component ${key} ${q(name)} { description ${q(backend+' / '+(accessMode==='access'?'Cloudflare Access保護':'mTLS・証明書と操作パス制限'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" metadata { owner ${q(dedicated?'reventer':'my-infra')} referenceOnly ${q(dedicated?'true':'false')} accessMode ${q(accessMode)} trafficKind ${q(kind)} } }`);
   routeLinks.push(`external.edge.tunnel .${kind} ${modelRef} "hostname転送"`);
-  if(targets[name]&&!dedicated)routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
+  if(targets[name]&&!dedicated){
+   routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
+   routeLinks.push(`external.edge.tunnel .${kind} ${targets[name]} ${q(name+' / '+(url.port||(url.protocol==='https:'?'443':'80'))+' / '+(accessMode==='access'?'Access':'mTLS'))}`);
+  }
   const row={id:'hostname:'+name,type:'Tunnel hostname',name,file:'terraform/cloudflare/locals.tf',owner:dedicated?'reventer':'my-infra',definitionRepository:'my-infra',accessMode,trafficKind:kind,modelRef};routes.push(row);coverage.push(row);
  }
- const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
+ if(routes.some(route=>route.owner==='my-infra'&&route.trafficKind==='runtime'))routeLinks.push('external.edge.tunnel .runtime premises.home "認証済みHTTP / Access・mTLS → 内部Service" { #overview }');
+ const guestConnections=[];
+ const deploymentSource=readFileSync(resolve(root,'docs/architecture/deployment.c4'),'utf8');
+ const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'};
+ // Preserve guest NIC facts and role aggregates. Network memberships project
+ // these same guest identities inside the corresponding VLAN boundaries.
+ const guests=[];
+ let mappedGuests=0;
+ for(const pool of deploymentSource.matchAll(/^ {6}cluster (\w+) '[^'\n]+' \{([\s\S]*?)^ {6}\}/gm)){
+  const subnets=new Set();
+  for(const match of pool[2].matchAll(/(?:vm|container) (\w+) '[^'\n]+' \{[^\n]*?metadata \{ ([^}]+) \}/g)){
+   const attributes=Object.fromEntries([...match[2].matchAll(/(\w+) "([^"]+)"/g)].map(m=>[m[1],m[2]]));
+   const segment=segments[attributes.vlan];if(!segment)throw new Error(`Unknown guest VLAN ${attributes.vlan}`);
+   if(!attributes.host)throw new Error(`Missing placement host for ${match[1]}`);
+   mappedGuests++;subnets.add(segment);
+   guests.push({ref:`homeSite.pve.${pool[1]}.${match[1]}`,poolTitle:pool[0].match(/^ {6}cluster \w+ '([^']+)'/)[1],segment});
+   guestConnections.push(`homeSite.pve.${pool[1]}.${match[1]} .network homeSite.lan.${segment} "" { #nic }`);
+  }
+  if(subnets.size!==1)throw new Error(`Role pool ${pool[1]} must have one common NIC VLAN`);
+  guestConnections.push(`homeSite.pve.${pool[1]} .network homeSite.lan.${[...subnets][0]} "" { #vlan }`);
+ }
+ if(mappedGuests!==[...deploymentSource.matchAll(/(?:vm|container) \w+ '/g)].length)throw new Error('Every PVE guest must belong to a role pool');
+ guestConnections.push('providers.warp .network homeSite.lan.server "WARP / private CIDR routes・policy" { #vlan }');
+ for(const [tag,segment]of Object.entries(segments))guestConnections.push(`homeSite.ix2215 .network homeSite.lan.${segment} ${q(tag==='native1'?'native IF':tag==='40'?'BVI4 / tag40':'BVI'+tag)} { #vlan }`);
+ const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',networkMemberships(root,guests),...guestConnections,...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
  return {dsl,coverage,apps,rows:[...rows,...routes],routeCount:routes.length};
 }
 if(process.argv[1]&&resolve(process.argv[1])===resolve(import.meta.filename)){

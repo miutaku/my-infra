@@ -1,9 +1,16 @@
 specification {
+  tag overview
+  tag topology
+  tag nic
+  tag vlan
+  tag nfs
   element actor { style { shape person color green } }
   element system { style { color blue } }
   element component { style { color muted } }
   element store { style { shape storage color amber } }
   relationship authenticate { color indigo line solid }
+  relationship host { color blue line solid }
+  relationship member { color blue line dashed }
   relationship provide { color gray line dashed }
   relationship runtime { color green }
   relationship admin { color indigo line dashed }
@@ -17,9 +24,12 @@ specification {
   relationship connect { color sky line dashed }
   deploymentNode site { style { color gray } }
   deploymentNode hypervisor { style { color green } }
-  deploymentNode container { style { color muted } }
+  deploymentNode container { style { color muted size xs textSize md padding sm } }
   deploymentNode physical { style { color gray } }
-  deploymentNode vm { style { color muted } }
+  deploymentNode workload { style { color muted size xs textSize md padding sm } }
+  deploymentNode os { style { color blue size xs textSize md padding sm } }
+  deploymentNode vm { style { color muted size xs textSize md padding sm } }
   deploymentNode cluster { style { color blue } }
+  deploymentNode networkGroup { style { color gray size sm textSize md padding sm } }
   deploymentNode namespace { style { color muted } }
 }
