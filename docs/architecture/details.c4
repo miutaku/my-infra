@@ -167,7 +167,7 @@ model {
   external.internet .network premises.hardware.network.router 'WAN / GigaEthernet0'
   premises.hardware.network.router .network premises.hardware.network.ethernet 'GigaEthernet2 / native1 + tag10,20,30,31,40'
   premises.hardware.network.ethernet .network premises.hardware.network.switch '802.1Q / uplink'
-  premises.hardware.network.switch .network premises.hardware.network.ap 'AP trunk / 配線ポート未確定'
+  premises.hardware.network.ethernet .network premises.hardware.network.ap 'AP trunk / 接続ポート未確定'
   premises.hardware.network.ethernet .network premises.hardware.x570.bridge 'native1 + taggedゲスト / 配線ポート未確定'
   premises.hardware.network.ethernet .network premises.hardware.b550m.bridge 'native1 + taggedゲスト / 配線ポート未確定'
   premises.hardware.network.switch .admin premises.hardware.unifi 'UniFiで管理'
