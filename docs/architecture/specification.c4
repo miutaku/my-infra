@@ -1,9 +1,11 @@
 specification {
+  tag overview
   element actor { style { shape person color green } }
   element system { style { color blue } }
   element component { style { color muted } }
   element store { style { shape storage color amber } }
   relationship authenticate { color indigo line solid }
+  relationship host { color blue line solid }
   relationship member { color blue line dashed }
   relationship provide { color gray line dashed }
   relationship runtime { color green }
@@ -20,6 +22,7 @@ specification {
   deploymentNode hypervisor { style { color green } }
   deploymentNode container { style { color muted size xs textSize md padding sm } }
   deploymentNode physical { style { color gray } }
+  deploymentNode workload { style { color muted size xs textSize md padding sm } }
   deploymentNode os { style { color blue size xs textSize md padding sm } }
   deploymentNode vm { style { color muted size xs textSize md padding sm } }
   deploymentNode cluster { style { color blue } }

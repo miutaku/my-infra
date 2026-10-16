@@ -3,16 +3,16 @@ model {
     system home 'Talos / home-k8s' {
       description 'Talos CP VM3台・worker VM2台とRPi worker2台で構成。アプリ・クラスタ基盤・監視・運用・DB/バックアップを用途別に表示し、Application全件は一覧へ対応付ける。Pod配置は動的。'
       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
-      component nextcloud 'Nextcloud' { link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
-      component recording '録画・配信' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
-      component apps '自宅ワークロード / 基盤の利用側' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
+      component nextcloud 'Nextcloud' { description 'ファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
+      component recording '録画・配信 / EPGStation・TNLaStation' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
+      component apps '生活サービス / Loockit・Coupon・WOL'  { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
       component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
       component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
       component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
     }
     system hardware '物理・ネットワーク' {
-      component x570 'Proxmox / x570'
-      component b550m 'Proxmox / b550m'
+      component x570 'pve-x570 / Proxmox' { description '192.168.0.115。Talos VM2台・TrueNAS・PBS・UniFi・Loockit/Mirakurunなどを実行。' }
+      component b550m 'pve-b550m / Proxmox' { description '192.168.0.119。Talos VM3台・TrueNAS・開発VM・kiosk・Loockit/Mirakurunを実行。' }
       component network 'ネットワーク機器' { description 'IX2215・US-8-60W・FS AP。機器を開くとEthernet・VLAN・PVEのトランクを確認できる。' }
       component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
     }
@@ -55,12 +55,6 @@ model {
   user .runtime external.edge.access 'HTTPS / 利用時の認証'
   operator .admin external.edge.access 'HTTPS / 管理時の認証'
   external.edge.access .authenticate external.edge.tunnel 'Access認証後の転送'
-  external.edge.tunnel .runtime premises.home.nextcloud 'Access認証後 / 公開UI・サービス'
-  external.edge.tunnel .runtime premises.home.apps 'Access認証後 / 公開UI・サービス'
-  external.edge.tunnel .runtime premises.home.recording 'Access認証後 / 公開UI・サービス'
-  external.edge.tunnel .admin premises.management.argo 'Access認証後 / 管理UI'
-  external.edge.tunnel .admin premises.hardware 'Access認証後 / 機器管理UI'
-  external.edge.tunnel .admin premises.data.nas 'Access認証後 / NAS管理UI'
   premises.hardware.network.router .runtime premises.home.dns 'LAN / 内部DNS'
   external.github .deploy premises.management.argo 'GitOps'
   external.github .deploy external.terraform_cloud 'Terraform実行'
