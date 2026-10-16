@@ -1,0 +1,2354 @@
+diff --git a/docs/architecture/README.md b/docs/architecture/README.md
+index 3dc8129..e0babe5 100644
+--- a/docs/architecture/README.md
++++ b/docs/architecture/README.md
+@@ -2,7 +2,7 @@
+ 
+ 公開サイト: https://miutaku.github.io/my-infra/
+ 
+-reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。OCI/OKE・監視VM・Re:Venter向け変更経路・専用runner/agent・レビュー配信などは、定義がmy-infraにあってもRe:Venter専用の境界へ集約する。自宅側の共有ArgoCD・ARC制御基盤との接点だけを描き、専用側の詳細はreventerの図に委ねる。10の観点は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置では標準viewerの要素詳細・内部構造・関係表示からホストやクラスタを辿る。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
++reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。OCI/OKE・監視VM・Re:Venter向け変更経路・専用runner/agent・レビュー配信などは、定義がmy-infraにあってもRe:Venter専用の境界へ集約する。自宅側の共有ArgoCD・ARC制御基盤との接点だけを描き、専用側の詳細はreventerの図に委ねる。各観点とホスト別の詳細は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置ではホストをクリックして、PVE → VM/Talos OS、PVE → LXC → Dockerサービスを辿る。クラスタ所属の線は通信経路と分ける。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
+ 
+ | ファイル | 役割 |
+ | --- | --- |
+@@ -61,3 +61,32 @@ my-infraの変更ビューは自宅基盤の構成管理に限定する。Re:Ven
+ Pages配信の識別子はmainのSHAではなく生成サイト（gh-pages）のcommitにする。同じmainに複数のPreviewを追加しても別の配信として扱い、artifact名もrun/attemptごとに分ける。配信成功後に本番build-infoと比較changes.jsonのheadをHTTPで照合し、実際のURLが確認できるまで公開リンクを通知しない。
+ 
+ 通知経路は `architecture-notify.yml` → Cloudflare OIDC受信Worker → Queue → HTTP非公開consumer → 非公開Actions。通知は署名・固定repo ID・main・固定workflowを検証する。OpenAI認証はこの経路に渡さない。通知失敗時は「Notify architecture automation」を再実行する。通知済みの処理が失敗した場合は非公開Actionsでtargetを選び手動実行する。ドキュメントだけの変更では通知しない。
++
++## 自宅サービスの選定と稼働照合
++
++サービスは公開URLの有無や知名度で選ばない。ArgoCD Application全件を、利用アプリ・録画・DNS・クラスタ基盤・Secret・監視・運用・DB/バックアップの役割へ対応付ける。既知名はcatalog.mjsの対応表、exporter/ARC/TFCなどは分類規則を使う。未分類の新Applicationもアプリ配下へ自動生成し、一覧に残す。Applicationは設定・共有PVCだけの場合もあり、Application数とサービス数は一致しない。Re:Venter専用Applicationは参照だけを保持し、詳細をこの図に重複させない。
++
++ArgoCD本体と、クラスタbootstrapとして稼働するcluster.local用CoreDNS・Flannel・kube-proxy・metrics-server・kubelet-serving-cert-approverは別途対応付ける。宅内miutaku.internal用CoreDNSとは別の要素。metrics-serverと証明書承認は稼働を確認したが、導入宣言はこのrepo内では確認できていない。
++
++2026-10-16にhome-k8sのApplication49件、Deployment/StatefulSet/DaemonSet/CronJob計74件、Readyな7ノードを読み取りで照合した。Application定義の欠落と分類先不明のcontrollerは0件。ownerを持たないPodも0件だった。証跡は `evidence/home-k8s-runtime.json`。これは取得日時の記録で、現在の稼働を常時保証する情報ではない。replica数・一時Job/runner Pod・各アプリの内部実装を個別サービス数として数えない。
++
++`npm run audit:runtime` はkubectlのhome-k8s contextを読み取り、名前・namespace・所属Application・分類先と健康状態だけを記録する。Secret/ConfigMapの内容やコンテナ環境変数は保存しない。通常のPagesビルドでクラスタ認証は使わない。
++
++## PVE・VM・Talosとネットワーク
++
++PVE2ホストの全非templateゲスト18件（VM14 / LXC4）を稼働configと照合し、`evidence/pve-runtime.json` に残す。Windows VM60000はTerraform管理外だが省略しない。`npm run audit:pve` は既存SSH接続を使う読み取り専用の調査で、ゲスト名・ID・状態・bridge/tagのみ保存する。
++
++物理配置はPVE → VM → Talos OS。home-k8sは3 CP VM・2 worker VM・2 RPiにまたがるため、クラスタをいずれか1VMの子にはしない。所属線で結び、namespace/サービスの配置はクラスタ側で保持する。Podを特定PVE/VMへ固定した描写にしない。ホスト別・VLAN別の詳細はクリックで開き、トップの観点選択には増やさない。
++
++ネットワーク機器からIX2215・US-8-60W・FS APとPVEの接続、VLANを開ける。native1とtag10/20/30/31/40、VMのNIC tag、guest ACLを区別する。PVEはvmbr0とVLAN subinterface/bridgeを使用し、vlan-aware設定があるとは記載しない。設定上のDHCP予約を現在の管理IPと混同しない。正確なケーブルポートとAPのSSID別VLAN割当は未確認として残す。根拠と限界は `evidence/network.md`。
++
++## 全体から接続先・内部構造へ
++
++最初の図はインフラ全体。LAN/PVE/RPiがTalosやTrueNAS/PBSをどう支えるか、Cloudflare・BWS・Grafana・IDriveがどこに接続するかを示す。ホストの実行基盤、通信、バックアップは線種で分け、運用・アプリ内部は次の階層へ進む。分類名だけのカード一覧にはしない。
++
++- PVE → Loockit/MirakurunのLXC → Dockerサービス。CT名には用途を含め、VMIDだけの表示にしない。
++- Talos → 各サービス → Web/API・DB・NFS・外部API。LoockitはHAProxy→LXC→BlueZ/Lease、録画はAPI/encode/streaming/HLS/チューナーへ。
++- Talosのクラスタ基盤 → API・worker・CNI・Service・DNSと、CSR承認/metrics/ESO/ArgoCD/ARCの実際の接点。
++- ネットワーク機器 → ルーター/SW/AP/トランク → VLAN。配線が未確認の部分は引き続き断定しない。
++
++LikeC4標準の要素詳細と関係ブラウザは置き換えず使用する。明示的なビュー遷移はクリックで行い、ホスト詳細などの補助ビューはトップの観点選択に並べない。比較レポートは変更のある全体/配置/サービスを優先し、`?view=loockit` のような直接選択もできる。
+diff --git a/docs/architecture/deployment.c4 b/docs/architecture/deployment.c4
+index ddcb0f5..497a8a3 100644
+--- a/docs/architecture/deployment.c4
++++ b/docs/architecture/deployment.c4
+@@ -1,43 +1,54 @@
+ deployment {
+   site homeSite '自宅 / Proxmox2ホスト・RPi' {
+-    description 'CP VM3台とworker VM2台はPVE2ホストへ配置。Podの配置は動的。配置詳細はホスト・クラスタをクリックして辿る。'
+-    hypervisor x570 'pve-x570' {
++    description 'PVE → VM/LXC → Talos OSの物理包含と、home-k8sへの所属を別に表す。PodはVMに固定しない。'
++    hypervisor x570 'pve-x570' { description '192.168.0.115 / native1。Talos VM2・TrueNAS・PBS・UniFi・Windows・LXC2。'
+       instanceOf premises.hardware.x570
+-      vm cp1 'Talos controlplane01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
+-      vm worker1 'Talos worker01' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
+-      vm lb 'HAProxy / Keepalived VM10001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf premises.hardware.lb }
+-      vm pbs 'PBS VM14001 / 手動退避' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" } instanceOf premises.data.pbs }
+-      vm unifi 'UniFi OS VM13201' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" } instanceOf premises.hardware.unifi }
+-      container loockit 'LXC CT12902' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf premises.hardware.loockit_a }
+-      container tuner 'Mirakurun LXC CT12901' { metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" } instanceOf premises.hardware.tuner_prod }
+-      vm nas1 'TrueNAS VM69001 / nas-01' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf premises.data.nas.nas01 }
++      workload bluez 'BlueZ / USB Bluetooth' { instanceOf premises.hardware.ble_a }
++      vm cp1 'Talos controlplane01 / VM13001' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13001" vlan "20" } os talos 'Talos OS / VLAN20' { instanceOf premises.home.platform.controlplane } }
++      vm worker1 'Talos worker01 / VM13004' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13004" vlan "20" } os talos 'Talos OS / VLAN20' { instanceOf premises.home.platform.worker } }
++      vm lb 'HAProxy / Keepalived VM10001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" vmId "10001" vlan "20" bridge "vmbr0" } instanceOf premises.hardware.lb }
++      vm pbs 'PBS VM14001' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.pbs" vmId "14001" vlan "20" bridge "vmbr0" } instanceOf premises.data.pbs }
++      vm unifi 'UniFi OS VM13201' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.unifi_os_server" vmId "13201" vlan "native1" bridge "vmbr0" } workload app 'Podman / UniFi OS・Network' { instanceOf premises.hardware.unifi } }
++      container loockit 'Loockit 01 / CT12902' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" vmId "12902" vlan "20" bridge "vmbr0" } workload app 'Docker / Loockit REST・gRPC' { instanceOf premises.hardware.loockit_a } }
++      container tuner 'Mirakurun本番 / CT12901・PT3' { metadata { sourceFile "terraform/mirakurun-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun" vmId "12901" vlan "20" bridge "vmbr0" } workload app 'Docker / Mirakurun / PT3' { instanceOf premises.hardware.tuner_prod } }
++      vm windows 'Windows / VM60000 / tag30' { metadata { sourceFile "docs/architecture/evidence/pve-runtime.json" vmId "60000" vlan "30" managedBy "observed-only" } instanceOf premises.hardware.windows }
++      vm nas1 'TrueNAS VM69001 / nas-01' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" vmId "69001" vlan "20" bridge "vmbr0" } instanceOf premises.data.nas.nas01 }
+     }
+-    hypervisor b550m 'pve-b550m' {
++    hypervisor b550m 'pve-b550m' { description '192.168.0.119 / native1。Talos VM3・TrueNAS・Docker開発・表示VM・LXC2。'
+       instanceOf premises.hardware.b550m
+-      vm cp2 'Talos controlplane02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
+-      vm cp3 'Talos controlplane03' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
+-      vm worker2 'Talos worker02' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" } }
+-      vm lb 'HAProxy / Keepalived VM10002' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" } instanceOf premises.hardware.lb }
+-      vm dev '開発アプリVM40000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" } instanceOf premises.hardware.dev }
+-      vm kiosk 'DisplayLink kiosk VM5000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" } instanceOf premises.hardware.kiosk }
+-      container loockit 'LXC CT12903' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" } instanceOf premises.hardware.loockit_b }
+-      container tuner 'Mirakurun STG LXC CT12904' { metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" } instanceOf premises.hardware.tuner_stg }
+-      vm nas2 'TrueNAS VM69002 / nas-02' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" } instanceOf premises.data.nas.nas02 }
++      workload bluez 'BlueZ / USB Bluetooth' { instanceOf premises.hardware.ble_b }
++      vm cp2 'Talos controlplane02 / VM13002' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13002" vlan "20" } os talos 'Talos OS / VLAN20' { instanceOf premises.home.platform.controlplane } }
++      vm cp3 'Talos controlplane03 / VM13003' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13003" vlan "20" } os talos 'Talos OS / VLAN20' { instanceOf premises.home.platform.controlplane } }
++      vm worker2 'Talos worker02 / VM13005' { metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13005" vlan "20" } os talos 'Talos OS / VLAN20' { instanceOf premises.home.platform.worker } }
++      vm lb 'HAProxy / Keepalived VM10002' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" vmId "10002" vlan "20" bridge "vmbr0" } instanceOf premises.hardware.lb }
++      vm dev '開発用Docker / VM40000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.dev_application_server" vmId "40000" vlan "20" bridge "vmbr0" } instanceOf premises.hardware.dev }
++      vm kiosk 'MagicMirror表示 / VM5000' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.displaylink_kiosk" vmId "5000" vlan "40" bridge "vmbr0" } instanceOf premises.hardware.kiosk }
++      container loockit 'Loockit 02 / CT12903' { metadata { sourceFile "terraform/loockit-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.loockit" vmId "12903" vlan "20" bridge "vmbr0" } workload app 'Docker / Loockit REST・gRPC' { instanceOf premises.hardware.loockit_b } }
++      container tuner 'Mirakurun STG / CT12904・PX-S1UD' { metadata { sourceFile "terraform/mirakurun-staging-lxc/main.tf" resourceRef "proxmox_virtual_environment_container.mirakurun_staging" vmId "12904" vlan "20" bridge "vmbr0" } workload app 'Docker / Mirakurun / PX-S1UD' { instanceOf premises.hardware.tuner_stg } }
++      vm nas2 'TrueNAS VM69002 / nas-02' { metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" vmId "69002" vlan "20" bridge "vmbr0" } instanceOf premises.data.nas.nas02 }
+     }
+-    physical worker_pi1 'RPi Talos worker01' { instanceOf premises.hardware.rpi_workers }
+-    physical worker_pi2 'RPi Talos worker02' { instanceOf premises.hardware.rpi_workers }
++    physical worker_pi1 'RPi / worker03 / VLAN10' { os talos 'Talos OS / arm64' { instanceOf premises.home.platform.worker } }
++    physical worker_pi2 'RPi / worker04 / VLAN10' { os talos 'Talos OS / arm64' { instanceOf premises.home.platform.worker } }
+     physical nut_pi1 'NUT Pi / .112' { instanceOf premises.hardware.ups.pi_a }
+     physical nut_pi2 'NUT Pi / .113' { instanceOf premises.hardware.ups.pi_b }
+     physical ups_a 'UPS A' { instanceOf premises.hardware.ups.ups_a }
+     physical ups_b 'UPS B' { instanceOf premises.hardware.ups.ups_b }
+-    instanceOf premises.hardware.router
++    instanceOf premises.lan
++    physical network 'ネットワーク機器 / IX2215・SW・AP' { instanceOf premises.hardware.network }
+     instanceOf premises.hardware.kvm
+     cluster talos 'home-k8s' {
+-      description 'VMとRPiにまたがるクラスタ。PVEホストとクラスタを入れ子にしてPod配置を固定しない。'
++      description '3 CP VM・2 worker VM・2 RPiで構成。namespace/Podの配置は動的。'
+       instanceOf premises.home
+ 
+     }
+   }
++  homeSite.x570.cp1.talos .member homeSite.talos 'control-plane / home-k8s所属'
++  homeSite.x570.worker1.talos .member homeSite.talos 'worker / home-k8s所属'
++  homeSite.b550m.cp2.talos .member homeSite.talos 'control-plane / home-k8s所属'
++  homeSite.b550m.cp3.talos .member homeSite.talos 'control-plane / home-k8s所属'
++  homeSite.b550m.worker2.talos .member homeSite.talos 'worker / home-k8s所属'
++  homeSite.worker_pi1.talos .member homeSite.talos 'worker / home-k8s所属'
++  homeSite.worker_pi2.talos .member homeSite.talos 'worker / home-k8s所属'
+   cluster stg 'Re:Venter / STG OCI・OKE（参照のみ）' {
+     instanceOf consumers.reventer
+ 
+@@ -46,4 +57,23 @@ deployment {
+     description '専用構成はreventer側の図に集約。この配置はソース定義との対応付けだけに用い、my-infraの配置ビューでは展開しない。'
+     instanceOf consumers.reventer
+   }
++
++  homeSite.x570.nas1 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.x570.pbs .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.x570.cp1 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.x570.lb .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.x570.unifi .network homeSite.lan.native "vmbr0 / native 1"
++  homeSite.x570.worker1 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.x570.windows .network homeSite.lan.client "vmbr0 / tag 30"
++  homeSite.x570.loockit .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.x570.tuner .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.kiosk .network homeSite.lan.iot "vmbr0 / tag 40"
++  homeSite.b550m.worker2 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.dev .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.cp3 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.lb .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.cp2 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.nas2 .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.loockit .network homeSite.lan.server "vmbr0 / tag 20"
++  homeSite.b550m.tuner .network homeSite.lan.server "vmbr0 / tag 20"
+ }
+diff --git a/docs/architecture/details.c4 b/docs/architecture/details.c4
+index 226d949..71a7c84 100644
+--- a/docs/architecture/details.c4
++++ b/docs/architecture/details.c4
+@@ -13,6 +13,7 @@ model {
+   system external '外部サービス / SaaS・公開サービス' {
+     store idrive 'IDrive e2 / S3' { description 'PBS datastore、DB logical dump、NAS restic、録画、VictoriaMetrics snapshotの保存先。用途・prefix・整合性を分ける。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs 'PBS設定' }
+     component internet 'Internet'
++    component public_dns 'Public DNS / 1.1.1.1・8.8.8.8'
+     component oracle 'Oracle Services Network'
+     component annict 'Annict API'
+     component ai 'Gemini API / OpenAI互換' { description 'Coupon ManagerのAi設定から利用。認証値は掲載しない。' }
+@@ -23,19 +24,30 @@ model {
+     component mtls 'mTLS / 専用APIの例外' { description 'loockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/loockit-api.tf '例外の定義' }
+     component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
+   }
+-  extend premises.home.nextcloud { store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
++  extend premises.home.nextcloud { component web 'Nextcloud / PHP・HTTP :80' store redis 'Redis / locking・cache' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nextcloud/redis.yaml '定義' } }
+   extend premises.home.dns {
+     component coredns 'CoreDNS / miutaku.internal'
+     component metallb 'MetalLB / LANのService IP'
+   }
+   extend premises.home.eso { component config 'ClusterSecretStore / BWS' }
+-  extend premises.home { component platform 'Kubernetes基盤' { component cloudflared 'cloudflared / 自宅connector' component api 'Kubernetes API / Lease' } }
++  extend premises.home { component platform 'クラスタ基盤 / Talos' {
++    description 'ArgoCD Application以外のbootstrapも含む。クラスタDNSと宅内DNS、metrics-serverと監視保存基盤は区別する。'
++    component cloudflared 'cloudflared / 自宅connector'
++    component api 'Kubernetes API / Lease'
++    component controlplane 'home-k8s control-plane' { description 'Talos OS上のAPI server・etcd・scheduler・controller-manager。3 VMで構成。' }
++    component worker 'home-k8s worker' { description 'Talos OS上のkubelet・containerd。2 VMと2 RPi。アプリPodの固定配置を意味しない。' }
++    component cluster_dns 'CoreDNS / cluster.local' { description 'クラスタDNS。app-corednsのmiutaku.internalとは別。稼働照合で確認。' }
++    component flannel 'Flannel / CNI'
++    component kube_proxy 'kube-proxy / Service routing'
++    component metrics_server 'metrics-server / Metrics API' { description '稼働確認済み。リポジトリ内の導入宣言は未確認。' }
++    component cert_approver 'kubelet-serving-cert-approver' { description '稼働確認済み。リポジトリ内の導入宣言は未確認。' }
++  } }
+   extend premises.home.apps {
+-    system loockit 'Loockit' { component proxy 'HAProxy / leaderへ転送' }
+-    system coupon_manager 'Coupon Manager' { component web 'Web' component api 'API / AI・DB' }
+-    component wol 'Wake-on-LAN'
+-    component magic_mirror 'MagicMirror'
+-    component annict_scraper 'Annict scraper'
++    system loockit 'Loockit / BLEスマートロック' { description 'KubernetesのHAProxyが2台のLXCのreadyzを監視しactiveへ転送。APIはmTLS、実機のBLE操作はLXC/BlueZが担当。' component proxy 'HAProxy / :8080・:50051' }
++    system coupon_manager 'Coupon Manager' { description 'Web → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。' component web 'Web / :80' component api 'API / :8080' }
++    component wol 'Wake-on-LAN' { description 'app-gptwol。LANにMagic Packetを送信して対象PCを起動する。' }
++    component magic_mirror 'MagicMirror / ダッシュボード' { description 'app-magic-mirror / HTTP:8080。VLAN40のDisplayLink kiosk VM5000で表示。' }
++    component annict_scraper 'Annict scraper / 番組照合' { description 'Annict APIを照会して録画同期CronJobへ番組情報を提供。' }
+   }
+   extend premises.home.recording {
+     component epgstation 'EPGStation'
+@@ -58,6 +70,7 @@ model {
+     component pdc 'PDC agent / 自宅'
+     component exporters 'exporter群' { description 'node・PVE・SNMP・NUT・TinyTuya・blackbox・speedtest。個別Applicationを内部に保持。' }
+   }
++  extend premises.management.runner { component config 'ARC 共通設定 / cache' component automation_config '非公開モデル更新 / namespace・認証保管' }
+   extend premises.management {
+     component images 'Image Updater'
+ 
+@@ -83,19 +96,27 @@ model {
+   }
+   extend premises.hardware {
+     component lb 'HAProxy / Keepalived ×2' { description 'VM10001・10002。Terraform/PVEとAnsible/load-balancerで管理。' }
+-    component dev '開発アプリVM / Docker'
+-    component kiosk 'DisplayLink kiosk / VLAN40'
+-    component unifi 'UniFi OS Server'
+-    component wifi 'Wi-Fi AP'
++    component dev '開発アプリ / VM40000・Docker' { description '192.168.20.101 / VLAN20。開発環境用のDocker実行VM。' }
++    component kiosk 'MagicMirror表示 / VM5000' { description 'VLAN40のDisplayLink kiosk。MagicMirrorのHTTP画面を表示。' }
++    component unifi 'UniFi OS / VM13201' { description '192.168.0.132:11443 / native1。US-8-60Wの構成・監視を管理。' }
+     component kvm 'NanoKVM ×2'
+     component rpi_workers 'RPi worker ×2' { description 'Talos worker。UPS監視用Piとは別機器。' }
+-    component loockit_a 'Loockit LXC / x570・CT12902'
+-    component loockit_b 'Loockit LXC / b550m・CT12903'
++    component loockit_a 'Loockit 01 / CT12902' { description '192.168.20.133:8080 / :50051。x570のUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
++    component loockit_b 'Loockit 02 / CT12903' { description '192.168.20.134:8080 / :50051。b550mのUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
+     component ble_a 'x570 BlueZ / Bluetooth'
+     component ble_b 'b550m BlueZ / Bluetooth'
+-    component tuner_prod 'Mirakurun LXC / CT12901・PT3'
+-    component tuner_stg 'Mirakurun STG LXC / CT12904・PX-S1UD' { description 'GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
++    component tuner_prod 'Mirakurun本番 / CT12901・PT3' { description '192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。' }
++    component tuner_stg 'Mirakurun STG / CT12904・PX-S1UD' { description 'GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
+   }
++  extend premises.hardware.network {
++    component router 'IX2215 / ルーター・VLAN間ACL' { description 'GigaEthernet2: native1、tagged10/20/30/31/40。guestの他VLAN横断は拒否。IoTのIF名はGigaEthernet2.4/BVI4だがタグは40。' link https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml 'VLAN・ACL定義' }
++    component switch 'US-8-60W / 管理スイッチ' { description 'UniFi Network DB・PVE側LLDPで確認。Port4はnative VLAN30、Port5/6/7はnative VLAN10でtaggedを遮断。uplinkはnative1とtagged VLANを運ぶ。管理IPは稼働時192.168.0.252。DHCPのVLAN10予約を稼働中IPと混同しない。' link https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/network.md '稼働確認・根拠' }
++    component ap 'FS Wi-Fi AP' { description '管理はnative VLAN1 / 192.168.0.253。SSIDの名前・各SSIDとVLANの対応、ケーブルの接続ポートは未確認。' link https://github.com/miutaku/my-infra/blob/main/ansible/ix2215/group_vars/all.yml 'DHCP・AP trunk定義' }
++    component ethernet '宅内Ethernet / VLAN trunk' { description '同一LANの接続を表す。PVE2台で同じSW Port1のLLDPを受信するため、LLDPだけを根拠にPVEをSWの別ポートへ直結とは描かない。個別配線ポートは未確定。' }
++  }
++  extend premises.hardware.x570 { component bridge 'enp7s0 / vmbr0' { description 'PVE管理はnative1。ゲストNICのtag20/30を確認。vmbr0v20/v30/v40とNIC subinterfaceが存在し、vlan-aware bridge設定とは区別する。' } }
++  extend premises.hardware.b550m { component bridge 'enp6s0 / vmbr0' { description 'PVE管理はnative1。ゲストNICのtag20/40を確認。vmbr0v20/v30/v40とNIC subinterfaceが存在。' } }
++  extend premises.hardware { component windows 'Windows作業VM60000 / IaC管理外' { description 'x570上で稼働確認。VLAN30。Terraformで管理しているVMとは区別する。' link https://github.com/miutaku/my-infra/blob/main/docs/architecture/evidence/pve-runtime.json '稼働確認' } }
+   extend premises.hardware.ups {
+     component mains '商用AC'
+     component surge_a 'UPS A / サージのみ口・非backup'
+@@ -108,6 +129,7 @@ model {
+   extend consumers.reventer { component definitions '専用定義の参照 / 詳細はreventer側' { metadata { owner "reventer" referenceOnly "true" } description 'my-infraにある専用リソースの名前・参照元だけを自動抽出。構成図・通信トポロジーは重複して作らない。' link https://reventer-architecture.pages.dev/ 'Re:Venterの構成図' } }
+ 
+ 
++  premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
+   client .runtime external.edge.mtls 'クライアント証明書'
+   external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
+   premises.home.apps.loockit.proxy .runtime premises.hardware.loockit_a 'readyz / leaderのみ'
+@@ -119,7 +141,7 @@ model {
+   premises.home.apps.coupon_manager.web .runtime premises.home.apps.coupon_manager.api '内部API'
+   premises.home.apps.coupon_manager.api .runtime premises.data.databases.postgres 'PostgreSQL'
+   premises.home.apps.coupon_manager.api .runtime external.ai 'AI API'
+-  premises.home.nextcloud .runtime premises.data.databases.mariadb 'MYSQL_HOST / MariaDB'
++  premises.home.nextcloud.web .runtime premises.data.databases.mariadb 'MYSQL_HOST / MariaDB'
+   premises.home.recording.epgstation .runtime premises.data.databases.mariadb 'EPGStation DB'
+   premises.home.recording.tnlastation.gateway .runtime premises.home.recording.tnlastation.frontend 'Web'
+   premises.home.recording.tnlastation.gateway .runtime premises.home.recording.tnlastation.backend 'API'
+@@ -144,12 +166,23 @@ model {
+   premises.home.agent.pdc .connect external.grafana '外向きPDC接続'
+   external.grafana .query premises.home.agent.pdc 'PDC経由の検索'
+   premises.home.agent.pdc .query premises.home.agent.local_store 'private query / :8428'
+-  premises.hardware.router .network premises.lan.native 'native IF'
+-  premises.hardware.router .network premises.lan.management 'BVI10'
+-  premises.hardware.router .network premises.lan.server 'BVI20'
+-  premises.hardware.router .network premises.lan.client 'BVI30'
+-  premises.hardware.router .network premises.lan.guest 'BVI31 / 他VLAN拒否'
+-  premises.hardware.router .network premises.lan.iot 'BVI40'
++  external.internet .network premises.hardware.network.router 'WAN / GigaEthernet0'
++  premises.hardware.network.router .network premises.hardware.network.ethernet 'GigaEthernet2 / native1 + tag10,20,30,31,40'
++  premises.hardware.network.ethernet .network premises.hardware.network.switch '802.1Q / uplink'
++  premises.hardware.network.ethernet .network premises.hardware.network.ap 'AP trunk / 接続ポート未確定'
++  premises.hardware.network.ethernet .network premises.hardware.x570.bridge 'native1管理 / ゲストtag20・30 / 配線ポート未確定'
++  premises.hardware.network.ethernet .network premises.hardware.b550m.bridge 'native1管理 / ゲストtag20・40 / 配線ポート未確定'
++  premises.hardware.network.switch .admin premises.hardware.unifi 'UniFiで管理'
++  premises.hardware.x570.bridge .network premises.lan.server 'VM・LXC tag20'
++  premises.hardware.x570.bridge .network premises.lan.client 'Windows VM tag30'
++  premises.hardware.b550m.bridge .network premises.lan.server 'VM・LXC tag20'
++  premises.hardware.b550m.bridge .network premises.lan.iot 'kiosk VM tag40'
++  premises.hardware.network.router .network premises.lan.native 'native IF'
++  premises.hardware.network.router .network premises.lan.management 'BVI10'
++  premises.hardware.network.router .network premises.lan.server 'BVI20'
++  premises.hardware.network.router .network premises.lan.client 'BVI30'
++  premises.hardware.network.router .network premises.lan.guest 'BVI31 / 他VLAN拒否'
++  premises.hardware.network.router .network premises.lan.iot 'BVI4 / tag40'
+   premises.home.platform.cloudflared .connect external.edge.tunnel '外向きTunnel接続'
+   external.edge.warp .network premises.lan.server 'private CIDR routes / WARP policy'
+   premises.data.databases .runtime premises.data.nas.nas02 'DB用NFS PVC'
+@@ -178,8 +211,39 @@ model {
+   external.bws .secret premises.management.ansible '機器・PBS用credential'
+   external.bws .secret premises.data.backups 'ESO経由 / backup credential'
+   premises.data.shared .runtime premises.data.nas.nas01 'runner cache / NFS'
+-  premises.home.nextcloud .runtime premises.data.nas.nas02 'html・data / NFS'
++  premises.home.nextcloud.web .runtime premises.data.nas.nas02 'html・data / NFS'
+   premises.home.recording .runtime premises.data.nas.nas02 '録画・thumbnail・drop / NFS'
+   premises.home.apps.coupon_manager .runtime premises.data.nas.nas02 'images・Data Protection keys / PVC'
+ 
++
++  premises.hardware.network.ethernet .network premises.hardware.rpi_workers 'VLAN10 / arm64 worker'
++  premises.hardware.x570 .host premises.home 'Talos VM13001・13004 / CP1・worker1'
++  premises.hardware.b550m .host premises.home 'Talos VM13002・13003・13005 / CP2・worker1'
++  premises.hardware.rpi_workers .host premises.home 'Talos worker03・04 / arm64'
++  premises.hardware.x570 .host premises.data.nas.nas01 'TrueNAS VM69001 / USB disk passthrough'
++  premises.hardware.b550m .host premises.data.nas.nas02 'TrueNAS VM69002 / USB disk passthrough'
++  premises.hardware.x570 .host premises.data.pbs 'PBS VM14001 / VLAN20'
++  premises.home .provide consumers.reventer '共有ArgoCD・ARCを提供 / 専用構成は利用側へ'
++  premises.home.platform.controlplane .provide premises.home.platform.api 'API server :6443 / etcd'
++  premises.home.platform.worker .admin premises.home.platform.api 'kubelet / Pod・Serviceのwatch'
++  premises.home.platform.api .deploy premises.home.platform.worker 'Podの実行を制御'
++  premises.home.platform.flannel .network premises.home.platform.worker 'CNI / Podネットワーク'
++  premises.home.platform.kube_proxy .network premises.home.platform.worker 'Service / ClusterIP転送'
++  premises.home.platform.worker .runtime premises.home.platform.cluster_dns 'Podの名前解決 / :53'
++  premises.home.platform.metrics_server .query premises.home.platform.worker 'kubelet metrics / :10250'
++  premises.home.platform.cert_approver .admin premises.home.platform.api 'kubelet serving CSRの承認'
++  premises.home.platform.descheduler .admin premises.home.platform.api 'Podのeviction / 配置再調整'
++  premises.home.eso .secret premises.home.platform.api 'Kubernetes Secretを同期'
++  premises.management.argo .deploy premises.home.platform.api 'manifest同期 / Kubernetes API'
++  premises.management.runner .deploy premises.home.platform.api 'runner Podの作成・削除'
++  premises.home.platform.worker .host premises.home.platform.cloudflared 'connector Pod'
++  premises.home.dns.metallb .network premises.lan.server 'L2広告 / Service IP .200-.226'
++  premises.home.recording.tnlastation.backend .runtime premises.home.recording.mirakurun_staging 'STG環境のチューナーAPI'
++
++  premises.home.platform.worker .host premises.home.nextcloud.web 'Nextcloud Pod'
++  premises.home.platform.worker .host premises.home.recording '録画・配信Pod'
++  premises.home.platform.worker .host premises.home.apps 'アプリPod / HAProxy・Web・API'
++  premises.home.dns.metallb .admin premises.home.platform.api 'ServiceのIP割当 / controller'
++  premises.home.dns.metallb .provide premises.home.dns.coredns 'LAN向けDNS / LoadBalancer IP .201'
++  premises.home.dns.coredns .runtime external.public_dns '非internal名をforward / DNS :53'
+ }
+diff --git a/docs/architecture/evidence/home-k8s-runtime.json b/docs/architecture/evidence/home-k8s-runtime.json
+new file mode 100644
+index 0000000..4531d36
+--- /dev/null
++++ b/docs/architecture/evidence/home-k8s-runtime.json
+@@ -0,0 +1,989 @@
++{
++  "checkedAt": "2026-10-16T08:06:50.369Z",
++  "context": "home-k8s",
++  "applications": [
++    {
++      "name": "annict-rec-sync",
++      "namespace": "app-annict-rec-sync",
++      "modelRef": "premises.home.recording.annict_sync",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "annict-rec-sync-tnlastation",
++      "namespace": "app-annict-rec-sync-tnlastation",
++      "modelRef": "premises.home.recording.annict_sync",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "annict-rec-sync-tnlastation-staging",
++      "namespace": "app-annict-rec-sync-tnlastation-staging",
++      "modelRef": "premises.home.recording.annict_sync",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "annict-scraper",
++      "namespace": "app-annict-scraper",
++      "modelRef": "premises.home.apps.annict_scraper",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-controller",
++      "namespace": "arc-systems",
++      "modelRef": "premises.management.runner.arc_controller",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-runner-architecture-automation",
++      "namespace": "architecture-automation",
++      "modelRef": "premises.management.runner.arc_runner_architecture_automation",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-runner-architecture-reader",
++      "namespace": "architecture-automation",
++      "modelRef": "premises.management.runner.arc_runner_architecture_reader",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-runner-my-infra",
++      "namespace": "arc-runners",
++      "modelRef": "premises.management.runner.arc_runner_my_infra",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-runner-reventer",
++      "namespace": "arc-runners",
++      "modelRef": "consumers.reventer.definitions.r_92f1248bed164d",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-runner-reventer-review",
++      "namespace": "arc-runners",
++      "modelRef": "consumers.reventer.definitions.r_e44db286b73b5e",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "arc-runners-config",
++      "namespace": "arc-runners",
++      "modelRef": "premises.management.runner.config",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "architecture-automation-config",
++      "namespace": "architecture-automation",
++      "modelRef": "premises.management.runner.automation_config",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "architecture-review",
++      "namespace": "arc-runners",
++      "modelRef": "consumers.reventer.definitions.r_921011558c39aa",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "argocd-image-updater",
++      "namespace": "argocd",
++      "modelRef": "premises.management.images.argocd_image_updater",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "blackbox-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.blackbox_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "cloudflared",
++      "namespace": "cloudflared",
++      "modelRef": "premises.home.platform.cloudflared",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "coredns",
++      "namespace": "app-coredns",
++      "modelRef": "premises.home.dns.coredns",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "coupon-manager",
++      "namespace": "app-coupon-manager",
++      "modelRef": "premises.home.apps.coupon_manager",
++      "health": "Progressing",
++      "sync": "Synced"
++    },
++    {
++      "name": "descheduler",
++      "namespace": "kube-system",
++      "modelRef": "premises.home.platform.descheduler",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "epgstation",
++      "namespace": "app-epgstation",
++      "modelRef": "premises.home.recording.epgstation",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "external-secrets",
++      "namespace": "external-secrets",
++      "modelRef": "premises.home.eso",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "external-secrets-config",
++      "namespace": "external-secrets",
++      "modelRef": "premises.home.eso.config",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "loockit",
++      "namespace": "app-loockit",
++      "modelRef": "premises.home.apps.loockit",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "magic-mirror",
++      "namespace": "app-magic-mirror",
++      "modelRef": "premises.home.apps.magic_mirror",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "mariadb",
++      "namespace": "infra-db",
++      "modelRef": "premises.data.databases.mariadb",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "metallb",
++      "namespace": "metallb-system",
++      "modelRef": "premises.home.dns.metallb",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "mirakurun",
++      "namespace": "app-mirakurun",
++      "modelRef": "premises.home.recording.mirakurun",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "mirakurun-staging",
++      "namespace": "app-mirakurun-staging",
++      "modelRef": "premises.home.recording.mirakurun_staging",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "nas-backup",
++      "namespace": "infra-backup",
++      "modelRef": "premises.data.backups.nas",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "nextcloud",
++      "namespace": "app-nextcloud",
++      "modelRef": "premises.home.nextcloud",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "nut-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.nut_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "pdc-agent",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.pdc",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "postgres",
++      "namespace": "infra-db",
++      "modelRef": "premises.data.databases.postgres",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "postgres-staging",
++      "namespace": "infra-db-staging",
++      "modelRef": "premises.data.databases.postgres",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "prometheus-node-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.prometheus_node_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "pve-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.pve_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "reventer-gitops",
++      "namespace": "argocd",
++      "modelRef": "consumers.reventer.definitions.r_8c8f91db8f7cea",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "reventer-tfc-agent",
++      "namespace": "reventer-tfc-agent",
++      "modelRef": "consumers.reventer.definitions.r_ea213c3cfe71ad",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "root-app",
++      "namespace": "argocd",
++      "modelRef": "premises.management.argo.registry",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "shared-state-storage",
++      "namespace": "default",
++      "modelRef": "premises.data.shared",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "snmp-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.snmp_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "speedtest-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.speedtest_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "tfc-agent",
++      "namespace": "tfc-agent",
++      "modelRef": "premises.management.tfc_agents.tfc_agent",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "tinytuya-exporter",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "tnlastation",
++      "namespace": "app-tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "tnlastation-staging",
++      "namespace": "app-tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "victoria-metrics",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.local_store",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "vmagent",
++      "namespace": "monitoring",
++      "modelRef": "premises.home.agent.collector",
++      "health": "Healthy",
++      "sync": "Synced"
++    },
++    {
++      "name": "wol",
++      "namespace": "app-gptwol",
++      "modelRef": "premises.home.apps.wol",
++      "health": "Healthy",
++      "sync": "Synced"
++    }
++  ],
++  "nodes": [
++    {
++      "name": "controlplane-01-talos-home-pve-amd64",
++      "ip": "192.168.20.137",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    },
++    {
++      "name": "controlplane-02-talos-home-pve-amd64",
++      "ip": "192.168.20.138",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    },
++    {
++      "name": "controlplane-03-talos-home-pve-amd64",
++      "ip": "192.168.20.139",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    },
++    {
++      "name": "worker-01-talos-home-pve-amd64",
++      "ip": "192.168.20.140",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    },
++    {
++      "name": "worker-02-talos-home-pve-amd64",
++      "ip": "192.168.20.141",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    },
++    {
++      "name": "worker-03-talos-home-rpi4-arm64",
++      "ip": "192.168.10.107",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    },
++    {
++      "name": "worker-04-talos-home-rpi4-arm64",
++      "ip": "192.168.10.109",
++      "os": "Talos (v1.14.1)",
++      "ready": true
++    }
++  ],
++  "workloads": [
++    {
++      "namespace": "app-annict-scraper",
++      "kind": "Deployment",
++      "name": "annict-scraper",
++      "application": "annict-scraper",
++      "modelRef": "premises.home.apps.annict_scraper",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-coredns",
++      "kind": "Deployment",
++      "name": "coredns-deployment",
++      "application": "coredns",
++      "modelRef": "premises.home.dns.coredns",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-coupon-manager",
++      "kind": "Deployment",
++      "name": "coupon-manager-api",
++      "application": "coupon-manager",
++      "modelRef": "premises.home.apps.coupon_manager",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-coupon-manager",
++      "kind": "Deployment",
++      "name": "coupon-manager-web",
++      "application": "coupon-manager",
++      "modelRef": "premises.home.apps.coupon_manager",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-epgstation",
++      "kind": "Deployment",
++      "name": "epgstation",
++      "application": "epgstation",
++      "modelRef": "premises.home.recording.epgstation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-gptwol",
++      "kind": "Deployment",
++      "name": "gptwol-deployment",
++      "application": "wol",
++      "modelRef": "premises.home.apps.wol",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-loockit",
++      "kind": "Deployment",
++      "name": "loockit-proxy",
++      "application": "loockit",
++      "modelRef": "premises.home.apps.loockit",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-magic-mirror",
++      "kind": "Deployment",
++      "name": "magic-mirror",
++      "application": "magic-mirror",
++      "modelRef": "premises.home.apps.magic_mirror",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-nextcloud",
++      "kind": "Deployment",
++      "name": "nextcloud",
++      "application": "nextcloud",
++      "modelRef": "premises.home.nextcloud",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-nextcloud",
++      "kind": "Deployment",
++      "name": "nextcloud-redis",
++      "application": "nextcloud",
++      "modelRef": "premises.home.nextcloud",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation-staging",
++      "kind": "Deployment",
++      "name": "backend",
++      "application": "tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation-staging",
++      "kind": "Deployment",
++      "name": "ffmpeg-worker-encode",
++      "application": "tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation-staging",
++      "kind": "Deployment",
++      "name": "frontend",
++      "application": "tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation-staging",
++      "kind": "Deployment",
++      "name": "gateway",
++      "application": "tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation-staging",
++      "kind": "Deployment",
++      "name": "mediamtx",
++      "application": "tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation",
++      "kind": "Deployment",
++      "name": "backend",
++      "application": "tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation",
++      "kind": "Deployment",
++      "name": "ffmpeg-worker-encode",
++      "application": "tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation",
++      "kind": "Deployment",
++      "name": "frontend",
++      "application": "tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation",
++      "kind": "Deployment",
++      "name": "gateway",
++      "application": "tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation",
++      "kind": "Deployment",
++      "name": "mediamtx",
++      "application": "tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "arc-runners",
++      "kind": "Deployment",
++      "name": "architecture-review",
++      "application": "architecture-review",
++      "modelRef": "consumers.reventer.definitions.r_921011558c39aa",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "arc-systems",
++      "kind": "Deployment",
++      "name": "arc-systems-gha-rs-controller",
++      "application": "arc-controller",
++      "modelRef": "premises.management.runner.arc_controller",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-applicationset-controller",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-dex-server",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-image-updater-controller",
++      "application": "argocd-image-updater",
++      "modelRef": "premises.management.images.argocd_image_updater",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-notifications-controller",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-redis",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-redis-ha-haproxy",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-repo-server",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "Deployment",
++      "name": "argocd-server",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "cloudflared",
++      "kind": "Deployment",
++      "name": "cloudflared",
++      "application": "cloudflared",
++      "modelRef": "premises.home.platform.cloudflared",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "external-secrets",
++      "kind": "Deployment",
++      "name": "bitwarden-sdk-server",
++      "application": "external-secrets",
++      "modelRef": "premises.home.eso",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "external-secrets",
++      "kind": "Deployment",
++      "name": "external-secrets",
++      "application": "external-secrets",
++      "modelRef": "premises.home.eso",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "external-secrets",
++      "kind": "Deployment",
++      "name": "external-secrets-cert-controller",
++      "application": "external-secrets",
++      "modelRef": "premises.home.eso",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "external-secrets",
++      "kind": "Deployment",
++      "name": "external-secrets-webhook",
++      "application": "external-secrets",
++      "modelRef": "premises.home.eso",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "kube-system",
++      "kind": "Deployment",
++      "name": "coredns",
++      "application": null,
++      "modelRef": "premises.home.platform.cluster_dns",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "kube-system",
++      "kind": "Deployment",
++      "name": "metrics-server",
++      "application": null,
++      "modelRef": "premises.home.platform.metrics_server",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "kubelet-serving-cert-approver",
++      "kind": "Deployment",
++      "name": "kubelet-serving-cert-approver",
++      "application": null,
++      "modelRef": "premises.home.platform.cert_approver",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "metallb-system",
++      "kind": "Deployment",
++      "name": "metallb-controller",
++      "application": "metallb",
++      "modelRef": "premises.home.dns.metallb",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "blackbox-exporter-prometheus-blackbox-exporter",
++      "application": "blackbox-exporter",
++      "modelRef": "premises.home.agent.exporters.blackbox_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "nut-exporter",
++      "application": "nut-exporter",
++      "modelRef": "premises.home.agent.exporters.nut_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "pdc-agent",
++      "application": "pdc-agent",
++      "modelRef": "premises.home.agent.pdc",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "pve-exporter",
++      "application": "pve-exporter",
++      "modelRef": "premises.home.agent.exporters.pve_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "snmp-exporter-prometheus-snmp-exporter",
++      "application": "snmp-exporter",
++      "modelRef": "premises.home.agent.exporters.snmp_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "speedtest-exporter",
++      "application": "speedtest-exporter",
++      "modelRef": "premises.home.agent.exporters.speedtest_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "tinytuya-exporter",
++      "application": "tinytuya-exporter",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "tinytuya-exporter-bedside",
++      "application": "tinytuya-exporter",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "tinytuya-exporter-desk",
++      "application": "tinytuya-exporter",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "tinytuya-exporter-entrance",
++      "application": "tinytuya-exporter",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "tinytuya-exporter-refrigerator",
++      "application": "tinytuya-exporter",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "tinytuya-exporter-washing-machine",
++      "application": "tinytuya-exporter",
++      "modelRef": "premises.home.agent.exporters.tinytuya_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "Deployment",
++      "name": "vmagent-victoria-metrics-agent",
++      "application": "vmagent",
++      "modelRef": "premises.home.agent.collector",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "reventer-tfc-agent",
++      "kind": "Deployment",
++      "name": "reventer-tfc-agent",
++      "application": "reventer-tfc-agent",
++      "modelRef": "consumers.reventer.definitions.r_ea213c3cfe71ad",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "tfc-agent",
++      "kind": "Deployment",
++      "name": "tfc-agent",
++      "application": "tfc-agent",
++      "modelRef": "premises.management.tfc_agents.tfc_agent",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation-staging",
++      "kind": "StatefulSet",
++      "name": "ffmpeg-worker-streaming",
++      "application": "tnlastation-staging",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-tnlastation",
++      "kind": "StatefulSet",
++      "name": "ffmpeg-worker-streaming",
++      "application": "tnlastation",
++      "modelRef": "premises.home.recording.tnlastation",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "StatefulSet",
++      "name": "argocd-application-controller",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "argocd",
++      "kind": "StatefulSet",
++      "name": "argocd-redis-ha-server",
++      "application": null,
++      "modelRef": "premises.management.argo",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "infra-db-staging",
++      "kind": "StatefulSet",
++      "name": "postgres",
++      "application": "postgres-staging",
++      "modelRef": "premises.data.databases.postgres",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "infra-db",
++      "kind": "StatefulSet",
++      "name": "mariadb",
++      "application": "mariadb",
++      "modelRef": "premises.data.databases.mariadb",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "infra-db",
++      "kind": "StatefulSet",
++      "name": "postgres",
++      "application": "postgres",
++      "modelRef": "premises.data.databases.postgres",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "StatefulSet",
++      "name": "victoria-metrics",
++      "application": "victoria-metrics",
++      "modelRef": "premises.home.agent.local_store",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "kube-system",
++      "kind": "DaemonSet",
++      "name": "kube-flannel",
++      "application": null,
++      "modelRef": "premises.home.platform.flannel",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "kube-system",
++      "kind": "DaemonSet",
++      "name": "kube-proxy",
++      "application": null,
++      "modelRef": "premises.home.platform.kube_proxy",
++      "origin": "cluster-bootstrap"
++    },
++    {
++      "namespace": "metallb-system",
++      "kind": "DaemonSet",
++      "name": "metallb-speaker",
++      "application": "metallb",
++      "modelRef": "premises.home.dns.metallb",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "DaemonSet",
++      "name": "node-exporter-prometheus-node-exporter",
++      "application": "prometheus-node-exporter",
++      "modelRef": "premises.home.agent.exporters.prometheus_node_exporter",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-annict-rec-sync-tnlastation-staging",
++      "kind": "CronJob",
++      "name": "annict-rec-sync-tnlastation",
++      "application": "annict-rec-sync-tnlastation-staging",
++      "modelRef": "premises.home.recording.annict_sync",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-annict-rec-sync-tnlastation",
++      "kind": "CronJob",
++      "name": "annict-rec-sync-tnlastation",
++      "application": "annict-rec-sync-tnlastation",
++      "modelRef": "premises.home.recording.annict_sync",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "app-annict-rec-sync",
++      "kind": "CronJob",
++      "name": "annict-rec-sync",
++      "application": "annict-rec-sync",
++      "modelRef": "premises.home.recording.annict_sync",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "infra-backup",
++      "kind": "CronJob",
++      "name": "nas-backup",
++      "application": "nas-backup",
++      "modelRef": "premises.data.backups.nas",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "infra-backup",
++      "kind": "CronJob",
++      "name": "tnlastation-recorded-backup",
++      "application": "nas-backup",
++      "modelRef": "premises.data.backups.nas",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "infra-db",
++      "kind": "CronJob",
++      "name": "mariadb-backup",
++      "application": "mariadb",
++      "modelRef": "premises.data.databases.mariadb",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "kube-system",
++      "kind": "CronJob",
++      "name": "descheduler",
++      "application": "descheduler",
++      "modelRef": "premises.home.platform.descheduler",
++      "origin": "ArgoCD"
++    },
++    {
++      "namespace": "monitoring",
++      "kind": "CronJob",
++      "name": "victoria-metrics-backup",
++      "application": "victoria-metrics",
++      "modelRef": "premises.home.agent.local_store",
++      "origin": "ArgoCD"
++    }
++  ],
++  "unmapped": [],
++  "missingApplicationDefinitions": []
++}
+diff --git a/docs/architecture/evidence/network.md b/docs/architecture/evidence/network.md
+new file mode 100644
+index 0000000..2e6ac3a
+--- /dev/null
++++ b/docs/architecture/evidence/network.md
+@@ -0,0 +1,15 @@
++# ネットワークの照合（2026-10-16）
++
++構成モデルの根拠。リアルタイム監視ではない。設定や認証情報の全文は保存しない。
++
++| 確認先 | 確認した事実 |
++| --- | --- |
++| IX2215 Ansible `ansible/ix2215/group_vars/all.yml` | GigaEthernet2.0はnative、dot1q 10/20/30/31/40。IoTはGigaEthernet2.4/BVI4でタグ40。guest ACLで他VLAN横断を拒否 |
++| UniFi OS VM内のNetwork DB（読み取りのみ） | US-8-60W、管理IP 192.168.0.252。VLAN10/20/30/31/40のnetwork定義。Port4 native30 / tagged auto。Port5/6/7 native10 / tagged block_all |
++| PVE2台のNICでLLDPのみ受信 | enp7s0 / enp6s0の両方でUS-8-60WのPort1広告を受信。両ホストをそれぞれSW Port1に直結とは判断できない |
++| PVE interfaces / bridge vlan / ゲストconfig | 管理はnative 192.168.0.115 / .119。vmbr0とvmbr0v20/v30/v40、物理NICのVLAN subinterface。`bridge-vlan-aware yes` の構成ではない。ゲストNICのタグはpve-runtime.jsonに記録 |
++| IX2215 DHCP宣言 | FS AP管理 192.168.0.253、native VLAN1。SWのVLAN10向け予約も存在するが、それを実際の管理IPと断定しない |
++
++`last_connection` のMACテーブル履歴や、経由して受信できるLLDPだけでは配線を確定しない。図の「宅内Ethernet」は共有LAN接続を表す。SWとAPの線は共有LANへの参加を表し、SWとAPが直接結線されているとは断定しない。ケーブルポートは未確認としている。
++
++未確認: ルーター各LANポートとPVE/SW間の正確な結線、FS APの型番と現在のSSID/VLAN割当。SSID名・パスワードは取得・掲載しない。設定上のトランクと無線側の割当を混同しない。
+diff --git a/docs/architecture/evidence/pve-runtime.json b/docs/architecture/evidence/pve-runtime.json
+new file mode 100644
+index 0000000..dfe4ba8
+--- /dev/null
++++ b/docs/architecture/evidence/pve-runtime.json
+@@ -0,0 +1,273 @@
++{
++  "checkedAt": "2026-10-16T08:52:25.932807+00:00",
++  "hosts": [
++    {
++      "name": "pve-x570",
++      "guests": [
++        {
++          "id": 10001,
++          "name": "lb-01-haproxy-keepalived-ubuntu-26-04-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 14001,
++          "name": "pbs-01-debian-13-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 13001,
++          "name": "controlplane-01-talos-home-pve-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 13004,
++          "name": "worker-01-talos-home-pve-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 60000,
++          "name": "work-windows-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 30
++            }
++          ]
++        },
++        {
++          "id": 69001,
++          "name": "nas-01-truenas-scale-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 13201,
++          "name": "unifi-os-01-server-ubuntu-26-04-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": null
++            }
++          ]
++        },
++        {
++          "id": 12901,
++          "name": "mirakurun-01-ubuntu-26-04-home-lxc-amd64",
++          "kind": "lxc",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ],
++          "runtimeContainers": [
++            {
++              "name": "mirakurun",
++              "image": "ghcr.io/miutaku/mirakurun:e47c455"
++            }
++          ]
++        },
++        {
++          "id": 12902,
++          "name": "loockit-01-ubuntu-26-04-home-lxc-amd64",
++          "kind": "lxc",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ],
++          "runtimeContainers": [
++            {
++              "name": "loockit",
++              "image": "ghcr.io/miutaku/loockit:0.1.19"
++            }
++          ]
++        }
++      ]
++    },
++    {
++      "name": "pve-b550m",
++      "guests": [
++        {
++          "id": 13005,
++          "name": "worker-02-talos-home-pve-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 40000,
++          "name": "dev-application-server-01-docker-ubuntu-26-04-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 10002,
++          "name": "lb-02-haproxy-keepalived-ubuntu-26-04-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 13003,
++          "name": "controlplane-03-talos-home-pve-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 69002,
++          "name": "nas-02-truenas-scale-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 13002,
++          "name": "controlplane-02-talos-home-pve-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ]
++        },
++        {
++          "id": 5000,
++          "name": "smart-display-01-ubuntu-26-04-home-amd64",
++          "kind": "qemu",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 40
++            }
++          ]
++        },
++        {
++          "id": 12904,
++          "name": "mirakurun-staging-01-ubuntu-26-04-home-lxc-amd64",
++          "kind": "lxc",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ],
++          "runtimeContainers": [
++            {
++              "name": "mirakurun-staging",
++              "image": "ghcr.io/miutaku/mirakurun:e47c455"
++            }
++          ]
++        },
++        {
++          "id": 12903,
++          "name": "loockit-02-ubuntu-26-04-home-lxc-amd64",
++          "kind": "lxc",
++          "status": "running",
++          "network": [
++            {
++              "interface": "net0",
++              "bridge": "vmbr0",
++              "tag": 20
++            }
++          ],
++          "runtimeContainers": [
++            {
++              "name": "loockit",
++              "image": "ghcr.io/miutaku/loockit:0.1.19"
++            }
++          ]
++        }
++      ]
++    }
++  ]
++}
+\ No newline at end of file
+diff --git a/docs/architecture/logical.c4 b/docs/architecture/logical.c4
+index 24b9abf..f7e1b27 100644
+--- a/docs/architecture/logical.c4
++++ b/docs/architecture/logical.c4
+@@ -1,19 +1,19 @@
+ model {
+   system premises '自宅' {
+     system home 'Talos / home-k8s' {
+-      description 'Talos。CP VM3台・worker VM2台をProxmox2ホストへ配置し、RPi worker2台を追加。Podの配置は動的。'
++      description 'Talos CP VM3台・worker VM2台とRPi worker2台で構成。アプリ・クラスタ基盤・監視・運用・DB/バックアップを用途別に表示し、Application全件は一覧へ対応付ける。Pod配置は動的。'
+       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
+-      component nextcloud 'Nextcloud' { link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
+-      component recording '録画・配信' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
+-      component apps '自宅ワークロード / 基盤の利用側' { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
++      component nextcloud 'Nextcloud' { description 'ファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
++      component recording '録画・配信 / EPGStation・TNLaStation' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
++      component apps '生活サービス / Loockit・Coupon・WOL'  { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
+       component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
+       component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
+       component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
+     }
+     system hardware '物理・ネットワーク' {
+-      component x570 'Proxmox / x570'
+-      component b550m 'Proxmox / b550m'
+-      component router 'IX2215 / VLAN' { description 'native・管理・server・client・guest・IoTを分離。guest VLANから他VLANは到達不可。' link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 '定義' }
++      component x570 'pve-x570 / Proxmox' { description '192.168.0.115。Talos VM2台・TrueNAS・PBS・UniFi・Loockit/Mirakurunなどを実行。' }
++      component b550m 'pve-b550m / Proxmox' { description '192.168.0.119。Talos VM3台・TrueNAS・開発VM・kiosk・Loockit/Mirakurunを実行。' }
++      component network 'ネットワーク機器' { description 'IX2215・US-8-60W・FS AP。機器を開くとEthernet・VLAN・PVEのトランクを確認できる。' }
+       component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
+     }
+     system data '保存・バックアップ' {
+@@ -55,13 +55,7 @@ model {
+   user .runtime external.edge.access 'HTTPS / 利用時の認証'
+   operator .admin external.edge.access 'HTTPS / 管理時の認証'
+   external.edge.access .authenticate external.edge.tunnel 'Access認証後の転送'
+-  external.edge.tunnel .runtime premises.home.nextcloud 'Access認証後 / 公開UI・サービス'
+-  external.edge.tunnel .runtime premises.home.apps 'Access認証後 / 公開UI・サービス'
+-  external.edge.tunnel .runtime premises.home.recording 'Access認証後 / 公開UI・サービス'
+-  external.edge.tunnel .admin premises.management.argo 'Access認証後 / 管理UI'
+-  external.edge.tunnel .admin premises.hardware 'Access認証後 / 機器管理UI'
+-  external.edge.tunnel .admin premises.data.nas 'Access認証後 / NAS管理UI'
+-  premises.hardware.router .runtime premises.home.dns 'LAN / 内部DNS'
++  premises.hardware.network.router .runtime premises.home.dns 'LAN / 内部DNS'
+   external.github .deploy premises.management.argo 'GitOps'
+   external.github .deploy external.terraform_cloud 'Terraform実行'
+   external.github .deploy premises.management.runner 'Actions job'
+diff --git a/docs/architecture/package.json b/docs/architecture/package.json
+index c07788b..8a932c6 100644
+--- a/docs/architecture/package.json
++++ b/docs/architecture/package.json
+@@ -11,7 +11,9 @@
+     "preview": "node scripts/serve.mjs",
+     "dev:native": "likec4 start",
+     "test": "node --test tests/*.test.mjs",
+-    "inventory": "node scripts/inventory.mjs"
++    "inventory": "node scripts/inventory.mjs",
++    "audit:runtime": "node scripts/audit-runtime.mjs",
++    "audit:pve": "python3 scripts/audit-pve.py"
+   },
+   "devDependencies": {
+     "likec4": "1.59.4",
+diff --git a/docs/architecture/review.html b/docs/architecture/review.html
+index c956638..f6c235a 100644
+--- a/docs/architecture/review.html
++++ b/docs/architecture/review.html
+@@ -13,9 +13,13 @@ $('commits').textContent=`変更前 ${data.base} → 変更後 ${data.head}`;
+ function setViews(){
+  const current=data.environments[$('env').value],changed=new Set(current.changes.views.map(v=>v.id));
+  $('view').replaceChildren();
+- for(const [id,view] of Object.entries(current.views).sort(([a],[b])=>Number(changed.has(b))-Number(changed.has(a)))){
++ const preferred=['index','placement','home_apps'];
++ const priority=id=>preferred.includes(id)?preferred.indexOf(id):preferred.length;
++ for(const [id,view] of Object.entries(current.views).sort(([a],[b])=>Number(changed.has(b))-Number(changed.has(a))||priority(a)-priority(b))){
+   const option=document.createElement('option');option.value=id;option.textContent=`${changed.has(id)?'● 変更あり · ':''}${view.title} (${id})`;$('view').append(option);
+  }
++ const requested=new URL(location.href).searchParams.get('view');
++ if(requested&&current.views[requested])$('view').value=requested;
+  render();
+ }
+ function render(){
+diff --git a/docs/architecture/scripts/audit-pve.py b/docs/architecture/scripts/audit-pve.py
+new file mode 100644
+index 0000000..c79b889
+--- /dev/null
++++ b/docs/architecture/scripts/audit-pve.py
+@@ -0,0 +1,26 @@
++import subprocess,json,datetime
++remote=r'''
++import subprocess,json,socket,re
++host=socket.gethostname(); guests=[]
++for kind in ['qemu','lxc']:
++ for vm in json.loads(subprocess.check_output(['pvesh','get',f'/nodes/{host}/{kind}','--output-format','json'])):
++  if vm.get('template'):continue
++  c=json.loads(subprocess.check_output(['pvesh','get',f'/nodes/{host}/{kind}/{vm["vmid"]}/config','--output-format','json']))
++  nets=[]
++  for k,v in c.items():
++   if not re.fullmatch('net[0-9]+',k):continue
++   opts=dict(x.split('=',1) for x in v.split(',') if '=' in x)
++   nets.append({'interface':k,'bridge':opts.get('bridge'),'tag':int(opts['tag']) if 'tag'in opts else None})
++  entry={'id':vm['vmid'],'name':vm.get('name'),'kind':kind,'status':vm['status'],'network':nets}
++  if kind=='lxc' and vm['status']=='running':
++   services=subprocess.run(['pct','exec',str(vm['vmid']),'--','docker','ps','--format','{{.Names}}\t{{.Image}}'],capture_output=True,text=True)
++   entry['runtimeContainers']=[dict(zip(['name','image'],line.split('\t',1))) for line in services.stdout.splitlines() if '\t' in line]
++  guests.append(entry)
++print(json.dumps({'name':host,'guests':guests}))
++'''
++rows=[]
++for ip in ['192.168.0.115','192.168.0.119']:
++ out=subprocess.check_output(['ssh','-o','BatchMode=yes','-o','StrictHostKeyChecking=yes','root@'+ip,'python3 -'],input=remote.encode())
++ rows.append(json.loads(out))
++json.dump({'checkedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'hosts':rows},open('evidence/pve-runtime.json','w'),ensure_ascii=False,indent=2)
++print([(r['name'],len(r['guests'])) for r in rows])
+diff --git a/docs/architecture/scripts/audit-runtime.mjs b/docs/architecture/scripts/audit-runtime.mjs
+new file mode 100644
+index 0000000..0cf8876
+--- /dev/null
++++ b/docs/architecture/scripts/audit-runtime.mjs
+@@ -0,0 +1,22 @@
++// Read-only audit; retain names, placement and source references, never configuration values.
++import {execFileSync} from 'node:child_process';
++import {writeFileSync,readFileSync} from 'node:fs';
++import {bootstrapWorkloads} from './runtime-scope.mjs';
++const get=resource=>JSON.parse(execFileSync('kubectl',['--context','home-k8s','get',resource,'-A','-o','json'],{encoding:'utf8',maxBuffer:16*1024*1024})).items;
++const coverage=JSON.parse(readFileSync('model-coverage.json','utf8')).records;
++const declarations=new Map(coverage.filter(row=>row.type==='Application').map(row=>[row.name,row]));
++const apps=get('applications.argoproj.io').filter(a=>!a.spec.destination.name&&a.spec.destination.server==='https://kubernetes.default.svc');
++const bootstrap=Object.fromEntries(bootstrapWorkloads.map(w=>[`${w.namespace}/${w.kind}/${w.name}`,w.modelRef]));
++const workloads=get('deployments,statefulsets,daemonsets,cronjobs').map(w=>{
++ const namespace=w.metadata.namespace,key=`${namespace}/${w.kind}/${w.metadata.name}`;
++ const app=apps.find(a=>(a.status?.resources??[]).some(r=>r.kind===w.kind&&r.name===w.metadata.name&&(r.namespace??a.spec.destination.namespace)===namespace));
++ const modelRef=app?declarations.get(app.metadata.name)?.modelRef:bootstrap[key]??(namespace==='argocd'&&/^(argocd-)/.test(w.metadata.name)?'premises.management.argo':null);
++ return {namespace,kind:w.kind,name:w.metadata.name,application:app?.metadata.name??null,modelRef:modelRef??null,origin:app?'ArgoCD':modelRef?'cluster-bootstrap':'unmapped'};
++});
++const report={checkedAt:new Date().toISOString(),context:'home-k8s',
++ applications:apps.map(a=>({name:a.metadata.name,namespace:a.spec.destination.namespace,modelRef:declarations.get(a.metadata.name)?.modelRef??null,health:a.status?.health?.status,sync:a.status?.sync?.status})),
++ nodes:get('nodes').map(n=>({name:n.metadata.name,ip:n.status.addresses.find(a=>a.type==='InternalIP')?.address,os:n.status.nodeInfo.osImage,ready:n.status.conditions.find(c=>c.type==='Ready')?.status==='True'})),
++ workloads,unmapped:workloads.filter(w=>!w.modelRef),
++ missingApplicationDefinitions:apps.filter(a=>!declarations.has(a.metadata.name)).map(a=>a.metadata.name)};
++writeFileSync('evidence/home-k8s-runtime.json',JSON.stringify(report,null,2)+'\n');
++console.log(JSON.stringify({applications:report.applications.length,workloads:workloads.length,unmapped:report.unmapped,missingApplicationDefinitions:report.missingApplicationDefinitions},null,2));
+diff --git a/docs/architecture/scripts/build.mjs b/docs/architecture/scripts/build.mjs
+index ca3e213..80865f5 100644
+--- a/docs/architecture/scripts/build.mjs
++++ b/docs/architecture/scripts/build.mjs
+@@ -1,6 +1,6 @@
+ import {spawnSync} from 'node:child_process';
+ import {writeFileSync,copyFileSync,rmSync,readFileSync} from 'node:fs';
+-import {adaptViewer,targetView} from './relationship-navigation.mjs';
++import {targetView,deploymentTarget} from './relationship-navigation.mjs';
+ import {adaptLineFilters} from './line-filters.mjs';
+ rmSync('dist',{recursive:true,force:true});
+ for(const [command,args] of [
+@@ -12,13 +12,13 @@ for(const [command,args] of [
+ ]){
+  const result=spawnSync(command,args,{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
+ }
+-adaptViewer('dist/diagram/assets');
+ adaptLineFilters('dist/diagram/assets');
+ const model=JSON.parse(readFileSync('model.json','utf8'));
+ const manifest={};
+ for(const [id,view] of Object.entries(model.views))manifest[id]={
+  title:view.title,description:view.description?.txt??view.description?.md??'',
+  kinds:[...new Set(view.edges.map(edge=>edge.kind).filter(Boolean))],
++ deploymentNavigation:Object.fromEntries(view.nodes.map(node=>[node.id,node.navigateTo??(node.deploymentRef?deploymentTarget(node.deploymentRef):null)]).filter(([,target])=>target&&target!==id)),
+ };
+ writeFileSync('dist/view-manifest.json',JSON.stringify(manifest));
+ copyFileSync('model.json','dist/model.json');
+diff --git a/docs/architecture/scripts/catalog.mjs b/docs/architecture/scripts/catalog.mjs
+index 7a4bc27..b434f58 100644
+--- a/docs/architecture/scripts/catalog.mjs
++++ b/docs/architecture/scripts/catalog.mjs
+@@ -3,11 +3,12 @@ import {resolve} from 'node:path';
+ import {createHash} from 'node:crypto';
+ import {parseAllDocuments} from 'yaml';
+ import {inventory} from './inventory.mjs';
++import {bootstrapWorkloads} from './runtime-scope.mjs';
+ import {isReventerDedicated} from './ownership.mjs';
+ const q=value=>JSON.stringify(String(value));
+ const id=value=>'r_'+createHash('sha256').update(value).digest('hex').slice(0,14);
+ const slug=value=>value.replace(/[^a-zA-Z0-9_]/g,'_');
+-const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.data.databases.mariadb',postgres:'premises.data.databases.postgres','postgres-staging':'premises.data.databases.postgres',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.data.backups.nas','shared-state-storage':'premises.data.shared', 'root-app':'premises.management.argo.registry'};
++const known={nextcloud:'premises.home.nextcloud',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation','tnlastation-staging':'premises.home.recording.tnlastation',mirakurun:'premises.home.recording.mirakurun','mirakurun-staging':'premises.home.recording.mirakurun_staging',loockit:'premises.home.apps.loockit','coupon-manager':'premises.home.apps.coupon_manager',wol:'premises.home.apps.wol','magic-mirror':'premises.home.apps.magic_mirror','annict-scraper':'premises.home.apps.annict_scraper','annict-rec-sync':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation':'premises.home.recording.annict_sync','annict-rec-sync-tnlastation-staging':'premises.home.recording.annict_sync',mariadb:'premises.data.databases.mariadb',postgres:'premises.data.databases.postgres','postgres-staging':'premises.data.databases.postgres',cloudflared:'premises.home.platform.cloudflared',coredns:'premises.home.dns.coredns',metallb:'premises.home.dns.metallb','external-secrets':'premises.home.eso','external-secrets-config':'premises.home.eso.config',vmagent:'premises.home.agent.collector','victoria-metrics':'premises.home.agent.local_store','pdc-agent':'premises.home.agent.pdc','nas-backup':'premises.data.backups.nas','shared-state-storage':'premises.data.shared', 'root-app':'premises.management.argo.registry','arc-runners-config':'premises.management.runner.config','architecture-automation-config':'premises.management.runner.automation_config'};
+ function placement(file,destination){
+  if(destination.name==='oke-prd'||file.startsWith('k8s/oci-prd/'))return 'prd';
+  if(destination.name==='oke-stg'||file.startsWith('k8s/oci/'))return 'stg';
+@@ -70,6 +71,11 @@ export function generateCatalog(root){
+   }
+   coverage.push(record);
+  }
++ for(const workload of bootstrapWorkloads){
++  const key=`homeSite.talos.ns_${slug(workload.namespace)}`;
++  if(!deployments.has(key))deployments.set(key,{scope:'homeSite.talos',namespace:workload.namespace,instances:[]});
++  deployments.get(key).instances.push(`${id('bootstrap:'+workload.namespace+'/'+workload.name)} = instanceOf ${workload.modelRef} { title ${q(workload.name)} }`);
++ }
+  const routes=[],routeElements={protected:[],exceptions:[],dedicated:[]},routeLinks=[];
+  const locals=readFileSync(resolve(root,'terraform/cloudflare/locals.tf'),'utf8');
+  const homeRoutes=locals.slice(locals.indexOf('home_k8s_services ='),locals.indexOf('  # Private network routes'));
+@@ -82,7 +88,7 @@ export function generateCatalog(root){
+   if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
+   for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
+  }
+- const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.wifi',ix2215:'premises.hardware.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
++ const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit.proxy',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
+   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
+   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
+@@ -93,9 +99,13 @@ export function generateCatalog(root){
+   const kind=/^(architecture-review|argocd-|unifi$|wifi-ap$|ix2215$|nas-|pve-|nanokvm-)/.test(name)?'admin':'runtime';
+   routeElements[dedicated?'dedicated':group].push(`component ${key} ${q(name)} { description ${q(backend+' / '+(accessMode==='access'?'Cloudflare Access保護':'mTLS・証明書と操作パス制限'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" metadata { owner ${q(dedicated?'reventer':'my-infra')} referenceOnly ${q(dedicated?'true':'false')} accessMode ${q(accessMode)} trafficKind ${q(kind)} } }`);
+   routeLinks.push(`external.edge.tunnel .${kind} ${modelRef} "hostname転送"`);
+-  if(targets[name]&&!dedicated)routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
++  if(targets[name]&&!dedicated){
++   routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
++   routeLinks.push(`external.edge.tunnel .${kind} ${targets[name]} ${q(name+' / '+(url.port||(url.protocol==='https:'?'443':'80'))+' / '+(accessMode==='access'?'Access':'mTLS'))}`);
++  }
+   const row={id:'hostname:'+name,type:'Tunnel hostname',name,file:'terraform/cloudflare/locals.tf',owner:dedicated?'reventer':'my-infra',definitionRepository:'my-infra',accessMode,trafficKind:kind,modelRef};routes.push(row);coverage.push(row);
+  }
++ if(routes.some(route=>route.owner==='my-infra'&&route.trafficKind==='runtime'))routeLinks.push('external.edge.tunnel .runtime premises.home "認証済みHTTP / Access・mTLS → 内部Service" { #overview }');
+  const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
+  return {dsl,coverage,apps,rows:[...rows,...routes],routeCount:routes.length};
+ }
+diff --git a/docs/architecture/scripts/line-filters.mjs b/docs/architecture/scripts/line-filters.mjs
+index 7cbe6f9..02e16c7 100644
+--- a/docs/architecture/scripts/line-filters.mjs
++++ b/docs/architecture/scripts/line-filters.mjs
+@@ -8,7 +8,7 @@ export function adaptLineFilters(directory){
+  let next=source.replace(pattern,(match,where,first,react)=>{
+  hooks++;
+  const boundary=match.indexOf('{let ')+1;
+- const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true,provide:true,authenticate:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
++ const injection=`let [__lineFilters,__setLineFilters]=(0,${react}.useState)(()=>window.parent.myInfraLineFilters||{runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true,provide:true,authenticate:true,member:true,host:true});(0,${react}.useEffect)(()=>{const listener=e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='my-infra:line-filters')__setLineFilters(e.data.filters)};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener)},[]);const __hiddenKinds=Object.entries(__lineFilters).filter(([kind,enabled])=>!enabled).map(([kind])=>({kind:{neq:kind}}));${where}=__hiddenKinds.length?{and:__hiddenKinds}:${where};`;
+  return match.slice(0,boundary)+injection+match.slice(boundary);
+  });
+  // Updating the where input alone does not refresh existing React Flow edges.
+diff --git a/docs/architecture/scripts/relationship-navigation.mjs b/docs/architecture/scripts/relationship-navigation.mjs
+index 5517bcf..78a6557 100644
+--- a/docs/architecture/scripts/relationship-navigation.mjs
++++ b/docs/architecture/scripts/relationship-navigation.mjs
+@@ -1,9 +1,16 @@
+-import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
+-// Adapt the pinned LikeC4 1.59.4 viewer: relationship actions open curated views.
+-// Fail the build if the upstream API changes, rather than silently losing this behavior.
++// Navigation targets for inventory links and deployment-node drill-down.
+ export function targetView(fqn) {
++ if(fqn.startsWith('premises.hardware.network'))return 'network';
++ if(fqn.startsWith('premises.home.platform'))return 'platform';
++ if(fqn==='premises.hardware.x570')return 'pve_x570';
++ if(fqn==='premises.hardware.b550m')return 'pve_b550m';
++ if(fqn.startsWith('premises.home.apps.loockit'))return 'loockit';
++ if(fqn.startsWith('premises.home.apps.coupon_manager'))return 'coupon';
++ if(fqn.startsWith('premises.home.recording'))return 'recording';
++ if(fqn.startsWith('premises.home.nextcloud'))return 'nextcloud';
++ if(fqn.startsWith('premises.home.apps'))return 'home_apps';
+  if(fqn.startsWith('premises.hardware.ups'))return 'power';
+- if(fqn.startsWith('premises.lan')||fqn.startsWith('premises.hardware.router')||fqn.startsWith('premises.home.dns')||fqn.startsWith('external.edge.warp'))return 'network';
++ if(fqn.startsWith('premises.lan')||fqn.startsWith('premises.hardware.network.router')||fqn.startsWith('premises.home.dns')||fqn.startsWith('external.edge.warp'))return 'network';
+  if(fqn.startsWith('premises.data')||fqn==='external.idrive')return 'storage';
+  if(fqn.startsWith('external.edge')&&!fqn.startsWith('external.edge.warp'))return 'access';
+  if(fqn==='external.bws'||fqn.endsWith('.eso'))return 'secrets';
+@@ -14,16 +21,13 @@ export function targetView(fqn) {
+  if(fqn.startsWith('premises.hardware')||fqn.startsWith('premises.data'))return 'placement';
+  return 'home_apps';
+ }
+-export function adaptViewer(directory) {
+- let replaced=0;
+- for(const name of readdirSync(directory).filter(n=>n.endsWith('.js'))){
+-  const path=`${directory}/${name}`,source=readFileSync(path,'utf8');
+-  const pattern=/openRelationshipsBrowser\((\w+),(\w+)\)\{this\.send\(\{type:`open\.relationshipsBrowser`,fqn:\1,\.\.\.\2&&\{scope:\2\}\}\)\}/g;
+-  const next=source.replace(pattern,(_,subject)=>{
+-   replaced++;
+-   return `openRelationshipsBrowser(${subject}){window.location.hash='/view/'+(${targetView.toString()})(${subject});}`;
+-  });
+-  if(next!==source)writeFileSync(path,next);
+- }
+- if(replaced!==1)throw new Error(`LikeC4 relationship navigation adapter expected 1 hook, found ${replaced}`);
++// LikeC4 1.59.4 drops deployment-node navigateTo while compiling views.
++// Keep the host drill-down usable in the shell until native deployment navigation works.
++export function deploymentTarget(ref){
++ if(/\.(cp[123]|worker[12])\.talos$/.test(ref))return 'platform';
++ if(/\.loockit(?:\.app)?$/.test(ref))return 'loockit';
++ if(/\.tuner(?:\.app)?$/.test(ref))return 'recording';
++ if(/\.(nas[12]|pbs)$/.test(ref))return 'storage';
++ if(/\.unifi(?:\.app)?$/.test(ref))return 'network';
++ return {'homeSite.x570':'pve_x570','homeSite.b550m':'pve_b550m','homeSite.talos':'home_apps','homeSite.network':'network'}[ref]??null;
+ }
+diff --git a/docs/architecture/scripts/runtime-scope.mjs b/docs/architecture/scripts/runtime-scope.mjs
+new file mode 100644
+index 0000000..fa145c7
+--- /dev/null
++++ b/docs/architecture/scripts/runtime-scope.mjs
+@@ -0,0 +1,8 @@
++// Cluster bootstrap components have no ArgoCD Application. References are explicit.
++export const bootstrapWorkloads = [
++ {namespace:'kube-system',kind:'DaemonSet',name:'kube-flannel',modelRef:'premises.home.platform.flannel'},
++ {namespace:'kube-system',kind:'DaemonSet',name:'kube-proxy',modelRef:'premises.home.platform.kube_proxy'},
++ {namespace:'kube-system',kind:'Deployment',name:'coredns',modelRef:'premises.home.platform.cluster_dns'},
++ {namespace:'kube-system',kind:'Deployment',name:'metrics-server',modelRef:'premises.home.platform.metrics_server'},
++ {namespace:'kubelet-serving-cert-approver',kind:'Deployment',name:'kubelet-serving-cert-approver',modelRef:'premises.home.platform.cert_approver'},
++];
+diff --git a/docs/architecture/shell.html b/docs/architecture/shell.html
+index 4be88db..c79ad91 100644
+--- a/docs/architecture/shell.html
++++ b/docs/architecture/shell.html
+@@ -1,26 +1,41 @@
+ <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>my-infra Architecture</title>
+ <style>*{box-sizing:border-box}body{margin:0;background:#111318;color:#edf0f7;font:14px system-ui,sans-serif}header{min-height:72px;padding:14px 22px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;border-bottom:1px solid #333846}strong{font-size:18px}small{display:block;color:#9da8bc;margin-top:3px}nav{display:flex;gap:6px;flex:1}button,select{font:inherit;color:#e4e9f2;border:1px solid #434b5c;border-radius:7px;background:#202530;padding:8px 13px;cursor:pointer}button.active{background:#384b79;border-color:#7d9de2}label{display:flex;align-items:center;gap:10px}#note{padding:10px 22px;background:#1b2230;color:#cdd9f0;font-size:13px;border-bottom:1px solid #343d4e;line-height:1.6}iframe{display:block;width:100%;height:calc(100dvh - 173px);min-height:480px;border:0;background:#fff}@media(max-width:700px){header{gap:12px;padding:12px}nav{order:3;flex-basis:100%;overflow:auto}#note{padding:8px 12px}iframe{height:calc(100dvh - 230px)}}
+-dialog{width:min(1100px,95vw);max-height:85dvh;border:1px solid #4c5871;border-radius:12px;background:#171d29;color:#edf0f7;padding:24px}dialog::backdrop{background:#000a}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;text-align:left;border-bottom:1px solid #343d4e;overflow-wrap:anywhere}td a{color:#9ec2ff}#inventoryNote{color:#b3bed1;line-height:1.6}</style><header><div><strong>my-infra Architecture</strong><small>LikeC4 · 箱から詳細へ</small></div><nav aria-label="構成図"><button data-view="index">全体</button><button data-view="home_apps">自宅サービス</button><button data-view="delivery">基盤の変更</button></nav><select id="perspective" aria-label="インフラの表示"><option value="" disabled>監視・秘密情報・配置</option><option value="secrets">秘密情報の管理・注入</option><option value="observability">監視の収集・保存・照会</option><option value="placement">配置・所有境界</option></select><button id="resources">リソース一覧</button><button id="up" hidden>← 全体へ戻る</button></header>
+-<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><label style="color:#9da8bc"><input type="checkbox" data-kind="network" checked>ネットワーク接続</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="power" checked>給電</label><label style="color:#79c8f7"><input type="checkbox" data-kind="connect" checked>外向き接続</label><label style="color:#9da8bc"><input type="checkbox" data-kind="provide" checked>基盤の提供</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="authenticate" checked>認証後の転送</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
++dialog{width:min(1100px,95vw);max-height:85dvh;border:1px solid #4c5871;border-radius:12px;background:#171d29;color:#edf0f7;padding:24px}dialog::backdrop{background:#000a}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;text-align:left;border-bottom:1px solid #343d4e;overflow-wrap:anywhere}td a{color:#9ec2ff}#inventoryNote{color:#b3bed1;line-height:1.6}</style><header><div><strong>my-infra Architecture</strong><small>LikeC4 · 箱から詳細へ</small></div><nav aria-label="構成図"><button data-view="index">全体</button><button data-view="home_apps">自宅サービス</button><button data-view="placement">配置・ホスト</button></nav><select id="perspective" aria-label="インフラの表示"><option value="" disabled>監視・秘密情報・配置</option><option value="secrets">秘密情報の管理・注入</option><option value="observability">監視の収集・保存・照会</option><option value="placement">配置・所有境界</option></select><button id="resources">リソース一覧</button><button id="up" hidden>← 全体へ戻る</button></header>
++<fieldset id="lineFilters" style="display:flex;flex-wrap:wrap;gap:18px;margin:0;padding:10px 22px;border:0;border-bottom:1px solid #343d4e"><legend style="float:left;margin-right:18px;padding:0">表示する線</legend><label style="color:#82d994"><input type="checkbox" data-kind="runtime" checked>利用者・サービス通信</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="admin" checked>管理アクセス</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="deploy" checked>CI・デプロイ</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="secret" checked>秘密情報の注入</label><label style="color:#f3cc72"><input type="checkbox" data-kind="observe" checked>監視の収集</label><label style="color:#79c8f7"><input type="checkbox" data-kind="query" checked>監視の照会</label><label style="color:#f3cc72"><input type="checkbox" data-kind="backup" checked>バックアップ</label><label style="color:#9da8bc"><input type="checkbox" data-kind="network" checked>ネットワーク接続</label><label style="color:#ffaaa5"><input type="checkbox" data-kind="power" checked>給電</label><label style="color:#79c8f7"><input type="checkbox" data-kind="connect" checked>外向き接続</label><label style="color:#9da8bc"><input type="checkbox" data-kind="provide" checked>基盤の提供</label><label style="color:#b8a5ff"><input type="checkbox" data-kind="authenticate" checked>認証後の転送</label><label style="color:#86aafc"><input type="checkbox" data-kind="member" checked>クラスタ所属</label><label style="color:#86aafc"><input type="checkbox" data-kind="host" checked>ホスト・実行基盤</label><button id="allLines" style="padding:3px 10px">すべて表示</button></fieldset><div id="note"></div><iframe id="diagram" title="LikeC4 インタラクティブ構成図"></iframe>
+ <dialog id="inventory"><div style="display:flex;justify-content:space-between;align-items:center;gap:20px"><strong id="inventoryTitle"></strong><button id="closeInventory">閉じる</button></div><p id="inventoryNote"></p><p><a href="./resources.html" style="color:#9ec2ff">名前・種類で検索し、関連する図を見る</a></p><table><thead><tr><th>種類</th><th>名前</th><th>定義</th></tr></thead><tbody id="inventoryRows"></tbody></table></dialog>
+ <script>
+ (async()=>{
+ const frame=document.querySelector('#diagram'),note=document.querySelector('#note');
+ const manifest=await fetch('./view-manifest.json').then(r=>r.json()),views=Object.keys(manifest);
+-const perspectives=document.querySelector('#perspective');perspectives.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.disabled=true;placeholder.textContent='その他の観点';perspectives.append(placeholder);for(const id of views.filter(id=>!['index','home_apps','delivery'].includes(id))){const option=document.createElement('option');option.value=id;option.textContent=manifest[id].title;perspectives.append(option);}
++const perspectives=document.querySelector('#perspective');perspectives.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.disabled=true;placeholder.textContent='その他の観点';perspectives.append(placeholder);for(const id of views.filter(id=>!['index','home_apps','placement','pve_x570','pve_b550m','nextcloud','recording','loockit','coupon','vlans','platform'].includes(id))){const option=document.createElement('option');option.value=id;option.textContent=manifest[id].title;perspectives.append(option);}
+ const initial=new URLSearchParams(location.hash.slice(1));
+ let view=initial.get('view')||location.hash.match(/\/view\/([^/?]+)/)?.[1]||'index';if(!views.includes(view))view='index';
+-const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true,provide:true,authenticate:true};
++const defaults={runtime:true,admin:true,deploy:true,secret:true,observe:true,query:true,backup:true,network:true,power:true,connect:true,provide:true,authenticate:true,member:true,host:true};
+ window.myInfraLineFilters={...defaults};
+ try{const saved=JSON.parse(localStorage.getItem('my-infra-line-filters'));for(const kind of Object.keys(defaults))if(typeof saved?.[kind]==='boolean')window.myInfraLineFilters[kind]=saved[kind]}catch{}
+ const toggles=[...document.querySelectorAll('[data-kind]')];
+ function sendFilters(){for(const input of toggles)input.checked=window.myInfraLineFilters[input.dataset.kind];try{localStorage.setItem('my-infra-line-filters',JSON.stringify(window.myInfraLineFilters))}catch{}frame.contentWindow.postMessage({type:'my-infra:line-filters',filters:window.myInfraLineFilters},location.origin)}
+ for(const input of toggles)input.onchange=()=>{window.myInfraLineFilters={...window.myInfraLineFilters,[input.dataset.kind]:input.checked};sendFilters()};
+-document.querySelector('#allLines').onclick=()=>{window.myInfraLineFilters={...defaults};sendFilters()};frame.addEventListener('load',sendFilters);
++document.querySelector('#allLines').onclick=()=>{window.myInfraLineFilters={...defaults};sendFilters()};frame.addEventListener('load',()=>{
++ sendFilters();
++ const document=frame.contentDocument;
++ document.addEventListener('click',event=>{
++  if(!(event.target instanceof frame.contentWindow.Element)||event.target.closest('button,a,input'))return;
++  const node=event.target.closest('.react-flow__node[data-id]');
++  const current=frame.contentWindow.location.hash.match(/\/view\/([^/?]+)/)?.[1];
++  const target=manifest[current]?.deploymentNavigation?.[node?.dataset.id];
++  if(!target)return;
++  event.preventDefault();event.stopPropagation();frame.contentWindow.location.hash='/view/'+target;
++ },true);
++ for(const [id,target] of Object.entries(manifest[view]?.deploymentNavigation??{})){
++  const node=document.querySelector(`.react-flow__node[data-id="${id}"]`);
++  if(node)node.style.cursor='pointer';
++ }
++});
+ const pageKinds=Object.fromEntries(views.map(id=>[id,manifest[id].kinds]));
+ function update(){
+  for(const input of toggles)input.closest('label').style.display=pageKinds[view].includes(input.dataset.kind)?'flex':'none';
+- const select=document.querySelector('#perspective');select.value=!['index','home_apps','delivery'].includes(view)?view:'';
++ const select=document.querySelector('#perspective');select.value=!['index','home_apps','placement'].includes(view)?view:'';
+  document.querySelector('#up').hidden=view==='index';
+  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  note.textContent=manifest[view].description||manifest[view].title;history.replaceState(null,'',`#view=${view}`);
+diff --git a/docs/architecture/specification.c4 b/docs/architecture/specification.c4
+index 995075a..86ae36f 100644
+--- a/docs/architecture/specification.c4
++++ b/docs/architecture/specification.c4
+@@ -1,9 +1,12 @@
+ specification {
++  tag overview
+   element actor { style { shape person color green } }
+   element system { style { color blue } }
+   element component { style { color muted } }
+   element store { style { shape storage color amber } }
+   relationship authenticate { color indigo line solid }
++  relationship host { color blue line solid }
++  relationship member { color blue line dashed }
+   relationship provide { color gray line dashed }
+   relationship runtime { color green }
+   relationship admin { color indigo line dashed }
+@@ -17,9 +20,11 @@ specification {
+   relationship connect { color sky line dashed }
+   deploymentNode site { style { color gray } }
+   deploymentNode hypervisor { style { color green } }
+-  deploymentNode container { style { color muted } }
++  deploymentNode container { style { color muted size xs textSize md padding sm } }
+   deploymentNode physical { style { color gray } }
+-  deploymentNode vm { style { color muted } }
++  deploymentNode workload { style { color muted size xs textSize md padding sm } }
++  deploymentNode os { style { color blue size xs textSize md padding sm } }
++  deploymentNode vm { style { color muted size xs textSize md padding sm } }
+   deploymentNode cluster { style { color blue } }
+   deploymentNode namespace { style { color muted } }
+ }
+diff --git a/docs/architecture/tests/architecture-navigation.test.mjs b/docs/architecture/tests/architecture-navigation.test.mjs
+new file mode 100644
+index 0000000..0f69fe9
+--- /dev/null
++++ b/docs/architecture/tests/architecture-navigation.test.mjs
+@@ -0,0 +1,39 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {readFileSync} from 'node:fs';
++const model=JSON.parse(readFileSync('model.json','utf8'));
++const manifest=JSON.parse(readFileSync('dist/view-manifest.json','utf8'));
++function relation(source,target,kind){return Object.values(model.relations).some(r=>r.source.model===source&&r.target.model===target&&r.kind===kind);}
++test('overview shows physical execution, storage and outside dependencies together',()=>{
++ const refs=model.views.index.nodes.map(n=>n.modelRef);
++ for(const ref of ['premises.hardware.network','premises.hardware.x570','premises.hardware.b550m','premises.hardware.rpi_workers','premises.home','premises.data.nas','premises.data.pbs','external.edge','external.bws','external.idrive','external.grafana'])assert.ok(refs.includes(ref),ref);
++ for(const kind of ['host','network','runtime','backup','secret'])assert.ok(model.views.index.edges.some(e=>e.kind===kind),kind);
++});
++test('service overview keeps communication dependencies for every shown application',()=>{
++ for(const ref of ['premises.home.nextcloud','premises.home.recording','premises.home.apps.loockit','premises.home.apps.coupon_manager','premises.home.apps.magic_mirror','premises.home.apps.wol','premises.home.apps.annict_scraper']){
++  assert.ok(model.views.home_apps.edges.some(e=>e.kind==='runtime'&&(e.source===ref||e.target===ref)),`${ref} must have a communication connection, not only a hosting edge`);
++ }
++ for(const name of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver','descheduler']){
++  const ref=`premises.home.platform.${name}`;
++  assert.ok(model.views.platform.edges.some(e=>e.source===ref||e.target===ref),ref);
++ }
++});
++test('drill-down reaches service internals, and physical guests show meaningful names and Docker containment',()=>{
++ for(const [ref,view] of [['premises.home.nextcloud','nextcloud'],['premises.home.recording','recording'],['premises.home.apps.loockit','loockit'],['premises.home.apps.coupon_manager','coupon'],['premises.home.platform','platform']])assert.equal(manifest.home_apps.deploymentNavigation[ref],view);
++ for(const [host,ref]of [['x570','loockit_a'],['b550m','loockit_b']]){
++  const ct=model.deployments.elements[`homeSite.${host}.loockit`];
++  assert.match(ct.title,/Loockit/);
++  assert.equal(model.deployments.elements[`homeSite.${host}.loockit.app`].kind,'workload');
++  assert.ok(Object.values(model.deployments.elements).some(n=>n.id.startsWith(`homeSite.${host}.loockit.app.`)&&n.element===`premises.hardware.${ref}`));
++ }
++ assert.ok(!Object.values(model.deployments.elements).some(n=>/^LXC CT\d+$/.test(n.title??'')));
++});
++test('Loockit proxy checks readiness while its LXC backends own Kubernetes Lease and Bluetooth access',()=>{
++ const proxy='premises.home.apps.loockit.proxy',api='premises.home.platform.api';
++ for(const [node,ble]of [['loockit_a','ble_a'],['loockit_b','ble_b']]){
++  assert.ok(relation(proxy,`premises.hardware.${node}`,'runtime'));
++  assert.ok(relation(`premises.hardware.${node}`,api,'runtime'));
++  assert.ok(relation(`premises.hardware.${node}`,`premises.hardware.${ble}`,'runtime'));
++ }
++ assert.ok(!relation(proxy,api,'runtime'));
++});
+diff --git a/docs/architecture/tests/line-filters.test.mjs b/docs/architecture/tests/line-filters.test.mjs
+index 09273f8..02cb2a4 100644
+--- a/docs/architecture/tests/line-filters.test.mjs
++++ b/docs/architecture/tests/line-filters.test.mjs
+@@ -3,7 +3,7 @@ import vm from 'node:vm';
+ import assert from 'node:assert/strict';
+ import {whereOperatorAsPredicate} from '@likec4/core';
+ 
+-const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect','provide','authenticate'];
++const kinds=['runtime','admin','deploy','secret','observe','query','backup','network','power','connect','provide','authenticate','member','host'];
+ for(const env of ['my-infra']){
+   const dir=`dist/diagram/assets`;
+   const files=fs.readdirSync(dir);
+diff --git a/docs/architecture/tests/model-coverage.test.mjs b/docs/architecture/tests/model-coverage.test.mjs
+index 4063000..905af8f 100644
+--- a/docs/architecture/tests/model-coverage.test.mjs
++++ b/docs/architecture/tests/model-coverage.test.mjs
+@@ -28,7 +28,7 @@ test('manual details preserve independent media workers, LXC, DB, NUT and correc
+  assert.ok(!relations.some(r=>r.source.model==='premises.home.agent'&&r.target.model==='monitoring.vms'));
+  const physical=Object.values(model.deployments.elements);
+  assert.equal(physical.filter(r=>r.kind==='container').length,4);
+- assert.equal(physical.filter(r=>r.kind==='vm').length,13);
++ assert.equal(physical.filter(r=>r.kind==='vm').length,14);
+  for(const element of Object.values(model.elements))for(const link of element.links??[]){
+   const prefix='https://github.com/miutaku/my-infra/';if(!link.url.startsWith(prefix))continue;
+   const path=link.url.replace(/^https:\/\/github.com\/miutaku\/my-infra\/(blob|tree)\/main\//,'');
+@@ -106,12 +106,12 @@ test('public access keeps authentication separate from traffic purpose and rejec
+  assert.throws(()=>authenticationMode('new-unclassified-host',new Set()),/authentication policy/);
+  const relations=Object.values(model.relations);
+  assert.ok(relations.some(r=>r.source.model==='external.edge.access'&&r.target.model==='external.edge.tunnel'&&r.kind==='authenticate'));
+- for(const id of ['index','home_apps','access']){
++ for(const id of ['index','access']){
+   const view=model.views[id];
+   const entrance=view.edges.filter(edge=>edge.source==='user');
+   assert.ok(entrance.length>0);
+-  assert.ok(entrance.every(edge=>edge.target==='external.edge.access'),id);
+-  assert.ok(!view.edges.some(edge=>edge.source==='external.edge'&&edge.target.startsWith('premises')),id);
++  assert.ok(entrance.every(edge=>edge.target===(id==='index'?'external.edge':'external.edge.access')),id);
++  if(id==='access')assert.ok(!view.edges.some(edge=>edge.source==='external.edge'&&edge.target.startsWith('premises')),id);
+  }
+  assert.ok(model.views.access.nodes.some(node=>node.modelRef==='external.edge.mtls'));
+  assert.ok(!model.views.index.edges.some(edge=>['deploy','admin'].includes(edge.kind)&&edge.target==='consumers.reventer'));
+diff --git a/docs/architecture/tests/runtime-placement.test.mjs b/docs/architecture/tests/runtime-placement.test.mjs
+new file mode 100644
+index 0000000..b3fd0f6
+--- /dev/null
++++ b/docs/architecture/tests/runtime-placement.test.mjs
+@@ -0,0 +1,48 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {readFileSync} from 'node:fs';
++import {deploymentTarget} from '../scripts/relationship-navigation.mjs';
++const model=JSON.parse(readFileSync('model.json','utf8'));
++const runtime=JSON.parse(readFileSync('evidence/home-k8s-runtime.json','utf8'));
++const pve=JSON.parse(readFileSync('evidence/pve-runtime.json','utf8'));
++
++test('recorded live Applications and workload controllers are accounted for including bootstrap',()=>{
++ assert.equal(runtime.missingApplicationDefinitions.length,0);
++ assert.equal(runtime.unmapped.length,0);
++ for(const row of [...runtime.applications,...runtime.workloads])assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
++ for(const ref of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver']){
++  const id=`premises.home.platform.${ref}`;
++  assert.ok(runtime.workloads.some(w=>w.modelRef===id));
++  assert.ok(model.views.platform.nodes.some(n=>n.modelRef===id));
++ }
++ assert.notEqual('premises.home.platform.cluster_dns','premises.home.dns.coredns');
++});
++test('recorded running Proxmox guests are represented under their actual host with NIC tags',()=>{
++ for(const host of pve.hosts)for(const guest of host.guests){
++  const node=Object.values(model.deployments.elements).find(n=>n.metadata?.vmId===String(guest.id));
++  assert.ok(node,`Missing running guest ${host.name}/${guest.id}`);
++  assert.ok(node.id.startsWith(`homeSite.${host.name.replace('pve-','')}.`));
++  assert.equal(node.metadata.vlan,String(guest.network[0].tag??'native1'));
++ }
++});
++test('Talos OS is nested in each VM or RPi and membership targets a multi-host cluster',()=>{
++ const members=[['x570','cp1'],['x570','worker1'],['b550m','cp2'],['b550m','cp3'],['b550m','worker2']];
++ for(const [host,vm] of members){
++  const ref=`homeSite.${host}.${vm}.talos`;
++  assert.equal(model.deployments.elements[ref].kind,'os');
++  assert.ok(model.views[`pve_${host}`].nodes.some(n=>n.id===ref&&n.parent===`homeSite.${host}.${vm}`));
++ }
++ assert.equal(model.deployments.elements['homeSite.worker_pi1.talos'].kind,'os');
++ assert.equal(model.deployments.elements['homeSite.worker_pi2.talos'].kind,'os');
++ assert.equal(model.views.placement.edges.filter(e=>e.kind==='member').length,4); // 2 PVE hosts + 2 RPis
++ assert.equal(deploymentTarget('homeSite.x570'),'pve_x570');
++ assert.equal(JSON.parse(readFileSync('dist/view-manifest.json','utf8')).placement.deploymentNavigation['homeSite.x570'],'pve_x570');
++});
++test('physical network and VLAN details retain switches, AP, tagged PVE guests and isolated guest VLAN',()=>{
++ const refs=model.views.network.nodes.map(n=>n.modelRef);
++ for(const ref of ['premises.hardware.network.router','premises.hardware.network.switch','premises.hardware.network.ap','premises.hardware.x570.bridge','premises.hardware.b550m.bridge'])assert.ok(refs.includes(ref),ref);
++ assert.equal(JSON.parse(readFileSync('dist/view-manifest.json','utf8')).placement.deploymentNavigation['homeSite.network'],'network');
++ assert.equal(model.views.network.nodes.find(n=>n.modelRef==='premises.lan').navigateTo,'vlans');
++ assert.ok(Object.values(model.relations).some(r=>r.source.model==='premises.hardware.b550m.bridge'&&r.target.model==='premises.lan.iot'&&r.title.includes('40')));
++ assert.ok(model.elements['premises.lan.guest'].description.txt.includes('不可'));
++});
+diff --git a/docs/architecture/views.c4 b/docs/architecture/views.c4
+index 25e5d47..968fca7 100644
+--- a/docs/architecture/views.c4
++++ b/docs/architecture/views.c4
+@@ -5,34 +5,44 @@ views {
+   style premises.data { color gray }
+   style consumers { color muted }
+   view index {
+-    title 'インフラ基盤の全体'
+-    description 'my-infraが提供する実行・保存・監視・運用基盤。自宅サービスの入口は原則Access → Tunnel。Re:Venterの専用VM・監視・agent・runnerは利用側にまとめ、詳細はreventer側の図を参照。mTLSなどの例外は入口・認証から確認。'
+-    include user, operator, external.edge.access, external.edge.tunnel, external.bws, premises.home, premises.data.nas, premises.management.argo, premises.management.runner, consumers.reventer
+-    include external.edge.access with { navigateTo access }
+-    include external.edge.tunnel with { navigateTo access }
++    title '自宅インフラの全体'
++    description '宅内LAN → PVE / RPi → Talos、PVE上のTrueNAS・PBS、外部の認証・秘密情報・監視・バックアップ先を結ぶ。機器やクラスタをクリックして、その内部の役割と接続へ。線種で実行基盤・通信・保存を区別する。'
++    include user, operator, external.edge, external.bws, external.grafana, external.idrive, premises.hardware.network, premises.hardware.x570, premises.hardware.b550m, premises.hardware.rpi_workers, premises.home, premises.data.nas, premises.data.pbs, consumers.reventer
++    include external.edge with { navigateTo access }
++    include premises.hardware.network with { navigateTo network }
++    include premises.hardware.x570 with { navigateTo pve_x570 }
++    include premises.hardware.b550m with { navigateTo pve_b550m }
++    include premises.hardware.rpi_workers with { navigateTo placement }
+     include premises.home with { navigateTo home_apps }
+-    include premises.management.argo, premises.management.runner with { navigateTo delivery }
++    include premises.data.nas, premises.data.pbs, external.idrive with { navigateTo storage }
+     include external.bws with { navigateTo secrets }
+-    include premises.data.nas with { navigateTo storage }
++    include external.grafana with { navigateTo observability }
+     exclude * -> consumers.reventer.definitions.**
+     exclude external.edge.routes.** -> *
++    exclude external.edge.tunnel -> premises.home.**
+     exclude premises.home.** -> premises.data.**
+-    exclude * -> * where kind is not runtime and kind is not admin and kind is not authenticate and kind is not provide and kind is not secret
+-    rank source { user, operator }
+-    autoLayout TopBottom 100 80
++    exclude external.edge.tunnel -> premises.hardware.**
++    exclude external.edge.tunnel -> premises.data.**
++    exclude premises.hardware.x570 -> premises.data.pbs where kind is host
++    exclude premises.home.platform.cloudflared -> external.edge.tunnel
++    exclude * -> * where kind is deploy or kind is power
++    autoLayout LeftRight 70 60
+   }
+   view home_apps of premises.home {
+-    title '自宅基盤・利用するサービス'
+-    description '共通入口と基盤の利用先。公開UIはAccess → Tunnel、内部DNS・NFS・DBは宅内の経路。アプリの処理フローとデプロイ経路は混ぜない。'
+-    include user, operator, external.edge.access, external.edge.tunnel, premises.home, premises.home.nextcloud, premises.home.recording, premises.home.apps, premises.home.dns, premises.data.nas, premises.data.databases, premises.management.argo
+-    include external.edge.access with { navigateTo access }
+-    include premises.data.nas with { navigateTo storage }
+-    include premises.home.dns with { navigateTo network }
+-    include premises.management.argo with { navigateTo delivery }
+-    exclude premises.home.** -> premises.home.**
++    title 'home-k8sのサービスと接続'
++    description '公開入口・実行サービス・DB・NFS・外部APIの依存を表示。Loockitと録画の実機制御はPVEのLXC、MagicMirrorの表示はkiosk VM。複雑なサービスをクリックすると内部へ。基盤や運用はクラスタ基盤から確認。'
++    include external.edge, premises.home, premises.home.platform, premises.home.nextcloud, premises.home.recording, premises.home.apps.loockit, premises.home.apps.coupon_manager, premises.home.apps.magic_mirror, premises.home.apps.wol, premises.home.apps.annict_scraper, premises.data.databases, premises.data.nas.nas02, premises.hardware.kiosk, external.annict, external.ai
++    include premises.home.platform with { navigateTo platform }
++    include premises.home.nextcloud with { navigateTo nextcloud }
++    include premises.home.recording with { navigateTo recording }
++    include premises.home.apps.loockit with { navigateTo loockit }
++    include premises.home.apps.coupon_manager with { navigateTo coupon }
++    include premises.data.databases, premises.data.nas.nas02 with { navigateTo storage }
++    include external.edge with { navigateTo access }
++    exclude * -> * where tag is #overview
+     exclude external.edge.routes.** -> *
+-    exclude * -> * where kind is not runtime and kind is not admin and kind is not authenticate
+-    autoLayout LeftRight 80 60
++    exclude * -> * where kind is not runtime and kind is not host
++    autoLayout LeftRight 60 50
+   }
+   view access {
+     title '入口・認証 / 原則Access・例外mTLS'
+@@ -41,6 +51,7 @@ views {
+     include external.edge.routes.protected with { navigateTo home_apps }
+     include premises.home with { navigateTo home_apps }
+     include premises.hardware with { navigateTo placement }
++    include premises.hardware.network with { navigateTo network }
+     include premises.data.nas with { navigateTo storage }
+     exclude external.edge.tunnel -> premises.**
+     exclude external.edge.tunnel -> premises.management.**
+@@ -54,6 +65,7 @@ views {
+     include premises.management.argo, premises.management.runner, premises.management.tfc_agents, premises.management.ansible, premises.management.images, premises.management.packer, external.github, external.terraform_cloud, external.github_pages, premises.home, premises.hardware, external.edge
+     include premises.home with { navigateTo home_apps }
+     include premises.hardware with { navigateTo placement }
++    include premises.hardware.network with { navigateTo network }
+     exclude external.edge.routes.** -> *
+     exclude * -> * where kind is not deploy
+     autoLayout TopBottom 80 60
+@@ -75,19 +87,106 @@ views {
+     autoLayout LeftRight 80 60
+   }
+   deployment view placement {
+-    title '基盤の配置 / 管理範囲'
+-    include homeSite, homeSite.x570, homeSite.x570.nas1, homeSite.x570.pbs, homeSite.b550m, homeSite.b550m.nas2, homeSite.talos
+-    exclude * -> *
++    title '基盤の配置 / PVE → VM → Talos'
++    description 'PVEホストをクリックしてVM/LXCとその内側のTalos OSを見る。点線はクラスタ所属で、通信経路ではない。Podの配置先VMは固定しない。'
++    include homeSite, homeSite.x570, homeSite.b550m, homeSite.worker_pi1, homeSite.worker_pi2, homeSite.talos, homeSite.network, homeSite.lan
++    include homeSite.x570 with { navigateTo pve_x570 }
++    include homeSite.b550m with { navigateTo pve_b550m }
++    include homeSite.talos with { navigateTo home_apps }
++    exclude * -> * where kind is not member and kind is not network
++    autoLayout LeftRight 80 60
++  }
++  deployment view pve_x570 {
++    title 'pve-x570 / VM・LXC・Talos OS'
++    description '物理ホスト → VM/LXC → OS。Windows VM60000はIaC管理外だが稼働確認して追加。CP・workerの点線はhome-k8s所属。'
++    include homeSite, homeSite.x570, homeSite.x570.*, homeSite.x570.cp1.talos, homeSite.x570.worker1.talos, homeSite.x570.loockit.app, homeSite.x570.tuner.app, homeSite.x570.unifi.app, homeSite.talos, homeSite.lan
++    include homeSite.talos with { navigateTo home_apps }
++    exclude homeSite.x570.x570, homeSite.b550m.b550m
++    exclude * -> * where kind is not member and kind is not network
++    autoLayout TopBottom 50 40
++  }
++  deployment view pve_b550m {
++    title 'pve-b550m / VM・LXC・Talos OS'
++    description '物理ホスト → VM/LXC → OS。CP VM2台とworker VM1台。TrueNASはこのPVE上のVM。'
++    include homeSite, homeSite.b550m, homeSite.b550m.*, homeSite.b550m.cp2.talos, homeSite.b550m.cp3.talos, homeSite.b550m.worker2.talos, homeSite.b550m.loockit.app, homeSite.b550m.tuner.app, homeSite.talos, homeSite.lan
++    include homeSite.talos with { navigateTo home_apps }
++    exclude homeSite.x570.x570, homeSite.b550m.b550m
++    exclude * -> * where kind is not member and kind is not network
++    autoLayout TopBottom 50 40
++  }
++  view network of premises.hardware.network {
++    title 'ネットワーク機器 / ルーター・SW・AP'
++    description 'IX2215の配下に宅内Ethernet・SW・AP。PVEはnativeで管理し、VMごとに802.1Q tagを設定。線はLAN接続を表し、未確認のケーブルポートを断定しない。VLANをクリックしてセグメントへ。'
++    include premises, external.internet, premises.hardware.network, premises.hardware.network.*, premises.hardware.x570, premises.hardware.x570.bridge, premises.hardware.b550m, premises.hardware.b550m.bridge, premises.hardware.unifi, premises.lan
++    include premises.lan with { navigateTo vlans }
++    include premises.hardware.x570 with { navigateTo pve_x570 }
++    include premises.hardware.b550m with { navigateTo pve_b550m }
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not network and kind is not admin
+     autoLayout TopBottom 80 60
+   }
+-  view network {
+-    title 'ネットワーク / LAN・WARP'
+-    description 'WARPのprivate CIDR routeと自宅LANのL3接続。公開WebのAccess認証は入口・認証で扱う。Re:VenterのOCI通信経路は利用側の図を参照。'
+-    include operator, external.edge.warp, premises.lan, premises.lan.*, premises.hardware.router, premises.hardware.wifi, premises.hardware.unifi, premises.hardware.lb, premises.home.dns, premises.home.dns.coredns, premises.home.dns.metallb
++  view vlans of premises.lan {
++    title 'VLAN / native・タグ・経路'
++    description 'native1とtag10/20/30/31/40。PVEのゲストtagは稼働configで照合。guestの他VLAN向け通信は拒否。IoTのBVI名は4だがタグ40。各SSIDのVLAN割当は未確認。'
++    include premises, premises.lan, premises.lan.*, premises.hardware.network.router, premises.hardware.network.switch, premises.hardware.x570.bridge, premises.hardware.b550m.bridge, external.edge.warp, premises.home.dns
++    include premises.hardware.network.router, premises.hardware.network.switch with { navigateTo network }
++    include premises.home.dns with { navigateTo platform }
+     exclude external.edge.routes.** -> *
+-    exclude * -> * where kind is not network and kind is not connect
++    exclude * -> * where kind is not network
+     autoLayout LeftRight 80 60
+   }
++  view platform of premises.home.platform {
++    title 'Talos / Kubernetesの動作と支援サービス'
++    description 'control-planeのAPIがworkerを制御し、CNI・Service転送・DNSがPodを支える。metrics-server・CSR承認・descheduler、ArgoCD/ARC/ESOがAPIへ働きかける。内部DNSとクラスタDNSは別。'
++    include premises.home.platform.*, premises.home.dns.metallb, premises.home.dns.coredns, external.public_dns, premises.home.eso, external.bws, premises.management.argo, premises.management.runner, external.edge, premises.lan.server
++    include premises.management.argo, premises.management.runner with { navigateTo delivery }
++    include premises.home.eso with { navigateTo secrets }
++    include premises.home.dns.metallb with { navigateTo network }
++    include external.edge with { navigateTo access }
++    exclude external.edge.routes.** -> *
++    exclude external.edge.tunnel -> premises.**
++    exclude * -> * where kind is backup or kind is power
++    autoLayout LeftRight 60 50
++  }
++  view loockit of premises.home.apps.loockit {
++    title 'Loockit / HAProxy → LXC → Bluetooth'
++    description '外部APIはmTLS。Pod内HAProxyはreadyzでactiveだけを選択し、LXC 12902/12903のREST/gRPCへ転送。LXCがPVE上のBlueZを使い、Leaseでleaderを選ぶ。'
++    include client, external.edge.mtls, external.edge.tunnel, premises.home.apps.loockit.proxy, premises.hardware.loockit_a, premises.hardware.loockit_b, premises.hardware.ble_a, premises.hardware.ble_b, premises.home.platform.api
++    include premises.home.platform.api with { navigateTo platform }
++    include premises.hardware.loockit_a with { navigateTo pve_x570 }
++    include premises.hardware.loockit_b with { navigateTo pve_b550m }
++    exclude external.edge.routes.** -> *
++    autoLayout LeftRight 60 50
++  }
++  view recording of premises.home.recording {
++    title '録画・配信 / チューナー・制御・エンコード・保存'
++    description 'PVEのMirakurun LXCとTalos上の録画アプリを分離。Gateway→API/Frontend/HLS、API→encode/streamingとDB、録画データ→nas-02。本番とSTGは同じ機能構造の別配置。'
++    include external.edge, premises.home.recording.epgstation, premises.home.recording.tnlastation.*, premises.home.recording.mirakurun, premises.home.recording.mirakurun_staging, premises.hardware.tuner_prod, premises.hardware.tuner_stg, premises.data.databases, premises.data.nas.nas02
++    include premises.data.nas.nas02, premises.data.databases with { navigateTo storage }
++    include premises.hardware.tuner_prod with { navigateTo pve_x570 }
++    include premises.hardware.tuner_stg with { navigateTo pve_b550m }
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not runtime
++    autoLayout LeftRight 55 45
++  }
++  view nextcloud of premises.home.nextcloud {
++    title 'Nextcloud / DB・ロック・ファイル保存'
++    description 'Access認証後のHTTPをNextcloudへ。MariaDBはメタデータ、Redisはlocking/cache、ファイルはnas-02のNFS PVC。オンライン保存とバックアップは保存図で分ける。'
++    include external.edge, premises.home.nextcloud, premises.home.nextcloud.*, premises.data.databases.mariadb, premises.data.nas.nas02
++    include premises.data.nas.nas02 with { navigateTo storage }
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not runtime
++    autoLayout LeftRight 60 50
++  }
++  view coupon of premises.home.apps.coupon_manager {
++    title 'Coupon Manager / Web・API・DB・AI'
++    description 'Access→Web→API。APIはPostgreSQLと外部AIを使用。画像・Data Protection keyはnas-02のNFS PVCへ。'
++    include external.edge, premises.home.apps.coupon_manager.*, premises.data.databases.postgres, premises.data.nas.nas02, external.ai
++    include premises.data.nas.nas02 with { navigateTo storage }
++    exclude external.edge.routes.** -> *
++    exclude * -> * where kind is not runtime
++    autoLayout LeftRight 60 50
++  }
+   view storage {
+     title '保存・バックアップ / 復元元の区別'
+     include premises.home.nextcloud, premises.home.recording, premises.home.agent.local_store, premises.data, premises.data.nas, premises.data.nas.nas01, premises.data.nas.nas02, premises.data.pbs, premises.data.databases, premises.data.databases.*, premises.data.shared, premises.data.backups, premises.data.backups.*, external.idrive, premises.hardware.x570, premises.hardware.b550m
