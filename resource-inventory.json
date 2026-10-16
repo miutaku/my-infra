@@ -465,13 +465,6 @@
     "file": "k8s/pve/arc-runners/namespace.yaml"
   },
   {
-    "id": "k8s/pve/arc-runners/public-runner-networkpolicy.yaml:NetworkPolicy:arc-runners:public-infra-runner",
-    "type": "NetworkPolicy",
-    "name": "public-infra-runner",
-    "namespace": "arc-runners",
-    "file": "k8s/pve/arc-runners/public-runner-networkpolicy.yaml"
-  },
-  {
     "id": "k8s/pve/arc-runners/reventer-cache-pvc.yaml:PersistentVolume::arc-runner-reventer-cache-pv",
     "type": "PersistentVolume",
     "name": "arc-runner-reventer-cache-pv",
@@ -500,23 +493,23 @@
     "file": "k8s/pve/architecture-automation/resources.yaml"
   },
   {
-    "id": "k8s/pve/architecture-automation/resources.yaml:NetworkPolicy:architecture-automation:credential-runner",
-    "type": "NetworkPolicy",
-    "name": "credential-runner",
+    "id": "k8s/pve/architecture-automation/resources.yaml:Role:architecture-automation:codex-auth-persist",
+    "type": "Role",
+    "name": "codex-auth-persist",
     "namespace": "architecture-automation",
     "file": "k8s/pve/architecture-automation/resources.yaml"
   },
   {
-    "id": "k8s/pve/architecture-automation/resources.yaml:PersistentVolume::architecture-automation-auth-pv",
-    "type": "PersistentVolume",
-    "name": "architecture-automation-auth-pv",
-    "namespace": "",
+    "id": "k8s/pve/architecture-automation/resources.yaml:RoleBinding:architecture-automation:codex-auth-persist",
+    "type": "RoleBinding",
+    "name": "codex-auth-persist",
+    "namespace": "architecture-automation",
     "file": "k8s/pve/architecture-automation/resources.yaml"
   },
   {
-    "id": "k8s/pve/architecture-automation/resources.yaml:PersistentVolumeClaim:architecture-automation:codex-auth",
-    "type": "PersistentVolumeClaim",
-    "name": "codex-auth",
+    "id": "k8s/pve/architecture-automation/resources.yaml:ServiceAccount:architecture-automation:codex-auth-persist",
+    "type": "ServiceAccount",
+    "name": "codex-auth-persist",
     "namespace": "architecture-automation",
     "file": "k8s/pve/architecture-automation/resources.yaml"
   },
