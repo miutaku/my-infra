@@ -21,7 +21,7 @@ const manifest={};
 for(const [id,view] of Object.entries(model.views))manifest[id]={
  title:view.title,description:view.description?.txt??view.description?.md??'',
  kinds:[...new Set(view.edges.map(edge=>edge.kind).filter(Boolean))],
- deploymentNavigation:Object.fromEntries(view.nodes.map(node=>[node.id,node.navigateTo??(node.deploymentRef?deploymentTarget(node.deploymentRef):null)]).filter(([,target])=>target&&target!==id)),
+ deploymentNavigation:Object.fromEntries(view.nodes.map(node=>[node.id,node.navigateTo??model.deployments.elements[node.id]?.metadata?.drillDown??(node.deploymentRef?deploymentTarget(node.deploymentRef):null)]).filter(([,target])=>target&&target!==id)),
 };
 writeFileSync('dist/view-manifest.json',JSON.stringify(manifest));
 copyFileSync('model.json','dist/model.json');

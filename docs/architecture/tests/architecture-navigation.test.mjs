@@ -101,22 +101,42 @@ test('Raspberry Pi workers are summarized, while services and control-plane VMs 
   assert.equal(node.parent,'homeSite.pve.controlplanes');assert.match(node.title,/コントロールプレーン/);assert.doesNotMatch(node.title,/\bCP/);
  }
 });
-test('VLAN routes start once at each role pool, while every guest and NIC fact remains available',()=>{
- const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'};
- const view=model.views.vlans,pools=new Set();
+test('VLAN containment replaces membership lines while every canonical guest and NIC remains available',()=>{
+ const segments={native1:'native',10:'management',20:'server',30:'client',31:'guest',40:'iot'},view=model.views.vlans;
+ assert.ok(!view.nodes.some(n=>['vm','container'].includes(n.kind)||n.id.startsWith('homeSite.pve')));
  for(const guest of Object.values(model.deployments.elements).filter(n=>['vm','container'].includes(n.kind))){
-  const node=view.nodes.find(n=>n.id===guest.id);assert.ok(node,guest.id);
-  const pool=view.nodes.find(n=>n.id===node.parent);assert.equal(pool.parent,'homeSite.pve');pools.add(pool.id);
-  assert.ok(!view.edges.some(e=>e.source===guest.id),guest.id);
-  const edges=view.edges.filter(e=>e.source===pool.id);assert.equal(edges.length,1,pool.id);
-  const expected=`homeSite.lan.${segments[guest.metadata.vlan]}`;assert.equal(edges[0].target,expected,guest.id);
+  const segment=`homeSite.lan.${segments[guest.metadata.vlan]}`,projection=model.deployments.elements[segment+'.pve'];
+  assert.ok(projection.metadata.placementRefs.split(',').includes(guest.id),guest.id);
+  assert.equal(view.nodes.find(n=>n.id===segment+'.pve').parent,segment);
+  assert.ok(model.views.placement.nodes.some(n=>n.id===guest.id),guest.id);
   const nic=Object.values(model.deployments.relations).filter(r=>r.tags?.includes('nic')&&r.source.deployment===guest.id);
-  assert.equal(nic.length,1,guest.id);assert.equal(nic[0].target.deployment,expected);
-  assert.equal(model.views.placement.nodes.find(n=>n.id===guest.id).parent,pool.id);
+  assert.equal(nic.length,1,guest.id);assert.equal(nic[0].target.deployment,segment);
  }
- assert.equal(view.edges.filter(e=>e.source.startsWith('homeSite.pve.')).length,pools.size);
- for(const segment of Object.values(segments))assert.equal(view.nodes.find(n=>n.id===`homeSite.lan.${segment}`).modelRef,`premises.lan.${segment}`);
- const workerPool=view.nodes.find(n=>n.id==='homeSite.pve.workers');assert.equal(workerPool.children.length,2);
+ assert.equal(view.edges.length,7);
+ assert.equal(view.edges.filter(e=>e.source==='homeSite.ix2215').length,6);
+ assert.equal(view.edges.filter(e=>e.source==='providers.warp'&&e.target==='homeSite.lan.server').length,1);
+ for(const name of Object.values(segments))assert.ok(view.nodes.some(n=>n.id===`homeSite.lan.${name}`));
+});
+test('VLAN membership includes physical devices, clients and virtual service addresses with source evidence',()=>{
+ const view=model.views.vlans;
+ for(const ref of ['native.pve_management','native.switch','native.ap','management.rpi_workers','management.nut','management.kvm','management.management_clients','client.physical_clients','client.wol','iot.av','iot.smart_home','guest.clients','server.service_ips','server.vips'])assert.ok(view.nodes.some(n=>n.id==='homeSite.lan.'+ref),ref);
+ const elements=model.deployments.elements;
+ assert.equal(elements['homeSite.lan.native.switch'].metadata.addresses,'192.168.0.252');
+ assert.equal(elements['homeSite.lan.management.rpi_workers'].metadata.addresses,'192.168.10.107,192.168.10.109');
+ assert.equal(elements['homeSite.lan.management.nut'].metadata.addresses,'192.168.10.112,192.168.10.113');
+ const config=parse(readFileSync('../../ansible/ix2215/group_vars/all.yml','utf8'));
+ const names={main:'native',vlan10:'management',vlan20:'server',vlan30:'client',guest:'guest',vlan40:'iot'};
+ for(const profile of config.ix_dhcp_profiles){
+  const metadata=elements[`homeSite.lan.${names[profile.name]}`].metadata;
+  assert.deepEqual(JSON.parse(metadata.dhcpReservations).map(r=>r.ip),(profile.fixed_assignments??[]).map(r=>r.ip));
+  assert.equal(metadata.dhcpRange,profile.assignable_range);
+  assert.ok(config.ix_interfaces.some(i=>i.name===metadata.routeInterface&&i.ip_address===metadata.gateway));
+  assert.doesNotMatch(JSON.stringify(metadata),/\b(?:[0-9a-f]{2}:){5}[0-9a-f]{2}\b/i);
+ }
+ for(const node of view.nodes){
+  const target=elements[node.id]?.metadata?.drillDown;
+  if(target){assert.ok(model.views[target],target);assert.equal(manifest.vlans.deploymentNavigation[node.id],target);}
+ }
 });
 test('restore sources and online NFS use are separate views of the same model',()=>{
  assert.ok(model.views.storage.edges.length>0);assert.ok(model.views.storage.edges.every(e=>e.kind==='backup'));

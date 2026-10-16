@@ -30,5 +30,6 @@ specification {
   deploymentNode os { style { color blue size xs textSize md padding sm } }
   deploymentNode vm { style { color muted size xs textSize md padding sm } }
   deploymentNode cluster { style { color blue } }
+  deploymentNode networkGroup { style { color gray size sm textSize md padding sm } }
   deploymentNode namespace { style { color muted } }
 }
