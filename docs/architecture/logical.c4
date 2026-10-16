@@ -5,7 +5,6 @@ model {
       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
       component nextcloud 'Nextcloud' { description 'ファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
       component recording '録画・配信 / EPGStation・TNLaStation' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
-      component apps '生活サービス / Loockit・Coupon・WOL'  { description 'Loockit・Coupon Manager・Wake-on-LAN・Annict連携など。全Applicationとリソースは自動抽出一覧から確認できる。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/argocd-apps 'Application一覧' }
       component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
       component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
       component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }
@@ -14,11 +13,12 @@ model {
       component network 'ネットワーク機器' { description 'IX2215・US-8-60W・FS AP。機器を開くとEthernet・VLAN・PVEのトランクを確認できる。' }
       component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
     }
-    system pve 'Proxmox VEクラスタ' {
+    system pve 'Proxmox VEクラスタ（2ノード構成）' {
       component x570 'pve-x570 / Proxmox' { description '192.168.0.115。home-k8s VM2台・TrueNAS・PBS・UniFi・Loockit/Mirakurunなどを実行。' }
       component b550m 'pve-b550m / Proxmox' { description '192.168.0.119。home-k8s VM3台・TrueNAS・開発VM・kiosk・Loockit/Mirakurunを実行。' }
       store nas01 'nas-01 / TrueNAS VM69001' { description 'pve-x570。192.168.20.191。runner cache用NFS。USB disk passthrough上のZFS。' link https://github.com/miutaku/my-infra/blob/main/ansible/truenas/host_vars/nas-01.yml 'dataset定義' }
       store nas02 'nas-02 / TrueNAS VM69002' { description 'pve-b550m。192.168.20.192。録画・Nextcloud・DB・監視のNFS。USB disk passthrough上のZFS。' link https://github.com/miutaku/my-infra/blob/main/ansible/truenas/host_vars/nas-02.yml 'dataset定義' }
+      component backup_sources 'VMバックアップ対象 / 2ノード' { metadata { hosts "pve-x570,pve-b550m" } }
       store pbs 'PBS / VM14001' { description 'pve-x570。VMバックアップをIDrive e2のS3互換datastoreへ保存。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs '定義' }
     }
   }
@@ -76,6 +76,5 @@ model {
   external.bws .secret external.terraform_cloud 'Terraform変数'
   premises.hardware .observe premises.home.agent.collector 'exporter収集'
   operator .query external.grafana '照会'
-  premises.pve.x570 .backup premises.pve.pbs 'VM backup'
-  premises.pve.b550m .backup premises.pve.pbs 'VM backup'
+  premises.pve.backup_sources .backup premises.pve.pbs 'VM backup / 2ノード'
 }

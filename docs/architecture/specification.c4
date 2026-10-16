@@ -1,6 +1,8 @@
 specification {
   tag overview
   tag topology
+  tag vlan
+  tag nfs
   element actor { style { shape person color green } }
   element system { style { color blue } }
   element component { style { color muted } }

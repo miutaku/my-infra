@@ -26,7 +26,7 @@
     {
       "name": "annict-scraper",
       "namespace": "app-annict-scraper",
-      "modelRef": "premises.home.apps.annict_scraper",
+      "modelRef": "premises.home.annict_scraper",
       "health": "Healthy",
       "sync": "Synced"
     },
@@ -124,7 +124,7 @@
     {
       "name": "coupon-manager",
       "namespace": "app-coupon-manager",
-      "modelRef": "premises.home.apps.coupon_manager",
+      "modelRef": "premises.home.coupon_manager",
       "health": "Progressing",
       "sync": "Synced"
     },
@@ -159,14 +159,14 @@
     {
       "name": "loockit",
       "namespace": "app-loockit",
-      "modelRef": "premises.home.apps.loockit",
+      "modelRef": "premises.home.loockit",
       "health": "Healthy",
       "sync": "Synced"
     },
     {
       "name": "magic-mirror",
       "namespace": "app-magic-mirror",
-      "modelRef": "premises.home.apps.magic_mirror",
+      "modelRef": "premises.home.magic_mirror",
       "health": "Healthy",
       "sync": "Synced"
     },
@@ -341,7 +341,7 @@
     {
       "name": "wol",
       "namespace": "app-gptwol",
-      "modelRef": "premises.home.apps.wol",
+      "modelRef": "premises.home.wol",
       "health": "Healthy",
       "sync": "Synced"
     }
@@ -396,7 +396,7 @@
       "kind": "Deployment",
       "name": "annict-scraper",
       "application": "annict-scraper",
-      "modelRef": "premises.home.apps.annict_scraper",
+      "modelRef": "premises.home.annict_scraper",
       "origin": "ArgoCD"
     },
     {
@@ -412,7 +412,7 @@
       "kind": "Deployment",
       "name": "coupon-manager-api",
       "application": "coupon-manager",
-      "modelRef": "premises.home.apps.coupon_manager",
+      "modelRef": "premises.home.coupon_manager",
       "origin": "ArgoCD"
     },
     {
@@ -420,7 +420,7 @@
       "kind": "Deployment",
       "name": "coupon-manager-web",
       "application": "coupon-manager",
-      "modelRef": "premises.home.apps.coupon_manager",
+      "modelRef": "premises.home.coupon_manager",
       "origin": "ArgoCD"
     },
     {
@@ -436,7 +436,7 @@
       "kind": "Deployment",
       "name": "gptwol-deployment",
       "application": "wol",
-      "modelRef": "premises.home.apps.wol",
+      "modelRef": "premises.home.wol",
       "origin": "ArgoCD"
     },
     {
@@ -444,7 +444,7 @@
       "kind": "Deployment",
       "name": "loockit-proxy",
       "application": "loockit",
-      "modelRef": "premises.home.apps.loockit",
+      "modelRef": "premises.home.loockit",
       "origin": "ArgoCD"
     },
     {
@@ -452,7 +452,7 @@
       "kind": "Deployment",
       "name": "magic-mirror",
       "application": "magic-mirror",
-      "modelRef": "premises.home.apps.magic_mirror",
+      "modelRef": "premises.home.magic_mirror",
       "origin": "ArgoCD"
     },
     {
