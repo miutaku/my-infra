@@ -3,7 +3,7 @@ deployment {
     description 'Proxmox VEクラスタとRaspberry Pi。'
     cluster pve 'Proxmox VEクラスタ' {
       description 'pve-x570（192.168.0.115）・pve-b550m（192.168.0.119）。VM14台・LXC4台。'
-    hypervisor x570 'pve-x570' { description '192.168.0.115 / native1。Talos VM2・TrueNAS・PBS・UniFi・Windows・LXC2。'
+    hypervisor x570 'pve-x570' { description '192.168.0.115 / native1。home-k8s VM2・TrueNAS・PBS・UniFi・Windows・LXC2。'
       instanceOf premises.pve.x570
       workload bluez 'BlueZ / USB Bluetooth' { instanceOf premises.pve.x570.bluez }
       vm cp1 'home-k8s CP01 / VM13001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13001" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
@@ -16,7 +16,7 @@ deployment {
       vm windows 'Windows / VM60000 / VLAN30' { description 'pve-x570' metadata { sourceFile "docs/architecture/evidence/pve-runtime.json" vmId "60000" vlan "30" managedBy "observed-only" host "pve-x570" } instanceOf premises.pve.windows }
       vm nas1 'nas-01 / TrueNAS VM69001 / runner cache / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.truenas" vmId "69001" vlan "20" bridge "vmbr0" host "pve-x570" } instanceOf premises.pve.nas01 }
     }
-    hypervisor b550m 'pve-b550m' { description '192.168.0.119 / native1。Talos VM3・TrueNAS・Docker開発・表示VM・LXC2。'
+    hypervisor b550m 'pve-b550m' { description '192.168.0.119 / native1。home-k8s VM3・TrueNAS・Docker開発・表示VM・LXC2。'
       instanceOf premises.pve.b550m
       workload bluez 'BlueZ / USB Bluetooth' { instanceOf premises.pve.b550m.bluez }
       vm cp2 'home-k8s CP02 / VM13002 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13002" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }

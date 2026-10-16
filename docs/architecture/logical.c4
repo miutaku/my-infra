@@ -15,8 +15,8 @@ model {
       component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
     }
     system pve 'Proxmox VEクラスタ' {
-      component x570 'pve-x570 / Proxmox' { description '192.168.0.115。Talos VM2台・TrueNAS・PBS・UniFi・Loockit/Mirakurunなどを実行。' }
-      component b550m 'pve-b550m / Proxmox' { description '192.168.0.119。Talos VM3台・TrueNAS・開発VM・kiosk・Loockit/Mirakurunを実行。' }
+      component x570 'pve-x570 / Proxmox' { description '192.168.0.115。home-k8s VM2台・TrueNAS・PBS・UniFi・Loockit/Mirakurunなどを実行。' }
+      component b550m 'pve-b550m / Proxmox' { description '192.168.0.119。home-k8s VM3台・TrueNAS・開発VM・kiosk・Loockit/Mirakurunを実行。' }
       store nas01 'nas-01 / TrueNAS VM69001' { description 'pve-x570。192.168.20.191。runner cache用NFS。USB disk passthrough上のZFS。' link https://github.com/miutaku/my-infra/blob/main/ansible/truenas/host_vars/nas-01.yml 'dataset定義' }
       store nas02 'nas-02 / TrueNAS VM69002' { description 'pve-b550m。192.168.20.192。録画・Nextcloud・DB・監視のNFS。USB disk passthrough上のZFS。' link https://github.com/miutaku/my-infra/blob/main/ansible/truenas/host_vars/nas-02.yml 'dataset定義' }
       store pbs 'PBS / VM14001' { description 'pve-x570。VMバックアップをIDrive e2のS3互換datastoreへ保存。' link https://github.com/miutaku/my-infra/tree/main/ansible/pbs '定義' }
