@@ -28,7 +28,7 @@ test('manual details preserve independent media workers, LXC, DB, NUT and correc
  assert.ok(!relations.some(r=>r.source.model==='premises.home.agent'&&r.target.model==='monitoring.vms'));
  const physical=Object.values(model.deployments.elements);
  assert.equal(physical.filter(r=>r.kind==='container').length,4);
- assert.equal(physical.filter(r=>r.kind==='vm').length,13);
+ assert.equal(physical.filter(r=>r.kind==='vm').length,14);
  for(const element of Object.values(model.elements))for(const link of element.links??[]){
   const prefix='https://github.com/miutaku/my-infra/';if(!link.url.startsWith(prefix))continue;
   const path=link.url.replace(/^https:\/\/github.com\/miutaku\/my-infra\/(blob|tree)\/main\//,'');
@@ -106,7 +106,7 @@ test('public access keeps authentication separate from traffic purpose and rejec
  assert.throws(()=>authenticationMode('new-unclassified-host',new Set()),/authentication policy/);
  const relations=Object.values(model.relations);
  assert.ok(relations.some(r=>r.source.model==='external.edge.access'&&r.target.model==='external.edge.tunnel'&&r.kind==='authenticate'));
- for(const id of ['index','home_apps','access']){
+ for(const id of ['index','access']){
   const view=model.views[id];
   const entrance=view.edges.filter(edge=>edge.source==='user');
   assert.ok(entrance.length>0);

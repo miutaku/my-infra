@@ -1,7 +1,7 @@
 model {
   system premises '自宅' {
     system home 'Talos / home-k8s' {
-      description 'Talos。CP VM3台・worker VM2台をProxmox2ホストへ配置し、RPi worker2台を追加。Podの配置は動的。'
+      description 'Talos CP VM3台・worker VM2台とRPi worker2台で構成。アプリ・クラスタ基盤・監視・運用・DB/バックアップを用途別に表示し、Application全件は一覧へ対応付ける。Pod配置は動的。'
       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
       component nextcloud 'Nextcloud' { link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
       component recording '録画・配信' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
@@ -13,7 +13,7 @@ model {
     system hardware '物理・ネットワーク' {
       component x570 'Proxmox / x570'
       component b550m 'Proxmox / b550m'
-      component router 'IX2215 / VLAN' { description 'native・管理・server・client・guest・IoTを分離。guest VLANから他VLANは到達不可。' link https://github.com/miutaku/my-infra/tree/main/ansible/ix2215 '定義' }
+      component network 'ネットワーク機器' { description 'IX2215・US-8-60W・FS AP。機器を開くとEthernet・VLAN・PVEのトランクを確認できる。' }
       component ups 'UPS / NUT' { description '電源断を検知してVM・NAS・物理ホストを順序制御する。RPi workerとは別のNUT機器を利用。' link https://github.com/miutaku/my-infra/blob/main/docs/ups-shutdown.md '手順' }
     }
     system data '保存・バックアップ' {
@@ -61,7 +61,7 @@ model {
   external.edge.tunnel .admin premises.management.argo 'Access認証後 / 管理UI'
   external.edge.tunnel .admin premises.hardware 'Access認証後 / 機器管理UI'
   external.edge.tunnel .admin premises.data.nas 'Access認証後 / NAS管理UI'
-  premises.hardware.router .runtime premises.home.dns 'LAN / 内部DNS'
+  premises.hardware.network.router .runtime premises.home.dns 'LAN / 内部DNS'
   external.github .deploy premises.management.argo 'GitOps'
   external.github .deploy external.terraform_cloud 'Terraform実行'
   external.github .deploy premises.management.runner 'Actions job'

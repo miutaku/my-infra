@@ -22,17 +22,18 @@ views {
     autoLayout TopBottom 100 80
   }
   view home_apps of premises.home {
-    title '自宅基盤・利用するサービス'
-    description '共通入口と基盤の利用先。公開UIはAccess → Tunnel、内部DNS・NFS・DBは宅内の経路。アプリの処理フローとデプロイ経路は混ぜない。'
-    include user, operator, external.edge.access, external.edge.tunnel, premises.home, premises.home.nextcloud, premises.home.recording, premises.home.apps, premises.home.dns, premises.data.nas, premises.data.databases, premises.management.argo
-    include external.edge.access with { navigateTo access }
-    include premises.data.nas with { navigateTo storage }
-    include premises.home.dns with { navigateTo network }
-    include premises.management.argo with { navigateTo delivery }
-    exclude premises.home.** -> premises.home.**
-    exclude external.edge.routes.** -> *
-    exclude * -> * where kind is not runtime and kind is not admin and kind is not authenticate
-    autoLayout LeftRight 80 60
+    title '自宅基盤・サービスの分類'
+    description '利用アプリ・クラスタ基盤・DNS/Secret・監視を用途別に分類。DB・バックアップ・共用運用もhome-k8sで稼働。要素を開いて詳細へ。経路は入口・認証、実行場所は配置で確認。'
+    include premises.home.*, premises.data.databases, premises.data.backups, premises.management
+    include premises.home.nextcloud, premises.home.recording with { navigateTo storage }
+    include premises.home.apps with { navigateTo home_workloads }
+    include premises.home.platform, premises.home.dns with { navigateTo platform }
+    include premises.home.eso with { navigateTo secrets }
+    include premises.home.agent with { navigateTo observability }
+    include premises.data.databases, premises.data.backups with { navigateTo storage }
+    include premises.management with { navigateTo delivery }
+    exclude * -> *
+    autoLayout TopBottom 60 50
   }
   view access {
     title '入口・認証 / 原則Access・例外mTLS'
@@ -41,6 +42,7 @@ views {
     include external.edge.routes.protected with { navigateTo home_apps }
     include premises.home with { navigateTo home_apps }
     include premises.hardware with { navigateTo placement }
+    include premises.hardware.network with { navigateTo network }
     include premises.data.nas with { navigateTo storage }
     exclude external.edge.tunnel -> premises.**
     exclude external.edge.tunnel -> premises.management.**
@@ -54,6 +56,7 @@ views {
     include premises.management.argo, premises.management.runner, premises.management.tfc_agents, premises.management.ansible, premises.management.images, premises.management.packer, external.github, external.terraform_cloud, external.github_pages, premises.home, premises.hardware, external.edge
     include premises.home with { navigateTo home_apps }
     include premises.hardware with { navigateTo placement }
+    include premises.hardware.network with { navigateTo network }
     exclude external.edge.routes.** -> *
     exclude * -> * where kind is not deploy
     autoLayout TopBottom 80 60
@@ -75,18 +78,71 @@ views {
     autoLayout LeftRight 80 60
   }
   deployment view placement {
-    title '基盤の配置 / 管理範囲'
-    include homeSite, homeSite.x570, homeSite.x570.nas1, homeSite.x570.pbs, homeSite.b550m, homeSite.b550m.nas2, homeSite.talos
-    exclude * -> *
+    title '基盤の配置 / PVE → VM → Talos'
+    description 'PVEホストをクリックしてVM/LXCとその内側のTalos OSを見る。点線はクラスタ所属で、通信経路ではない。Podの配置先VMは固定しない。'
+    include homeSite, homeSite.x570, homeSite.b550m, homeSite.worker_pi1, homeSite.worker_pi2, homeSite.talos
+    include homeSite.x570 with { navigateTo pve_x570 }
+    include homeSite.b550m with { navigateTo pve_b550m }
+    include homeSite.talos with { navigateTo home_apps }
+    exclude * -> * where kind is not member
+    autoLayout LeftRight 80 60
+  }
+  deployment view pve_x570 {
+    title 'pve-x570 / VM・LXC・Talos OS'
+    description '物理ホスト → VM/LXC → OS。Windows VM60000はIaC管理外だが稼働確認して追加。CP・workerの点線はhome-k8s所属。'
+    include homeSite, homeSite.x570, homeSite.x570.*, homeSite.x570.cp1.talos, homeSite.x570.worker1.talos, homeSite.talos
+    include homeSite.talos with { navigateTo home_apps }
+    exclude homeSite.x570.x570, homeSite.b550m.b550m
+    exclude * -> * where kind is not member
+    autoLayout TopBottom 50 40
+  }
+  deployment view pve_b550m {
+    title 'pve-b550m / VM・LXC・Talos OS'
+    description '物理ホスト → VM/LXC → OS。CP VM2台とworker VM1台。TrueNASはこのPVE上のVM。'
+    include homeSite, homeSite.b550m, homeSite.b550m.*, homeSite.b550m.cp2.talos, homeSite.b550m.cp3.talos, homeSite.b550m.worker2.talos, homeSite.talos
+    include homeSite.talos with { navigateTo home_apps }
+    exclude homeSite.x570.x570, homeSite.b550m.b550m
+    exclude * -> * where kind is not member
+    autoLayout TopBottom 50 40
+  }
+  view network of premises.hardware.network {
+    title 'ネットワーク機器 / ルーター・SW・AP'
+    description 'IX2215の配下に宅内Ethernet・SW・AP。PVEはnativeで管理し、VMごとに802.1Q tagを設定。線はLAN接続を表し、未確認のケーブルポートを断定しない。VLANをクリックしてセグメントへ。'
+    include premises, external.internet, premises.hardware.network, premises.hardware.network.*, premises.hardware.x570, premises.hardware.x570.bridge, premises.hardware.b550m, premises.hardware.b550m.bridge, premises.hardware.unifi, premises.lan
+    include premises.lan with { navigateTo vlans }
+    include premises.hardware.x570 with { navigateTo pve_x570 }
+    include premises.hardware.b550m with { navigateTo pve_b550m }
+    exclude external.edge.routes.** -> *
+    exclude * -> * where kind is not network and kind is not admin
     autoLayout TopBottom 80 60
   }
-  view network {
-    title 'ネットワーク / LAN・WARP'
-    description 'WARPのprivate CIDR routeと自宅LANのL3接続。公開WebのAccess認証は入口・認証で扱う。Re:VenterのOCI通信経路は利用側の図を参照。'
-    include operator, external.edge.warp, premises.lan, premises.lan.*, premises.hardware.router, premises.hardware.wifi, premises.hardware.unifi, premises.hardware.lb, premises.home.dns, premises.home.dns.coredns, premises.home.dns.metallb
+  view vlans of premises.lan {
+    title 'VLAN / native・タグ・経路'
+    description 'native1とtag10/20/30/31/40。PVEのゲストtagは稼働configで照合。guestの他VLAN向け通信は拒否。IoTのBVI名は4だがタグ40。各SSIDのVLAN割当は未確認。'
+    include premises, premises.lan, premises.lan.*, premises.hardware.network.router, premises.hardware.network.switch, premises.hardware.x570.bridge, premises.hardware.b550m.bridge, external.edge.warp, premises.home.dns
+    include premises.hardware.network.router, premises.hardware.network.switch with { navigateTo network }
+    include premises.home.dns with { navigateTo platform }
     exclude external.edge.routes.** -> *
-    exclude * -> * where kind is not network and kind is not connect
+    exclude * -> * where kind is not network
     autoLayout LeftRight 80 60
+  }
+  view home_workloads of premises.home.apps {
+    title '自宅の利用アプリ / Application全件から分類'
+    description 'アプリ一覧は固定の選抜ではなく、ArgoCD定義を用途へ対応付ける。録画・Nextcloudは独立カテゴリ。未分類の新Applicationも自動生成し、一覧から追跡できる。'
+    include premises.home.apps.*, premises.home.nextcloud, premises.home.recording, external.edge.access, external.edge.tunnel
+    exclude external.edge.routes.** -> *
+    exclude * -> * where kind is not runtime and kind is not authenticate
+    autoLayout LeftRight 70 50
+  }
+  view platform of premises.home {
+    title 'クラスタ基盤 / bootstrap・DNS・Secret・運用'
+    description 'cluster.local用CoreDNSと宅内miutaku.internalは別。Flannel・kube-proxy・metrics-server・証明書承認も含める。metrics-server/証明書承認は稼働確認のみで導入宣言は未管理。ArgoCD・ARC・Terraform agentの詳細は基盤の変更へ。'
+    include premises.home.platform.*, premises.home.dns.*, premises.home.eso, premises.management.argo, premises.management.runner, premises.management.tfc_agents
+    include premises.home.dns with { navigateTo vlans }
+    include premises.home.eso with { navigateTo secrets }
+    include premises.management.argo, premises.management.runner, premises.management.tfc_agents with { navigateTo delivery }
+    exclude * -> * where kind is not runtime and kind is not provide
+    autoLayout TopBottom 70 50
   }
   view storage {
     title '保存・バックアップ / 復元元の区別'
