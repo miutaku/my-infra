@@ -34,8 +34,8 @@ model {
     description 'ArgoCD Application以外のbootstrapも含む。クラスタDNSと宅内DNS、metrics-serverと監視保存基盤は区別する。'
     component cloudflared 'cloudflared / 自宅connector'
     component api 'Kubernetes API / Lease'
-    component controlplane 'home-k8s control-plane' { description 'Talos OS上のAPI server・etcd・scheduler・controller-manager。3 VMで構成。' }
-    component worker 'home-k8s worker' { description 'Talos OS上のkubelet・containerd。2 VMと2 RPi。' }
+    component controlplane 'home-k8s control-plane' { description 'Talos Linux上のAPI server・etcd・scheduler・controller-manager。3 VMで構成。' }
+    component worker 'home-k8s worker' { description 'Talos Linux上のkubelet・containerd。2 VMと2 RPi。' }
     component cluster_dns 'CoreDNS / cluster.local' { description 'クラスタDNS。app-corednsのmiutaku.internalとは別。' }
     component flannel 'Flannel / CNI'
     component kube_proxy 'kube-proxy / Service routing'
@@ -94,10 +94,10 @@ model {
       store postgres_staging 'PostgreSQL STG'
     }
     component backups 'バックアップ処理' {
-      component nas 'NAS restic / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/cronjob.yaml '実行定義' }
-      component db 'DB logical dump / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/mariadb/backup-cronjob.yaml '実行定義' }
-      component metrics 'metrics snapshot / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/victoria-metrics/backup-cronjob.yaml '実行定義' }
-      component recordings '録画 / 自宅Talos CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/tnlastation-recorded-cronjob.yaml '実行定義' }
+      component nas 'NAS restic / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/cronjob.yaml '実行定義' }
+      component db 'DB logical dump / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/mariadb/backup-cronjob.yaml '実行定義' }
+      component metrics 'metrics snapshot / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/victoria-metrics/backup-cronjob.yaml '実行定義' }
+      component recordings '録画 / home-k8s CronJob' { link https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/tnlastation-recorded-cronjob.yaml '実行定義' }
     }
   }
 
@@ -113,7 +113,7 @@ model {
   }
   extend premises.hardware {
     component kvm 'NanoKVM ×2'
-    component rpi_workers 'RPi worker ×2' { description 'Talos worker。UPS監視用Piとは別機器。' }
+    component rpi_workers 'Raspberry Pi / home-k8s worker ×2' { description 'home-k8sのworker03・04。UPS監視用Piとは別機器。' }
   }
   extend premises.pve.x570 { component bluez 'BlueZ / USB Bluetooth' }
   extend premises.pve.b550m { component bluez 'BlueZ / USB Bluetooth' }
