@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 import {writeFileSync,copyFileSync,rmSync,readFileSync} from 'node:fs';
-import {adaptViewer,targetView,deploymentTarget} from './relationship-navigation.mjs';
+import {targetView,deploymentTarget} from './relationship-navigation.mjs';
 import {adaptLineFilters} from './line-filters.mjs';
 rmSync('dist',{recursive:true,force:true});
 for(const [command,args] of [
@@ -12,14 +12,13 @@ for(const [command,args] of [
 ]){
  const result=spawnSync(command,args,{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
 }
-adaptViewer('dist/diagram/assets');
 adaptLineFilters('dist/diagram/assets');
 const model=JSON.parse(readFileSync('model.json','utf8'));
 const manifest={};
 for(const [id,view] of Object.entries(model.views))manifest[id]={
  title:view.title,description:view.description?.txt??view.description?.md??'',
  kinds:[...new Set(view.edges.map(edge=>edge.kind).filter(Boolean))],
- deploymentNavigation:Object.fromEntries(view.nodes.filter(node=>node.deploymentRef&&deploymentTarget(node.deploymentRef)&&deploymentTarget(node.deploymentRef)!==id).map(node=>[node.id,deploymentTarget(node.deploymentRef)])),
+ deploymentNavigation:Object.fromEntries(view.nodes.map(node=>[node.id,node.navigateTo??(node.deploymentRef?deploymentTarget(node.deploymentRef):null)]).filter(([,target])=>target&&target!==id)),
 };
 writeFileSync('dist/view-manifest.json',JSON.stringify(manifest));
 copyFileSync('model.json','dist/model.json');

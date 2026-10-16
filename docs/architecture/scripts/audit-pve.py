@@ -11,7 +11,11 @@ for kind in ['qemu','lxc']:
    if not re.fullmatch('net[0-9]+',k):continue
    opts=dict(x.split('=',1) for x in v.split(',') if '=' in x)
    nets.append({'interface':k,'bridge':opts.get('bridge'),'tag':int(opts['tag']) if 'tag'in opts else None})
-  guests.append({'id':vm['vmid'],'name':vm.get('name'),'kind':kind,'status':vm['status'],'network':nets})
+  entry={'id':vm['vmid'],'name':vm.get('name'),'kind':kind,'status':vm['status'],'network':nets}
+  if kind=='lxc' and vm['status']=='running':
+   services=subprocess.run(['pct','exec',str(vm['vmid']),'--','docker','ps','--format','{{.Names}}\t{{.Image}}'],capture_output=True,text=True)
+   entry['runtimeContainers']=[dict(zip(['name','image'],line.split('\t',1))) for line in services.stdout.splitlines() if '\t' in line]
+  guests.append(entry)
 print(json.dumps({'name':host,'guests':guests}))
 '''
 rows=[]

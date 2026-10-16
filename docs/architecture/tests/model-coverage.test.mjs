@@ -110,8 +110,8 @@ test('public access keeps authentication separate from traffic purpose and rejec
   const view=model.views[id];
   const entrance=view.edges.filter(edge=>edge.source==='user');
   assert.ok(entrance.length>0);
-  assert.ok(entrance.every(edge=>edge.target==='external.edge.access'),id);
-  assert.ok(!view.edges.some(edge=>edge.source==='external.edge'&&edge.target.startsWith('premises')),id);
+  assert.ok(entrance.every(edge=>edge.target===(id==='index'?'external.edge':'external.edge.access')),id);
+  if(id==='access')assert.ok(!view.edges.some(edge=>edge.source==='external.edge'&&edge.target.startsWith('premises')),id);
  }
  assert.ok(model.views.access.nodes.some(node=>node.modelRef==='external.edge.mtls'));
  assert.ok(!model.views.index.edges.some(edge=>['deploy','admin'].includes(edge.kind)&&edge.target==='consumers.reventer'));

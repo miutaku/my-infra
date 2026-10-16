@@ -88,7 +88,7 @@ export function generateCatalog(root){
   if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
   for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
  }
- const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+ const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.management.argo',wol:'premises.home.apps.wol','loockit-api':'premises.home.apps.loockit.proxy',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.apps.coupon_manager.web',unifi:'premises.hardware.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.data.nas.nas01','nas-02':'premises.data.nas.nas02','pve-x570':'premises.hardware.x570','pve-b550m':'premises.hardware.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
@@ -99,9 +99,13 @@ export function generateCatalog(root){
   const kind=/^(architecture-review|argocd-|unifi$|wifi-ap$|ix2215$|nas-|pve-|nanokvm-)/.test(name)?'admin':'runtime';
   routeElements[dedicated?'dedicated':group].push(`component ${key} ${q(name)} { description ${q(backend+' / '+(accessMode==='access'?'Cloudflare Access保護':'mTLS・証明書と操作パス制限'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" metadata { owner ${q(dedicated?'reventer':'my-infra')} referenceOnly ${q(dedicated?'true':'false')} accessMode ${q(accessMode)} trafficKind ${q(kind)} } }`);
   routeLinks.push(`external.edge.tunnel .${kind} ${modelRef} "hostname転送"`);
-  if(targets[name]&&!dedicated)routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
+  if(targets[name]&&!dedicated){
+   routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
+   routeLinks.push(`external.edge.tunnel .${kind} ${targets[name]} ${q(name+' / '+(url.port||(url.protocol==='https:'?'443':'80'))+' / '+(accessMode==='access'?'Access':'mTLS'))}`);
+  }
   const row={id:'hostname:'+name,type:'Tunnel hostname',name,file:'terraform/cloudflare/locals.tf',owner:dedicated?'reventer':'my-infra',definitionRepository:'my-infra',accessMode,trafficKind:kind,modelRef};routes.push(row);coverage.push(row);
  }
+ if(routes.some(route=>route.owner==='my-infra'&&route.trafficKind==='runtime'))routeLinks.push('external.edge.tunnel .runtime premises.home "認証済みHTTP / Access・mTLS → 内部Service" { #overview }');
  const dsl=['// Generated from declarations. Edit source files or the curated model, not this file.','model {',...declarations.values(),...extensions,`extend consumers.reventer.definitions { ${routeElements.dedicated.join('\n')} }`,`extend external.edge { component routes \"公開hostname / 設定から抽出\" { component protected \"Access保護のhostname\" { ${routeElements.protected.join('\n')} } component exceptions \"例外 / mTLS専用API\" { ${routeElements.exceptions.join('\n')} } } }`,...routeLinks,...[...grouped].map(([parent,items])=>parent==='consumers.reventer.definitions'?`extend ${parent} {\n${items.join('\n')}\n}`:`extend ${parent} { component resources "リソース定義" {\n${items.join('\n')}\n} }`),'}','deployment {',...[...deployments.values()].map(({scope,namespace,instances})=>`extend ${scope} { namespace ns_${slug(namespace)} ${q(namespace)} {\n${instances.join('\n')}\n} }`),'}'].join('\n');
  return {dsl,coverage,apps,rows:[...rows,...routes],routeCount:routes.length};
 }

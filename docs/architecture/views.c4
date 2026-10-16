@@ -5,35 +5,44 @@ views {
   style premises.data { color gray }
   style consumers { color muted }
   view index {
-    title 'インフラ基盤の全体'
-    description 'my-infraが提供する実行・保存・監視・運用基盤。自宅サービスの入口は原則Access → Tunnel。Re:Venterの専用VM・監視・agent・runnerは利用側にまとめ、詳細はreventer側の図を参照。mTLSなどの例外は入口・認証から確認。'
-    include user, operator, external.edge.access, external.edge.tunnel, external.bws, premises.home, premises.data.nas, premises.management.argo, premises.management.runner, consumers.reventer
-    include external.edge.access with { navigateTo access }
-    include external.edge.tunnel with { navigateTo access }
+    title '自宅インフラの全体'
+    description '宅内LAN → PVE / RPi → Talos、PVE上のTrueNAS・PBS、外部の認証・秘密情報・監視・バックアップ先を結ぶ。機器やクラスタをクリックして、その内部の役割と接続へ。線種で実行基盤・通信・保存を区別する。'
+    include user, operator, external.edge, external.bws, external.grafana, external.idrive, premises.hardware.network, premises.hardware.x570, premises.hardware.b550m, premises.hardware.rpi_workers, premises.home, premises.data.nas, premises.data.pbs, consumers.reventer
+    include external.edge with { navigateTo access }
+    include premises.hardware.network with { navigateTo network }
+    include premises.hardware.x570 with { navigateTo pve_x570 }
+    include premises.hardware.b550m with { navigateTo pve_b550m }
+    include premises.hardware.rpi_workers with { navigateTo placement }
     include premises.home with { navigateTo home_apps }
-    include premises.management.argo, premises.management.runner with { navigateTo delivery }
+    include premises.data.nas, premises.data.pbs, external.idrive with { navigateTo storage }
     include external.bws with { navigateTo secrets }
-    include premises.data.nas with { navigateTo storage }
+    include external.grafana with { navigateTo observability }
     exclude * -> consumers.reventer.definitions.**
     exclude external.edge.routes.** -> *
+    exclude external.edge.tunnel -> premises.home.**
     exclude premises.home.** -> premises.data.**
-    exclude * -> * where kind is not runtime and kind is not admin and kind is not authenticate and kind is not provide and kind is not secret
-    rank source { user, operator }
-    autoLayout TopBottom 100 80
+    exclude external.edge.tunnel -> premises.hardware.**
+    exclude external.edge.tunnel -> premises.data.**
+    exclude premises.hardware.x570 -> premises.data.pbs where kind is host
+    exclude premises.home.platform.cloudflared -> external.edge.tunnel
+    exclude * -> * where kind is deploy or kind is power
+    autoLayout LeftRight 70 60
   }
   view home_apps of premises.home {
-    title '自宅基盤・サービスの分類'
-    description '利用アプリ・クラスタ基盤・DNS/Secret・監視を用途別に分類。DB・バックアップ・共用運用もhome-k8sで稼働。要素を開いて詳細へ。経路は入口・認証、実行場所は配置で確認。'
-    include premises.home.*, premises.data.databases, premises.data.backups, premises.management
-    include premises.home.nextcloud, premises.home.recording with { navigateTo storage }
-    include premises.home.apps with { navigateTo home_workloads }
-    include premises.home.platform, premises.home.dns with { navigateTo platform }
-    include premises.home.eso with { navigateTo secrets }
-    include premises.home.agent with { navigateTo observability }
-    include premises.data.databases, premises.data.backups with { navigateTo storage }
-    include premises.management with { navigateTo delivery }
-    exclude * -> *
-    autoLayout TopBottom 60 50
+    title 'home-k8sのサービスと接続'
+    description '公開入口・実行サービス・DB・NFS・外部APIの依存を表示。Loockitと録画の実機制御はPVEのLXC、MagicMirrorの表示はkiosk VM。複雑なサービスをクリックすると内部へ。基盤や運用はクラスタ基盤から確認。'
+    include external.edge, premises.home, premises.home.platform, premises.home.nextcloud, premises.home.recording, premises.home.apps.loockit, premises.home.apps.coupon_manager, premises.home.apps.magic_mirror, premises.home.apps.wol, premises.home.apps.annict_scraper, premises.data.databases, premises.data.nas.nas02, premises.hardware.kiosk, external.annict, external.ai
+    include premises.home.platform with { navigateTo platform }
+    include premises.home.nextcloud with { navigateTo nextcloud }
+    include premises.home.recording with { navigateTo recording }
+    include premises.home.apps.loockit with { navigateTo loockit }
+    include premises.home.apps.coupon_manager with { navigateTo coupon }
+    include premises.data.databases, premises.data.nas.nas02 with { navigateTo storage }
+    include external.edge with { navigateTo access }
+    exclude * -> * where tag is #overview
+    exclude external.edge.routes.** -> *
+    exclude * -> * where kind is not runtime and kind is not host
+    autoLayout LeftRight 60 50
   }
   view access {
     title '入口・認証 / 原則Access・例外mTLS'
@@ -80,29 +89,29 @@ views {
   deployment view placement {
     title '基盤の配置 / PVE → VM → Talos'
     description 'PVEホストをクリックしてVM/LXCとその内側のTalos OSを見る。点線はクラスタ所属で、通信経路ではない。Podの配置先VMは固定しない。'
-    include homeSite, homeSite.x570, homeSite.b550m, homeSite.worker_pi1, homeSite.worker_pi2, homeSite.talos, homeSite.network
+    include homeSite, homeSite.x570, homeSite.b550m, homeSite.worker_pi1, homeSite.worker_pi2, homeSite.talos, homeSite.network, homeSite.lan
     include homeSite.x570 with { navigateTo pve_x570 }
     include homeSite.b550m with { navigateTo pve_b550m }
     include homeSite.talos with { navigateTo home_apps }
-    exclude * -> * where kind is not member
+    exclude * -> * where kind is not member and kind is not network
     autoLayout LeftRight 80 60
   }
   deployment view pve_x570 {
     title 'pve-x570 / VM・LXC・Talos OS'
     description '物理ホスト → VM/LXC → OS。Windows VM60000はIaC管理外だが稼働確認して追加。CP・workerの点線はhome-k8s所属。'
-    include homeSite, homeSite.x570, homeSite.x570.*, homeSite.x570.cp1.talos, homeSite.x570.worker1.talos, homeSite.talos
+    include homeSite, homeSite.x570, homeSite.x570.*, homeSite.x570.cp1.talos, homeSite.x570.worker1.talos, homeSite.x570.loockit.app, homeSite.x570.tuner.app, homeSite.x570.unifi.app, homeSite.talos, homeSite.lan
     include homeSite.talos with { navigateTo home_apps }
     exclude homeSite.x570.x570, homeSite.b550m.b550m
-    exclude * -> * where kind is not member
+    exclude * -> * where kind is not member and kind is not network
     autoLayout TopBottom 50 40
   }
   deployment view pve_b550m {
     title 'pve-b550m / VM・LXC・Talos OS'
     description '物理ホスト → VM/LXC → OS。CP VM2台とworker VM1台。TrueNASはこのPVE上のVM。'
-    include homeSite, homeSite.b550m, homeSite.b550m.*, homeSite.b550m.cp2.talos, homeSite.b550m.cp3.talos, homeSite.b550m.worker2.talos, homeSite.talos
+    include homeSite, homeSite.b550m, homeSite.b550m.*, homeSite.b550m.cp2.talos, homeSite.b550m.cp3.talos, homeSite.b550m.worker2.talos, homeSite.b550m.loockit.app, homeSite.b550m.tuner.app, homeSite.talos, homeSite.lan
     include homeSite.talos with { navigateTo home_apps }
     exclude homeSite.x570.x570, homeSite.b550m.b550m
-    exclude * -> * where kind is not member
+    exclude * -> * where kind is not member and kind is not network
     autoLayout TopBottom 50 40
   }
   view network of premises.hardware.network {
@@ -126,23 +135,57 @@ views {
     exclude * -> * where kind is not network
     autoLayout LeftRight 80 60
   }
-  view home_workloads of premises.home.apps {
-    title '自宅の利用アプリ / Application全件から分類'
-    description 'アプリ一覧は固定の選抜ではなく、ArgoCD定義を用途へ対応付ける。録画・Nextcloudは独立カテゴリ。未分類の新Applicationも自動生成し、一覧から追跡できる。'
-    include premises.home.apps.*, premises.home.nextcloud, premises.home.recording, external.edge.access, external.edge.tunnel
-    exclude external.edge.routes.** -> *
-    exclude * -> * where kind is not runtime and kind is not authenticate
-    autoLayout LeftRight 70 50
-  }
-  view platform of premises.home {
-    title 'クラスタ基盤 / bootstrap・DNS・Secret・運用'
-    description 'cluster.local用CoreDNSと宅内miutaku.internalは別。Flannel・kube-proxy・metrics-server・証明書承認も含める。metrics-server/証明書承認は稼働確認のみで導入宣言は未管理。ArgoCD・ARC・Terraform agentの詳細は基盤の変更へ。'
-    include premises.home.platform.*, premises.home.dns.*, premises.home.eso, premises.management.argo, premises.management.runner, premises.management.tfc_agents
-    include premises.home.dns with { navigateTo vlans }
+  view platform of premises.home.platform {
+    title 'Talos / Kubernetesの動作と支援サービス'
+    description 'control-planeのAPIがworkerを制御し、CNI・Service転送・DNSがPodを支える。metrics-server・CSR承認・descheduler、ArgoCD/ARC/ESOがAPIへ働きかける。内部DNSとクラスタDNSは別。'
+    include premises.home.platform.*, premises.home.dns.metallb, premises.home.dns.coredns, external.public_dns, premises.home.eso, external.bws, premises.management.argo, premises.management.runner, external.edge, premises.lan.server
+    include premises.management.argo, premises.management.runner with { navigateTo delivery }
     include premises.home.eso with { navigateTo secrets }
-    include premises.management.argo, premises.management.runner, premises.management.tfc_agents with { navigateTo delivery }
-    exclude * -> * where kind is not runtime and kind is not provide
-    autoLayout TopBottom 70 50
+    include premises.home.dns.metallb with { navigateTo network }
+    include external.edge with { navigateTo access }
+    exclude external.edge.routes.** -> *
+    exclude external.edge.tunnel -> premises.**
+    exclude * -> * where kind is backup or kind is power
+    autoLayout LeftRight 60 50
+  }
+  view loockit of premises.home.apps.loockit {
+    title 'Loockit / HAProxy → LXC → Bluetooth'
+    description '外部APIはmTLS。Pod内HAProxyはreadyzでactiveだけを選択し、LXC 12902/12903のREST/gRPCへ転送。LXCがPVE上のBlueZを使い、Leaseでleaderを選ぶ。'
+    include client, external.edge.mtls, external.edge.tunnel, premises.home.apps.loockit.proxy, premises.hardware.loockit_a, premises.hardware.loockit_b, premises.hardware.ble_a, premises.hardware.ble_b, premises.home.platform.api
+    include premises.home.platform.api with { navigateTo platform }
+    include premises.hardware.loockit_a with { navigateTo pve_x570 }
+    include premises.hardware.loockit_b with { navigateTo pve_b550m }
+    exclude external.edge.routes.** -> *
+    autoLayout LeftRight 60 50
+  }
+  view recording of premises.home.recording {
+    title '録画・配信 / チューナー・制御・エンコード・保存'
+    description 'PVEのMirakurun LXCとTalos上の録画アプリを分離。Gateway→API/Frontend/HLS、API→encode/streamingとDB、録画データ→nas-02。本番とSTGは同じ機能構造の別配置。'
+    include external.edge, premises.home.recording.epgstation, premises.home.recording.tnlastation.*, premises.home.recording.mirakurun, premises.home.recording.mirakurun_staging, premises.hardware.tuner_prod, premises.hardware.tuner_stg, premises.data.databases, premises.data.nas.nas02
+    include premises.data.nas.nas02, premises.data.databases with { navigateTo storage }
+    include premises.hardware.tuner_prod with { navigateTo pve_x570 }
+    include premises.hardware.tuner_stg with { navigateTo pve_b550m }
+    exclude external.edge.routes.** -> *
+    exclude * -> * where kind is not runtime
+    autoLayout LeftRight 55 45
+  }
+  view nextcloud of premises.home.nextcloud {
+    title 'Nextcloud / DB・ロック・ファイル保存'
+    description 'Access認証後のHTTPをNextcloudへ。MariaDBはメタデータ、Redisはlocking/cache、ファイルはnas-02のNFS PVC。オンライン保存とバックアップは保存図で分ける。'
+    include external.edge, premises.home.nextcloud, premises.home.nextcloud.*, premises.data.databases.mariadb, premises.data.nas.nas02
+    include premises.data.nas.nas02 with { navigateTo storage }
+    exclude external.edge.routes.** -> *
+    exclude * -> * where kind is not runtime
+    autoLayout LeftRight 60 50
+  }
+  view coupon of premises.home.apps.coupon_manager {
+    title 'Coupon Manager / Web・API・DB・AI'
+    description 'Access→Web→API。APIはPostgreSQLと外部AIを使用。画像・Data Protection keyはnas-02のNFS PVCへ。'
+    include external.edge, premises.home.apps.coupon_manager.*, premises.data.databases.postgres, premises.data.nas.nas02, external.ai
+    include premises.data.nas.nas02 with { navigateTo storage }
+    exclude external.edge.routes.** -> *
+    exclude * -> * where kind is not runtime
+    autoLayout LeftRight 60 50
   }
   view storage {
     title '保存・バックアップ / 復元元の区別'

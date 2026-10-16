@@ -2,7 +2,7 @@
 
 公開サイト: https://miutaku.github.io/my-infra/
 
-reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。OCI/OKE・監視VM・Re:Venter向け変更経路・専用runner/agent・レビュー配信などは、定義がmy-infraにあってもRe:Venter専用の境界へ集約する。自宅側の共有ArgoCD・ARC制御基盤との接点だけを描き、専用側の詳細はreventerの図に委ねる。各観点とホスト別の詳細は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置ではホストをクリックして、PVE → VM/LXC → Talos OSを辿る。クラスタ所属の線は通信経路と分ける。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
+reventerと同じ濃色ヘッダー・LikeC4標準viewerを使い、全体から要素をクリックして、自宅サービス、変更・デプロイ、BWSからの秘密注入、監視、配置へ進む。「自宅」の内側にTalos・TrueNAS VM・PBS・バックアップ処理を置き、Cloudflare・Bitwarden・Grafana Cloud・GitHub・Terraform Cloud・IDriveなどは「外部サービス」にまとめる。TrueNASはProxmoxの各ホスト上のVM69001・69002で、保存先とバックアップ処理の実行場所は区別する。Re:Venterは基盤の利用側の1要素とし、アプリ内部はreventerの図へ委ねる。OCI/OKE・監視VM・Re:Venter向け変更経路・専用runner/agent・レビュー配信などは、定義がmy-infraにあってもRe:Venter専用の境界へ集約する。自宅側の共有ArgoCD・ARC制御基盤との接点だけを描き、専用側の詳細はreventerの図に委ねる。各観点とホスト別の詳細は同じモデルを使い、概要を膨らませずに説明・参照元リンク・関係・配置詳細を使う。配置ではホストをクリックして、PVE → VM/Talos OS、PVE → LXC → Dockerサービスを辿る。クラスタ所属の線は通信経路と分ける。Terraform/Kubernetes・NAS dataset・Tunnel hostnameの全宣言を内部要素として保持し、「リソース一覧」から関連する図にも進める。全ApplicationとバックアップCronJobは宣言されたクラスタ・namespaceへのinstanceOf配置を自動生成する。
 
 | ファイル | 役割 |
 | --- | --- |
@@ -78,3 +78,14 @@ Windows VM60000はTerraform管理外だが省略しない。`npm run audit:pve` 
 物理配置はPVE → VM → Talos OS。home-k8sは3 CP VM・2 worker VM・2 RPiにまたがるため、クラスタをいずれか1VMの子にはしない。所属線で結び、namespace/サービスの配置はクラスタ側で保持する。Podを特定PVE/VMへ固定した描写にしない。ホスト別・VLAN別の詳細はクリックで開き、トップの観点選択には増やさない。
 
 ネットワーク機器からIX2215・US-8-60W・FS APとPVEの接続、VLANを開ける。native1とtag10/20/30/31/40、VMのNIC tag、guest ACLを区別する。PVEはvmbr0とVLAN subinterface/bridgeを使用し、vlan-aware設定があるとは記載しない。設定上のDHCP予約を現在の管理IPと混同しない。正確なケーブルポートとAPのSSID別VLAN割当は未確認として残す。根拠と限界は `evidence/network.md`。
+
+## 全体から接続先・内部構造へ
+
+最初の図はインフラ全体。LAN/PVE/RPiがTalosやTrueNAS/PBSをどう支えるか、Cloudflare・BWS・Grafana・IDriveがどこに接続するかを示す。ホストの実行基盤、通信、バックアップは線種で分け、運用・アプリ内部は次の階層へ進む。分類名だけのカード一覧にはしない。
+
+- PVE → Loockit/MirakurunのLXC → Dockerサービス。CT名には用途を含め、VMIDだけの表示にしない。
+- Talos → 各サービス → Web/API・DB・NFS・外部API。LoockitはHAProxy→LXC→BlueZ/Lease、録画はAPI/encode/streaming/HLS/チューナーへ。
+- Talosのクラスタ基盤 → API・worker・CNI・Service・DNSと、CSR承認/metrics/ESO/ArgoCD/ARCの実際の接点。
+- ネットワーク機器 → ルーター/SW/AP/トランク → VLAN。配線が未確認の部分は引き続き断定しない。
+
+LikeC4標準の要素詳細と関係ブラウザは置き換えず使用する。明示的なビュー遷移はクリックで行い、ホスト詳細などの補助ビューはトップの観点選択に並べない。比較レポートは変更のある全体/配置/サービスを優先し、`?view=loockit` のような直接選択もできる。
