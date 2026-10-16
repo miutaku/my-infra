@@ -1,0 +1,169 @@
+{
+  "base": "27ddd93ae97cf973cfd2f2c67b6fb69a5181e3c6",
+  "head": "7d65703d636e904d85064480a0ddb3609af4ced9",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [
+          {
+            "id": "external.edge.routes.protected.r_9206cd3558ad22",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "accessMode": "access",
+                "trafficKind": "runtime"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf",
+                  "title": "hostname定義"
+                }
+              ],
+              "description": {
+                "txt": "http://nextcloud.app-nextcloud.svc.cluster.local:80 / Cloudflare Access保護"
+              },
+              "title": "nextcloud-model-test",
+              "kind": "component",
+              "id": "external.edge.routes.protected.r_9206cd3558ad22"
+            }
+          }
+        ],
+        "relations": [
+          {
+            "id": "external.edge.tunnel → external.edge.routes.protected.r_9206cd3558ad22 [runtime]",
+            "status": "added",
+            "after": [
+              {
+                "color": "green",
+                "kind": "runtime",
+                "source": {
+                  "model": "external.edge.tunnel"
+                },
+                "target": {
+                  "model": "external.edge.routes.protected.r_9206cd3558ad22"
+                },
+                "title": "hostname転送"
+              }
+            ]
+          }
+        ],
+        "views": [],
+        "specification": [],
+        "inventory": [
+          {
+            "id": "hostname:nextcloud-model-test",
+            "status": "added",
+            "after": {
+              "id": "hostname:nextcloud-model-test",
+              "type": "Tunnel hostname",
+              "name": "nextcloud-model-test",
+              "file": "terraform/cloudflare/locals.tf",
+              "owner": "my-infra",
+              "definitionRepository": "my-infra",
+              "accessMode": "access",
+              "trafficKind": "runtime",
+              "modelRef": "external.edge.routes.protected.r_9206cd3558ad22"
+            }
+          }
+        ]
+      },
+      "views": {
+        "access": {
+          "title": "入口・認証 / 原則Access・例外mTLS",
+          "before": true,
+          "after": true
+        },
+        "delivery": {
+          "title": "自宅基盤の変更・同期",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "home-k8sのサービスと接続",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "自宅インフラの全体",
+          "before": true,
+          "after": true
+        },
+        "loockit": {
+          "title": "Loockit / HAProxy → LXC → Bluetooth",
+          "before": true,
+          "after": true
+        },
+        "network": {
+          "title": "ネットワーク機器 / ルーター・SW・AP",
+          "before": true,
+          "after": true
+        },
+        "nextcloud": {
+          "title": "Nextcloud / DB・ロック・ファイル保存",
+          "before": true,
+          "after": true
+        },
+        "nfs": {
+          "title": "NFSの利用経路 / nas-01・nas-02",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "Proxmox VEクラスタ / 全VM・LXC",
+          "before": true,
+          "after": true
+        },
+        "platform": {
+          "title": "home-k8s / クラスタ基盤",
+          "before": true,
+          "after": true
+        },
+        "power": {
+          "title": "電源・安全停止 / UPS・NUTのcross-power",
+          "before": true,
+          "after": true
+        },
+        "recording": {
+          "title": "録画・配信 / PRD・STG",
+          "before": true,
+          "after": true
+        },
+        "recording_prd": {
+          "title": "TNLaStation PRD / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "recording_stg": {
+          "title": "TNLaStation STG / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        },
+        "storage": {
+          "title": "保存・バックアップ / 復元元の区別",
+          "before": true,
+          "after": true
+        },
+        "vlans": {
+          "title": "VLAN / native・タグ・経路",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}
