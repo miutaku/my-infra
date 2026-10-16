@@ -28,7 +28,7 @@ jobs:
             if (endpoint.protocol !== 'https:' || endpoint.pathname !== '/events') {
               throw new Error('Invalid architecture event endpoint');
             }
-            const token = await core.getIDToken('https://github.com/miutaku/architecture-automation');
+            const token = await core.getIDToken('https://architecture-event-ingress.mtakumi-0925.workers.dev');
             core.setSecret(token);
             for (let attempt = 0; attempt < 3; attempt++) {
               try {
