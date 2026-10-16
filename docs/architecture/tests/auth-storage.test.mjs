@@ -1,9 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,writeFileSync,rmSync,readFileSync} from 'node:fs';
+import {mkdtempSync,writeFileSync,rmSync,readFileSync,symlinkSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {createPersister,readAuth} from '../../../k8s/pve/architecture-automation/persist-auth.mjs';
+import {createPersister,readAuth,isMain} from '../../../k8s/pve/architecture-automation/persist-auth.mjs';
 import {parse,parseAllDocuments} from 'yaml';
 const auth=token=>JSON.stringify({auth_mode:'chatgpt',tokens:{refresh_token:token}});
 const secret=raw=>({metadata:{resourceVersion:'7'},data:{'auth.json':Buffer.from(raw).toString('base64')}});
@@ -40,4 +40,11 @@ test('runner has no NAS or Kubernetes token mount; helper can access only one Se
  const role=resources.find(row=>row.kind==='Role');
  assert.equal(role.metadata.namespace,'architecture-automation');
  assert.deepEqual(role.rules,[{apiGroups:[''],resources:['secrets'],resourceNames:['codex-account-auth'],verbs:['get','update']}]);
+});
+
+test('recognizes the entrypoint through a projected ConfigMap symlink',t=>{
+ const dir=mkdtempSync(join(tmpdir(),'auth-entry-test-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const url=new URL('../../../k8s/pve/architecture-automation/persist-auth.mjs',import.meta.url);
+ const link=join(dir,'persist-auth.mjs');symlinkSync(url,link);
+ assert.equal(isMain(url.href,link),true);assert.equal(isMain(import.meta.url,link),false);
 });
