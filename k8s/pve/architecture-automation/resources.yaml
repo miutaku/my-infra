@@ -1,0 +1,65 @@
+# OpenAI credentials are NOT declared in Git. codex-account-auth is created
+# once during the approved migration, then refreshed by a narrowly scoped helper.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: architecture-automation
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: github-automation-token-secret
+  namespace: architecture-automation
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: bitwarden
+    kind: ClusterSecretStore
+  target:
+    name: github-automation-token-secret
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+  - secretKey: github_token
+    remoteRef:
+      key: GITHUB_REVENTER_RUNNER_PAT
+      conversionStrategy: Default
+      decodingStrategy: None
+      metadataPolicy: None
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: codex-auth-persist
+  namespace: architecture-automation
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: codex-auth-persist
+  namespace: architecture-automation
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  resourceNames:
+  - codex-account-auth
+  verbs:
+  - get
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: codex-auth-persist
+  namespace: architecture-automation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: codex-auth-persist
+subjects:
+- kind: ServiceAccount
+  name: codex-auth-persist
+  namespace: architecture-automation
