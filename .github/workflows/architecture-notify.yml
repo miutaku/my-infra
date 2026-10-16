@@ -1,0 +1,54 @@
+name: Notify architecture automation
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: architecture-notify-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  notify:
+    if: github.ref == 'refs/heads/main' && vars.ARCHITECTURE_EVENT_URL != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      # No checkout or source repository code runs in this job.
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          EVENT_URL: ${{ vars.ARCHITECTURE_EVENT_URL }}
+        with:
+          script: |
+            const endpoint = new URL(process.env.EVENT_URL);
+            if (endpoint.protocol !== 'https:' || endpoint.pathname !== '/events') {
+              throw new Error('Invalid architecture event endpoint');
+            }
+            const token = await core.getIDToken('https://github.com/miutaku/architecture-automation');
+            core.setSecret(token);
+            for (let attempt = 0; attempt < 3; attempt++) {
+              try {
+                const response = await fetch(endpoint, {
+                  method: 'POST', redirect: 'error',
+                  headers: { Authorization: `Bearer ${token}` },
+                  signal: AbortSignal.timeout(15000),
+                });
+                await response.body?.cancel();
+                if (response.status === 202) {
+                  core.info('Architecture update notification accepted');
+                  return;
+                }
+                if (response.status < 500) {
+                  core.setFailed(`Architecture notification rejected (${response.status})`);
+                  return;
+                }
+              } catch {
+                // Never log bearer tokens or response bodies.
+              }
+              if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            core.setFailed('Architecture notification unavailable; rerun this workflow');
