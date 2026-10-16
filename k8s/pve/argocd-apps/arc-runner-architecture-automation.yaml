@@ -17,55 +17,151 @@ spec:
     targetRevision: 0.9.3
     helm:
       releaseName: architecture-automation-codex
-      values: "githubConfigUrl: https://github.com/miutaku/architecture-automation\n\
-        githubConfigSecret: github-automation-token-secret\ncontrollerServiceAccount:\n\
-        \  namespace: arc-systems\n  name: arc-systems-gha-rs-controller\nminRunners:\
-        \ 1\nmaxRunners: 1\ntemplate:\n  spec:\n    securityContext:\n      fsGroup:\
-        \ 1001\n      fsGroupChangePolicy: OnRootMismatch\n      seccompProfile:\n\
-        \        type: RuntimeDefault\n    nodeSelector:\n      kubernetes.io/arch:\
-        \ amd64\n      kubernetes.io/os: linux\n    affinity:\n      nodeAffinity:\n\
-        \        preferredDuringSchedulingIgnoredDuringExecution:\n        - weight:\
-        \ 100\n          preference:\n            matchExpressions:\n            -\
-        \ key: topology.miutaku/proxmox-node\n              operator: In\n       \
-        \       values:\n              - pve-x570\n        - weight: 20\n        \
-        \  preference:\n            matchExpressions:\n            - key: topology.miutaku/proxmox-node\n\
-        \              operator: In\n              values:\n              - pve-b550m\n\
-        \    containers:\n    - name: runner\n      image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807\n\
-        \      command:\n      - /home/runner/run.sh\n      env:\n      - name: RUNNER_TOOL_CACHE\n\
-        \        value: /opt/hostedtoolcache\n      resources:\n        requests:\n\
-        \          cpu: 1000m\n          memory: 1Gi\n        limits:\n          cpu:\
-        \ '2'\n          memory: 4Gi\n      volumeMounts:\n      - name: codex-auth\n\
-        \        mountPath: /home/runner/.codex\n      - name: toolcache\n       \
-        \ mountPath: /opt/hostedtoolcache\n      securityContext:\n        allowPrivilegeEscalation:\
-        \ false\n        capabilities:\n          drop:\n          - ALL\n    volumes:\n\
-        \    - name: codex-auth\n      emptyDir:\n        medium: Memory\n       \
-        \ sizeLimit: 128Mi\n    - name: toolcache\n      emptyDir: {}\n    - name:\
-        \ auth-seed\n      secret:\n        secretName: codex-account-auth\n     \
-        \   defaultMode: 288\n    - name: persist-script\n      configMap:\n     \
-        \   name: codex-auth-persist\n        defaultMode: 292\n    - name: private-service-account\n\
-        \      projected:\n        defaultMode: 288\n        sources:\n        - serviceAccountToken:\n\
-        \            path: token\n            expirationSeconds: 3600\n        - configMap:\n\
-        \            name: kube-root-ca.crt\n            items:\n            - key:\
-        \ ca.crt\n              path: ca.crt\n    automountServiceAccountToken: false\n\
-        \    serviceAccountName: codex-auth-persist\n    initContainers:\n    - name:\
-        \ seed-account-auth\n      image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807\n\
-        \      command:\n      - /bin/sh\n      - -c\n      args:\n      - set -eu;\
-        \ umask 077; cp /seed/auth.json /state/auth.json; chmod 0600 /state/auth.json\n\
-        \      securityContext: &id001\n        runAsNonRoot: true\n        runAsUser:\
-        \ 1001\n        runAsGroup: 1001\n        allowPrivilegeEscalation: false\n\
-        \        capabilities:\n          drop:\n          - ALL\n      volumeMounts:\n\
-        \      - name: auth-seed\n        mountPath: /seed\n        readOnly: true\n\
-        \      - name: codex-auth\n        mountPath: /state\n    - name: persist-account-auth\n\
-        \      restartPolicy: Always\n      image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807\n\
-        \      command:\n      - /home/runner/externals/node20/bin/node\n      - /scripts/persist-auth.mjs\n\
-        \      securityContext: *id001\n      resources:\n        requests:\n    \
-        \      cpu: 10m\n          memory: 32Mi\n        limits:\n          cpu: 100m\n\
-        \          memory: 128Mi\n      volumeMounts:\n      - name: codex-auth\n\
-        \        mountPath: /state\n      - name: persist-script\n        mountPath:\
-        \ /scripts\n        readOnly: true\n      - name: private-service-account\n\
-        \        mountPath: /var/run/private-service-account\n        readOnly: true\n\
-        \  metadata:\n    labels:\n      architecture.miutaku/credential-runner: 'true'\n\
-        runnerScaleSetName: architecture-automation-codex\n"
+      values: |
+        githubConfigUrl: https://github.com/miutaku/architecture-automation
+        githubConfigSecret: github-automation-token-secret
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-systems-gha-rs-controller
+        minRunners: 1
+        maxRunners: 1
+        template:
+          spec:
+            securityContext:
+              fsGroup: 1001
+              fsGroupChangePolicy: OnRootMismatch
+              seccompProfile:
+                type: RuntimeDefault
+            nodeSelector:
+              kubernetes.io/arch: amd64
+              kubernetes.io/os: linux
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                    - key: topology.miutaku/proxmox-node
+                      operator: In
+                      values:
+                      - pve-x570
+                - weight: 20
+                  preference:
+                    matchExpressions:
+                    - key: topology.miutaku/proxmox-node
+                      operator: In
+                      values:
+                      - pve-b550m
+            containers:
+            - name: runner
+              image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807
+              command:
+              - /home/runner/run.sh
+              env:
+              - name: RUNNER_TOOL_CACHE
+                value: /opt/hostedtoolcache
+              resources:
+                requests:
+                  cpu: 1000m
+                  memory: 1Gi
+                limits:
+                  cpu: '2'
+                  memory: 4Gi
+              volumeMounts:
+              - name: codex-auth
+                mountPath: /home/runner/.codex
+              - name: toolcache
+                mountPath: /opt/hostedtoolcache
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+            volumes:
+            - name: codex-auth
+              emptyDir:
+                medium: Memory
+                sizeLimit: 128Mi
+            - name: toolcache
+              emptyDir: {}
+            - name: auth-seed
+              secret:
+                secretName: codex-account-auth
+                defaultMode: 288
+            - name: persist-script
+              configMap:
+                name: codex-auth-persist
+                defaultMode: 292
+            - name: private-service-account
+              projected:
+                defaultMode: 288
+                sources:
+                - serviceAccountToken:
+                    path: token
+                    expirationSeconds: 3600
+                - configMap:
+                    name: kube-root-ca.crt
+                    items:
+                    - key: ca.crt
+                      path: ca.crt
+            automountServiceAccountToken: false
+            serviceAccountName: codex-auth-persist
+            initContainers:
+            - name: seed-account-auth
+              image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807
+              command:
+              - /bin/sh
+              - -c
+              args:
+              - set -eu; umask 077; cp /seed/auth.json /state/auth.json; chmod 0600 /state/auth.json
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1001
+                runAsGroup: 1001
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+              volumeMounts:
+              - name: auth-seed
+                mountPath: /seed
+                readOnly: true
+              - name: codex-auth
+                mountPath: /state
+            - name: persist-account-auth
+              restartPolicy: Always
+              image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807
+              command:
+              - /home/runner/externals/node20/bin/node
+              - /scripts/persist-auth.mjs
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1001
+                runAsGroup: 1001
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              volumeMounts:
+              - name: codex-auth
+                mountPath: /state
+              - name: persist-script
+                mountPath: /scripts
+                readOnly: true
+              - name: private-service-account
+                mountPath: /var/run/private-service-account
+                readOnly: true
+          metadata:
+            labels:
+              architecture.miutaku/credential-runner: 'true'
+        runnerScaleSetName: architecture-automation-codex
   destination:
     server: https://kubernetes.default.svc
     namespace: architecture-automation
