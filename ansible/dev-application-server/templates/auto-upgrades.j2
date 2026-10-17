@@ -1,0 +1,13 @@
+// Managed by Ansible. Keep Ubuntu's default security origins enabled.
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}-updates";
+};
+// Only the third-party repositories configured for this development host.
+Unattended-Upgrade::Origins-Pattern {
+{% for pattern in dev_auto_upgrade_origins %}
+    "{{ pattern }}";
+{% endfor %}
+};
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ dev_auto_reboot_time }}";

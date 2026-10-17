@@ -1,13 +1,6 @@
 ---
-- name: Configure automatic security updates
-  ansible.builtin.copy:
-    dest: /etc/apt/apt.conf.d/20auto-upgrades
-    content: |
-      APT::Periodic::Update-Package-Lists "1";
-      APT::Periodic::Unattended-Upgrade "1";
-    owner: root
-    group: root
-    mode: "0644"
+- name: Configure automatic package maintenance
+  ansible.builtin.import_tasks: auto-update.yml
 
 - name: Create managed user configuration directories
   ansible.builtin.file:

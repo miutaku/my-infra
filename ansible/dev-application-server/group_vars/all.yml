@@ -2,6 +2,16 @@ dev_user: miutaku
 dev_group: miutaku
 dev_home: /home/miutaku
 
+# Times use the server's local timezone (Asia/Tokyo).
+dev_auto_upgrade_time: "04:00:00"
+dev_auto_reboot_time: "05:00"
+dev_auto_upgrade_origins:
+  - "site=download.docker.com"
+  - "site=pkgs.k8s.io"
+  - "site=packages.microsoft.com"
+  - "site=apt.releases.hashicorp.com"
+  - "site=dl.google.com"
+
 dev_apt_packages:
   - ansible-core
   - apt-transport-https

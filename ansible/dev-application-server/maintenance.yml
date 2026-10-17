@@ -1,0 +1,8 @@
+---
+- name: Configure automatic maintenance for the development application server
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Configure automatic package maintenance
+      ansible.builtin.import_tasks: tasks/auto-update.yml
