@@ -21,6 +21,50 @@ config:
       timeout: 5s
       icmp:
         preferred_ip_protocol: "ip4"
+    nextcloud_status:
+      prober: http
+      timeout: 5s
+      http:
+        follow_redirects: false
+        preferred_ip_protocol: ip4
+        fail_if_body_not_matches_regexp:
+          - '"installed"\s*:\s*true'
+          - '"maintenance"\s*:\s*false'
+          - '"needsDbUpgrade"\s*:\s*false'
+    tcp_connect:
+      prober: tcp
+      timeout: 5s
+      tcp:
+        preferred_ip_protocol: ip4
+    https_kubernetes_ready:
+      prober: http
+      timeout: 5s
+      http:
+        # The private VIP uses cluster PKI, not a public CA. Readiness is public
+        # to system:unauthenticated; do not put a privileged bearer token here.
+        tls_config:
+          insecure_skip_verify: true
+        fail_if_body_not_matches_regexp: ['^ok$']
+    dns_internal:
+      prober: dns
+      timeout: 5s
+      dns:
+        preferred_ip_protocol: ip4
+        query_name: pve-x570.miutaku.internal
+        query_type: A
+        valid_rcodes: [NOERROR]
+        validate_answer_rrs:
+          fail_if_not_matches_regexp: ['pve-x570\.miutaku\.internal\.\s+.*IN\s+A\s+192\.168\.0\.115']
+    dns_external:
+      prober: dns
+      timeout: 5s
+      dns:
+        preferred_ip_protocol: ip4
+        query_name: example.com
+        query_type: A
+        valid_rcodes: [NOERROR]
+        validate_answer_rrs:
+          fail_if_none_matches_regexp: ['.+\s+IN\s+A\s+.+']
 
 # ServiceMonitor はこのリポジトリでは管理しない
 serviceMonitor:

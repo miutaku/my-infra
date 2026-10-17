@@ -26,6 +26,14 @@ config:
         - targets:
             - localhost:8429
 
+    - job_name: kube-state-metrics
+      static_configs:
+        - targets: ["kube-state-metrics.monitoring.svc.cluster.local:8080"]
+
+    - job_name: victoria-metrics
+      static_configs:
+        - targets: ["victoria-metrics.monitoring.svc.cluster.local:8428"]
+
     - job_name: kubernetes-pods
       kubernetes_sd_configs:
         - role: pod
@@ -164,6 +172,8 @@ config:
 
     - job_name: nut
       metrics_path: /ups_metrics
+      scrape_interval: 15s
+      scrape_timeout: 10s
       static_configs:
         - targets: ["nut-exporter.monitoring.svc.cluster.local:9199"]
           labels:
@@ -240,6 +250,18 @@ config:
         - targets: ["http://nextcloud.app-nextcloud.svc.cluster.local:80/status.php"]
           labels:
             instance: nextcloud
+            module: nextcloud_status
+        - targets: ["http://tnlastation.app-tnlastation.svc.cluster.local:8888/api/version"]
+          labels:
+            instance: tnlastation
+            module: http_2xx
+        - targets: ["http://coupon-manager-api.app-coupon-manager.svc.cluster.local:8080/health"]
+          labels:
+            instance: coupon-manager
+            module: http_2xx
+        - targets: ["http://loockit.app-loockit.svc.cluster.local:8080/readyz"]
+          labels:
+            instance: loockit
             module: http_2xx
         - targets: ["https://192.168.0.132:11443"]
           labels:
@@ -252,6 +274,63 @@ config:
           target_label: __param_module
         - action: labeldrop
           regex: module
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    - job_name: blackbox_dns
+      metrics_path: /probe
+      static_configs:
+        - targets: ["192.168.20.201:53"]
+          labels:
+            instance: internal-dns
+            module: dns_internal
+        - targets: ["192.168.20.201:53"]
+          labels:
+            instance: external-dns
+            module: dns_external
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [module]
+          target_label: __param_module
+        - action: labeldrop
+          regex: module
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    - job_name: blackbox_api
+      metrics_path: /probe
+      params:
+        module: [https_kubernetes_ready]
+      static_configs:
+        - targets: ["https://192.168.20.228:6443/readyz"]
+          labels:
+            instance: home-k8s-api
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    # Transport availability only; authenticated DB queries and NFS writes are separate checks.
+    - job_name: blackbox_tcp
+      metrics_path: /probe
+      params:
+        module: [tcp_connect]
+      static_configs:
+        - targets: ["mariadb.infra-db.svc.cluster.local:3306"]
+          labels: {instance: mariadb}
+        - targets: ["postgres.infra-db.svc.cluster.local:5432"]
+          labels: {instance: postgres}
+        - targets: ["nextcloud-redis.app-nextcloud.svc.cluster.local:6379"]
+          labels: {instance: redis}
+        - targets: ["192.168.20.191:2049"]
+          labels: {instance: nas-01-nfs}
+        - targets: ["192.168.20.192:2049"]
+          labels: {instance: nas-02-nfs}
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
         - target_label: __address__
           replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
 

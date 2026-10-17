@@ -1,0 +1,26 @@
+# Existing UID and contact point names: discover through Grafana before planning.
+environments = {
+  home = {
+    datasource_uid = "REPLACE_WITH_HOME_PROMETHEUS_UID"
+    cluster        = "home-k8s"
+    profile        = "home"
+    features       = ["kubernetes", "probes", "backups"]
+  }
+  # stg = {
+  #   datasource_uid = "REPLACE_WITH_STG_PROMETHEUS_UID"
+  #   cluster        = "oke-stg"
+  #   profile        = "oke"
+  #   features       = ["kubernetes"]
+  # }
+  # prd = {
+  #   datasource_uid = "REPLACE_WITH_PRD_PROMETHEUS_UID"
+  #   cluster        = "oke-prd"
+  #   profile        = "oke"
+  #   features       = ["kubernetes"]
+  # }
+}
+contact_points = {
+  warn     = "REPLACE_WITH_WARN_RECEIVER"
+  critical = "REPLACE_WITH_CRITICAL_RECEIVER"
+}
+paused = true

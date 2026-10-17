@@ -1,0 +1,57 @@
+name: Grafana monitoring validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - terraform/grafana-cloud/**
+      - scripts/test-grafana-monitoring.py
+      - scripts/check-grafana-monitoring.py
+      - scripts/grafana-monitoring.py
+      - .github/workflows/grafana_monitoring.yml
+      - k8s/pve/vmagent/**
+      - k8s/pve/blackbox-exporter/**
+      - k8s/pve/kube-state-metrics/**
+      - k8s/pve/argocd-apps/kube-state-metrics.yaml
+  push:
+    branches: [main]
+    paths:
+      - terraform/grafana-cloud/**
+      - scripts/test-grafana-monitoring.py
+      - scripts/check-grafana-monitoring.py
+      - scripts/grafana-monitoring.py
+      - .github/workflows/grafana_monitoring.yml
+      - k8s/pve/vmagent/**
+      - k8s/pve/blackbox-exporter/**
+      - k8s/pve/kube-state-metrics/**
+      - k8s/pve/argocd-apps/kube-state-metrics.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+      - name: Terraform checks (no credentials or apply)
+        working-directory: terraform/grafana-cloud
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false -lockfile=readonly
+          terraform validate -no-color
+          terraform test -no-color
+      - name: Install pinned Prometheus test tools
+        run: |
+          curl --fail --silent --show-error --location \
+            https://github.com/prometheus/prometheus/releases/download/v3.15.0/prometheus-3.15.0.linux-amd64.tar.gz \
+            --output "$RUNNER_TEMP/prometheus.tar.gz"
+          echo "2a542df32eac02ee17b9d844fb2aa1de00dafa5476579ba8a3ba862e9d572ea0  $RUNNER_TEMP/prometheus.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/prometheus.tar.gz" -C "$RUNNER_TEMP" prometheus-3.15.0.linux-amd64/promtool
+      - name: PromQL and alert behavior checks
+        run: python3 scripts/test-grafana-monitoring.py --promtool "$RUNNER_TEMP/prometheus-3.15.0.linux-amd64/promtool"
+      - name: Render Kubernetes resources
+        run: kubectl kustomize k8s/pve/kube-state-metrics > "$RUNNER_TEMP/kube-state-metrics.yaml"

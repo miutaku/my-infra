@@ -69,7 +69,7 @@ PRD OKEのkubeconfigはOCIのPRDプロファイルで取得し、認証のexec�
 | OKE定義 | [terraform/oci/](terraform/oci/)、[k8s/oci/](k8s/oci/) |
 | ArgoCD定義 | [k8s/pve/argocd/](k8s/pve/argocd/)、[k8s/pve/reventer-gitops/](k8s/pve/reventer-gitops/) |
 | ネットワーク | [ansible/ix2215/](ansible/ix2215/)、[terraform/cloudflare/](terraform/cloudflare/) |
-| 監視 | [k8s/pve/vmagent/](k8s/pve/vmagent/)、[terraform/oci-observability/](terraform/oci-observability/)、[terraform/oci-observability-stg/](terraform/oci-observability-stg/) |
+| 監視 | [Grafana Cloud / Terraform](terraform/grafana-cloud/)、[k8s/pve/vmagent/](k8s/pve/vmagent/)、[terraform/oci-observability/](terraform/oci-observability/)、[terraform/oci-observability-stg/](terraform/oci-observability-stg/) |
 | UPS・ストレージ | [UPSシャットダウン](docs/ups-shutdown.md)、[TrueNAS NFS](docs/truenas-nfs-setup.md) |
 | 管理端末セットアップ | [scripts/setup-k8s-tools](scripts/setup-k8s-tools)、[scripts/setup-kubeconfig](scripts/setup-kubeconfig) |
 
