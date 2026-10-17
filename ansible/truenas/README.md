@@ -47,6 +47,8 @@ truenas_datasets:
 
 worker03・04はNFS接続元がVLAN10のため、`truenas_nfs_additional_networks`で
 `192.168.10.107/32`・`192.168.10.109/32`を各共有の許可先へ追加する。
+既存のVLAN10全体の許可がある録画用共有は`nfs.additional_networks: []`で
+重複する/32追加を省略し、既存の許可ネットワークを維持する。
 共有アクセスだけの更新は`ansible-playbook nfs-access.yml -K`で実行できる。
 このplaybookはデータセット作成、所有権・モード変更、NFSサービス再起動を行わない。
 
