@@ -6,6 +6,8 @@ dev_home: /home/miutaku
 dev_auto_upgrade_time: "18:00:00"
 dev_reboot_notify_time: "19:00:00"
 dev_reboot_webhook_secret: REBOOT_NOTIFY_WEBHOOK
+# Enable only after the external controller and Discord interactions are ready.
+dev_reboot_controller_enabled: true
 dev_auto_reboot_time: "05:00"
 dev_auto_upgrade_origins:
   - "site=download.docker.com"

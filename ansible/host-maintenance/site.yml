@@ -1,0 +1,117 @@
+---
+- name: Install Discord-controlled host maintenance
+  hosts: all
+  become: true
+  gather_facts: false
+  pre_tasks:
+    - name: Require the deployed controller endpoint
+      ansible.builtin.assert:
+        that:
+          - host_maintenance_controller_url is match('https://[a-zA-Z0-9.-]+$')
+          - inventory_hostname in ['dev-app-server', 'pve-x570', 'pve-b550m']
+        fail_msg: Set host_maintenance_controller_url after deploying and configuring Discord.
+
+    - name: Read agent credentials from BSM
+      ansible.builtin.command:
+        argv: [bws, secret, list, --output, json]
+      delegate_to: localhost
+      become: false
+      check_mode: false
+      changed_when: false
+      register: host_maintenance_bws
+      no_log: true
+
+    - name: Select this host's credential
+      ansible.builtin.set_fact:
+        host_maintenance_token: "{{ ((host_maintenance_bws.stdout | from_json | items2dict(key_name='key', value_name='value'))[host_maintenance_agent_tokens_secret] | from_json)[inventory_hostname] }}"
+      no_log: true
+
+    - name: Validate the agent token
+      ansible.builtin.assert:
+        that:
+          - host_maintenance_token | length >= 32
+      no_log: true
+
+  tasks:
+    - name: Create the root-only credential directory
+      ansible.builtin.file:
+        path: /etc/host-maintenance
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Install the agent credential
+      ansible.builtin.copy:
+        content: "{{ {'controller': host_maintenance_controller_url, 'host': inventory_hostname, 'token': host_maintenance_token} | to_json }}\n"
+        dest: /etc/host-maintenance/agent-config
+        owner: root
+        group: root
+        mode: '0600'
+      no_log: true
+
+    - name: Install the maintenance agent
+      ansible.builtin.copy:
+        src: maintenance-agent.py
+        dest: /usr/local/sbin/host-maintenance-agent
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Install the agent units
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/host-maintenance-{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: [agent.service, agent.timer]
+      register: host_maintenance_units
+
+    - name: Stop the previous local reboot timers on the development VM
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: [dev-app-reboot-notify.timer, dev-app-reboot.timer]
+      when: inventory_hostname == 'dev-app-server'
+
+    - name: Require explicit approval for PVE package installation and reboot
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/99zz-host-maintenance
+        content: |
+          APT::Periodic::Unattended-Upgrade "0";
+          Unattended-Upgrade::Automatic-Reboot "false";
+        owner: root
+        group: root
+        mode: '0644'
+      when: inventory_hostname != 'dev-app-server'
+
+    - name: Install PVE metadata refresh units
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/host-maintenance-{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: [metadata.service, metadata.timer]
+      register: host_maintenance_metadata_units
+      when: inventory_hostname != 'dev-app-server'
+
+    - name: Enable the PVE metadata refresh timer
+      ansible.builtin.systemd_service:
+        name: host-maintenance-metadata.timer
+        daemon_reload: true
+        enabled: true
+        state: "{{ 'restarted' if host_maintenance_metadata_units.changed else 'started' }}"
+      when:
+        - inventory_hostname != 'dev-app-server'
+        - not (ansible_check_mode and host_maintenance_metadata_units.changed)
+
+    - name: Enable the maintenance agent timer
+      ansible.builtin.systemd_service:
+        name: host-maintenance-agent.timer
+        daemon_reload: true
+        enabled: true
+        state: "{{ 'restarted' if host_maintenance_units.changed else 'started' }}"
+      when: not (ansible_check_mode and host_maintenance_units.changed)

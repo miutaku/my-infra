@@ -1,0 +1,11 @@
+[Unit]
+Description=Check PVE update candidates before the evening notification
+
+[Timer]
+OnCalendar=*-*-* 18:00:00 Asia/Tokyo
+RandomizedDelaySec=15m
+Persistent=false
+Unit=host-maintenance-metadata.service
+
+[Install]
+WantedBy=timers.target

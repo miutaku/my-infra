@@ -1,0 +1,11 @@
+[Unit]
+Description=Check host maintenance authorization every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=false
+Unit=host-maintenance-agent.service
+
+[Install]
+WantedBy=timers.target

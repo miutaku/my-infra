@@ -1,0 +1,42 @@
+{
+  "name": "home-maintenance-control",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-17",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "FLEET",
+        "class_name": "MaintenanceFleet"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "MaintenanceFleet"
+      ]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 10 * * *"
+    ]
+  },
+  "vars": {
+    "DISCORD_PUBLIC_KEY": "2293bc1e4678b5d883c6e9a0ea042cc8261fcd6f8f39aa4d257fbb56e357a4ef",
+    "DISCORD_CHANNEL_ID": "1560827731342786580",
+    "DISCORD_GUILD_ID": "1358762884028432494",
+    "DISCORD_OPERATOR_IDS": "459960653390544906"
+  },
+  "account_id": "d1221137443d7862cbdd136bdffb2dc5"
+}

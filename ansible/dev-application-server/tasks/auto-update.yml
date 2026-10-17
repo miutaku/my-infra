@@ -122,8 +122,8 @@
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     daemon_reload: "{{ dev_reboot_units.changed }}"
-    enabled: true
-    state: "{{ 'restarted' if dev_reboot_units.changed else 'started' }}"
+    enabled: "{{ not dev_reboot_controller_enabled }}"
+    state: "{{ 'stopped' if dev_reboot_controller_enabled else ('restarted' if dev_reboot_units.changed else 'started') }}"
   loop:
     - dev-app-reboot-notify.timer
     - dev-app-reboot.timer

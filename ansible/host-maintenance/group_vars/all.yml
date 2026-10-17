@@ -1,0 +1,3 @@
+# Set the deployed workers.dev origin before activation; HTTPS is mandatory.
+host_maintenance_controller_url: "https://home-maintenance-control.mtakumi-0925.workers.dev"
+host_maintenance_agent_tokens_secret: REBOOT_AGENT_TOKENS_JSON

@@ -1,0 +1,19 @@
+{
+  "name": "maintenance-control",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types --include-runtime=false --strict-vars=false",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.4",
+    "@cloudflare/workers-types": "5.20261016.1",
+    "@types/node": "^22",
+    "typescript": "~5.9.3",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.1"
+  }
+}

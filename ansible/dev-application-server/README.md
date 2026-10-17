@@ -25,6 +25,11 @@ ansible-playbook site.yml
 
 ## 自動更新と再起動
 
+Discordからの延期・日時指定・保留、およびPVEの承認付き更新は
+[host-maintenance](../host-maintenance/README.md)で管理する。
+`dev_reboot_controller_enabled: true`の場合は、以下の旧ローカル通知・再起動timerを無効にする。
+パッケージの18時台の自動更新はこのplaybookで継続する。
+
 APTパッケージは毎日18:00〜18:15（サーバーのAsia/Tokyo時刻）に自動更新を開始する。
 Ubuntuの標準セキュリティ更新に加え、通常の`-updates`と、設定済みのDocker、
 Kubernetes、Azure CLI、HashiCorp、Googleのリポジトリも対象とする。

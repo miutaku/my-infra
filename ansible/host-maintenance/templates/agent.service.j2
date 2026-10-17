@@ -1,0 +1,13 @@
+[Unit]
+Description=Check the approved maintenance plan for {{ inventory_hostname }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+StateDirectory=host-maintenance
+StateDirectoryMode=0700
+LoadCredential=agent-config:/etc/host-maintenance/agent-config
+ExecStart=/usr/local/sbin/host-maintenance-agent
+UMask=0077
+TimeoutStartSec=3h
