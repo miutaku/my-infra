@@ -11,3 +11,8 @@ contact_points = {
   critical = "REPLACE_WITH_CRITICAL_RECEIVER"
 }
 paused = true
+
+discord_receiver_uids = {
+  warn     = "existing-warning-integration-uid"
+  critical = "existing-critical-integration-uid"
+}

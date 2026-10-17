@@ -13,3 +13,9 @@ contact_points = {
 
 # Collection and PDC queries validated before enabling notifications.
 paused = false
+
+# Public identifiers, verified with the read-only provisioning API.
+discord_receiver_uids = {
+  warn     = "afl6jwnytrjeoa"
+  critical = "efl6k3pt6sni8f"
+}

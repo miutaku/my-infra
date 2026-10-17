@@ -8,15 +8,16 @@ variable "contact_points" {
 }
 variable "catalog" {
   type = list(object({
-    id          = string
-    title       = string
-    expression  = string
-    duration    = string
-    severity    = string
-    service     = string
-    group       = string
-    feature     = string
-    description = string
+    id             = string
+    title          = string
+    expression     = string
+    duration       = string
+    severity       = string
+    service        = string
+    group          = string
+    feature        = string
+    description    = string
+    display_target = optional(string)
   }))
 }
 variable "targets" {

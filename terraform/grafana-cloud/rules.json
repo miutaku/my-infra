@@ -19,7 +19,7 @@
     "service": "hosts",
     "group": "capacity",
     "feature": "",
-    "description": "Host memory warn"
+    "description": "利用可能メモリが5%以上15%未満の状態です。メモリ余力が低下しています。対象ホストのプロセス別使用量と増加傾向を確認してください。"
   },
   {
     "id": "memory-critical",
@@ -30,7 +30,7 @@
     "service": "hosts",
     "group": "capacity",
     "feature": "",
-    "description": "Host memory critical"
+    "description": "利用可能メモリが5%未満です。メモリ不足による処理失敗のリスクがあります。対象ホストの使用量、OOM記録、影響サービスを確認してください。"
   },
   {
     "id": "oom",
@@ -52,7 +52,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "Persistent filesystem capacity warn"
+    "description": "永続ファイルシステムの容量使用率が80%超90%以下です。書き込み余力を確認し、対象mountpointの使用量・増加元を調べてください。"
   },
   {
     "id": "inode-warn",
@@ -63,7 +63,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "Persistent filesystem inode capacity warn"
+    "description": "永続ファイルシステムのinode使用率が80%超90%以下です。書き込み余力を確認し、対象mountpointの使用量・増加元を調べてください。"
   },
   {
     "id": "disk-critical",
@@ -74,7 +74,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "Persistent filesystem capacity critical"
+    "description": "永続ファイルシステムの容量使用率が90%超です。書き込み余力を確認し、対象mountpointの使用量・増加元を調べてください。"
   },
   {
     "id": "inode-critical",
@@ -85,7 +85,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "Persistent filesystem inode capacity critical"
+    "description": "永続ファイルシステムのinode使用率が90%超です。書き込み余力を確認し、対象mountpointの使用量・増加元を調べてください。"
   },
   {
     "id": "filesystem-readonly",
@@ -96,7 +96,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "Persistent filesystem read-only"
+    "description": "永続ファイルシステムが読み取り専用になっています。書き込み処理への影響を確認し、対象mountpointのマウント状態とカーネルログを調べてください。"
   },
   {
     "id": "zpool-state",
@@ -107,7 +107,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "PVE ZFS pool unhealthy"
+    "description": "ZFS poolがdegraded/faulted/offline等の異常状態です。対象poolのzpool statusとデバイス状態を確認してください。"
   },
   {
     "id": "ups-on-battery",
@@ -118,7 +118,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS on battery"
+    "description": "UPSがバッテリー運転中です（残量85%超）。停電の継続と対象UPSの残量を確認してください。80%でのホスト停止に先行する通知です。"
   },
   {
     "id": "ups-shutdown-near",
@@ -140,7 +140,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS unsafe state"
+    "description": "UPSがLB/FSD/SD/OFF/OVERのいずれかを報告しています。給電継続に影響する状態です。対象UPSの状態フラグと接続ホストの停止状況を確認してください。"
   },
   {
     "id": "ups-replace",
@@ -151,7 +151,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS battery replacement required"
+    "description": "UPSがバッテリー交換要求（RB）を報告しています。停電時の保護能力を確認し、対象UPSのバッテリー点検・交換を計画してください。"
   },
   {
     "id": "ups-load-warn",
@@ -162,7 +162,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS load warning"
+    "description": "UPS負荷が70%超90%以下です。給電の余力が低下しています。対象UPSの接続機器と負荷推移を確認してください。"
   },
   {
     "id": "ups-load-critical",
@@ -173,7 +173,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS load critical"
+    "description": "UPS負荷が90%を超えています。接続機器への給電余力を確認し、対象UPSの負荷と状態フラグを調べてください。"
   },
   {
     "id": "ups-telemetry",
@@ -184,7 +184,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS telemetry unavailable"
+    "description": "UPS exporterのscrapeまたはNUTの取得が失敗しています。停電・残量の監視を保証できません。対象instanceへの接続とNUT/exporterのログを確認してください。"
   },
   {
     "id": "host-unreachable",
@@ -195,7 +195,7 @@
     "service": "infrastructure",
     "group": "availability",
     "feature": "",
-    "description": "Critical host unreachable"
+    "description": "主要ホストへのICMP probeが失敗しています。ホスト停止か通信経路の問題かは未判定です。対象instanceの電源、経路、他のサービス監視を確認してください。"
   },
   {
     "id": "management-unreachable",
@@ -206,7 +206,7 @@
     "service": "management",
     "group": "availability",
     "feature": "",
-    "description": "Management host unreachable"
+    "description": "管理ホストへのICMP probeが失敗しています。対象instanceの電源とネットワーク経路を確認してください。"
   },
   {
     "id": "lb-degraded",
@@ -217,7 +217,7 @@
     "service": "load-balancer",
     "group": "availability",
     "feature": "",
-    "description": "Load balancer redundancy lost"
+    "description": "lb-01/02の2台中1台だけがICMPに応答しています。冗長性が低下しています。両ホストの死活とHAProxy/Keepalivedの状態を確認してください。"
   },
   {
     "id": "lb-down",
@@ -228,7 +228,7 @@
     "service": "load-balancer",
     "group": "availability",
     "feature": "",
-    "description": "Both load balancers unreachable"
+    "description": "lb-01/02のICMP応答の合計が0です。ロードバランサ経路への影響を確認し、両ホストの電源・ネットワークを調べてください。"
   },
   {
     "id": "http-service",
@@ -239,7 +239,7 @@
     "service": "applications",
     "group": "availability",
     "feature": "",
-    "description": "Home application unavailable"
+    "description": "アプリケーションのHTTP probeが失敗しています。利用経路に影響する可能性があります。対象instanceのHTTP応答、probeログ、backendの状態を確認してください。"
   },
   {
     "id": "http-management",
@@ -250,7 +250,7 @@
     "service": "management",
     "group": "availability",
     "feature": "",
-    "description": "Management UI unavailable"
+    "description": "管理UIのHTTP probeが失敗しています。対象instanceのHTTP応答、プロセス、接続経路を確認してください。"
   },
   {
     "id": "probe-critical",
@@ -272,7 +272,7 @@
     "service": "observability",
     "group": "observability",
     "feature": "",
-    "description": "Exporter scrape failed"
+    "description": "exporterのscrapeが失敗しています。対象instanceのメトリクスが更新されません。exporterの稼働状態と収集側からの到達性を確認してください。"
   },
   {
     "id": "optional-scrape",
@@ -283,7 +283,7 @@
     "service": "optional-devices",
     "group": "observability",
     "feature": "",
-    "description": "IoT or speedtest collection failed"
+    "description": "IoTまたはspeedtestのscrapeが失敗しています。対象job/instanceのデータが更新されません。収集プロセスと接続を確認してください。"
   },
   {
     "id": "vmagent-backlog",
@@ -294,7 +294,7 @@
     "service": "observability",
     "group": "observability",
     "feature": "",
-    "description": "Metrics write queue growing"
+    "description": "vmagentの送信待ちデータが1 MiBを超え、10分間の傾向が増加しています。監視データの転送遅延を確認し、転送先の到達性とエラーを調べてください。"
   },
   {
     "id": "vmagent-drop",
@@ -305,7 +305,7 @@
     "service": "observability",
     "group": "observability",
     "feature": "",
-    "description": "Metrics samples dropped"
+    "description": "過去5分にvmagentの破棄サンプルが増加しました。監視データの欠落が発生しています。送信先・キュー制限とvmagentログを確認してください。"
   },
   {
     "id": "vmagent-blocked",
@@ -316,7 +316,7 @@
     "service": "observability",
     "group": "observability",
     "feature": "",
-    "description": "Metrics write queue blocked"
+    "description": "vmagentのremote-writeキューがblockedを報告しています。メトリクス転送への影響を確認し、送信先とキューの状態を調べてください。"
   },
   {
     "id": "freshness",
@@ -338,7 +338,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Kubernetes node not ready"
+    "description": "Kubernetes NodeのReady=trueが0です。対象nodeのCondition、kubelet、ネットワークを確認し、Pod配置への影響を調べてください。"
   },
   {
     "id": "node-pressure",
@@ -349,7 +349,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Kubernetes node pressure"
+    "description": "NodeがMemoryPressure/DiskPressure/PIDPressureを報告しています。対象nodeとconditionを確認し、リソース使用量・evictionイベントを調べてください。"
   },
   {
     "id": "control-plane-quorum",
@@ -360,7 +360,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Home control plane quorum at risk"
+    "description": "Readyなcontrolplane Nodeが2台未満、またはその系列がありません。制御系の冗長性を確認し、Node状態とetcd/APIの独立監視を調べてください。Node Readyだけでetcd quorumは断定できません。"
   },
   {
     "id": "home-workers-down",
@@ -371,7 +371,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "All home Kubernetes workers unavailable"
+    "description": "Readyなworker Nodeの合計が0、またはworkerの系列がありません。ワークロード稼働への影響を確認し、Node状態と収集の欠落を調べてください。"
   },
   {
     "id": "deployment-degraded",
@@ -382,7 +382,7 @@
     "service": "workloads",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Deployment replicas unavailable"
+    "description": "Deploymentのavailable replicaが1以上かつdesired未満です。冗長性・処理余力が低下しています。対象namespace/deploymentのPodとrolloutイベントを確認してください。"
   },
   {
     "id": "deployment-down",
@@ -393,7 +393,7 @@
     "service": "workloads",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Required deployment has no ready replicas"
+    "description": "稼働を要求する重要Deploymentのavailable replicaが0です。対象サービスへの影響を確認し、Pod状態、rollout、イベントを調べてください。"
   },
   {
     "id": "statefulset-degraded",
@@ -404,7 +404,7 @@
     "service": "workloads",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "StatefulSet replicas unavailable"
+    "description": "StatefulSetのready replicaが1以上かつdesired未満です。冗長性が低下しています。対象namespace/statefulsetのPod・volume・イベントを確認してください。"
   },
   {
     "id": "statefulset-down",
@@ -415,7 +415,7 @@
     "service": "databases",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Required StatefulSet unavailable"
+    "description": "稼働を要求する重要StatefulSetのready replicaが0です。対象サービスへの影響を確認し、Pod・volume・イベントを調べてください。"
   },
   {
     "id": "daemonset-degraded",
@@ -426,7 +426,7 @@
     "service": "workloads",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "DaemonSet scheduling incomplete"
+    "description": "DaemonSetにunavailable Podがあります。対象namespace/daemonsetの配置、Node状態、Podイベントを確認してください。"
   },
   {
     "id": "pvc-pending",
@@ -437,7 +437,7 @@
     "service": "storage",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Persistent volume claim pending"
+    "description": "PVCがPendingです。ストレージの確保待ちでPodを起動できない可能性があります。対象namespace/PVCのイベントとStorageClass・provisionerを確認してください。"
   },
   {
     "id": "pv-lost",
@@ -448,7 +448,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "kubernetes",
-    "description": "Persistent volume claim lost"
+    "description": "PVCがLostを報告しています。永続データへのアクセスに影響する可能性があります。対象PVCと対応PVの状態・ストレージ到達性を確認してください。"
   },
   {
     "id": "pod-restarts",
@@ -459,7 +459,7 @@
     "service": "workloads",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Container repeatedly restarting"
+    "description": "コンテナの再起動回数が過去15分に3回を超えています。対象namespace/pod/containerの終了理由、直前ログ、イベントを確認してください。"
   },
   {
     "id": "pod-pending",
@@ -470,7 +470,7 @@
     "service": "workloads",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Pod pending"
+    "description": "PodがPendingのままです。配置または起動準備が完了していません。対象namespace/podのイベント、リソース要求、volumeを確認してください。"
   },
   {
     "id": "ksm-missing",
@@ -481,7 +481,7 @@
     "service": "observability",
     "group": "observability",
     "feature": "kubernetes",
-    "description": "Kubernetes state collection missing"
+    "description": "Node Readyの状態系列が3分間ありません。Kubernetes状態監視を保証できません。kube-state-metricsの稼働、scrape、API参照権限を確認してください。"
   },
   {
     "id": "backup-db-warn",
@@ -514,7 +514,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backups",
-    "description": "Required backup job missing: mariadb-backup"
+    "description": "必須のbackup CronJobが5分間見つからないかsuspendされています。対象CronJob（mariadb-backup）の存在・suspend設定とGitOps同期を確認してください。定期backupの実行に影響します。"
   },
   {
     "id": "backup-nas-warn",
@@ -547,7 +547,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backups",
-    "description": "Required backup job missing: nas-backup"
+    "description": "必須のbackup CronJobが5分間見つからないかsuspendされています。対象CronJob（nas-backup）の存在・suspend設定とGitOps同期を確認してください。定期backupの実行に影響します。"
   },
   {
     "id": "backup-metrics-warn",
@@ -580,7 +580,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backups",
-    "description": "Required backup job missing: victoria-metrics-backup"
+    "description": "必須のbackup CronJobが5分間見つからないかsuspendされています。対象CronJob（victoria-metrics-backup）の存在・suspend設定とGitOps同期を確認してください。定期backupの実行に影響します。"
   },
   {
     "id": "backup-recorded-warn",
@@ -613,7 +613,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backups",
-    "description": "Required backup job missing: tnlastation-recorded-backup"
+    "description": "必須のbackup CronJobが5分間見つからないかsuspendされています。対象CronJob（tnlastation-recorded-backup）の存在・suspend設定とGitOps同期を確認してください。定期backupの実行に影響します。"
   },
   {
     "id": "nas-capacity-warn",
@@ -646,7 +646,7 @@
     "service": "network",
     "group": "capacity",
     "feature": "",
-    "description": "IX2215 CPU busy"
+    "description": "IX2215の1分CPU使用率が80%を超えています。ルータの処理余力を確認し、トラフィックとCPU推移を調べてください。"
   },
   {
     "id": "router-napt",
@@ -657,7 +657,7 @@
     "service": "network",
     "group": "capacity",
     "feature": "",
-    "description": "IX2215 NAPT allocation failures"
+    "description": "過去5分にTCPまたはUDPのNAPT作成失敗が増加しています。新規接続への影響を確認し、NAPT使用量とルータログを調べてください。"
   },
   {
     "id": "systemd-failed",
@@ -679,7 +679,7 @@
     "service": "load-balancer",
     "group": "availability",
     "feature": "",
-    "description": "Load balancer service redundancy lost"
+    "description": "ロードバランサのHAProxyまたはKeepalivedがactiveでないホストがあります。冗長性を確認し、対象instance/nameのsystemd状態とログを調べてください。"
   },
   {
     "id": "lb-service-all",
@@ -690,7 +690,7 @@
     "service": "load-balancer",
     "group": "availability",
     "feature": "",
-    "description": "No active load balancer service"
+    "description": "lb-01/02で対象サービスのactive状態の合計が0です。ロードバランサ経路への影響を確認し、両系の対象nameとログを調べてください。"
   },
   {
     "id": "charge-guard",
@@ -701,7 +701,7 @@
     "service": "power",
     "group": "power",
     "feature": "",
-    "description": "UPS host shutdown guard inactive"
+    "description": "PVEのnut-charge-guard.timerがactiveではありません。残量に基づく停止保護を確認し、対象instanceのtimerと実行ログを調べてください。"
   },
   {
     "id": "pve-guest",
@@ -712,7 +712,7 @@
     "service": "infrastructure",
     "group": "availability",
     "feature": "",
-    "description": "Required PVE guest stopped"
+    "description": "常時稼働対象のPVE guestがup=0です。対象node/id/nameの稼働状態とホストログを確認し、提供サービスへの影響を調べてください。"
   },
   {
     "id": "cronjob-failed",
@@ -855,7 +855,7 @@
     "service": "connectivity",
     "group": "availability",
     "feature": "access",
-    "description": "access functional check unavailable"
+    "description": "accessのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-access",
@@ -866,7 +866,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "access",
-    "description": "access check stopped updating"
+    "description": "accessの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-truenas",
@@ -877,7 +877,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "storage_api",
-    "description": "truenas functional check unavailable"
+    "description": "truenasのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-truenas",
@@ -888,7 +888,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "storage_api",
-    "description": "truenas check stopped updating"
+    "description": "truenasの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-database",
@@ -899,7 +899,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "database",
-    "description": "database functional check unavailable"
+    "description": "databaseのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-database",
@@ -910,7 +910,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "database",
-    "description": "database check stopped updating"
+    "description": "databaseの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-recorder",
@@ -921,7 +921,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "recording",
-    "description": "recorder functional check unavailable"
+    "description": "recorderのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-recorder",
@@ -932,7 +932,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "recording",
-    "description": "recorder check stopped updating"
+    "description": "recorderの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-mirakurun",
@@ -943,7 +943,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "recording",
-    "description": "mirakurun functional check unavailable"
+    "description": "mirakurunのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-mirakurun",
@@ -954,7 +954,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "recording",
-    "description": "mirakurun check stopped updating"
+    "description": "mirakurunの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-pbs",
@@ -965,7 +965,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "backup_integrity",
-    "description": "pbs functional check unavailable"
+    "description": "pbsのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-pbs",
@@ -976,7 +976,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "backup_integrity",
-    "description": "pbs check stopped updating"
+    "description": "pbsの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-secrets",
@@ -987,7 +987,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "operations",
-    "description": "secrets functional check unavailable"
+    "description": "secretsのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-secrets",
@@ -998,7 +998,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "operations",
-    "description": "secrets check stopped updating"
+    "description": "secretsの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "functional-collection-unifi",
@@ -1009,7 +1009,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "network",
-    "description": "unifi functional check unavailable"
+    "description": "unifiのcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-unifi",
@@ -1020,7 +1020,7 @@
     "service": "observability",
     "group": "availability",
     "feature": "network",
-    "description": "unifi check stopped updating"
+    "description": "unifiの収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "access-service-failed",
@@ -1031,7 +1031,7 @@
     "service": "connectivity",
     "group": "availability",
     "feature": "access",
-    "description": "Authenticated public URL must return HTTP 200 and the expected service body. Redirects, Access login pages, DNS/TLS/auth failures are not success. Service-token probes do not exercise interactive IdP login."
+    "description": "認証付き公開HTTP probeで期待する応答を確認できません。公開経路の利用に影響する可能性があります。対象targetのAccess認証、HTTP応答、backendを確認してください。"
   },
   {
     "id": "access-tls-warn",
@@ -1042,7 +1042,7 @@
     "service": "connectivity",
     "group": "availability",
     "feature": "access",
-    "description": "Public TLS certificate expires soon"
+    "description": "TLS証明書が残り3日以上14日未満です。期限切れ時の接続失敗を防ぐため、対象instance/targetの証明書期限と更新状態を確認してください。"
   },
   {
     "id": "access-tls-critical",
@@ -1053,7 +1053,7 @@
     "service": "connectivity",
     "group": "availability",
     "feature": "access",
-    "description": "Public TLS certificate expiry imminent"
+    "description": "TLS証明書が残り3日未満です。期限切れ時の接続失敗を防ぐため、対象instance/targetの証明書期限と更新状態を確認してください。"
   },
   {
     "id": "nas-pool-capacity-warn",
@@ -1064,7 +1064,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS physical pool usage warn"
+    "description": "TrueNAS poolの物理使用率が80%超85%以下です。対象target/poolの空き容量、snapshot、増加傾向を確認してください。dataset使用率とは別の指標です。"
   },
   {
     "id": "nas-pool-capacity-critical",
@@ -1075,7 +1075,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS physical pool usage critical"
+    "description": "TrueNAS poolの物理使用率が85%超です。対象target/poolの空き容量、snapshot、増加傾向を確認してください。dataset使用率とは別の指標です。"
   },
   {
     "id": "nas-pool-health",
@@ -1086,7 +1086,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS pool unhealthy"
+    "description": "TrueNAS APIがpoolを健全でないと報告しています。対象target/poolの状態とストレージalertを確認してください。"
   },
   {
     "id": "nas-smart-alert",
@@ -1097,7 +1097,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS disk or SMART fault"
+    "description": "TrueNAS APIでdisk/SMARTの重大alertが検出されています。対象ストレージのalert詳細とディスク状態を確認してください。"
   },
   {
     "id": "nas-scrub-errors",
@@ -1108,7 +1108,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS scrub errors"
+    "description": "TrueNAS scrubでエラーが報告されています。対象poolのscrub結果、zpool status、デバイス状態を確認してください。"
   },
   {
     "id": "nas-scrub-age-warn",
@@ -1119,7 +1119,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS completed scrub age warn"
+    "description": "最終成功scrubから35日超60日以下です。ストレージ検査が遅延しています。対象poolのscrubスケジュールと実行結果を確認してください。"
   },
   {
     "id": "nas-scrub-age-critical",
@@ -1130,7 +1130,7 @@
     "service": "storage",
     "group": "capacity",
     "feature": "storage_api",
-    "description": "TrueNAS completed scrub age critical"
+    "description": "最終成功scrubから60日超です。ストレージ検査が遅延しています。対象poolのscrubスケジュールと実行結果を確認してください。"
   },
   {
     "id": "db-connections-warn",
@@ -1141,7 +1141,7 @@
     "service": "database",
     "group": "capacity",
     "feature": "database",
-    "description": "Database connections used warn"
+    "description": "DB接続数の使用率が80%超95%以下です。新規接続の余力を確認し、対象targetの接続元・接続上限を調べてください。"
   },
   {
     "id": "db-connections-critical",
@@ -1152,7 +1152,7 @@
     "service": "database",
     "group": "capacity",
     "feature": "database",
-    "description": "Database connections used critical"
+    "description": "DB接続数の使用率が95%超です。新規接続の余力を確認し、対象targetの接続元・接続上限を調べてください。"
   },
   {
     "id": "db-lock-waits",
@@ -1163,7 +1163,7 @@
     "service": "database",
     "group": "capacity",
     "feature": "database",
-    "description": "Database lock waits persist"
+    "description": "DBがlock待ちを報告しています。処理遅延への影響を確認し、対象targetの待機queryとblocking transactionを調べてください。"
   },
   {
     "id": "db-long-queries",
@@ -1174,7 +1174,7 @@
     "service": "database",
     "group": "capacity",
     "feature": "database",
-    "description": "Database queries running longer than 60 seconds"
+    "description": "DBに60秒を超えるqueryがあります。対象targetの実行中query、待機理由、サービスの応答時間を確認してください。"
   },
   {
     "id": "db-query-failed",
@@ -1185,7 +1185,7 @@
     "service": "database",
     "group": "availability",
     "feature": "database",
-    "description": "Database SQL check failed"
+    "description": "DBの監視queryが失敗しています。接続またはSQL実行を確認できません。対象targetのDB稼働、監視ユーザー、collectorログを確認してください。"
   },
   {
     "id": "recording-not-started",
@@ -1196,7 +1196,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Scheduled recording did not start"
+    "description": "開始予定を過ぎても録画開始を確認できない予約があります。対象targetの予約・録画状態とAPI/録画ログを確認してください。"
   },
   {
     "id": "recording-interrupted",
@@ -1207,7 +1207,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Recording stopped before its scheduled end"
+    "description": "終了予定前に停止した録画が検出されています。録画の欠落を確認し、対象targetの録画状態とログを調べてください。"
   },
   {
     "id": "recording-missing-video",
@@ -1218,7 +1218,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Completed recording has no video file"
+    "description": "完了済み録画のvideoを確認できません。対象targetの録画情報、保存先、録画ログを確認してください。"
   },
   {
     "id": "recording-conflicts",
@@ -1229,7 +1229,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Recording conflict in the next 24 hours"
+    "description": "24時間以内の予約に競合があります。録画できない予約がないか、対象targetの予約内容とチューナー割当を確認してください。"
   },
   {
     "id": "tuner-unavailable",
@@ -1240,7 +1240,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Recording tuner unavailable"
+    "description": "チューナーが利用不可と報告されています。録画・EPG取得への影響を確認し、対象target/tunerのAPI状態とMirakurunログを調べてください。"
   },
   {
     "id": "epg-update-warn",
@@ -1251,7 +1251,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Per-TV-service epgUpdatedAt from Mirakurun; another channel updating cannot hide a stale channel."
+    "description": "テレビserviceのEPG更新が24時間超48時間以下ありません。番組情報の鮮度を確認し、対象target/service_idのEPG取得状態とログを調べてください。"
   },
   {
     "id": "epg-update-critical",
@@ -1262,7 +1262,7 @@
     "service": "recording",
     "group": "availability",
     "feature": "recording",
-    "description": "Per-TV-service EPG update stopped for more than 48 hours."
+    "description": "テレビserviceのEPG更新が48時間超ありません。番組情報の鮮度を確認し、対象target/service_idのEPG取得状態とログを調べてください。"
   },
   {
     "id": "encode-backlog-warn",
@@ -1273,7 +1273,7 @@
     "service": "recording",
     "group": "capacity",
     "feature": "recording",
-    "description": "Encoding backlog warn"
+    "description": "encode待ちが10件超30件以下です。録画後処理が滞留しています。対象targetのqueueとworker状態・ログを確認してください。"
   },
   {
     "id": "encode-backlog-critical",
@@ -1284,7 +1284,7 @@
     "service": "recording",
     "group": "capacity",
     "feature": "recording",
-    "description": "Encoding backlog critical"
+    "description": "encode待ちが30件超です。録画後処理が滞留しています。対象targetのqueueとworker状態・ログを確認してください。"
   },
   {
     "id": "encode-recording-age-warn",
@@ -1295,7 +1295,7 @@
     "service": "recording",
     "group": "capacity",
     "feature": "recording",
-    "description": "Oldest recording waiting for encoding warn"
+    "description": "encode待ちの最古録画が終了から1日超3日以下経過しています。対象targetのqueue、該当録画とworkerログを確認してください。"
   },
   {
     "id": "encode-recording-age-critical",
@@ -1306,7 +1306,7 @@
     "service": "recording",
     "group": "capacity",
     "feature": "recording",
-    "description": "Oldest recording waiting for encoding critical"
+    "description": "encode待ちの最古録画が終了から3日超経過しています。対象targetのqueue、該当録画とworkerログを確認してください。"
   },
   {
     "id": "pbs-backup-age-warn",
@@ -1317,7 +1317,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS VM backup age warn"
+    "description": "PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。"
   },
   {
     "id": "pbs-backup-age-critical",
@@ -1328,7 +1328,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS VM backup age critical"
+    "description": "PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。"
   },
   {
     "id": "pbs-verification-failed",
@@ -1339,7 +1339,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS snapshot verification failed"
+    "description": "PBSの保持snapshotにverify失敗があります。対象backupのverifyログとストレージ状態を確認してください。backup完了だけでは復元可能性を保証できません。"
   },
   {
     "id": "pbs-unverified",
@@ -1350,7 +1350,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS has no verified snapshot in 7 days"
+    "description": "7日以内にverify済みのbackupがありません。対象backupのverify Jobと結果を確認してください。verify成功だけでは実復元の成功を保証できません。"
   },
   {
     "id": "backup-verified-database",
@@ -1361,7 +1361,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "database backup read-back verification stale"
+    "description": "DB backupのread-back検証成功が48時間以上ありません。backup Jobと検証ログを確認してください。backup完了だけでは保存内容や復元可能性を保証できません。"
   },
   {
     "id": "backup-verified-nas",
@@ -1394,7 +1394,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "NAS restic repository storage budget warn"
+    "description": "NAS repositoryの実object容量が14 GB超17 GB以下です。容量予算への影響を確認し、S3 inventoryと保持・pruneの状態を調べてください。"
   },
   {
     "id": "restic-budget-critical",
@@ -1405,7 +1405,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "NAS restic repository storage budget critical"
+    "description": "NAS repositoryの実object容量が17 GB超です。容量予算への影響を確認し、S3 inventoryと保持・pruneの状態を調べてください。"
   },
   {
     "id": "backup-restore-failed",
@@ -1416,7 +1416,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "Backup restore validation failed"
+    "description": "最後に報告されたbackup復元検証が失敗しています。対象backupの復元テスト結果とログを確認してください。backup/verify成功は実復元の成功を保証しません。"
   },
   {
     "id": "etcd-member-unavailable",
@@ -1427,7 +1427,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "An etcd member is unavailable"
+    "description": "etcd memberのscrapeが失敗しています。対象instanceの稼働・metrics到達性と他memberの状態を確認してください。"
   },
   {
     "id": "etcd-quorum-lost",
@@ -1438,7 +1438,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Fewer than two etcd members report a leader"
+    "description": "scrapeに成功しleaderを認識するetcd memberが2台未満です。制御系の継続性を確認し、全memberのhealthと通信・API応答を調べてください。"
   },
   {
     "id": "etcd-leader-count",
@@ -1449,7 +1449,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Etcd leader count is not one"
+    "description": "scrape可能なetcd memberのleader数が1ではありません。etcd/APIの稼働への影響を確認し、各memberのhealthとleader選出ログを調べてください。"
   },
   {
     "id": "api-vip-ownership",
@@ -1460,7 +1460,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "API VIP must be owned by exactly one control-plane node"
+    "description": "API VIPを所有するNode数が1ではありません。API接続への影響を確認し、VIP所有状態と関連Pod・ネットワークを調べてください。"
   },
   {
     "id": "network-device-down",
@@ -1471,7 +1471,7 @@
     "service": "connectivity",
     "group": "availability",
     "feature": "network",
-    "description": "Managed network device disconnected"
+    "description": "管理APIがネットワーク機器を未接続と報告しています。対象device/targetの電源、接続経路、管理API上の状態を確認してください。"
   },
   {
     "id": "network-required-port-down",
@@ -1482,7 +1482,7 @@
     "service": "connectivity",
     "group": "availability",
     "feature": "network",
-    "description": "Required network port link down"
+    "description": "台帳で必須としたネットワークportのリンクがdownです。対象device/portの配線、対向機器、管理API上のリンク状態を確認してください。"
   },
   {
     "id": "secret-refresh-failed",
@@ -1493,7 +1493,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "ExternalSecret is not Ready"
+    "description": "ExternalSecretがReadyではありません。必要なSecretを更新できない可能性があります。対象namespace/nameのCondition、ESOログ、参照先への接続を確認してください。"
   },
   {
     "id": "secret-refresh-stale",
@@ -1504,7 +1504,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "ExternalSecret refresh overdue"
+    "description": "ExternalSecretの最終更新がrefreshIntervalの2倍+15分を超えています。対象namespace/nameの更新状態、ESOログと参照先への接続を確認してください。"
   },
   {
     "id": "argocd-out-of-sync",
@@ -1515,7 +1515,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "Home application remains OutOfSync"
+    "description": "Argo CD ApplicationがSyncedではありません。宣言と実環境に差分があります。対象nameのdiff、同期状態とイベントを確認してください。"
   },
   {
     "id": "argocd-degraded",
@@ -1526,7 +1526,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "Home application unhealthy"
+    "description": "Argo CD ApplicationがDegraded/Missing/Unknownです。対象nameのresource health、同期結果、Kubernetesイベントを確認してください。"
   },
   {
     "id": "arc-job-waiting",
@@ -1537,7 +1537,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "Home runner jobs remain queued"
+    "description": "割当済みJob数がbusy runner数を上回っています。CI開始待ちへの影響を確認し、対象scale_setのrunner起動とlistenerログを調べてください。"
   },
   {
     "id": "api-certificate-warn",
@@ -1548,7 +1548,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Kubernetes API certificate expiry warn"
+    "description": "TLS証明書が残り3日以上14日未満です。期限切れ時の接続失敗を防ぐため、対象instance/targetの証明書期限と更新状態を確認してください。"
   },
   {
     "id": "api-certificate-critical",
@@ -1559,7 +1559,7 @@
     "service": "kubernetes",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Kubernetes API certificate expiry critical"
+    "description": "TLS証明書が残り3日未満です。期限切れ時の接続失敗を防ぐため、対象instance/targetの証明書期限と更新状態を確認してください。"
   },
   {
     "id": "functional-collection-s3",
@@ -1570,7 +1570,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "S3 repository object inventory could not be read. Missing or empty repositories are failures."
+    "description": "s3のcollectorが取得失敗を報告しています。対象targetのAPI到達性、認証設定とcollectorログを確認してください。機能監視の状態を保証できません。"
   },
   {
     "id": "functional-stale-s3",
@@ -1581,7 +1581,7 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "S3 inventory is collected hourly; last completed attempt is over three hours old."
+    "description": "s3の収集完了時刻が許容時間を超えています。対象targetのcollector実行・タイムアウト・ログを確認してください。古い測定値を正常と判断しないでください。"
   },
   {
     "id": "backup-restore-job-failed",
@@ -1680,7 +1680,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "Node certificate request denied or failed"
+    "description": "Node証明書のCSRが拒否または失敗しています。証明書発行への影響を確認し、対象CSRのConditionと承認・署名側のイベントを調べてください。"
   },
   {
     "id": "node-certificate-request-stuck",
@@ -1691,7 +1691,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "operations",
-    "description": "Node certificate request pending over 10 minutes"
+    "description": "Node証明書のCSRが10分を超えて承認待ちです。対象CSRの内容、承認処理と証明書更新への影響を確認してください。"
   },
   {
     "id": "kubelet-certificate-warn",
@@ -1702,7 +1702,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Kubelet serving certificate expiry warn"
+    "description": "TLS証明書が残り3日以上14日未満です。期限切れ時の接続失敗を防ぐため、対象instance/targetの証明書期限と更新状態を確認してください。"
   },
   {
     "id": "kubelet-certificate-critical",
@@ -1713,7 +1713,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Kubelet serving certificate expiry critical"
+    "description": "TLS証明書が残り3日未満です。期限切れ時の接続失敗を防ぐため、対象instance/targetの証明書期限と更新状態を確認してください。"
   },
   {
     "id": "kubelet-tls-unavailable",
@@ -1724,7 +1724,7 @@
     "service": "operations",
     "group": "kubernetes",
     "feature": "control_plane",
-    "description": "Kubelet TLS handshake unavailable"
+    "description": "kubeletへのTLS handshake probeが失敗しています。対象instanceの接続、kubelet稼働、証明書を確認してください。"
   },
   {
     "id": "network-port-inventory-missing",

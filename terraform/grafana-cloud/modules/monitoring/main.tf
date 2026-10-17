@@ -5,15 +5,16 @@ locals {
     if rule.feature == "" || contains(var.features, rule.feature)
     ], [
     for target in var.targets : {
-      id          = "missing-${target.id}"
-      title       = "Required telemetry missing: ${target.id}"
-      expression  = "absent_over_time(${target.selector}[${target.service == "power" ? "1m" : "3m"}]) or vector(0)"
-      duration    = target.service == "power" ? "1m" : "2m"
-      severity    = target.severity
-      service     = target.service
-      group       = target.service == "power" ? "power" : "observability"
-      feature     = target.feature
-      description = "Required series ${target.selector} has disappeared or stopped updating. Check collector and target before treating any apparent recovery as real."
+      id             = "missing-${target.id}"
+      title          = "Required telemetry missing: ${target.id}"
+      expression     = "absent_over_time(${target.selector}[${target.service == "power" ? "1m" : "3m"}]) or vector(0)"
+      duration       = target.service == "power" ? "1m" : "2m"
+      severity       = target.severity
+      service        = target.service
+      group          = target.service == "power" ? "power" : "observability"
+      feature        = target.feature
+      description    = "必須の監視データが途絶しています。対象のcollector稼働、scrapeと接続を確認してください。データ欠落中はサービスの正常性を保証できません。"
+      display_target = target.id
     } if target.feature == "" || contains(var.features, target.feature)
   ])
   groups = {
@@ -59,9 +60,10 @@ resource "grafana_rule_group" "monitoring" {
         rule_id     = rule.key
       }
       annotations = {
-        summary     = rule.value.title
-        description = rule.value.description
-        runbook_url = local.runbook
+        display_target = try(rule.value.display_target, null) == null ? "" : rule.value.display_target
+        summary        = rule.value.title
+        description    = rule.value.description
+        runbook_url    = local.runbook
       }
 
       data {
@@ -90,7 +92,7 @@ resource "grafana_rule_group" "monitoring" {
 
       # Rule-level routing does not replace unrelated teams' notification policies.
       notification_settings {
-        contact_point   = var.contact_points[rule.value.severity]
+        contact_point   = lookup(var.contact_points, rule.value.severity, var.contact_points.warn)
         group_by        = ["grafana_folder", "alertname", "environment", "service"]
         group_wait      = each.key == "power" && rule.value.severity == "critical" ? "0s" : (rule.value.severity == "critical" ? "30s" : "2m")
         group_interval  = "5m"

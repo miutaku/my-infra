@@ -5,7 +5,8 @@ mock_provider "grafana" {
 }
 
 variables {
-  contact_points = { warn = "test-warn", critical = "test-critical" }
+  discord_receiver_uids = { warn = "test-warn", critical = "test-critical" }
+  contact_points        = { warn = "test-warn", critical = "test-critical" }
   environments = {
     home = {
       datasource_uid = "home-metrics"
@@ -137,4 +138,18 @@ run "reject_control_plane_without_probes" {
     }
   }
   expect_failures = [var.environments]
+}
+
+run "shared_notification_format" {
+  command = plan
+  assert {
+    condition = (
+      grafana_message_template.monitoring.name == "my-infra.notifications" &&
+      grafana_message_template.monitoring.template == file("templates/notifications.tmpl") &&
+      terraform_data.discord_format["warn"].input.message == terraform_data.discord_format["critical"].input.message &&
+      terraform_data.discord_format["warn"].input.uid == "test-warn" &&
+      terraform_data.discord_format["critical"].input.uid == "test-critical"
+    )
+    error_message = "Both existing severity receivers must use one shared template and verified UIDs."
+  }
 }

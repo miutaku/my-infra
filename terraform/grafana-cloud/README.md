@@ -2,7 +2,7 @@
 
 自宅のVictoriaMetricsをGrafana CloudのPrometheusデータソース/PDC経由で参照し、Grafana-managed alertsとdashboardをTerraformで管理する。
 対象は自宅インフラとhome-k8s上のサービス。KSMでは対象namespaceを明示し、ノード情報・クラスタ共通情報と併せて収集する。
-既存データソース、PDC network/token、通知先、stack全体の通知ポリシーは作り直さない。
+既存データソース、PDC network/token、通知先、stack全体の通知ポリシーは作り直さない。通知先の書式は既存UIDを保持してTerraformから更新する。
 
 ## 管理対象
 
@@ -83,7 +83,7 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | `operations` | Argo metrics、ARC listener metrics、ESO/CSR read-only API | 同期/health、待ちJob、Secret更新、ノード証明書発行停止 |
 
 
-`environments.tfvars`は全機能を含めた計画を`paused=true`で確認するための入力。通知を有効化する前に、未収集・認証未設定のfeatureを外し、対象機能のquery/必須系列が揃っていることを確認する。
+`environments.tfvars`は検証済みの全機能を有効化した現行入力（`paused=false`）。新規導入では例のとおり`paused=true`で始める。通知を有効化する前に、未収集・認証未設定のfeatureを外し、対象機能のquery/必須系列が揃っていることを確認する。
 必要なBSMキー名は`k8s/pve/home-service-monitor/external-secret.yaml`を参照。秘密値はBSM→ExternalSecret→投影volumeへ渡し、Terraform state/ConfigMap/ログへ入れない。
 内部APIの公開leaf証明書は`k8s/pve/home-service-monitor/certificates`へ固定し、期限・署名と証明書自体の一致を認証情報送信前に確認する。工場設定のhostnameを持つためhostname照合だけは使わない。証明書更新時はこの公開ファイルも更新する。公開Access probeは通常のCA/hostname検証を使う。
 Nextcloudのstatus probeは内部Serviceへ接続し、`Host: nextcloud.miutaku.work`を送る。Nextcloudのtrusted domain検証に合わせ、HTTP 200とinstalled/maintenance/needsDbUpgradeの本文を確認する。
@@ -92,10 +92,139 @@ home用`targets.json`の必須系列は3分欠測+2分継続、UPS/停止guard�
 
 ### 通知
 
-`contact_points.warn`と`contact_points.critical`に既存の通知先名を指定する。ルールの`notification_settings`で直接routingし、stack全体のpolicy treeを置き換えない。
+`contact_points.warn`と`contact_points.critical`に既存の通知先名、`discord_receiver_uids`にそのintegration UIDを指定する。
+ルールの`notification_settings`で直接routingし、stack全体のpolicy treeを置き換えない。
 warnはgroup_wait=2分/repeat=12時間、criticalは30秒/1時間。電源criticalだけgroup_wait=0秒。
-復旧通知の有効/無効は既存contact pointの設定に従う。UIでruleを編集せずTerraformへ反映する。
+group_intervalは5分、group_byは`grafana_folder, alertname, environment, service`を維持する。
+重要度ごとに異なるreceiverへ送るため、criticalがwarnに混ざらず、異なる障害名・環境・serviceも分離される。同じ障害の複数対象は一括表示する。
+将来`info`/`warning`を追加した場合はwarn receiverへ送る。INFOも書式側で対応済み。
+復旧通知は既存2 receiverで有効であることを確認済み。無効化されていた場合、更新処理は停止して設定見直しを要求する。
 計画停止にはGrafanaの対象を絞った終了時刻付きsilenceを使う。
+
+## 共通通知の設計と運用
+
+`notifications.tf`の`grafana_message_template.monitoring`が、[共通テンプレート](templates/notifications.tmpl)を登録する。
+`my-infra.title`と`my-infra.message`を2つのDiscord receiverで再利用し、個別表示を`my-infra.alert`に共通化する。
+新しいルールにも同じreceiverを使うだけで適用され、監視対象名による分岐は不要。
+Go templateとGrafana標準の`tmpl.Exec`、`reReplaceAll`等を使用する。対象別の外部通知サーバーは不要。
+
+表示例（リンクは説明用）：
+
+```text
+変更前: Value: A=1, B=1 / Labels: managed_by, rule_id, job, ... / Annotations: ...
+
+変更後:
+発生 1件 / 復旧 0件（本文表示 1/1件）
+🔴 FIRING | CRITICAL | Recording tuner unavailable
+📍 cluster=home-k8s environment=home
+🎯 service=recording target=mirakurun tuner=PT3-S0
+📝 チューナーが利用不可と報告されています。録画・EPG取得への影響を確認し、
+   対象target/tunerのAPI状態とMirakurunログを調べてください。
+Grafanaで詳細を確認 / 対処手順
+発生: 2026-10-18 00:00:00 UTC
+
+🟢 RESOLVED | CRITICAL | Recording tuner unavailable
+📍 cluster=home-k8s environment=home
+🎯 service=recording target=mirakurun tuner=PT3-S0
+アラート条件が解消しました。必要に応じて実サービスを確認してください。
+復旧: 2026-10-18 00:10:00 UTC
+```
+
+FIRINGはCRITICAL赤・WARNING橙・INFO青、RESOLVEDは緑で区別し、本文の各アラートにも状態・重要度を付ける。
+発生と復旧が混在しても個別の状態を保持し、critical発生→他の発生→復旧の順に表示する。
+復旧時は障害時のdescriptionを再掲せず、「条件解消」と表示する。MissingSeriesによる解消などもあり、実サービスの復旧と断定しない。
+
+### Labels / Annotations
+
+| 項目 | 方針 |
+| --- | --- |
+| `environment`, `cluster` | 環境を識別。任意の`region/site/datacenter/zone`も存在時に表示 |
+| `severity`, `service` | 既存値を保持。表示だけ`warn`/`warning`をWARNINGへ正規化。未指定はUNKNOWN |
+| 対象Labels | `target`, `namespace`, `node`, `pod`, controller, PVC, `cronjob`, `job_name`, `owner_name`, `tuner`, pool, device, mountpoint, SNMP IF, UPS, `name/id/vmid`, backup, repository, port, `service_id`, `scale_set`, VIP, condition/flagを存在時だけ表示 |
+| `instance` | 実対象を示すtarget/node/pod等がなければ表示。共通collectorのアドレスを無条件に併記しない |
+| `job` | 他の実対象・instanceがないときのfallback。通常の内部scrape情報は非表示 |
+| `managed_by/rule_id/scope/grafana_folder`等 | 評価・検索・routing用に保持し、通知には列挙しない。生の評価値も非表示 |
+| `summary` | 短い障害名。現行は安定したrule titleを使用し、名前/UIDを変更しない |
+| `description` | 条件、影響の可能性、確認先を式・collectorの実装に基づいて記述。対象は通知の識別欄と併読。原因を断定せずsummaryを繰り返さない |
+| `display_target` | 任意の人間向け対象表記。標準Labelsで識別できない新しい対象/集約式で指定する。欠測ルールでは対象台帳のIDを表示し、生のselectorを通知しない |
+| `runbook_url` | 任意のHTTPS URL。現行は本READMEの初動一覧へリンク。存在しなければ項目ごと省略 |
+
+名前とLabelsの改行・Markdown制御文字・mention文字を除去する。名前100文字、環境120文字、対象250文字、説明250文字までの概要を表示し、全文はGrafanaで確認する。
+Grafanaリンクは個別ルールのGeneratorURL、なければDashboardURL。長大なURLは省略し、末尾のアラート一覧リンクを利用する。
+外部URLを本文へ生で列挙せずDiscordのMarkdownリンクにする。個別リンク350文字・runbook 300文字まで、HTTP(S)形式だけを許可する。
+
+新規追加時は`rules.json`へ既存スキーマで定義し、短いtitle、意味のあるdescription、severity、serviceを指定する。
+namespace/target等を評価式のLabelsとして残す。集約で対象が失われる場合は`display_target`を付ける。テンプレートへサービス名の条件分岐を追加しない。
+Labelsの追加・変更はアラートの識別やsilenceに影響するため、通知上の表記だけで済む場合はAnnotationsを使う。
+
+### No Data / Error・上限
+
+現行281ルールは`no_data_state=OK`, `exec_err_state=Error`を維持する。
+データ欠落は主に116件の必須系列監視で明示的に検出する。クエリ失敗時は別インスタンス`DatasourceError`になり、通常の障害判定と区別して「評価エラー・判定不能」と表示する。
+将来NoData設定を使う場合の`DatasourceNoData`も「データなし・判定不能」と表示する。
+これらは元のLabelsが欠けることがあるため、`datasource_uid/ref_id`とalertnameで識別し、severityがなければUNKNOWNとする。復旧も「評価エラー/データなし状態が解消」と表示する。
+既存のdirect routingと待機時間は変更しない。PDC全断時は複数ルールのDatasourceErrorが集まる可能性が残る。
+
+GrafanaのDiscord notifierは本文2,000文字・title 256文字で切り詰める。
+本文の個別表示を1,650文字以内へ収め、残りを件数・省略警告・Grafana一覧リンクに確保する。
+通常の複数通知は各対象・説明・リンクを表示する。大量発生時に全詳細を1通へ無制限に詰めることはできないため、表示件数/総件数と「一部省略」を明示する。
+同じ重要度内はGrafanaから受け取った順で、criticalを優先する。隠れた対象の全文は一覧で確認する。
+通知嵐を増やす全Labels別groupingや、待機・repeatの変更は行わない。実Discordクライアントでの見え方・リンククリックは別途承認済みの受信試験で確認する。
+
+### 既存UIDを保持するTerraform適用
+
+Providerはlock済みの`grafana/grafana=4.46.0`。Grafana Cloud実機は2026-10-18の調査時13.3.0系。
+このProviderの`grafana_contact_point.discord`はSetでUIDがcomputed-only。
+本文/title変更時にUIDがunknownとなり、ローカル偽APIでもPOSTによる再作成を確認したため、この移管には使用しない。
+代わりに`terraform_data.discord_format`が、承認済みApply時だけ[限定更新スクリプト](../../scripts/grafana-notifications.py)を呼ぶ。
+既存name/UID/typeと復旧通知設定を照合し、`contact-points/export?format=json&decrypt=true`で直前の設定をメモリ内へ取得してtitle/messageだけを置き換え、**同じUIDへPUT**する。
+Webhook・avatar・username・その他設定を保持し、POSTによる作成、DELETE、テスト通知は実装しない。destroy provisionerもない。
+更新後にUIDと書式を再照合し、適用済みならPUTしない。WebhookはTerraform変数・state・plan・Gitへ渡さない。
+
+サービスアカウントには既存のread権限に加え、承認後の適用時に通知先のsecret exportとwrite権限が必要。調査時にread/export可能であることを確認済み。
+認証は`GRAFANA_URL/GRAFANA_AUTH`、またはBSMの`GRAFANA_URL/GRAFANA_SERVICE_ACCOUNT_TOKEN`を使用する。値を端末へ表示しない。
+適用中にGUIや他のプロセスで同じ通知先を編集しない。APIに設定の比較交換保証がないため、並行編集を避ける。
+
+```bash
+# ここまでは本番設定を変更せず通知も送らない
+python3 scripts/grafana-monitoring.py inventory
+python3 scripts/test-grafana-notifications.py
+python3 scripts/test-grafana-notifications.py --live
+python3 scripts/grafana-monitoring.py plan --var-file terraform/grafana-cloud/environments.tfvars
+terraform -chdir=terraform/grafana-cloud show -json .state/notifications.tfplan \
+  | python3 scripts/check-grafana-notification-plan.py
+```
+
+`.state/notifications.tfplan`はGit対象外。`show -json`の全出力は秘密情報を含み得るため共有しない。
+既存281ルールではAnnotations以外の差分なし、削除なし、共通テンプレート1件と書式更新処理2件の作成だけであることを確認する。
+**本番Apply・設定APIのPUT・実通知送信は別途明示承認が必要。** 承認後は認証環境を設定し、レビュー済みplanを`terraform -chdir=terraform/grafana-cloud apply .state/notifications.tfplan`で適用する。Python 3と必要時の`bws`も同じ実行環境で必要。
+ルール差分はAnnotationsだけで、[公式仕様](https://grafana.com/docs/grafana-cloud/observe-and-act/alert-and-measure-reliability/alerting/fundamentals/alert-rule-evaluation/)では状態リセットの対象外。適用後も評価状態と次回の通知書式を確認する。
+
+`terraform_data`は任意のGUI編集をrefreshで検出しない。通知先の書式driftを調査する場合は、次のread-only検査をreceiverごとに実行する（環境変数は公開UIDとテンプレート参照のみ）。
+
+```bash
+GRAFANA_NOTIFICATION_CONFIG='{"name":"Discord - grafana-warning","uid":"afl6jwnytrjeoa","title":"{{ template \"my-infra.title\" . }}","message":"{{ template \"my-infra.message\" . }}"}' \
+  python3 scripts/grafana-notifications.py configure
+```
+
+`format_change=true`なら、対応する`terraform_data.discord_format["warn"]`または`["critical"]`を`terraform plan -replace='terraform_data.discord_format["warn"]'`で再計画し、承認後にApplyする。このterraform_dataの置換はローカルの更新処理の再実行だけで、通知先の削除ではない。テンプレート内容の変更は通常のresource更新で反映される。
+手動でContact Pointを作り直してUIDが変わった場合は更新処理が停止する。新UIDをinventoryで確認し、tfvarsへ反映して再planする。
+
+### 通知の検証とロールバック
+
+`test-grafana-notifications.py`は秘密値なしの偽APIで、read-only既定、同UIDのPUT、全設定保持、冪等性、誤ったUID/type・復旧無効・redacted secretの拒否を検証する。
+`--live`は実Grafanaの**template preview APIだけ**へ合成アラートを送り、全281ルールとCRITICAL/WARNING/INFO、復旧、複数、欠損Labels/Annotations、任意Labels過多、No Data/Error、発生復旧混在、上限・優先順を検証する。
+実ユーザーの通知や実アラートを作成しない。CIではTerraform mock、更新処理の安全性、既存PromQLテストを実行し、実エンジンの検証は認証を持つ環境でApply前に実行する。
+
+適用前はコードを戻すだけで本番は変わらない。適用後は次の順序で戻す。
+
+1. Annotations/テンプレートのみの問題なら該当変更をGitでrevertし、通常のplan/検証/承認済みApplyを行う。受信先名・UID・評価式は変更しない。
+2. 標準書式へ戻す場合は`notifications.tf`のtitleを`{{ template "discord.default.title" . }}`、messageを`{{ template "discord.default.message" . }}`へ戻してplanし、書式更新処理が再実行される承認済みApplyを行う。
+3. 2つのreceiverの参照が標準へ戻った後、不要な共通テンプレートとterraform_dataを削除する。先にテンプレートだけ削除すると未定義参照になるため避ける。
+4. stateを破棄したりContact Pointを削除・再作成したりしない。新規変更でroutingやpauseを操作しない。
+
+[全ルール・必須系列の調査台帳](ALERT_INVENTORY.md)、[変更ファイル一覧・検証結果・Plan](NOTIFICATION_VALIDATION.md)も参照。
+公式仕様: [通知データと関数](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/template-notifications/reference/)、[No Data/Error](https://grafana.com/docs/grafana/latest/alerting/fundamentals/alert-rule-evaluation/nodata-and-error-states/)、[Discord notifier実装](https://github.com/grafana/alerting/blob/main/receivers/discord/v1/discord.go)、[固定ProviderのContact Point実装](https://github.com/grafana/terraform-provider-grafana/blob/v4.46.0/internal/resources/grafana/resource_alerting_contact_point.go)。
 
 ## 確認方法
 

@@ -8,6 +8,9 @@ on:
       - scripts/test-grafana-monitoring.py
       - scripts/check-grafana-monitoring.py
       - scripts/grafana-monitoring.py
+      - scripts/grafana-notifications.py
+      - scripts/test-grafana-notifications.py
+      - scripts/check-grafana-notification-plan.py
       - .github/workflows/grafana_monitoring.yml
       - k8s/pve/vmagent/**
       - k8s/pve/blackbox-exporter/**
@@ -28,6 +31,9 @@ on:
       - scripts/test-grafana-monitoring.py
       - scripts/check-grafana-monitoring.py
       - scripts/grafana-monitoring.py
+      - scripts/grafana-notifications.py
+      - scripts/test-grafana-notifications.py
+      - scripts/check-grafana-notification-plan.py
       - .github/workflows/grafana_monitoring.yml
       - k8s/pve/vmagent/**
       - k8s/pve/blackbox-exporter/**
@@ -60,6 +66,8 @@ jobs:
           terraform init -backend=false -input=false -lockfile=readonly
           terraform validate -no-color
           terraform test -no-color
+      - name: Notification updater safety (no credentials or sends)
+        run: python3 scripts/test-grafana-notifications.py
       - name: Install pinned Prometheus test tools
         run: |
           curl --fail --silent --show-error --location \

@@ -36,3 +36,14 @@ variable "paused" {
   type        = bool
   default     = true
 }
+
+variable "discord_receiver_uids" {
+  description = "Verified existing Discord integration UIDs. Name/UID/type are checked again before a PUT; no receivers are created or deleted."
+  type        = map(string)
+  validation {
+    condition = toset(keys(var.discord_receiver_uids)) == toset(keys(var.contact_points)) && alltrue([
+      for uid in values(var.discord_receiver_uids) : can(regex("^[A-Za-z0-9_-]+$", uid))
+    ])
+    error_message = "Provide the existing Discord integration UID for every severity receiver."
+  }
+}

@@ -56,7 +56,7 @@ def main():
         "datasources": [{k: ds.get(k) for k in ("uid", "name", "type", "url")} | {
             "pdc_network": ds.get("jsonData", {}).get("secureSocksProxyUsername")
         } for ds in datasources if ds.get("type") == "prometheus"],
-        "contact_points": sorted({contact["name"] for contact in contacts}),
+        "contact_points": [{k: contact.get(k) for k in ("name", "uid", "type", "disableResolveMessage")} for contact in contacts],
     }, indent=2), flush=True)
     if args.command == "plan":
         if not args.var_file:
@@ -64,7 +64,7 @@ def main():
         variables = str(Path(args.var_file).resolve(strict=True))
         root = Path(__file__).resolve().parents[1] / "terraform/grafana-cloud"
         subprocess.run(["terraform", f"-chdir={root}", "init", "-input=false", "-lockfile=readonly"], env=env, check=True)
-        subprocess.run(["terraform", f"-chdir={root}", "plan", "-input=false", f"-var-file={variables}"], env=env, check=True)
+        subprocess.run(["terraform", f"-chdir={root}", "plan", "-input=false", f"-var-file={variables}", "-out=.state/notifications.tfplan"], env=env, check=True)
 
 
 if __name__ == "__main__":
