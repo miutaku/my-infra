@@ -49,7 +49,7 @@ UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知す�
 | S3/restic・復元 | NAS repository実object容量14 GB超、復元成功が28日以上なし | 17 GB超、DB read-back/NAS repository/録画保存先の確認が期限超過、復元Job失敗 |
 | 制御系 | etcd片系取得不可、CSR滞留10分超 | leaderを認識するetcdが2台未満、leader数が1以外、API VIP所有数が1以外、CSR拒否/失敗、API/kubelet証明書残り3日未満 |
 | switch/AP | 必須port台帳未設定 | US-8-60W/FS APの死活、必須portリンク断2分 |
-| 運用系 | ESO更新が各refreshIntervalの2倍+15分を超過、Argo OutOfSync 15分、ARC待ち15分、TFC待ち15分超 | ESO Ready=false 5分、Argo unhealthy 5分、TFC待ち60分超 |
+| 運用系 | ESO更新が各refreshIntervalの2倍+15分を超過、Argo OutOfSync 15分、ARC待ち15分 | ESO Ready=false 5分、Argo unhealthy 5分 |
 
 
 ## 設定と初回移管
@@ -81,7 +81,6 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | `control_plane` | etcd metrics patch、VIP DaemonSet、追加TLS probe（`probes`必須） | etcd member/leader、Talos API VIP所有数、API/kubelet証明書 |
 | `network` | ICMP + UniFi API key | FS AP・US-8-60Wの死活、台帳の必須port状態 |
 | `operations` | Argo metrics、ARC listener metrics、ESO/CSR read-only API | 同期/health、待ちJob、Secret更新、ノード証明書発行停止 |
-| `tfc` | HCP TerraformのRun read token | pve-home / cloudflareに限定したRun待ち時間 |
 
 
 `environments.tfvars`は全機能を含めた計画を`paused=true`で確認するための入力。通知を有効化する前に、未収集・認証未設定のfeatureを外し、対象機能のquery/必須系列が揃っていることを確認する。
@@ -138,6 +137,7 @@ read-only検査で表示される「condition true」は継続時間未判定で
 - DB backupの検証指標は全dumpのS3読み戻しchecksum一致後、NASは`restic check`後、録画実体は保存先の名前/size一致後に送信する。それぞれ検証の強さが異なる。S3容量は`restic stats`の論理量ではなくrepository prefix配下の実object byte合計。
 - 毎週の復元Jobは本番DBへ接続せず、S3のdumpを一時領域のMariaDB 11.8/PostgreSQL 18へ実復元する。PostgreSQLのowner/grantの復元は対象外。NASは最大1 MiBのファイルをresticから一時領域へ復元・検証するサンプル試験で、全ファイル/全アプリの復旧保証ではない。
 - PBS VMの実復元・起動確認は別途隔離環境で実施し、実施結果だけを`scripts/report-backup-restore.py`で登録する。自動でVMを作成/起動しない。VMごとに28日間成功報告がない場合warnとし、PBS backup/verify成功で代用しない。
+- HCP Terraform APIのRun待ち監視は対象外。TFC agentのDeployment停止・欠測と関連Secretの更新はクラスタ側で監視する。agent稼働中のRun滞留は検知しない。
 - Talosのetcd metrics patchは既存3ノードへ別途順次反映が必要。collector/Argo同期・API認証・Grafana queryが揃うまでは通知を有効にしない。
 
 参照: [Grafana Terraform provisioning](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/terraform-provisioning/)、[欠測の扱い](https://grafana.com/docs/grafana/latest/alerting/guides/missing-data/)、[Provider rule schema](https://registry.terraform.io/providers/grafana/grafana/4.46.0/docs/resources/rule_group)。

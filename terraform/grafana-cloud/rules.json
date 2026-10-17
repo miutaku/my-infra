@@ -387,7 +387,7 @@
   {
     "id": "deployment-down",
     "title": "Required deployment has no ready replicas",
-    "expression": "(((kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"}) == bool 0) and (kube_deployment_spec_replicas > 0)) or vector(0)",
+    "expression": "(((kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"tfc-agent\",deployment=\"tfc-agent\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"}) == bool 0) and (kube_deployment_spec_replicas > 0)) or vector(0)",
     "duration": "2m",
     "severity": "critical",
     "service": "workloads",
@@ -728,7 +728,7 @@
   {
     "id": "deployment-stopped-warn",
     "title": "Management or optional deployment stopped",
-    "expression": "(((kube_deployment_status_replicas_available == bool 0) and (kube_deployment_spec_replicas > 0)) unless (kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"})) or vector(0)",
+    "expression": "(((kube_deployment_status_replicas_available == bool 0) and (kube_deployment_spec_replicas > 0)) unless (kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"tfc-agent\",deployment=\"tfc-agent\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"})) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "workloads",
@@ -999,28 +999,6 @@
     "group": "availability",
     "feature": "operations",
     "description": "secrets check stopped updating"
-  },
-  {
-    "id": "functional-collection-tfc",
-    "title": "tfc functional check unavailable",
-    "expression": "(home_monitor_success{job=\"home-service-monitor\",kind=\"tfc\"} == bool 0) or vector(0)",
-    "duration": "10m",
-    "severity": "critical",
-    "service": "observability",
-    "group": "availability",
-    "feature": "tfc",
-    "description": "tfc functional check unavailable"
-  },
-  {
-    "id": "functional-stale-tfc",
-    "title": "tfc check stopped updating",
-    "expression": "(time() - home_monitor_completed_seconds{job=\"home-service-monitor\",kind=\"tfc\"} > bool 900) or vector(0)",
-    "duration": "2m",
-    "severity": "critical",
-    "service": "observability",
-    "group": "availability",
-    "feature": "tfc",
-    "description": "tfc check stopped updating"
   },
   {
     "id": "functional-collection-unifi",
@@ -1560,28 +1538,6 @@
     "group": "kubernetes",
     "feature": "operations",
     "description": "Home runner jobs remain queued"
-  },
-  {
-    "id": "tfc-run-queue-warn",
-    "title": "HCP Terraform oldest queued Run age warn",
-    "expression": "((home_tfc_oldest_queued_seconds{job=\"home-service-monitor\"} > bool 900) and (home_tfc_oldest_queued_seconds{job=\"home-service-monitor\"} <= 3600)) or vector(0)",
-    "duration": "5m",
-    "severity": "warn",
-    "service": "operations",
-    "group": "kubernetes",
-    "feature": "tfc",
-    "description": "HCP Terraform oldest queued Run age warn"
-  },
-  {
-    "id": "tfc-run-queue-critical",
-    "title": "HCP Terraform oldest queued Run age critical",
-    "expression": "(home_tfc_oldest_queued_seconds{job=\"home-service-monitor\"} > bool 3600) or vector(0)",
-    "duration": "5m",
-    "severity": "critical",
-    "service": "operations",
-    "group": "kubernetes",
-    "feature": "tfc",
-    "description": "HCP Terraform oldest queued Run age critical"
   },
   {
     "id": "api-certificate-warn",

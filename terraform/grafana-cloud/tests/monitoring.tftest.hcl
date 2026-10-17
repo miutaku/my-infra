@@ -102,7 +102,7 @@ run "functional_monitoring" {
       home = {
         datasource_uid = "home-metrics"
         cluster        = "home-k8s"
-        features       = ["kubernetes", "probes", "backups", "access", "storage_api", "database", "recording", "backup_integrity", "control_plane", "network", "operations", "tfc"]
+        features       = ["kubernetes", "probes", "backups", "access", "storage_api", "database", "recording", "backup_integrity", "control_plane", "network", "operations"]
       }
     }
   }
@@ -110,6 +110,7 @@ run "functional_monitoring" {
     condition = (
       contains(keys(output.rule_uids["home"]), "access-service-failed") &&
       contains(keys(output.rule_uids["home"]), "missing-functional-access-tnlastation-staging") &&
+      contains(keys(output.rule_uids["home"]), "missing-deploy-tfc-agent") &&
       contains(keys(output.rule_uids["home"]), "backup-restore-stale-pbs-vm-13201") &&
       output.rule_settings["home"]["network-required-port-down"].receiver == "test-critical" &&
       output.rule_settings["home"]["nas-pool-capacity-warn"].receiver == "test-warn"

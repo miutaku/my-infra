@@ -24,7 +24,7 @@ def main():
     assert len({t["id"] for t in targets}) == len(targets), "duplicate required targets"
     for r in catalog:
         assert r["severity"] in ("warn", "critical"), r
-        assert r["feature"] in ('', 'kubernetes', 'probes', 'backups', 'access', 'storage_api', 'database', 'recording', 'backup_integrity', 'control_plane', 'network', 'operations', 'tfc'), r
+        assert r["feature"] in ('', 'kubernetes', 'probes', 'backups', 'access', 'storage_api', 'database', 'recording', 'backup_integrity', 'control_plane', 'network', 'operations'), r
         assert r["group"] in ("power", "availability", "capacity", "kubernetes", "backups", "observability"), r
 
     # Prometheus consumes the same expressions/for values as Grafana's A/B graph.
@@ -71,6 +71,11 @@ def main():
         'kube_deployment_spec_replicas{namespace="app-nextcloud",deployment="nextcloud"}': "1+0x40",
         'kube_deployment_status_replicas_available{namespace="app-nextcloud",deployment="nextcloud"}': "0+0x40",
     }, {"deployment-down": 1, "deployment-degraded": 0})
+    for desired, available, expected in [(1, 0, 1), (1, 1, 0), (0, 0, 0)]:
+        case(f"TFC agent desired={desired} available={available}", {
+            'kube_deployment_spec_replicas{namespace="tfc-agent",deployment="tfc-agent"}': f"{desired}+0x40",
+            'kube_deployment_status_replicas_available{namespace="tfc-agent",deployment="tfc-agent"}': f"{available}+0x40",
+        }, {"deployment-down": expected, "deployment-stopped-warn": 0})
     case("IoT exporter stops without becoming critical", {
         'kube_deployment_spec_replicas{namespace="monitoring",deployment="tinytuya-exporter"}': "1+0x40",
         'kube_deployment_status_replicas_available{namespace="monitoring",deployment="tinytuya-exporter"}': "0+0x40",

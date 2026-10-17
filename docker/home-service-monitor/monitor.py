@@ -387,40 +387,6 @@ def vip(target, metrics):
     metrics.add('home_vip_owned', target['address'] in ipv4_addresses(), vip=target['address'])
 
 
-def tfc(target, metrics):
-    headers = {'Authorization': 'Bearer ' + secret('tfc-api-token')}
-    for workspace in target['workspaces']:
-        base = 'https://app.terraform.io/api/v2/'
-        info = get_json(base + 'organizations/miutaku/workspaces/' + workspace, headers)
-        wid = info['data']['id']
-        url = base + 'workspaces/' + wid + '/runs?filter%5Bstatus%5D=pending,queuing,plan_queued,apply_queued&page%5Bsize%5D=100'
-        queued = []
-        while url:
-            data = get_json(url, headers)
-            queued.extend(data['data'])
-            url = data.get('links', {}).get('next')
-            if url:
-                url = urllib.parse.urljoin(base, url)
-            if url and not url.startswith(base):
-                raise ValueError('unexpected pagination origin')
-        ages = []
-        for run in queued:
-            attributes = run['attributes']
-            status = attributes['status']
-            entered = attributes['status-timestamps'].get(status.replace('_', '-') + '-at')
-            if not entered and status in ('queuing', 'plan_queued'):
-                entered = attributes['status-timestamps'].get('plan-queueable-at')
-            if not entered and status == 'apply_queued':
-                entered = attributes['status-timestamps'].get('confirmed-at')
-            if not entered and status == 'pending':
-                entered = attributes['created-at']
-            if not entered:
-                raise ValueError('run queue timestamp unavailable')
-            ages.append(max(0, time.time() - timestamp(entered)))
-        metrics.add('home_tfc_queued_runs', len(ages), workspace=workspace)
-        metrics.add('home_tfc_oldest_queued_seconds', max(ages or [0]), workspace=workspace)
-
-
 def unifi(target, metrics):
     headers = {'X-API-KEY': secret('unifi-api-key')}
     base = target['url'] + '/proxy/network/integration/v1/'
@@ -473,7 +439,7 @@ def s3(target, metrics):
 
 COLLECTORS = {'access': access, 'mirakurun': mirakurun, 'recorder': recorder,
               'truenas': truenas, 'pbs': pbs, 'database': database, 'secrets': kubernetes,
-              'vip': vip, 'tfc': tfc, 'unifi': unifi, 's3': s3}
+              'vip': vip, 'unifi': unifi, 's3': s3}
 
 
 def collect_once(target):

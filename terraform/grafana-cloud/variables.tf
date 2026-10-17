@@ -10,7 +10,7 @@ variable "environments" {
     condition = length(var.environments) == 1 && contains(keys(var.environments), "home") && alltrue([
       for env in values(var.environments) :
       length(env.datasource_uid) > 0 && length(env.cluster) > 0 &&
-      length(setsubtract(env.features, toset(["kubernetes", "probes", "backups", "access", "storage_api", "database", "recording", "backup_integrity", "control_plane", "network", "operations", "tfc"]))) == 0 &&
+      length(setsubtract(env.features, toset(["kubernetes", "probes", "backups", "access", "storage_api", "database", "recording", "backup_integrity", "control_plane", "network", "operations"]))) == 0 &&
       (!contains(env.features, "backups") || contains(env.features, "kubernetes")) &&
       (!contains(env.features, "backup_integrity") || contains(env.features, "kubernetes")) &&
       (!contains(env.features, "control_plane") || contains(env.features, "probes"))

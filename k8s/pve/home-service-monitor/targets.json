@@ -235,7 +235,6 @@
         "home-monitor-nas-02",
         "home-monitor-pbs",
         "home-monitor-s3",
-        "home-monitor-tfc",
         "home-monitor-unifi",
         "pve-exporter-config",
         "tinytuya-device"
@@ -244,15 +243,6 @@
         "tfc-agent-credentials"
       ]
     }
-  },
-  {
-    "name": "tfc-home",
-    "kind": "tfc",
-    "workspaces": [
-      "pve-home",
-      "cloudflare"
-    ],
-    "interval": 300
   },
   {
     "name": "unifi-network",

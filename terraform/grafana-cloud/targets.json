@@ -637,13 +637,6 @@
     "service": "observability"
   },
   {
-    "id": "functional-tfc-home",
-    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"tfc-home\",kind=\"tfc\"}",
-    "feature": "tfc",
-    "severity": "critical",
-    "service": "observability"
-  },
-  {
     "id": "functional-unifi-network",
     "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"unifi-network\",kind=\"unifi\"}",
     "feature": "network",
@@ -796,5 +789,12 @@
     "feature": "access",
     "severity": "critical",
     "service": "connectivity"
+  },
+  {
+    "id": "deploy-tfc-agent",
+    "selector": "kube_deployment_status_replicas_available{namespace=\"tfc-agent\",deployment=\"tfc-agent\"}",
+    "feature": "kubernetes",
+    "service": "workloads",
+    "severity": "critical"
   }
 ]

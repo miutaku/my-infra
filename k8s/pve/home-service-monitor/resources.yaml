@@ -81,7 +81,6 @@ spec:
               - secret: {name: home-monitor-nas-02, optional: true}
               - secret: {name: home-monitor-pbs, optional: true}
               - secret: {name: home-monitor-databases, optional: true}
-              - secret: {name: home-monitor-tfc, optional: true}
               - secret: {name: home-monitor-unifi, optional: true}
               - secret: {name: home-monitor-s3, optional: true}
 ---

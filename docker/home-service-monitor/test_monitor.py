@@ -175,30 +175,5 @@ class NetworkTests(unittest.TestCase):
         self.assertEqual(ports, [('1',1),('7',1),('8',0)])
 
 
-class TerraformCloudTests(unittest.TestCase):
-    def test_apply_queue_age_does_not_include_time_waiting_for_approval(self):
-        target = {'kind':'tfc','name':'tfc','workspaces':['pve-home']}
-        metrics = monitor.Metrics(target)
-        with patch.object(monitor, 'secret', return_value='secret'), patch.object(monitor.time, 'time', return_value=3600), \
-                patch.object(monitor, 'get_json', side_effect=[
-                    {'data':{'id':'ws-1'}},
-                    {'data':[{'attributes':{'status':'apply_queued','created-at':'1970-01-01T00:00:00Z',
-                                           'status-timestamps':{'confirmed-at':'1970-01-01T00:50:00Z'}}}], 'links':{'next':None}},
-                ]):
-            monitor.tfc(target, metrics)
-        value = next(v for n,v,_ in metrics.samples if n=='home_tfc_oldest_queued_seconds')
-        self.assertEqual(value, 600)
-
-    def test_pagination_cannot_forward_token_to_another_host(self):
-        target = {'kind':'tfc','name':'tfc','workspaces':['pve-home']}
-        metrics = monitor.Metrics(target)
-        with patch.object(monitor, 'secret', return_value='secret'), patch.object(monitor, 'get_json', side_effect=[
-            {'data':{'id':'ws-1'}}, {'data':[], 'links':{'next':'https://untrusted.example/steal'}},
-        ]) as get:
-            with self.assertRaises(ValueError):
-                monitor.tfc(target, metrics)
-        self.assertEqual(get.call_count, 2)
-
-
 if __name__ == '__main__':
     unittest.main()
