@@ -1,0 +1,1292 @@
+{
+  "base": "9c09eedd7926183cce2261c242c030372cfe5ee3",
+  "head": "12fb95fe2feb3766df382ea1c564231932df9ab4",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [
+          {
+            "id": "definitions.resources.r_54a59a031677dd",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+                "resourceType": "grafana_dashboard",
+                "sourceFile": "terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/modules/monitoring/dashboard.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "grafana_dashboard / terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+              },
+              "title": "health",
+              "kind": "component",
+              "id": "definitions.resources.r_54a59a031677dd"
+            }
+          },
+          {
+            "id": "definitions.resources.r_794ba16de6c3c1",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+                "resourceType": "grafana_rule_group",
+                "sourceFile": "terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/modules/monitoring/main.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "grafana_rule_group / terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "title": "monitoring",
+              "kind": "component",
+              "id": "definitions.resources.r_794ba16de6c3c1"
+            }
+          },
+          {
+            "id": "definitions.resources.r_b5ef1869142f85",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+                "resourceType": "grafana_folder",
+                "sourceFile": "terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/modules/monitoring/main.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "grafana_folder / terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "title": "monitoring",
+              "kind": "component",
+              "id": "definitions.resources.r_b5ef1869142f85"
+            }
+          },
+          {
+            "id": "definitions.resources.r_c3f9132b5dec9e",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/main.tf:module:monitoring:",
+                "resourceType": "Terraform module",
+                "sourceFile": "terraform/grafana-cloud/main.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/main.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Terraform module / terraform/grafana-cloud/main.tf"
+              },
+              "title": "monitoring",
+              "kind": "component",
+              "id": "definitions.resources.r_c3f9132b5dec9e"
+            }
+          },
+          {
+            "id": "premises.home.backups.nas.resources.r_3c440170f2a86f",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/nas-backup/restore-check.yaml:ConfigMap:infra-backup:backup-restore-check",
+                "resourceType": "ConfigMap",
+                "sourceFile": "k8s/pve/nas-backup/restore-check.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/restore-check.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ConfigMap / k8s/pve/nas-backup/restore-check.yaml / namespace infra-backup"
+              },
+              "title": "backup-restore-check",
+              "kind": "component",
+              "id": "premises.home.backups.nas.resources.r_3c440170f2a86f"
+            }
+          },
+          {
+            "id": "premises.home.backups.nas.resources.r_49b0dde916ba6f",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/nas-backup/database-restore-check.yaml:CronJob:infra-backup:backup-restore-database",
+                "resourceType": "CronJob",
+                "sourceFile": "k8s/pve/nas-backup/database-restore-check.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/database-restore-check.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "CronJob / k8s/pve/nas-backup/database-restore-check.yaml / namespace infra-backup"
+              },
+              "title": "backup-restore-database",
+              "kind": "component",
+              "id": "premises.home.backups.nas.resources.r_49b0dde916ba6f"
+            }
+          },
+          {
+            "id": "premises.home.backups.nas.resources.r_74a2dab1e144c4",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/nas-backup/database-restore-check.yaml:ConfigMap:infra-backup:database-restore-check",
+                "resourceType": "ConfigMap",
+                "sourceFile": "k8s/pve/nas-backup/database-restore-check.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/database-restore-check.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ConfigMap / k8s/pve/nas-backup/database-restore-check.yaml / namespace infra-backup"
+              },
+              "title": "database-restore-check",
+              "kind": "component",
+              "id": "premises.home.backups.nas.resources.r_74a2dab1e144c4"
+            }
+          },
+          {
+            "id": "premises.home.backups.nas.resources.r_b58c9dda0d0ee7",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/nas-backup/database-restore-check.yaml:ExternalSecret:infra-backup:backup-restore-s3",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/nas-backup/database-restore-check.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/database-restore-check.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/nas-backup/database-restore-check.yaml / namespace infra-backup"
+              },
+              "title": "backup-restore-s3",
+              "kind": "component",
+              "id": "premises.home.backups.nas.resources.r_b58c9dda0d0ee7"
+            }
+          },
+          {
+            "id": "premises.home.backups.nas.resources.r_bbc50580bf2fba",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/nas-backup/restore-check.yaml:CronJob:infra-backup:backup-restore-nas",
+                "resourceType": "CronJob",
+                "sourceFile": "k8s/pve/nas-backup/restore-check.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/nas-backup/restore-check.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "CronJob / k8s/pve/nas-backup/restore-check.yaml / namespace infra-backup"
+              },
+              "title": "backup-restore-nas",
+              "kind": "component",
+              "id": "premises.home.backups.nas.resources.r_bbc50580bf2fba"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "home-service-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/home-service-monitor.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "definitionRepository": "my-infra",
+                "application": "home-service-monitor",
+                "sourceFile": "k8s/pve/argocd-apps/home-service-monitor.yaml",
+                "namespace": "monitoring",
+                "scope": "homeSite.talos"
+              }
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "リソース定義",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_09cbfe922fc8e7",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-01",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-nas-01",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_09cbfe922fc8e7"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_3ee1faf792a538",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-access",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-access",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_3ee1faf792a538"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_4181c636404593",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-s3",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-s3",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_4181c636404593"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_46c7f91cbc71a4",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/vip.yaml:DaemonSet::home-vip-monitor",
+                "resourceType": "DaemonSet",
+                "sourceFile": "k8s/pve/home-service-monitor/vip.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/vip.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "DaemonSet / k8s/pve/home-service-monitor/vip.yaml"
+              },
+              "title": "home-vip-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_46c7f91cbc71a4"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_46dcf65016102a",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-unifi",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-unifi",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_46dcf65016102a"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_54771039b79a85",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/resources.yaml:Service::home-service-monitor",
+                "resourceType": "Service",
+                "sourceFile": "k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Service / k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "title": "home-service-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_54771039b79a85"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_775619cc8c9304",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/resources.yaml:Deployment::home-service-monitor",
+                "resourceType": "Deployment",
+                "sourceFile": "k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Deployment / k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "title": "home-service-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_775619cc8c9304"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_90a2b3d998d614",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-pbs",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-pbs",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_90a2b3d998d614"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_c1382f2f34378e",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/resources.yaml:ClusterRole::home-service-monitor",
+                "resourceType": "ClusterRole",
+                "sourceFile": "k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ClusterRole / k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "title": "home-service-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_c1382f2f34378e"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_c66f51f2644a53",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-02",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-nas-02",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_c66f51f2644a53"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_ceb2818dd7a3d9",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/resources.yaml:ClusterRoleBinding::home-service-monitor",
+                "resourceType": "ClusterRoleBinding",
+                "sourceFile": "k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ClusterRoleBinding / k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "title": "home-service-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_ceb2818dd7a3d9"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_ecee4ed12038e0",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-databases",
+                "resourceType": "ExternalSecret",
+                "sourceFile": "k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/external-secret.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ExternalSecret / k8s/pve/home-service-monitor/external-secret.yaml"
+              },
+              "title": "home-monitor-databases",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_ecee4ed12038e0"
+            }
+          },
+          {
+            "id": "premises.home.home_service_monitor.resources.r_ee399f1117d790",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/home-service-monitor/resources.yaml:ServiceAccount::home-service-monitor",
+                "resourceType": "ServiceAccount",
+                "sourceFile": "k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/home-service-monitor/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ServiceAccount / k8s/pve/home-service-monitor/resources.yaml"
+              },
+              "title": "home-service-monitor",
+              "kind": "component",
+              "id": "premises.home.home_service_monitor.resources.r_ee399f1117d790"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/kube-state-metrics.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "definitionRepository": "my-infra",
+                "application": "kube-state-metrics",
+                "sourceFile": "k8s/pve/argocd-apps/kube-state-metrics.yaml",
+                "namespace": "monitoring",
+                "scope": "homeSite.talos"
+              }
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "リソース定義",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_3640f48fa35880",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+                "resourceType": "Deployment",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Deployment / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_3640f48fa35880"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_3f5d25fceeebbb",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+                "resourceType": "ServiceAccount",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ServiceAccount / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_3f5d25fceeebbb"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_4430a54467b304",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+                "resourceType": "Service",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Service / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_4430a54467b304"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_cc04e28f21776c",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+                "resourceType": "ClusterRole",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ClusterRole / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "home-kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_cc04e28f21776c"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_e89754db4d2019",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+                "resourceType": "ClusterRoleBinding",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ClusterRoleBinding / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "home-kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_e89754db4d2019"
+            }
+          },
+          {
+            "id": "deployment:homeSite.talos.ns_monitoring.r_53445b968bf333",
+            "status": "added",
+            "after": {
+              "id": "homeSite.talos.ns_monitoring.r_53445b968bf333",
+              "element": "premises.home.home_service_monitor",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/home-service-monitor.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "home-service-monitor",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:homeSite.talos.ns_monitoring.r_6e23e76ccc1190",
+            "status": "added",
+            "after": {
+              "id": "homeSite.talos.ns_monitoring.r_6e23e76ccc1190",
+              "element": "premises.home.kube_state_metrics",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/kube-state-metrics.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "kube-state-metrics",
+              "style": {}
+            }
+          }
+        ],
+        "relations": [],
+        "views": [],
+        "specification": [],
+        "inventory": [
+          {
+            "id": "k8s/pve/argocd-apps/home-service-monitor.yaml:Application:argocd:home-service-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/argocd-apps/home-service-monitor.yaml:Application:argocd:home-service-monitor",
+              "type": "Application",
+              "name": "home-service-monitor",
+              "namespace": "argocd",
+              "file": "k8s/pve/argocd-apps/home-service-monitor.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/argocd-apps/kube-state-metrics.yaml:Application:argocd:kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/argocd-apps/kube-state-metrics.yaml:Application:argocd:kube-state-metrics",
+              "type": "Application",
+              "name": "kube-state-metrics",
+              "namespace": "argocd",
+              "file": "k8s/pve/argocd-apps/kube-state-metrics.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-access",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-access",
+              "type": "ExternalSecret",
+              "name": "home-monitor-access",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-databases",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-databases",
+              "type": "ExternalSecret",
+              "name": "home-monitor-databases",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-01",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-01",
+              "type": "ExternalSecret",
+              "name": "home-monitor-nas-01",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-02",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-02",
+              "type": "ExternalSecret",
+              "name": "home-monitor-nas-02",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-pbs",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-pbs",
+              "type": "ExternalSecret",
+              "name": "home-monitor-pbs",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-s3",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-s3",
+              "type": "ExternalSecret",
+              "name": "home-monitor-s3",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-unifi",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-unifi",
+              "type": "ExternalSecret",
+              "name": "home-monitor-unifi",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/resources.yaml:ClusterRole::home-service-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/resources.yaml:ClusterRole::home-service-monitor",
+              "type": "ClusterRole",
+              "name": "home-service-monitor",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/resources.yaml:ClusterRoleBinding::home-service-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/resources.yaml:ClusterRoleBinding::home-service-monitor",
+              "type": "ClusterRoleBinding",
+              "name": "home-service-monitor",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/resources.yaml:Deployment::home-service-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/resources.yaml:Deployment::home-service-monitor",
+              "type": "Deployment",
+              "name": "home-service-monitor",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/resources.yaml:Service::home-service-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/resources.yaml:Service::home-service-monitor",
+              "type": "Service",
+              "name": "home-service-monitor",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/resources.yaml:ServiceAccount::home-service-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/resources.yaml:ServiceAccount::home-service-monitor",
+              "type": "ServiceAccount",
+              "name": "home-service-monitor",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/home-service-monitor/vip.yaml:DaemonSet::home-vip-monitor",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/home-service-monitor/vip.yaml:DaemonSet::home-vip-monitor",
+              "type": "DaemonSet",
+              "name": "home-vip-monitor",
+              "namespace": "",
+              "file": "k8s/pve/home-service-monitor/vip.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+              "type": "ClusterRole",
+              "name": "home-kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+              "type": "ClusterRoleBinding",
+              "name": "home-kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+              "type": "Deployment",
+              "name": "kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+              "type": "Service",
+              "name": "kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+              "type": "ServiceAccount",
+              "name": "kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/nas-backup/database-restore-check.yaml:ConfigMap:infra-backup:database-restore-check",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/nas-backup/database-restore-check.yaml:ConfigMap:infra-backup:database-restore-check",
+              "type": "ConfigMap",
+              "name": "database-restore-check",
+              "namespace": "infra-backup",
+              "file": "k8s/pve/nas-backup/database-restore-check.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/nas-backup/database-restore-check.yaml:CronJob:infra-backup:backup-restore-database",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/nas-backup/database-restore-check.yaml:CronJob:infra-backup:backup-restore-database",
+              "type": "CronJob",
+              "name": "backup-restore-database",
+              "namespace": "infra-backup",
+              "file": "k8s/pve/nas-backup/database-restore-check.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/nas-backup/database-restore-check.yaml:ExternalSecret:infra-backup:backup-restore-s3",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/nas-backup/database-restore-check.yaml:ExternalSecret:infra-backup:backup-restore-s3",
+              "type": "ExternalSecret",
+              "name": "backup-restore-s3",
+              "namespace": "infra-backup",
+              "file": "k8s/pve/nas-backup/database-restore-check.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/nas-backup/restore-check.yaml:ConfigMap:infra-backup:backup-restore-check",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/nas-backup/restore-check.yaml:ConfigMap:infra-backup:backup-restore-check",
+              "type": "ConfigMap",
+              "name": "backup-restore-check",
+              "namespace": "infra-backup",
+              "file": "k8s/pve/nas-backup/restore-check.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/nas-backup/restore-check.yaml:CronJob:infra-backup:backup-restore-nas",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/nas-backup/restore-check.yaml:CronJob:infra-backup:backup-restore-nas",
+              "type": "CronJob",
+              "name": "backup-restore-nas",
+              "namespace": "infra-backup",
+              "file": "k8s/pve/nas-backup/restore-check.yaml"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/main.tf:module:monitoring:",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/main.tf:module:monitoring:",
+              "type": "Terraform module",
+              "name": "monitoring",
+              "file": "terraform/grafana-cloud/main.tf"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+              "type": "grafana_dashboard",
+              "name": "health",
+              "file": "terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+              "type": "grafana_folder",
+              "name": "monitoring",
+              "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+              "type": "grafana_rule_group",
+              "name": "monitoring",
+              "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
+            }
+          }
+        ]
+      },
+      "views": {
+        "access": {
+          "title": "入口・認証 / 原則Access・例外mTLS",
+          "before": true,
+          "after": true
+        },
+        "delivery": {
+          "title": "自宅基盤の変更・同期",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "home-k8sのサービスと接続",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "自宅インフラの全体",
+          "before": true,
+          "after": true
+        },
+        "loockit": {
+          "title": "Loockit / HAProxy → LXC → Bluetooth",
+          "before": true,
+          "after": true
+        },
+        "network": {
+          "title": "ネットワーク機器 / ルーター・SW・AP",
+          "before": true,
+          "after": true
+        },
+        "nextcloud": {
+          "title": "Nextcloud / DB・ロック・ファイル保存",
+          "before": true,
+          "after": true
+        },
+        "nfs": {
+          "title": "NFSの利用経路 / nas-01・nas-02",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "Proxmox VEクラスタ / 全VM・LXC",
+          "before": true,
+          "after": true
+        },
+        "platform": {
+          "title": "home-k8s / クラスタ基盤",
+          "before": true,
+          "after": true
+        },
+        "power": {
+          "title": "電源・安全停止 / UPS・NUTのcross-power",
+          "before": true,
+          "after": true
+        },
+        "recording": {
+          "title": "録画・配信 / PRD・STG",
+          "before": true,
+          "after": true
+        },
+        "recording_prd": {
+          "title": "TNLaStation PRD / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "recording_stg": {
+          "title": "TNLaStation STG / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        },
+        "storage": {
+          "title": "保存・バックアップ / 復元元の区別",
+          "before": true,
+          "after": true
+        },
+        "vlans": {
+          "title": "VLAN / native・タグ・経路",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}
