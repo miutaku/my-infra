@@ -1,7 +1,7 @@
 # Grafana Cloud monitoring
 
 自宅のVictoriaMetricsをGrafana CloudのPrometheusデータソース/PDC経由で参照し、Grafana-managed alertsとdashboardをTerraformで管理する。
-対象は自宅インフラとhome-k8s上の共用サービス。Re:Venter専用リソースは管理対象外とし、自宅KSMの収集からも専用namespaceを除外する。
+対象は自宅インフラとhome-k8s上の共用サービス。Re:Venter専用リソースは管理対象外とし、自宅KSMの収集からも専用namespaceと、共用namespaceにある専用workloadを除外する。
 既存データソース、PDC network/token、通知先、stack全体の通知ポリシーは作り直さない。
 
 ## 管理対象

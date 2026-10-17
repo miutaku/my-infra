@@ -34,6 +34,9 @@ config:
         - source_labels: [namespace]
           regex: "(app-)?reventer.*"
           action: drop
+        - source_labels: [pod, deployment, statefulset, daemonset, replicaset, cronjob, job_name]
+          regex: ".*(reventer|architecture-review).*"
+          action: drop
 
     - job_name: victoria-metrics
       static_configs:
