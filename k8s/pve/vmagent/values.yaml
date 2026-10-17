@@ -30,13 +30,10 @@ config:
       static_configs:
         - targets: ["kube-state-metrics.monitoring.svc.cluster.local:8080"]
       metric_relabel_configs:
-        # Dedicated application resources are managed in their own repository.
+        # Collect node/global metrics and the home services managed here.
         - source_labels: [namespace]
-          regex: "(app-)?reventer.*"
-          action: drop
-        - source_labels: [pod, deployment, statefulset, daemonset, replicaset, cronjob, job_name]
-          regex: ".*(reventer|architecture-review).*"
-          action: drop
+          regex: "(|app-(annict.*|coredns|coupon-manager|epgstation|gptwol|loockit|magic-mirror|mirakurun(-staging)?|nextcloud|tnlastation(-staging)?)|infra-(backup|db(-staging)?)|monitoring|argocd|cloudflared|external-secrets|kube-system|kubelet-serving-cert-approver|metallb-system|arc-systems|tfc-agent)"
+          action: keep
 
     - job_name: victoria-metrics
       static_configs:
