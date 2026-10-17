@@ -1,28 +1,19 @@
 variable "environments" {
-  description = "Existing environment-specific Prometheus/PDC data sources. Features must only be enabled after their collectors are deployed."
+  description = "Home Prometheus/PDC data source. Enable features only after their collectors are deployed."
   type = map(object({
     datasource_uid = string
     cluster        = string
-    profile        = string
     features       = set(string)
-    paused         = optional(bool, false)
   }))
 
   validation {
-    condition = alltrue([
-      for name, env in var.environments : contains(["home", "stg", "prd"], name) &&
-      contains(["home", "oke"], env.profile) &&
-      (name == "home" ? env.profile == "home" : env.profile == "oke") &&
+    condition = length(var.environments) == 1 && contains(keys(var.environments), "home") && alltrue([
+      for env in values(var.environments) :
       length(env.datasource_uid) > 0 && length(env.cluster) > 0 &&
       length(setsubtract(env.features, toset(["kubernetes", "probes", "backups"]))) == 0 &&
-      (!contains(env.features, "backups") || (env.profile == "home" && contains(env.features, "kubernetes")))
+      (!contains(env.features, "backups") || contains(env.features, "kubernetes"))
     ])
-    error_message = "Use home/home or stg|prd/oke, nonempty datasource UID/cluster, and supported features. Home backups require kubernetes."
-  }
-
-  validation {
-    condition     = length(distinct([for env in values(var.environments) : env.datasource_uid])) == length(var.environments)
-    error_message = "Each environment must reference its own data source."
+    error_message = "Only the home environment is managed. Specify nonempty datasource UID/cluster and supported features. Backups require kubernetes."
   }
 }
 

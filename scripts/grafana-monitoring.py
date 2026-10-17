@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("inventory", "plan"))
     parser.add_argument("--var-file", help="Terraform variable file (required for plan)")
+    parser.add_argument("--datasource-uid", default="cfkolv57kzn5sd", help="Home Prometheus data source UID")
     args = parser.parse_args()
     env = os.environ.copy()
     if not env.get("GRAFANA_URL") or not env.get("GRAFANA_AUTH"):
@@ -47,7 +48,8 @@ def main():
         except urllib.error.HTTPError as error:
             raise SystemExit(f"Grafana inventory request failed: HTTP {error.code}") from None
 
-    datasources = get("/api/datasources")
+    datasource = get("/api/datasources/uid/" + args.datasource_uid)
+    datasources = [datasource]
     contacts = get("/api/v1/provisioning/contact-points")
     # Explicit allowlist: API responses can contain receiver credentials.
     print(json.dumps({

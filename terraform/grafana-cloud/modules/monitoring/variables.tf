@@ -1,7 +1,6 @@
 variable "environment" { type = string }
 variable "cluster" { type = string }
 variable "datasource_uid" { type = string }
-variable "profile" { type = string }
 variable "features" { type = set(string) }
 variable "paused" { type = bool }
 variable "contact_points" {
@@ -16,7 +15,6 @@ variable "catalog" {
     severity    = string
     service     = string
     group       = string
-    profile     = string
     feature     = string
     description = string
   }))

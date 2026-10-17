@@ -2,36 +2,33 @@
   {
     "id": "cpu-busy",
     "title": "Host CPU busy",
-    "expression": "(100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job=~\"node_vm|node_kubernetes|node-exporter\",mode=\"idle\"}[5m]))) > bool 85) or vector(0)",
+    "expression": "(100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{job=~\"node_vm|node_kubernetes\",mode=\"idle\"}[5m]))) > bool 85) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "hosts",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "CPU >85% for 15m. Identify sustained consumers; CPU alone does not page."
   },
   {
     "id": "memory-warn",
     "title": "Host memory warn",
-    "expression": "(100 * node_memory_MemAvailable_bytes{job=~\"node_vm|node_kubernetes|node-exporter\"} / node_memory_MemTotal_bytes{job=~\"node_vm|node_kubernetes|node-exporter\"} < bool 15 and (100 * node_memory_MemAvailable_bytes{job=~\"node_vm|node_kubernetes|node-exporter\"} / node_memory_MemTotal_bytes{job=~\"node_vm|node_kubernetes|node-exporter\"} >= 5)) or vector(0)",
+    "expression": "(100 * node_memory_MemAvailable_bytes{job=~\"node_vm|node_kubernetes\"} / node_memory_MemTotal_bytes{job=~\"node_vm|node_kubernetes\"} < bool 15 and (100 * node_memory_MemAvailable_bytes{job=~\"node_vm|node_kubernetes\"} / node_memory_MemTotal_bytes{job=~\"node_vm|node_kubernetes\"} >= 5)) or vector(0)",
     "duration": "10m",
     "severity": "warn",
     "service": "hosts",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Host memory warn"
   },
   {
     "id": "memory-critical",
     "title": "Host memory critical",
-    "expression": "(100 * node_memory_MemAvailable_bytes{job=~\"node_vm|node_kubernetes|node-exporter\"} / node_memory_MemTotal_bytes{job=~\"node_vm|node_kubernetes|node-exporter\"} < bool 5) or vector(0)",
+    "expression": "(100 * node_memory_MemAvailable_bytes{job=~\"node_vm|node_kubernetes\"} / node_memory_MemTotal_bytes{job=~\"node_vm|node_kubernetes\"} < bool 5) or vector(0)",
     "duration": "5m",
     "severity": "critical",
     "service": "hosts",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Host memory critical"
   },
@@ -43,67 +40,61 @@
     "severity": "critical",
     "service": "hosts",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "OOM kills occurred; inspect memory consumers and affected services."
   },
   {
     "id": "disk-warn",
     "title": "Persistent filesystem capacity warn",
-    "expression": "((100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 80) and (100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) <= 90)) or vector(0)",
+    "expression": "((100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 80) and (100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) <= 90)) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "storage",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Persistent filesystem capacity warn"
   },
   {
     "id": "inode-warn",
     "title": "Persistent filesystem inode capacity warn",
-    "expression": "((100 * (1 - node_filesystem_files_free{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_files{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 80) and (100 * (1 - node_filesystem_files_free{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_files{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) <= 90)) or vector(0)",
+    "expression": "((100 * (1 - node_filesystem_files_free{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_files{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 80) and (100 * (1 - node_filesystem_files_free{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_files{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) <= 90)) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "storage",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Persistent filesystem inode capacity warn"
   },
   {
     "id": "disk-critical",
     "title": "Persistent filesystem capacity critical",
-    "expression": "((100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 90)) or vector(0)",
+    "expression": "((100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 90)) or vector(0)",
     "duration": "5m",
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Persistent filesystem capacity critical"
   },
   {
     "id": "inode-critical",
     "title": "Persistent filesystem inode capacity critical",
-    "expression": "((100 * (1 - node_filesystem_files_free{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_files{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 90)) or vector(0)",
+    "expression": "((100 * (1 - node_filesystem_files_free{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_files{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 90)) or vector(0)",
     "duration": "5m",
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Persistent filesystem inode capacity critical"
   },
   {
     "id": "filesystem-readonly",
     "title": "Persistent filesystem read-only",
-    "expression": "(node_filesystem_readonly{job=~\"node_vm|node_kubernetes|node-exporter\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} == bool 1) or vector(0)",
+    "expression": "(node_filesystem_readonly{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} == bool 1) or vector(0)",
     "duration": "0s",
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
-    "profile": "all",
     "feature": "",
     "description": "Persistent filesystem read-only"
   },
@@ -115,7 +106,6 @@
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
-    "profile": "home",
     "feature": "",
     "description": "PVE ZFS pool unhealthy"
   },
@@ -127,7 +117,6 @@
     "severity": "warn",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS on battery"
   },
@@ -139,7 +128,6 @@
     "severity": "critical",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "Hosts shut down at 80% charge. Check mains power and the cross-power UPS topology immediately."
   },
@@ -151,7 +139,6 @@
     "severity": "critical",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS unsafe state"
   },
@@ -163,7 +150,6 @@
     "severity": "warn",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS battery replacement required"
   },
@@ -175,7 +161,6 @@
     "severity": "warn",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS load warning"
   },
@@ -187,7 +172,6 @@
     "severity": "critical",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS load critical"
   },
@@ -199,7 +183,6 @@
     "severity": "critical",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS telemetry unavailable"
   },
@@ -211,7 +194,6 @@
     "severity": "critical",
     "service": "infrastructure",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Critical host unreachable"
   },
@@ -223,7 +205,6 @@
     "severity": "warn",
     "service": "management",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Management host unreachable"
   },
@@ -235,7 +216,6 @@
     "severity": "warn",
     "service": "load-balancer",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Load balancer redundancy lost"
   },
@@ -247,7 +227,6 @@
     "severity": "critical",
     "service": "load-balancer",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Both load balancers unreachable"
   },
@@ -259,7 +238,6 @@
     "severity": "critical",
     "service": "applications",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Home application unavailable"
   },
@@ -271,7 +249,6 @@
     "severity": "warn",
     "service": "management",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Management UI unavailable"
   },
@@ -283,7 +260,6 @@
     "severity": "critical",
     "service": "connectivity",
     "group": "availability",
-    "profile": "home",
     "feature": "probes",
     "description": "DNS/API/transport probe failed. TCP success alone does not prove authenticated DB queries or NFS writes work."
   },
@@ -295,7 +271,6 @@
     "severity": "warn",
     "service": "observability",
     "group": "observability",
-    "profile": "home",
     "feature": "",
     "description": "Exporter scrape failed"
   },
@@ -307,7 +282,6 @@
     "severity": "warn",
     "service": "optional-devices",
     "group": "observability",
-    "profile": "home",
     "feature": "",
     "description": "IoT or speedtest collection failed"
   },
@@ -319,7 +293,6 @@
     "severity": "warn",
     "service": "observability",
     "group": "observability",
-    "profile": "all",
     "feature": "",
     "description": "Metrics write queue growing"
   },
@@ -331,7 +304,6 @@
     "severity": "critical",
     "service": "observability",
     "group": "observability",
-    "profile": "all",
     "feature": "",
     "description": "Metrics samples dropped"
   },
@@ -343,19 +315,17 @@
     "severity": "critical",
     "service": "observability",
     "group": "observability",
-    "profile": "all",
     "feature": "",
     "description": "Metrics write queue blocked"
   },
   {
     "id": "freshness",
     "title": "Collection heartbeat stale",
-    "expression": "((time() - max(timestamp(up{job=~\"vmagent|vmagent-stg|vmagent-prd\"}))) > bool 180) or absent(up{job=~\"vmagent|vmagent-stg|vmagent-prd\"})",
+    "expression": "((time() - max(timestamp(up{job=~\"vmagent\"}))) > bool 180) or absent(up{job=~\"vmagent\"})",
     "duration": "2m",
     "severity": "critical",
     "service": "observability",
     "group": "observability",
-    "profile": "all",
     "feature": "",
     "description": "Collector self-scrape is stale or missing. A query returning old stored samples is not a recovery."
   },
@@ -367,7 +337,6 @@
     "severity": "warn",
     "service": "kubernetes",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Kubernetes node not ready"
   },
@@ -379,7 +348,6 @@
     "severity": "warn",
     "service": "kubernetes",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Kubernetes node pressure"
   },
@@ -391,7 +359,6 @@
     "severity": "critical",
     "service": "kubernetes",
     "group": "kubernetes",
-    "profile": "home",
     "feature": "kubernetes",
     "description": "Home control plane quorum at risk"
   },
@@ -403,7 +370,6 @@
     "severity": "critical",
     "service": "kubernetes",
     "group": "kubernetes",
-    "profile": "home",
     "feature": "kubernetes",
     "description": "All home Kubernetes workers unavailable"
   },
@@ -415,19 +381,17 @@
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Deployment replicas unavailable"
   },
   {
     "id": "deployment-down",
     "title": "Required deployment has no ready replicas",
-    "expression": "(((kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared|app-reventer-prd|app-reventer-stg\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"}) == bool 0) and (kube_deployment_spec_replicas > 0)) or vector(0)",
+    "expression": "(((kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"}) == bool 0) and (kube_deployment_spec_replicas > 0)) or vector(0)",
     "duration": "2m",
     "severity": "critical",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Required deployment has no ready replicas"
   },
@@ -439,19 +403,17 @@
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "StatefulSet replicas unavailable"
   },
   {
     "id": "statefulset-down",
     "title": "Required StatefulSet unavailable",
-    "expression": "((kube_statefulset_status_replicas_ready{namespace=~\"infra-db|monitoring|app-reventer-prd|app-reventer-stg\"} == bool 0) and (kube_statefulset_replicas > 0)) or vector(0)",
+    "expression": "((kube_statefulset_status_replicas_ready{namespace=~\"infra-db|monitoring\"} == bool 0) and (kube_statefulset_replicas > 0)) or vector(0)",
     "duration": "2m",
     "severity": "critical",
     "service": "databases",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Required StatefulSet unavailable"
   },
@@ -463,7 +425,6 @@
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "DaemonSet scheduling incomplete"
   },
@@ -475,7 +436,6 @@
     "severity": "warn",
     "service": "storage",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Persistent volume claim pending"
   },
@@ -487,7 +447,6 @@
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Persistent volume claim lost"
   },
@@ -499,7 +458,6 @@
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Container repeatedly restarting"
   },
@@ -511,7 +469,6 @@
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Pod pending"
   },
@@ -523,81 +480,8 @@
     "severity": "critical",
     "service": "observability",
     "group": "observability",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "Kubernetes state collection missing"
-  },
-  {
-    "id": "oke-node-none",
-    "title": "OKE has no Ready worker",
-    "expression": "(sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"}) == bool 0) or absent(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
-    "duration": "2m",
-    "severity": "critical",
-    "service": "kubernetes",
-    "group": "kubernetes",
-    "profile": "oke",
-    "feature": "kubernetes",
-    "description": "At least one base worker must be Ready. Zero burst workers is normal."
-  },
-  {
-    "id": "oke-storage-degraded",
-    "title": "OCI monitoring storage endpoint unavailable",
-    "expression": "(up{job=\"oci-monitoring-storage\"} == bool 0) or vector(0)",
-    "duration": "3m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI monitoring storage endpoint unavailable"
-  },
-  {
-    "id": "oke-storage-down",
-    "title": "All OCI monitoring storage endpoints unavailable",
-    "expression": "(sum(up{job=\"oci-monitoring-storage\"}) == bool 0) or absent_over_time(up{job=\"oci-monitoring-storage\"}[3m])",
-    "duration": "2m",
-    "severity": "critical",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "All OCI monitoring storage endpoints unavailable"
-  },
-  {
-    "id": "oke-storage-missing-01",
-    "title": "OCI monitoring replica 01 metrics missing",
-    "expression": "absent_over_time(up{job=\"oci-monitoring-storage\",replica=\"01\"}[3m]) or vector(0)",
-    "duration": "2m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI monitoring replica 01 metrics missing"
-  },
-  {
-    "id": "oke-storage-missing-02",
-    "title": "OCI monitoring replica 02 metrics missing",
-    "expression": "absent_over_time(up{job=\"oci-monitoring-storage\",replica=\"02\"}[3m]) or vector(0)",
-    "duration": "2m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI monitoring replica 02 metrics missing"
-  },
-  {
-    "id": "fluentbit-drop",
-    "title": "Log records dropped",
-    "expression": "(increase(fluentbit_output_dropped_records_total[5m]) > bool 0) or vector(0)",
-    "duration": "0s",
-    "severity": "critical",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "Log records dropped"
   },
   {
     "id": "backup-db-warn",
@@ -607,7 +491,6 @@
     "severity": "warn",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful mariadb-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -619,7 +502,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful mariadb-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -631,7 +513,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Required backup job missing: mariadb-backup"
   },
@@ -643,7 +524,6 @@
     "severity": "warn",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful nas-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -655,7 +535,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful nas-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -667,7 +546,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Required backup job missing: nas-backup"
   },
@@ -679,7 +557,6 @@
     "severity": "warn",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful victoria-metrics-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -691,7 +568,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful victoria-metrics-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -703,7 +579,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Required backup job missing: victoria-metrics-backup"
   },
@@ -715,7 +590,6 @@
     "severity": "warn",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful tnlastation-recorded-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -727,7 +601,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Last successful tnlastation-recorded-backup is overdue. Check job logs and destination verification; job success does not prove an actual restore works."
   },
@@ -739,7 +612,6 @@
     "severity": "critical",
     "service": "backups",
     "group": "backups",
-    "profile": "home",
     "feature": "backups",
     "description": "Required backup job missing: tnlastation-recorded-backup"
   },
@@ -751,7 +623,6 @@
     "severity": "warn",
     "service": "storage",
     "group": "capacity",
-    "profile": "home",
     "feature": "",
     "description": "SNMP mounted dataset use. Pool physical allocation and health require the TrueNAS API; snapshot pressure may not be visible here."
   },
@@ -763,7 +634,6 @@
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
-    "profile": "home",
     "feature": "",
     "description": "SNMP mounted dataset use. Pool physical allocation and health require the TrueNAS API; snapshot pressure may not be visible here."
   },
@@ -775,7 +645,6 @@
     "severity": "warn",
     "service": "network",
     "group": "capacity",
-    "profile": "home",
     "feature": "",
     "description": "IX2215 CPU busy"
   },
@@ -787,7 +656,6 @@
     "severity": "warn",
     "service": "network",
     "group": "capacity",
-    "profile": "home",
     "feature": "",
     "description": "IX2215 NAPT allocation failures"
   },
@@ -799,7 +667,6 @@
     "severity": "warn",
     "service": "management",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Explicitly monitored host services failed. Boot-only and unrelated units are not paged."
   },
@@ -811,7 +678,6 @@
     "severity": "warn",
     "service": "load-balancer",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Load balancer service redundancy lost"
   },
@@ -823,7 +689,6 @@
     "severity": "critical",
     "service": "load-balancer",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "No active load balancer service"
   },
@@ -835,7 +700,6 @@
     "severity": "critical",
     "service": "power",
     "group": "power",
-    "profile": "home",
     "feature": "",
     "description": "UPS host shutdown guard inactive"
   },
@@ -847,81 +711,8 @@
     "severity": "critical",
     "service": "infrastructure",
     "group": "availability",
-    "profile": "home",
     "feature": "",
     "description": "Required PVE guest stopped"
-  },
-  {
-    "id": "oke-metrics-down",
-    "title": "OCI metrics storage unavailable",
-    "expression": "(sum(up{job=\"oci-monitoring-storage\",instance=~\".*:18428\"}) == bool 0) or absent_over_time(up{job=\"oci-monitoring-storage\",instance=~\".*:18428\"}[3m])",
-    "duration": "2m",
-    "severity": "critical",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI metrics storage unavailable"
-  },
-  {
-    "id": "oke-metrics-01-missing",
-    "title": "OCI metrics replica 01 telemetry missing",
-    "expression": "absent_over_time(up{job=\"oci-monitoring-storage\",instance=~\".*:18428\",replica=\"01\"}[3m]) or vector(0)",
-    "duration": "2m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI metrics replica 01 telemetry missing"
-  },
-  {
-    "id": "oke-metrics-02-missing",
-    "title": "OCI metrics replica 02 telemetry missing",
-    "expression": "absent_over_time(up{job=\"oci-monitoring-storage\",instance=~\".*:18428\",replica=\"02\"}[3m]) or vector(0)",
-    "duration": "2m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI metrics replica 02 telemetry missing"
-  },
-  {
-    "id": "oke-logs-down",
-    "title": "OCI logs storage unavailable",
-    "expression": "(sum(up{job=\"oci-monitoring-storage\",instance=~\".*:19428\"}) == bool 0) or absent_over_time(up{job=\"oci-monitoring-storage\",instance=~\".*:19428\"}[3m])",
-    "duration": "2m",
-    "severity": "critical",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI logs storage unavailable"
-  },
-  {
-    "id": "oke-logs-01-missing",
-    "title": "OCI logs replica 01 telemetry missing",
-    "expression": "absent_over_time(up{job=\"oci-monitoring-storage\",instance=~\".*:19428\",replica=\"01\"}[3m]) or vector(0)",
-    "duration": "2m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI logs replica 01 telemetry missing"
-  },
-  {
-    "id": "oke-logs-02-missing",
-    "title": "OCI logs replica 02 telemetry missing",
-    "expression": "absent_over_time(up{job=\"oci-monitoring-storage\",instance=~\".*:19428\",replica=\"02\"}[3m]) or vector(0)",
-    "duration": "2m",
-    "severity": "warn",
-    "service": "observability",
-    "group": "observability",
-    "profile": "oke",
-    "feature": "",
-    "description": "OCI logs replica 02 telemetry missing"
   },
   {
     "id": "cronjob-failed",
@@ -931,31 +722,28 @@
     "severity": "warn",
     "service": "scheduled-jobs",
     "group": "kubernetes",
-    "profile": "home",
     "feature": "kubernetes",
     "description": "Inspect the job and CronJob history. A prior failed attempt does not mean the latest backup is overdue; freshness is checked separately."
   },
   {
     "id": "deployment-stopped-warn",
     "title": "Management or optional deployment stopped",
-    "expression": "(((kube_deployment_status_replicas_available == bool 0) and (kube_deployment_spec_replicas > 0)) unless (kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared|app-reventer-prd|app-reventer-stg\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"})) or vector(0)",
+    "expression": "(((kube_deployment_status_replicas_available == bool 0) and (kube_deployment_spec_replicas > 0)) unless (kube_deployment_status_replicas_available{namespace=~\"app-nextcloud|app-epgstation|app-tnlastation|app-loockit|app-coupon-manager|app-coredns|cloudflared\"} or kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=~\"pdc-agent|vmagent-victoria-metrics-agent|nut-exporter|blackbox-exporter-prometheus-blackbox-exporter|kube-state-metrics\"} or kube_deployment_status_replicas_available{namespace=\"kube-system\",deployment=\"coredns\"})) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "A noncritical controller with desired replicas is unavailable. Zero desired replicas is normal."
   },
   {
     "id": "statefulset-stopped-warn",
     "title": "Noncritical StatefulSet stopped",
-    "expression": "(((kube_statefulset_status_replicas_ready == bool 0) and (kube_statefulset_replicas > 0)) unless kube_statefulset_status_replicas_ready{namespace=~\"infra-db|monitoring|app-reventer-prd|app-reventer-stg\"}) or vector(0)",
+    "expression": "(((kube_statefulset_status_replicas_ready == bool 0) and (kube_statefulset_replicas > 0)) unless kube_statefulset_status_replicas_ready{namespace=~\"infra-db|monitoring\"}) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "workloads",
     "group": "kubernetes",
-    "profile": "all",
     "feature": "kubernetes",
     "description": "A noncritical controller with desired replicas is unavailable. Zero desired replicas is normal."
   }

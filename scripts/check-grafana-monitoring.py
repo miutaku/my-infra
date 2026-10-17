@@ -19,14 +19,13 @@ def main():
     parser.add_argument("--context", default="home-k8s")
     parser.add_argument("--namespace", default="monitoring")
     parser.add_argument("--service", default="victoria-metrics:8428")
-    parser.add_argument("--profile", choices=("home", "oke"), default="home")
     parser.add_argument("--features", default="", help="Comma-separated deployed features: kubernetes,probes,backups")
     parser.add_argument("--grafana-uid", help="Query this data source through Grafana/PDC instead of the Kubernetes proxy")
     args = parser.parse_args()
     features = set(filter(None, args.features.split(",")))
     config = Path(__file__).resolve().parents[1] / "terraform/grafana-cloud"
     catalog = json.loads((config / "rules.json").read_text())
-    targets = json.loads((config / "targets.json").read_text()) if args.profile == "home" else []
+    targets = json.loads((config / "targets.json").read_text())
     base = f"/api/v1/namespaces/{args.namespace}/services/{args.service}/proxy/api/v1/query?"
 
     if args.grafana_uid:
@@ -71,7 +70,7 @@ def main():
     failed = []
     checked = 0
     for rule in catalog:
-        if rule["profile"] not in ("all", args.profile) or (rule["feature"] and rule["feature"] not in features):
+        if rule["feature"] and rule["feature"] not in features:
             continue
         try:
             result = query(rule["expression"])

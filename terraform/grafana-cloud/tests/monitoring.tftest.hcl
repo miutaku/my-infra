@@ -10,27 +10,12 @@ variables {
     home = {
       datasource_uid = "home-metrics"
       cluster        = "home-k8s"
-      profile        = "home"
       features       = ["kubernetes", "probes", "backups"]
-    }
-    stg = {
-      datasource_uid = "stg-metrics"
-      cluster        = "oke-stg"
-      profile        = "oke"
-      features       = ["kubernetes"]
-      paused         = true
-    }
-    prd = {
-      datasource_uid = "prd-metrics"
-      cluster        = "oke-prd"
-      profile        = "oke"
-      features       = ["kubernetes"]
-      paused         = true
     }
   }
 }
 
-run "all_environments" {
+run "home_monitoring" {
   command = plan
 
   assert {
@@ -38,22 +23,13 @@ run "all_environments" {
       contains(keys(output.rule_uids["home"]), "ups-shutdown-near") &&
       contains(keys(output.rule_uids["home"]), "backup-db-critical") &&
       contains(keys(output.rule_uids["home"]), "missing-ups-a-status") &&
-      contains(keys(output.rule_uids["stg"]), "oke-node-none") &&
-      !contains(keys(output.rule_uids["prd"]), "ups-shutdown-near")
+      length(output.rule_uids) == 1
     )
-    error_message = "Environment-specific monitoring coverage was lost or mixed."
-  }
-
-  assert {
-    condition     = output.rule_uids["stg"]["cpu-busy"] != output.rule_uids["prd"]["cpu-busy"]
-    error_message = "Rule UIDs must not collide across environments."
+    error_message = "Only home infrastructure monitoring should be provisioned."
   }
 
   assert {
     condition = (
-      output.rule_settings["stg"]["oke-node-none"].severity == "warn" &&
-      output.rule_settings["prd"]["oke-node-none"].severity == "critical" &&
-      output.rule_settings["stg"]["oke-metrics-down"].severity == "critical" &&
       output.rule_settings["home"]["ups-shutdown-near"].receiver == "test-critical" &&
       output.rule_settings["home"]["ups-on-battery"].receiver == "test-warn" &&
       output.rule_settings["home"]["ups-shutdown-near"].interval == 10 &&
@@ -70,7 +46,6 @@ run "existing_collectors_only" {
       home = {
         datasource_uid = "home-metrics"
         cluster        = "home-k8s"
-        profile        = "home"
         features       = []
       }
     }
@@ -86,7 +61,7 @@ run "existing_collectors_only" {
   }
 }
 
-run "enable_home_without_enabling_unhealthy_oke_paths" {
+run "enable_home" {
   command = plan
   variables {
     paused = false
@@ -94,19 +69,17 @@ run "enable_home_without_enabling_unhealthy_oke_paths" {
   assert {
     condition = (
       !output.rule_settings["home"]["ups-shutdown-near"].paused &&
-      output.rule_settings["stg"]["oke-metrics-down"].paused &&
-      output.rule_settings["prd"]["oke-metrics-down"].paused
+      length(output.rule_settings) == 1
     )
-    error_message = "Enabling one environment must not enable paused environments."
+    error_message = "Only home rules should be enabled."
   }
 }
 
-run "reject_shared_datasource" {
+run "reject_unmanaged_environment" {
   command = plan
   variables {
     environments = {
-      stg = { datasource_uid = "shared", cluster = "oke-stg", profile = "oke", features = [] }
-      prd = { datasource_uid = "shared", cluster = "oke-prd", profile = "oke", features = [] }
+      other = { datasource_uid = "unmanaged", cluster = "unmanaged", features = [] }
     }
   }
   expect_failures = [var.environments]
@@ -116,7 +89,7 @@ run "reject_backups_without_collector" {
   command = plan
   variables {
     environments = {
-      home = { datasource_uid = "home", cluster = "home-k8s", profile = "home", features = ["backups"] }
+      home = { datasource_uid = "home", cluster = "home-k8s", features = ["backups"] }
     }
   }
   expect_failures = [var.environments]

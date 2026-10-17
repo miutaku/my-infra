@@ -24,7 +24,6 @@ def main():
     assert len({t["id"] for t in targets}) == len(targets), "duplicate required targets"
     for r in catalog:
         assert r["severity"] in ("warn", "critical"), r
-        assert r["profile"] in ("all", "home", "oke"), r
         assert r["feature"] in ("", "kubernetes", "probes", "backups"), r
         assert r["group"] in ("power", "availability", "capacity", "kubernetes", "backups", "observability"), r
 
@@ -80,9 +79,6 @@ def main():
         'kube_statefulset_replicas{namespace="monitoring",statefulset="victoria-metrics"}': "1+0x40",
         'kube_statefulset_status_replicas_ready{namespace="monitoring",statefulset="victoria-metrics"}': "0+0x40",
     }, {"statefulset-down": 1, "statefulset-stopped-warn": 0})
-    case("OKE base ready, burst absent", {
-        'kube_node_status_condition{node="base",condition="Ready",status="true"}': "1+0x40",
-    }, {"oke-node-none": 0})
     case("backup never succeeded", {
         'kube_cronjob_created{namespace="infra-db",cronjob="mariadb-backup"}': "1+0x17280",
     }, {"backup-db-critical": 1}, at="72h")
@@ -98,13 +94,6 @@ def main():
         'kube_cronjob_spec_suspend{namespace="infra-db",cronjob="mariadb-backup"}': "1+0x40",
     }, {"backup-db-deleted": 1})
     case("collector absent despite query succeeding", {}, {"freshness": 1})
-    case("metrics down while logs healthy", {
-        'up{job="oci-monitoring-storage",instance="replica1:18428",replica="01"}': "0+0x40",
-        'up{job="oci-monitoring-storage",instance="replica2:18428",replica="02"}': "0+0x40",
-        'up{job="oci-monitoring-storage",instance="replica1:19428",replica="01"}': "1+0x40",
-        'up{job="oci-monitoring-storage",instance="replica2:19428",replica="02"}': "1+0x40",
-    }, {"oke-metrics-down": 1, "oke-logs-down": 0})
-
     # A target removed from discovery must still page, and a failed probe (value
     # zero) must not be confused with a missing series.
     selector = 'probe_success{job="blackbox_icmp",instance="nas-02"}'

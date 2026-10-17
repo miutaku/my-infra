@@ -1,11 +1,8 @@
 locals {
   runbook = "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/README.md"
   rules = concat([
-    for rule in var.catalog : merge(rule, {
-      # STG availability loss does not page; data/observability risks still do.
-      severity = var.environment == "stg" && contains(["availability", "kubernetes"], rule.group) ? "warn" : rule.severity
-    })
-    if contains(["all", var.profile], rule.profile) && (rule.feature == "" || contains(var.features, rule.feature))
+    for rule in var.catalog : rule
+    if rule.feature == "" || contains(var.features, rule.feature)
     ], [
     for target in var.targets : {
       id          = "missing-${target.id}"
@@ -15,7 +12,6 @@ locals {
       severity    = target.severity
       service     = target.service
       group       = target.service == "power" ? "power" : "observability"
-      profile     = var.profile
       feature     = target.feature
       description = "Required series ${target.selector} has disappeared or stopped updating. Check collector and target before treating any apparent recovery as real."
     } if target.feature == "" || contains(var.features, target.feature)

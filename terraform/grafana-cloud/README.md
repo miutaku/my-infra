@@ -1,7 +1,8 @@
 # Grafana Cloud monitoring
 
-既存のVictoriaMetricsをGrafana CloudのPrometheusデータソース/PDC経由で参照し、Grafana-managed alertsと環境別dashboardをTerraformで管理する。
-`home` / `stg` / `prd` はそれぞれ異なるデータソースUIDを指定する。既存データソース、PDC network/token、通知先、stack全体の通知ポリシーは作り直さない。
+自宅のVictoriaMetricsをGrafana CloudのPrometheusデータソース/PDC経由で参照し、Grafana-managed alertsとdashboardをTerraformで管理する。
+対象は自宅インフラとhome-k8s上の共用サービス。Re:Venter専用リソースは管理対象外とし、自宅KSMの収集からも専用namespaceを除外する。
+既存データソース、PDC network/token、通知先、stack全体の通知ポリシーは作り直さない。
 
 ## 管理対象
 
@@ -11,7 +12,7 @@
 | 対象 | warn | critical |
 | --- | --- | --- |
 | UPS A/B | OBかつ残量85%超が30秒、負荷70%超が10分、交換要求5分 | OBかつ残量85%以下、LB/FSD/OFF/OVER。負荷90%超2分。NUT取得失敗2分 |
-| PVE/各VM・home-k8s/OKEノード | CPU85%超15分、メモリ空き15%未満10分 | メモリ空き5%未満5分、OOM kill |
+| PVE/各VM・home-k8sノード | CPU85%超15分、メモリ空き15%未満10分 | メモリ空き5%未満5分、OOM kill |
 | 永続filesystem | 容量/inode80%超15分 | 90%超5分、read-only化。Talosの意図したrootfs read-onlyは除外 |
 | PVE・NAS・IX2215 | exporter取得失敗3分 | ICMP失敗2分、常時稼働の主要PVE guest停止3分 |
 | PVE ZFS | — | poolがdegraded/faulted/offline等 |
@@ -24,29 +25,27 @@
 | Kubernetes | Node NotReady/Pressure5分、Pod Pending10分、再起動増加、PVC Pending | home control plane Ready<2が1分、home worker全停止2分、PVC Lost |
 | 日次DB/NAS backup | 最終成功から26時間超5分 | 48時間超5分、必須CronJob削除/停止5分 |
 | 毎時VMetrics/録画backup | 最終成功から2時間超5分 | 6時間超5分、必須CronJob削除/停止5分 |
-| OKE監視storage | endpoint/replica片系停止 | metricsまたはlogsの全系停止、Fluent Bit drop |
 | vmagent | write queue増加継続 | sample drop、queue blocked、self-scrapeの鮮度喪失 |
 | TinyTuya/speedtest | scrape失敗30分 | 設定しない |
 
-同じ数値のwarn/critical条件は排他的にする。STGの可用性・workload障害はwarnに下げ、データ危険と監視喪失はcriticalを維持する。
-OKEのbase workerが1台Readyなら正常であり、burst worker不在やARC runner待機0台を異常としない。
+同じ数値のwarn/critical条件は排他的にする。desired replicasが0のcontrollerは異常としない。
 UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知するため収集15秒、評価10秒。Grafana schedulerの10秒刻みに合わせる。Grafanaが利用不能でもNUTの自動停止は動作する。
 
 ## 設定と初回移管
 
 1. 対象stackのサービスアカウントを用意し、BSMに`GRAFANA_URL`と`GRAFANA_SERVICE_ACCOUNT_TOKEN`を登録する。APIにはdatasource read、folder/dashboard/alert provisioningの権限が必要。
 2. `python3 scripts/grafana-monitoring.py inventory` で既存のPrometheus UID、PDC network、通知先名を確認する。BSMのPDC tokenやCloud Metrics書込tokenは設定APIの認証には使えない。
-3. 確認済みのUID・通知先を記載した`environments.tfvars`を利用する。環境を変える場合は`terraform.tfvars.example`を参考に別の変数ファイルを用意する。ユーザー方針により既存の試作ルールは移管せず、新規folder `my-infra-<environment>`へルールを作成する。
+3. 確認済みの自宅UID・通知先を記載した`environments.tfvars`を利用する。接続先設定を変える場合は`terraform.tfvars.example`を参考に別の変数ファイルを用意する。既存の試作ルールは移管せず、新規folder `my-infra-home`へルールを作成する。
 4. `python3 scripts/grafana-monitoring.py plan --var-file terraform/grafana-cloud/environments.tfvars` を実行する。無関係な削除・既存通知先の変更がないことを確認する。
 5. applyする実行環境にも`GRAFANA_URL`/`GRAFANA_AUTH`を設定し、確認したplanに従って反映する。`paused=true`が初期値で、アラート通知はまだ有効にならない。
-6. 収集側のGitOps同期、Grafana経由のquery、通知先の受信を確認した後に`paused=false`で再plan/applyする。環境側の`paused=true`は全体フラグを解除しても維持される。STG/PRDはPDC経路の確認後に環境側のpauseも解除する。通知テストは別途許可された範囲で実施する。
+6. 収集側のGitOps同期、Grafana経由のquery、通知先の受信を確認した後に`paused=false`で再plan/applyする。通知テストは別途許可された範囲で実施する。
 
 stateは他のroot moduleと分離した`.state/terraform.tfstate`。初回apply前に永続保存先を決め、stateを紛失・複製しない。共有運用でHCP Terraformを使う場合は専用workspaceのbackendへ移行し、このstateだけを管理する。
 state・実入力・planはGit管理しない。Provider認証は環境変数から渡し、APIレスポンスの受信先設定や秘密値をログへ出さない。
 
 ### 収集機能の切替
 
-`environments.<name>.features`で追加収集が必要なルールを切り替える。
+`environments.home.features`で追加収集が必要なルールを切り替える。入力は`home`だけを受け付ける。
 
 | feature | 必要な収集 | この変更で追加するもの |
 | --- | --- | --- |
@@ -54,7 +53,7 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | `probes` | 新しいblackbox modulesとtarget | DNSの内部名/外部名、API readyz、DB/NFS TCP、TNLaStation・Loockit・coupon-manager、Nextcloud本文検証 |
 | `backups` | CronJob状態（`kubernetes`も必須） | KSMのlastSuccessfulTimeによる日次/毎時の鮮度・削除・suspend検知 |
 
-未収集のfeatureを有効化しない。OKEは別repoにある既存KSM/node-exporter/vmagent/storage scrapeを使い、同じcollectorを再導入しない。
+未収集のfeatureを有効化しない。
 home用`targets.json`の必須系列は3分欠測+2分継続、UPS/停止guardは1分欠測+1分継続で通知する。Pod IPの変化や系列の部分消失を正常復旧と見なさず、固定instanceごとに検知する。
 通常ルールの条件なしは0を返す。datasource接続・queryエラーは`Error`として通知する。PDC全断では複数のDatasourceErrorが出る可能性があり、初回受信試験で件数・集約を確認する。
 
@@ -106,10 +105,8 @@ read-only検査で表示される「condition true」は継続時間未判定で
 | PBS VM別backup/verify/restore・S3・restic容量予算 | PBS API、保存先検証結果の永続export。KSM Job成功は復元可能性の保証ではない |
 | etcd quorum、VIP重複、switch/AP、WAN外部probe、公開Access/TLS | 認証・対象機器/公開URLの台帳と専用probe。API readyz/内部probeだけでは不足 |
 | ESO/BSM更新・証明書期限、ArgoCD/TFC/ARC job遅延 | 各controllerのmetrics/API scrape。既存Pod/replica監視とは別 |
-| OCI課金・監視VM OS容量、Re:Venter業務SLO | OCI API、監視VM node-exporter、別repoのアプリ指標。今回はstorage endpointとOKE共通状態まで |
 | 拠点外heartbeat・metric/log canary | 独立した外部受信先/評価系。Grafanaからのdatasourceエラーは拠点heartbeatの代わりではない |
 
-有効化前には全環境のPDC接続、追加collectorの同期、通知先を確認する。既存試作ルールは今回変更しないため、新ルールと同じ障害の通知が重複しうる。旧ルールの停止・削除は切替時に別途行う。
-特にSTG/PRDは環境別PDC networkを使う運用方針なので、両datasourceのnetworkとagentの接続先・許可先が一致することを確認し、接続できない環境の通知は有効化しない。
+有効化前には自宅のPDC接続、追加collectorの同期、通知先を確認する。既存試作ルールは今回変更しないため、新ルールと同じ障害の通知が重複しうる。旧ルールの停止・削除は切替時に別途行う。
 
 参照: [Grafana Terraform provisioning](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/terraform-provisioning/)、[欠測の扱い](https://grafana.com/docs/grafana/latest/alerting/guides/missing-data/)、[Provider rule schema](https://registry.terraform.io/providers/grafana/grafana/4.46.0/docs/resources/rule_group)。

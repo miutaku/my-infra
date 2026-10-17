@@ -29,6 +29,11 @@ config:
     - job_name: kube-state-metrics
       static_configs:
         - targets: ["kube-state-metrics.monitoring.svc.cluster.local:8080"]
+      metric_relabel_configs:
+        # Dedicated application resources are managed in their own repository.
+        - source_labels: [namespace]
+          regex: "(app-)?reventer.*"
+          action: drop
 
     - job_name: victoria-metrics
       static_configs:

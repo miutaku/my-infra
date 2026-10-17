@@ -22,12 +22,11 @@ module "monitoring" {
   environment    = each.key
   cluster        = each.value.cluster
   datasource_uid = data.grafana_data_source.metrics[each.key].uid
-  profile        = each.value.profile
   features       = each.value.features
   catalog        = local.catalog
-  targets        = each.value.profile == "home" ? local.targets : []
+  targets        = local.targets
   contact_points = var.contact_points
-  paused         = var.paused || each.value.paused
+  paused         = var.paused
 }
 
 output "rule_uids" {
