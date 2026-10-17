@@ -1,4 +1,7 @@
 ---
+- name: Install the managed Codex CLI package
+  ansible.builtin.import_tasks: codex.yml
+
 - name: Create user command directories
   ansible.builtin.file:
     path: "{{ item }}"

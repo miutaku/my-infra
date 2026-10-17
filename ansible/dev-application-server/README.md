@@ -9,6 +9,7 @@ Ansible playbook。
 - 開発・ブラウザ・動画・Kubernetes関連のAPTパッケージ
 - Helm snap
 - Packer、D2、uv/uvx、BWS、kubectx/kubens、talosctl（バージョンとSHA-256を固定）
+- Codex CLI（完全な公式パッケージをバージョンとSHA-256で固定）
 - Pipenv、virtualenv、OCI CLI、Mermaid CLI、Bitwarden CLI
 - Docker/node exporterサービス、unattended-upgrades、bash環境、OCI CLI設定
 - `scripts/setup-kubeconfig`の配布
@@ -22,6 +23,33 @@ export BWS_ACCESS_TOKEN='...'
 ansible-playbook site.yml --check --diff
 ansible-playbook site.yml
 ```
+
+## Codex CLI
+
+ホスト共通のCLIとして、公式の完全なパッケージ（実行時リソースを含む）を
+root所有の`/opt/codex/<version>`へ配置し、`/usr/local/bin/codex`から参照する。
+`group_vars/all.yml`の`codex_version`、`codex_archive_sha256`、
+`codex_binary_sha256`を更新してバージョンを管理する。
+ユーザー領域へ公式インストーラーを手動実行する運用にはしない。
+
+Codexだけの反映にはBSMの認証は不要。
+
+```bash
+cd ansible/dev-application-server
+ansible-playbook codex.yml --check --diff
+ansible-playbook codex.yml
+```
+
+既存の`~/.local/bin/codex`が公式standalone installerのコマンドリンクなら削除し、
+管理済みのコマンドへ移行する。変更後、既存のシェルでは`hash -r`を実行する。
+古いSnap版が残っている場合も`/usr/local/bin`を`/snap/bin`より優先する。
+`type -a codex`と`codex --version`で解決先を確認する。
+
+`~/.codex`内の認証情報、設定、会話履歴、ペアリング情報とRemote Controlの
+実行状態は個人の状態として保持する。このplaybookではサービスの起動・停止や
+VS Code拡張同梱版の差し替えは行わない。公式インストーラーが作成した旧パッケージ
+キャッシュも保持する。ユーザー領域のapp-server daemon用パッケージはCodexが管理し、
+このCLI本体のバージョン固定とは別になる。
 
 ## 自動更新と再起動
 

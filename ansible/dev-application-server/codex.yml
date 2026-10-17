@@ -1,0 +1,8 @@
+---
+- name: Configure the development server Codex CLI
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install the managed Codex CLI package
+      ansible.builtin.import_tasks: tasks/codex.yml

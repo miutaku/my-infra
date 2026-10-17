@@ -94,6 +94,10 @@ dev_apt_packages:
 talosctl_version: "1.14.1"
 talosctl_sha256: 7233ece94c94296a033a6ddb5efe0baf508a94c71de7e6c7b286500705924208
 
+codex_version: "0.163.0"
+codex_archive_sha256: 582646c6bf0561eb0de540f7fc85b9121b0091a826bc6e96830b7f1722122182
+codex_binary_sha256: 399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215
+
 packer_version: "1.11.2"
 packer_archive_sha256: ced13efc257d0255932d14b8ae8f38863265133739a007c430cae106afcfc45a
 

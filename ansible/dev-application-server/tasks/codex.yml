@@ -1,0 +1,79 @@
+---
+- name: Validate the supported Codex platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.system == 'Linux'
+      - ansible_facts.architecture == 'x86_64'
+
+- name: Create managed Codex package directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /opt/codex
+    - "/opt/codex/{{ codex_version }}"
+    - /usr/local/bin
+    - /var/cache/codex
+
+- name: Download the pinned complete Codex package
+  ansible.builtin.get_url:
+    url: "https://releases.openai.com/codex/releases/{{ codex_version }}/codex-package-x86_64-unknown-linux-musl.tar.gz"
+    dest: "/var/cache/codex/codex-{{ codex_version }}.tar.gz"
+    checksum: "sha256:{{ codex_archive_sha256 }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: codex_archive
+  when: not ansible_check_mode
+
+- name: Inspect the managed Codex binary
+  ansible.builtin.stat:
+    path: "/opt/codex/{{ codex_version }}/bin/codex"
+    checksum_algorithm: sha256
+  register: codex_binary
+
+- name: Extract the complete Codex package including runtime resources
+  ansible.builtin.unarchive:
+    src: "/var/cache/codex/codex-{{ codex_version }}.tar.gz"
+    dest: "/opt/codex/{{ codex_version }}"
+    remote_src: true
+    owner: root
+    group: root
+  when:
+    - not ansible_check_mode
+    - codex_archive.changed or not codex_binary.stat.exists or codex_binary.stat.checksum != codex_binary_sha256
+
+- name: Publish the managed Codex command
+  ansible.builtin.file:
+    src: "/opt/codex/{{ codex_version }}/bin/codex"
+    dest: /usr/local/bin/codex
+    state: link
+    owner: root
+    group: root
+    force: true
+
+- name: Inspect the superseded user Codex command
+  ansible.builtin.stat:
+    path: "{{ dev_home }}/.local/bin/codex"
+    follow: false
+  register: codex_user_command
+
+- name: Remove the superseded standalone installer command link
+  ansible.builtin.file:
+    path: "{{ dev_home }}/.local/bin/codex"
+    state: absent
+  when:
+    - codex_user_command.stat.islnk | default(false)
+    - codex_user_command.stat.lnk_target == dev_home ~ '/.codex/packages/standalone/current/bin/codex'
+
+- name: Verify the installed Codex version
+  ansible.builtin.command: /usr/local/bin/codex --version
+  become: true
+  become_user: "{{ dev_user }}"
+  changed_when: false
+  register: codex_installed_version
+  failed_when: codex_installed_version.stdout != 'codex-cli ' ~ codex_version
+  when: not ansible_check_mode
