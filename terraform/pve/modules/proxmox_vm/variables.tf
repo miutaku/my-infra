@@ -116,6 +116,16 @@ variable "data_disk_storage" {
   default     = "local-zfs"
 }
 
+variable "data_disk_write_mbps" {
+  description = "Maximum secondary disk write throughput in MB/s. null leaves writes unlimited."
+  type        = number
+  default     = null
+  validation {
+    condition     = var.data_disk_write_mbps == null ? true : var.data_disk_write_mbps > 0
+    error_message = "data_disk_write_mbps must be positive when set."
+  }
+}
+
 variable "vlan_tag" {
   description = "VLAN tag for the primary network interface. null = untagged."
   type        = number

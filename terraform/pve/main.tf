@@ -104,8 +104,11 @@ module "pbs" {
   proxmox_nodes     = ["pve-x570"] # 平常時の稼働ノード。障害時は手動で pve-b550m へ移行する
   disk_size         = 20           # OS ディスク (lean)。datastore 実体は S3 なので小容量で足りる
   data_disk_size    = 64           # scsi1: S3 datastore ローカルキャッシュ (レプリ除外運用)
-  vlan_tag          = 20           # VLAN 20 (192.168.20.0/24, infra)。PVE から PBS:8007 へ到達させる
-  cloudinit_storage = "local-zfs"
+  # Shared NVMe write contention delayed control-plane API responses >8s.
+  # Keep PBS cache writes at 8 MB/s; measured API timeouts fell to zero.
+  data_disk_write_mbps = 8
+  vlan_tag             = 20 # VLAN 20 (192.168.20.0/24, infra)。PVE から PBS:8007 へ到達させる
+  cloudinit_storage    = "local-zfs"
 }
 
 

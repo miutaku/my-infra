@@ -104,10 +104,11 @@ resource "proxmox_vm_qemu" "vm" {
         for_each = var.data_disk_size != null ? [1] : []
         content {
           disk {
-            backup     = true
-            emulatessd = true
-            size       = "${var.data_disk_size}G"
-            storage    = var.data_disk_storage
+            backup             = true
+            emulatessd         = true
+            size               = "${var.data_disk_size}G"
+            storage            = var.data_disk_storage
+            mbps_wr_concurrent = var.data_disk_write_mbps
           }
         }
       }
