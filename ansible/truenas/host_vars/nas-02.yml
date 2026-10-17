@@ -9,16 +9,22 @@ truenas_datasets:
       comment: recorded
       networks:
         - 192.168.20.0/24
+        - 10.0.0.0/16
+        - 192.168.10.0/24
   - name: raid1_case/thumbnail
     nfs:
       comment: thumbnail
       networks:
         - 192.168.20.0/24
+        - 10.0.0.0/16
+        - 192.168.10.0/24
   - name: raid1_case/drop
     nfs:
       comment: drop
       networks:
         - 192.168.20.0/24
+        - 10.0.0.0/16
+        - 192.168.10.0/24
   # home-k8s state: shared by both Talos workers so a worker reboot does not
   # pin databases or monitoring to a single worker.
   - name: raid1_case/home-k8s-victoria-metrics
