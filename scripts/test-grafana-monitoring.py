@@ -34,9 +34,9 @@ def main():
                   "for": "1m" if t["service"] == "power" else "2m"} for t in targets]
     cases = []
 
-    def case(name, series, expectations, at="10m"):
+    def case(name, series, expectations, at="10m", interval="15s"):
         cases.append({
-            "name": name, "interval": "15s",
+            "name": name, "interval": interval,
             "input_series": [{"series": key, "values": value} for key, value in series.items()],
             "promql_expr_test": [
                 {"expr": f'sum({rules[rid]["expression"]})', "eval_time": at,
@@ -94,6 +94,64 @@ def main():
         'kube_cronjob_spec_suspend{namespace="infra-db",cronjob="mariadb-backup"}': "1+0x40",
     }, {"backup-db-deleted": 1})
     case("collector absent despite query succeeding", {}, {"freshness": 1})
+
+    for direction in ("receive", "transmit"):
+        rid = f"nic-{direction}-errors"
+        for name, errors, packets, device, state, expected in [
+            ("bad link", 30, 1500, "eth0", "up", 1),
+            ("low traffic single errors", 1, 1, "eth0", "up", 0),
+            ("below ratio threshold", 30, 6000, "eth0", "up", 0),
+            ("container interface", 30, 1500, "veth1234", "up", 0),
+            ("inactive interface", 30, 1500, "eth0", "down", 0),
+        ]:
+            labels = f'job="node_vm",instance="test",device="{device}"'
+            case(f"NIC {direction}: {name}", {
+                f'node_network_{direction}_errs_total{{{labels}}}': f"0+{errors}x40",
+                f'node_network_{direction}_packets_total{{{labels}}}': f"0+{packets}x40",
+                f'node_network_info{{{labels},operstate="{state}"}}': "1+0x40",
+            }, {rid: expected})
+
+    for metric, rid, step in [
+        ("ifInErrors", "router-receive-errors", 30),
+        ("ifOutErrors", "router-transmit-errors", 30),
+        ("ifInDiscards", "router-receive-drops", 300),
+        ("ifOutDiscards", "router-transmit-drops", 300),
+    ]:
+        for name, descr, state, expected in [
+            ("active WAN", "GigaEthernet0.0", 1, 1),
+            ("active tunnel", "Tunnel1.0", 1, 1),
+            ("inactive LAN", "GigaEthernet2.20", 2, 0),
+            ("unused port", "GigaEthernet1.0", 1, 0),
+            ("loopback", "Loopback0.0", 1, 0),
+        ]:
+            labels = f'job="snmp",instance="ix2215",ifIndex="1",ifDescr="{descr}"'
+            case(f"{rid}: {name}", {
+                f'{metric}{{{labels}}}': f"0+{step}x40",
+                f'ifOperStatus{{{labels}}}': f"{state}+0x40",
+            }, {rid: expected})
+
+    case("load normalized by cores", {
+        'node_load5{job="node_vm",instance="test"}': "4+0x40",
+        'node_cpu_seconds_total{job="node_vm",instance="test",cpu="0",mode="idle"}': "0+10x40",
+        'node_cpu_seconds_total{job="node_vm",instance="test",cpu="1",mode="idle"}': "0+10x40",
+    }, {"load-average": 1})
+    case("normal multicore load", {
+        'node_load5{job="node_vm",instance="test"}': "4+0x40",
+        **{f'node_cpu_seconds_total{{job="node_vm",instance="test",cpu="{cpu}",mode="idle"}}': "0+10x40" for cpu in range(4)},
+    }, {"load-average": 0})
+
+    for direction, threshold in (("download", 25), ("upload", 20)):
+        metric = f'speedtest_{direction}_speed_mbps{{job="speedtest",instance="speedtest"}}'
+        for name, samples, at, expected in [
+            ("three slow results", f"{threshold-1}+0x3", "10m", 1),
+            ("one slow result", f"100 {threshold-1} 100", "10m", 0),
+            ("only two results", f"{threshold-1}+0x1", "5m", 0),
+            ("stale measurement", f"{threshold-1}+0x2", "21m", 0),
+            ("measurement disappears", f"{threshold-1} {threshold-1} stale", "11m", 0),
+            ("exact threshold", f"{threshold}+0x3", "10m", 0),
+        ]:
+            case(f"{direction}: {name}", {metric: samples}, {f"speedtest-{direction}-slow": expected}, at=at, interval="5m")
+
     # A target removed from discovery must still page, and a failed probe (value
     # zero) must not be confused with a missing series.
     selector = 'probe_success{job="blackbox_icmp",instance="nas-02"}'

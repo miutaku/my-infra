@@ -746,5 +746,104 @@
     "group": "kubernetes",
     "feature": "kubernetes",
     "description": "A noncritical controller with desired replicas is unavailable. Zero desired replicas is normal."
+  },
+  {
+    "id": "nic-receive-errors",
+    "title": "Host NIC receive errors",
+    "expression": "(((rate(node_network_receive_errs_total{job=~\"node_vm|node_kubernetes\",device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*|br-.*|virbr.*|tap.*|fw.*|kube.*|dummy.*|sit.*|ip6tnl.*|tunl.*|teql.*\"}[5m]) / clamp_min(rate(node_network_receive_packets_total{job=~\"node_vm|node_kubernetes\",device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*|br-.*|virbr.*|tap.*|fw.*|kube.*|dummy.*|sit.*|ip6tnl.*|tunl.*|teql.*\"}[5m]), 1)) > bool 0.01) and (rate(node_network_receive_errs_total{job=~\"node_vm|node_kubernetes\",device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*|br-.*|virbr.*|tap.*|fw.*|kube.*|dummy.*|sit.*|ip6tnl.*|tunl.*|teql.*\"}[5m]) > 1) and on(job,instance,device) (node_network_info{job=~\"node_vm|node_kubernetes\",operstate=\"up\"} == 1)) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "Per active interface: 5-minute error rate >1% and >1 error/second for 5m. Excludes loopback and transient container interfaces. Inspect link, NIC and switch counters."
+  },
+  {
+    "id": "nic-transmit-errors",
+    "title": "Host NIC transmit errors",
+    "expression": "(((rate(node_network_transmit_errs_total{job=~\"node_vm|node_kubernetes\",device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*|br-.*|virbr.*|tap.*|fw.*|kube.*|dummy.*|sit.*|ip6tnl.*|tunl.*|teql.*\"}[5m]) / clamp_min(rate(node_network_transmit_packets_total{job=~\"node_vm|node_kubernetes\",device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*|br-.*|virbr.*|tap.*|fw.*|kube.*|dummy.*|sit.*|ip6tnl.*|tunl.*|teql.*\"}[5m]), 1)) > bool 0.01) and (rate(node_network_transmit_errs_total{job=~\"node_vm|node_kubernetes\",device!~\"lo|veth.*|cali.*|flannel.*|cni.*|docker.*|br-.*|virbr.*|tap.*|fw.*|kube.*|dummy.*|sit.*|ip6tnl.*|tunl.*|teql.*\"}[5m]) > 1) and on(job,instance,device) (node_network_info{job=~\"node_vm|node_kubernetes\",operstate=\"up\"} == 1)) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "Per active interface: 5-minute error rate >1% and >1 error/second for 5m. Excludes loopback and transient container interfaces. Inspect link, NIC and switch counters."
+  },
+  {
+    "id": "router-receive-errors",
+    "title": "IX2215 receive errors",
+    "expression": "((rate(ifInErrors{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"}[5m]) > bool 1) and on(job,instance,ifIndex) (ifOperStatus{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"} == 1)) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "Per active LAN/WAN/VLAN interface: >1 events/second for 5m. Check physical errors, congestion and interface counters; unused interfaces are excluded."
+  },
+  {
+    "id": "router-transmit-errors",
+    "title": "IX2215 transmit errors",
+    "expression": "((rate(ifOutErrors{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"}[5m]) > bool 1) and on(job,instance,ifIndex) (ifOperStatus{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"} == 1)) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "Per active LAN/WAN/VLAN interface: >1 events/second for 5m. Check physical errors, congestion and interface counters; unused interfaces are excluded."
+  },
+  {
+    "id": "router-receive-drops",
+    "title": "IX2215 receive drops",
+    "expression": "((rate(ifInDiscards{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"}[5m]) > bool 10) and on(job,instance,ifIndex) (ifOperStatus{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"} == 1)) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "Per active LAN/WAN/VLAN interface: >10 events/second for 5m. Check physical errors, congestion and interface counters; unused interfaces are excluded."
+  },
+  {
+    "id": "router-transmit-drops",
+    "title": "IX2215 transmit drops",
+    "expression": "((rate(ifOutDiscards{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"}[5m]) > bool 10) and on(job,instance,ifIndex) (ifOperStatus{job=\"snmp\",ifDescr=~\"GigaEthernet(0|2)([.].*)?|BVI.*|Tunnel.*\"} == 1)) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "Per active LAN/WAN/VLAN interface: >10 events/second for 5m. Check physical errors, congestion and interface counters; unused interfaces are excluded."
+  },
+  {
+    "id": "load-average",
+    "title": "Host load average high",
+    "expression": "(node_load5{job=~\"node_vm|node_kubernetes\"} / on(job,instance) group_left count by(job,instance) (node_cpu_seconds_total{job=~\"node_vm|node_kubernetes\",mode=\"idle\"}) > bool 1.5) or vector(0)",
+    "duration": "15m",
+    "severity": "warn",
+    "service": "hosts",
+    "group": "capacity",
+    "feature": "",
+    "description": "Five-minute load average per CPU core >1.5 for 15m. Check runnable tasks and uninterruptible I/O waits alongside CPU and storage metrics."
+  },
+  {
+    "id": "speedtest-download-slow",
+    "title": "Internet download speed low",
+    "expression": "((max_over_time(speedtest_download_speed_mbps{job=\"speedtest\"}[15m]) < bool 25) and (count_over_time(speedtest_download_speed_mbps{job=\"speedtest\"}[15m]) >= 3) and (time() - timestamp(speedtest_download_speed_mbps{job=\"speedtest\"}) < 600)) or vector(0)",
+    "duration": "0s",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "At least 3 measurements in 15m are all below 25 Mbps, with the latest sample less than 10m old. Check concurrent transfers and test server before diagnosing the WAN."
+  },
+  {
+    "id": "speedtest-upload-slow",
+    "title": "Internet upload speed low",
+    "expression": "((max_over_time(speedtest_upload_speed_mbps{job=\"speedtest\"}[15m]) < bool 20) and (count_over_time(speedtest_upload_speed_mbps{job=\"speedtest\"}[15m]) >= 3) and (time() - timestamp(speedtest_upload_speed_mbps{job=\"speedtest\"}) < 600)) or vector(0)",
+    "duration": "0s",
+    "severity": "warn",
+    "service": "network",
+    "group": "capacity",
+    "feature": "",
+    "description": "At least 3 measurements in 15m are all below 20 Mbps, with the latest sample less than 10m old. Check concurrent transfers and test server before diagnosing the WAN."
   }
 ]

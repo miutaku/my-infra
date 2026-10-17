@@ -18,6 +18,10 @@
 | PVE ZFS | — | poolがdegraded/faulted/offline等 |
 | NAS mounted dataset | 使用率75%超15分 | 85%超5分。SNMPのdataset使用量で、pool全体の物理使用量とは異なる |
 | IX2215 | CPU80%超15分、NAPT割当失敗増加5分 | 死活ルールで検出 |
+| ホストNIC品質 | 稼働IFの受信/送信エラー率1%超かつ1件/秒超が5分 | — |
+| IX2215 IF品質 | 稼働中の主要IFの受信/送信エラー1件/秒超、ドロップ10件/秒超が5分 | — |
+| ホストload average | 5分loadのCPUコア数あたり値が1.5超で15分 | — |
+| 回線速度 | 15分内の3回以上の測定がすべてdownload 25 Mbps未満/upload 20 Mbps未満 | — |
 | lb-01/02 | 片系停止/HAProxy・Keepalived停止5分 | 両系停止/どちらかの必須サービスが全系停止2分 |
 | Nextcloud/Mirakurun/EPGStation/TNLaStation/Loockit/coupon-manager | replica不足10分 | HTTP probe失敗3分、重要Deployment/StatefulSetのReady=0が2分 |
 | DNS/API/DB・NFS transport | — | DNS応答/答えの検証、API readyz、TCP接続失敗2分 |
@@ -26,9 +30,11 @@
 | 日次DB/NAS backup | 最終成功から26時間超5分 | 48時間超5分、必須CronJob削除/停止5分 |
 | 毎時VMetrics/録画backup | 最終成功から2時間超5分 | 6時間超5分、必須CronJob削除/停止5分 |
 | vmagent | write queue増加継続 | sample drop、queue blocked、self-scrapeの鮮度喪失 |
-| TinyTuya/speedtest | scrape失敗30分 | 設定しない |
+| TinyTuya/speedtest収集 | scrape失敗30分 | 設定しない |
 
 同じ数値のwarn/critical条件は排他的にする。desired replicasが0のcontrollerは異常としない。
+NIC品質は5分間のrateをIF別に比較し、loopback・一時的なコンテナIFを除く。IX2215はGigaEthernet0/2とそのサブIF、BVI、Tunnelインターフェースを対象とする。SNMPにpacket counterがないため、routerの判定は毎秒件数を使う。
+回線速度は5分間隔の測定を使い、直近結果が10分以上古い場合や15分内に3回未満しか結果がない場合は低速通知を出さない。
 UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知するため収集15秒、評価10秒。Grafana schedulerの10秒刻みに合わせる。Grafanaが利用不能でもNUTの自動停止は動作する。
 
 ## 設定と初回移管
