@@ -124,6 +124,7 @@ read-only検査で表示される「condition true」は継続時間未判定で
 - **ホスト/ストレージ**: 同じinstanceのICMP・exporter・ZFS状態・使用率を照合する。NASとPVE停止を先に確認してからアプリを調べる。
 - **サービス**: namespaceのDeployment/StatefulSet/Pod・イベントを確認し、DB/NFS/DNSの障害を切り分ける。TCP成功だけで機能正常と判断しない。
 - **backup**: CronJobの直近Jobとログ、保存先の検証結果を確認する。最終成功なしはCronJob作成時からの経過で判定する。DB jobはMariaDBとPostgreSQL両系統を含む。
+- **定期Job失敗**: CronJobごとに作成時刻が最新のJobだけを対象とし、終端のFailed状態を判定する。後続Jobが成功・実行中なら過去の失敗は通知しない。成功したJob内のPod再試行も失敗扱いしない。owner/作成時刻の収集欠落は別途検知する。
 - **監視喪失**: vmagent targets/queue、保存先、PDCを順に確認する。古いサンプルの表示やMissingSeriesによる解消は実復旧ではない。
 
 ## 収集・検証の前提と範囲

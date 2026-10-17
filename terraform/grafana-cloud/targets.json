@@ -796,5 +796,19 @@
     "feature": "kubernetes",
     "service": "workloads",
     "severity": "critical"
+  },
+  {
+    "id": "kubernetes-job-owner",
+    "selector": "kube_job_owner{owner_kind=\"CronJob\",owner_is_controller=\"true\"}",
+    "severity": "warn",
+    "service": "observability",
+    "feature": "kubernetes"
+  },
+  {
+    "id": "kubernetes-job-created",
+    "selector": "kube_job_created",
+    "severity": "warn",
+    "service": "observability",
+    "feature": "kubernetes"
   }
 ]

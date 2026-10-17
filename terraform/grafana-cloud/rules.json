@@ -716,14 +716,14 @@
   },
   {
     "id": "cronjob-failed",
-    "title": "Scheduled job has failed executions",
-    "expression": "(kube_job_status_failed > bool 0) or vector(0)",
+    "title": "Latest scheduled job failed",
+    "expression": "((kube_job_failed{condition=\"true\"} == 1) and on(namespace,job_name) ((kube_job_created * on(namespace,job_name) group_left(owner_name) kube_job_owner{owner_kind=\"CronJob\",owner_is_controller=\"true\"}) == on(namespace,owner_name) group_left() max by(namespace,owner_name) ((kube_job_created * on(namespace,job_name) group_left(owner_name) kube_job_owner{owner_kind=\"CronJob\",owner_is_controller=\"true\"})))) or vector(0)",
     "duration": "10m",
     "severity": "warn",
     "service": "scheduled-jobs",
     "group": "kubernetes",
     "feature": "kubernetes",
-    "description": "Inspect the job and CronJob history. A prior failed attempt does not mean the latest backup is overdue; freshness is checked separately."
+    "description": "The most recently created Job of a CronJob reached its terminal Failed condition. Earlier failed Jobs and recovered Pod retries do not alert; backup freshness is monitored separately."
   },
   {
     "id": "deployment-stopped-warn",

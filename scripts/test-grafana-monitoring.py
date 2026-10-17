@@ -157,6 +157,32 @@ def main():
         ]:
             case(f"{direction}: {name}", {metric: samples}, {f"speedtest-{direction}-slow": expected}, at=at, interval="5m")
 
+    # A terminal failure of the latest execution must remain visible, while a
+    # successful retry or a later execution must clear historical failures.
+    for name, old_failed, new_failed, new_complete, expected in [
+        ("latest Job failed", 0, 1, 0, 1),
+        ("old failure followed by success", 1, 0, 1, 0),
+        ("old failure followed by running Job", 1, 0, 0, 0),
+        ("successful Job with failed Pod attempt", 0, 0, 1, 0),
+    ]:
+        series = {}
+        for job, created, failed in [('old', 100, old_failed), ('latest', 200, new_failed)]:
+            labels = f'namespace="infra-backup",job_name="{job}"'
+            series[f'kube_job_created{{{labels}}}'] = f'{created}+0x40'
+            series[f'kube_job_owner{{{labels},owner_kind="CronJob",owner_is_controller="true",owner_name="backup"}}'] = '1+0x40'
+            series[f'kube_job_failed{{{labels},condition="true"}}'] = f'{failed}+0x40'
+        series['kube_job_complete{namespace="infra-backup",job_name="latest",condition="true"}'] = f'{new_complete}+0x40'
+        series['kube_job_status_failed{namespace="infra-backup",job_name="latest"}'] = '1+0x40'
+        case('scheduled jobs: ' + name, series, {'cronjob-failed': expected})
+    case('each CronJob has its own latest execution', {
+        'kube_job_created{namespace="test",job_name="a"}': '100+0x40',
+        'kube_job_created{namespace="test",job_name="b"}': '200+0x40',
+        'kube_job_owner{namespace="test",job_name="a",owner_kind="CronJob",owner_is_controller="true",owner_name="first"}': '1+0x40',
+        'kube_job_owner{namespace="test",job_name="b",owner_kind="CronJob",owner_is_controller="true",owner_name="second"}': '1+0x40',
+        'kube_job_failed{namespace="test",job_name="a",condition="true"}': '1+0x40',
+        'kube_job_failed{namespace="test",job_name="b",condition="true"}': '1+0x40',
+    }, {'cronjob-failed': 2})
+
     # A target removed from discovery must still page, and a failed probe (value
     # zero) must not be confused with a missing series.
     selector = 'probe_success{job="blackbox_icmp",instance="nas-02"}'
