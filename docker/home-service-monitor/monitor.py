@@ -94,11 +94,11 @@ class Metrics:
         self.labels = {'target': target['name'], 'kind': target['kind']}
         self.samples = []
 
-    def add(self, name, value, **labels):
+    def add(self, metric_name, value, **labels):
         value = float(value)
         if not math.isfinite(value):
             raise ValueError('non-finite metric')
-        self.samples.append((name, value, self.labels | labels))
+        self.samples.append((metric_name, value, self.labels | labels))
 
     def render(self):
         def quote(value):

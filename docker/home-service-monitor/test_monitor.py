@@ -92,6 +92,32 @@ class RecordingTests(unittest.TestCase):
                 monitor.pages('http://service/api/reserves', 'reserves')
 
 
+class KubernetesTests(unittest.TestCase):
+    def evaluate(self, items):
+        target = {'kind':'secrets','name':'home-secrets','namespaces':['monitoring'],
+                  'expected':{'monitoring':['db-credentials']}}
+        metrics = monitor.Metrics(target)
+        with patch.object(monitor.Path,'read_text',return_value='test-token'), \
+                patch.object(monitor,'get_json',side_effect=[{'items':items},{'items':[]}]):
+            monitor.kubernetes(target,metrics)
+        return metrics.samples
+
+    def test_secret_name_label_and_daily_refresh_interval(self):
+        samples = self.evaluate([{'metadata':{'name':'db-credentials'},
+            'spec':{'refreshInterval':'24h'},
+            'status':{'conditions':[{'type':'Ready','status':'True'}],
+                      'refreshTime':'2026-10-18T00:00:00Z'}}])
+        ready = next((v,l) for n,v,l in samples if n=='home_secret_ready')
+        self.assertEqual(ready[0],1)
+        self.assertEqual(ready[1]['name'],'db-credentials')
+        self.assertEqual(next(v for n,v,_ in samples if n=='home_secret_refresh_interval_seconds'),86400)
+
+    def test_missing_expected_secret_stays_not_ready(self):
+        samples = self.evaluate([])
+        self.assertEqual(next(v for n,v,_ in samples if n=='home_secret_ready'),0)
+        self.assertEqual(next(l['name'] for n,_,l in samples if n=='home_secret_ready'),'db-credentials')
+
+
 class TrueNASTests(unittest.TestCase):
     def target(self, protocol='ddp'):
         return {'name':'nas', 'kind':'truenas', 'url':'wss://nas/websocket',
