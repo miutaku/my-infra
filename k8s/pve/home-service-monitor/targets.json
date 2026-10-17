@@ -161,7 +161,7 @@
     "name": "mirakurun",
     "kind": "mirakurun",
     "url": "http://mirakurun.app-mirakurun.svc.cluster.local:40772",
-    "interval": 300
+    "interval": 30
   },
   {
     "name": "home-secrets",
