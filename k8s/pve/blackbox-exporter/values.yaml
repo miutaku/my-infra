@@ -1,3 +1,5 @@
+automountServiceAccountToken: true
+
 config:
   modules:
     http_2xx:
@@ -52,10 +54,12 @@ config:
       prober: http
       timeout: 5s
       http:
-        # The private VIP uses cluster PKI, not a public CA. Readiness is public
-        # to system:unauthenticated; do not put a privileged bearer token here.
+        follow_redirects: false
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
         tls_config:
-          insecure_skip_verify: true
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          server_name: kubernetes.default.svc
         fail_if_body_not_matches_regexp: ['^ok$']
     dns_internal:
       prober: dns

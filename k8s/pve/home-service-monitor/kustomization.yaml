@@ -5,6 +5,7 @@ resources:
   - resources.yaml
   - external-secret.yaml
   - vip.yaml
+  - blackbox-api-rbac.yaml
 configMapGenerator:
   - name: home-monitor-server-certificates
     files:

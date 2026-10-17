@@ -68,11 +68,11 @@ def main():
             run('postgres:18-bookworm', seed + '\n/bin/bash /scripts/postgres.sh', [(folder, '/scripts')], expected=1 if bad else 0)
         run('my-infra-home-backup-tools:check', '''
             mkdir -p /source/sample
-            printf 'restore fixture' > /source/sample/file.txt
+            printf 'restore fixture' > '/source/sample/字幕 [literal]*?.txt'
             restic init >/dev/null
             restic backup /source/sample >/dev/null
             /bin/sh /scripts/nas.sh
-            cmp /source/sample/file.txt /restore/source/sample/file.txt
+            cmp '/source/sample/字幕 [literal]*?.txt' '/restore/source/sample/字幕 [literal]*?.txt'
         ''', [(folder, '/scripts')], uid='65534')
     print('Passed MariaDB/PostgreSQL successful and corrupt restore cases, and an actual restic sample restore')
 

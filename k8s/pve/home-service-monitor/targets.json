@@ -63,13 +63,13 @@
     "name": "access-nas-01",
     "kind": "access",
     "url": "https://nas-01.miutaku.work/ui/",
-    "expect": "TrueNAS"
+    "expect": "TrueNAS|<ix-root(?:\\s|>)"
   },
   {
     "name": "access-nas-02",
     "kind": "access",
     "url": "https://nas-02.miutaku.work/ui/",
-    "expect": "TrueNAS"
+    "expect": "TrueNAS|<ix-root(?:\\s|>)"
   },
   {
     "name": "access-pve-x570",

@@ -21,7 +21,10 @@ data:
       *) echo 'No suitable restore sample' >&2; exit 1 ;;
     esac
     case "${selected}" in *'/../'*) exit 1 ;; esac
-    restic restore latest --target /restore --include "${selected}" --verify >/dev/null
+    # --include is a glob, even when the shell argument is quoted. NAS names
+    # commonly contain brackets; match only the literal selected file.
+    pattern=$(printf '%s\n' "${selected}" | sed 's/[][\\*?]/\\&/g')
+    restic restore latest --target /restore --include "${pattern}" --verify >/dev/null
     test -s "/restore${selected}"
     now=$(date +%s)
     printf 'home_backup_restore_success{backup="nas"} 1\nhome_backup_restore_timestamp_seconds{backup="nas"} %s\n' "${now}" > /tmp/result.prom
