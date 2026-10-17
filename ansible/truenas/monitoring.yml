@@ -1,0 +1,48 @@
+---
+- name: Provision read-only monitoring access over SSH
+  hosts: truenas
+  gather_facts: false
+  become: true
+  serial: 1
+  vars:
+    truenas_monitoring_output_dir: "{{ playbook_dir }}/../../.local/home-monitoring"
+    truenas_monitoring_remote_file: /data/home-monitoring/api-key.json
+  tasks:
+    - name: Validate monitoring inventory
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in ['nas-01', 'nas-02']
+
+    - name: Prepare private local credential directory
+      ansible.builtin.file:
+        path: "{{ truenas_monitoring_output_dir }}"
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      vars:
+        ansible_become: false
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+    - name: Ensure monitoring user, read-only privilege and API key
+      truenas_monitoring:
+        output_file: "{{ truenas_monitoring_remote_file }}"
+        secret_name: "HOME_MONITORING_{{ inventory_hostname | upper | replace('-', '_') }}_API_KEY"
+      no_log: true
+
+    - name: Fetch API key for manual BWS registration
+      ansible.builtin.fetch:
+        src: "{{ truenas_monitoring_remote_file }}"
+        dest: "{{ truenas_monitoring_output_dir }}/{{ inventory_hostname }}.json"
+        flat: true
+      when: not ansible_check_mode
+      no_log: true
+
+    - name: Restrict local credential file permissions
+      ansible.builtin.file:
+        path: "{{ truenas_monitoring_output_dir }}/{{ inventory_hostname }}.json"
+        mode: '0600'
+      delegate_to: localhost
+      vars:
+        ansible_become: false
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+      when: not ansible_check_mode

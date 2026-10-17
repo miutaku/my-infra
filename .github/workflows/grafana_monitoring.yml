@@ -20,6 +20,7 @@ on:
       - k8s/pve/nas-backup/**
       - k8s/pve/mariadb/backup-scripts-configmap.yaml
       - scripts/report-backup-restore.py
+      - ansible/truenas/**
   push:
     branches: [main]
     paths:
@@ -39,6 +40,7 @@ on:
       - k8s/pve/nas-backup/**
       - k8s/pve/mariadb/backup-scripts-configmap.yaml
       - scripts/report-backup-restore.py
+      - ansible/truenas/**
 
 permissions:
   contents: read
@@ -66,7 +68,9 @@ jobs:
           echo "2a542df32eac02ee17b9d844fb2aa1de00dafa5476579ba8a3ba862e9d572ea0  $RUNNER_TEMP/prometheus.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/prometheus.tar.gz" -C "$RUNNER_TEMP" prometheus-3.15.0.linux-amd64/promtool
       - name: Functional collector behavior checks
-        run: python3 -m unittest discover -s docker/home-service-monitor -v
+        run: |
+          python3 -m unittest discover -s docker/home-service-monitor -v
+          python3 -m unittest discover -s ansible/truenas/tests -v
       - name: Build backup test tools
         run: docker build -t my-infra-home-backup-tools:check docker/home-backup-tools
       - name: Isolated database and restic restore checks

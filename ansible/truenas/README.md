@@ -1,5 +1,26 @@
 # TrueNAS Scale ストレージ管理 (Ansible)
 
+監視用ユーザー・APIキーは、ストレージ変更を含まない`monitoring.yml`で管理する。
+TrueNAS 25.10の`midclt`をSSH経由で実行し、専用group/userと`READONLY_ADMIN` privilegeを作成する。
+adminへのSSH公開鍵登録とsudo利用は事前に設定する。API専用ユーザーにはSSH・SMB・passwordログインを許可しない。
+
+```bash
+cd ansible/truenas
+ansible-playbook monitoring.yml --check -K
+ansible-playbook monitoring.yml -K
+```
+
+sudoがpassword不要なら`-K`は省略できる。SSH鍵を指定する場合は`--private-key /path/to/key`を付ける。
+APIキーは各NASの`/data/home-monitoring/api-key.json`へ保存し、実行端末の
+`.local/home-monitoring/nas-01.json`・`nas-02.json`へ取得する。保存先directoryは0700、ファイルは0600。
+JSON内にBWSキー名と値が入るため、`HOME_MONITORING_NAS_01_API_KEY`・`HOME_MONITORING_NAS_02_API_KEY`として手動登録する。
+これらのローカルファイルはGitに追加しない。`.local/home-monitoring/`を実行端末の`.git/info/exclude`へ登録しておく。
+
+再実行では既存APIキーを維持する。NAS側の保存ファイルが失われた場合・キーが失効していた場合は停止し、勝手に再発行しない。
+既存の同名ユーザー/groupに別の権限や利用者がある場合も変更せず停止する。
+リポジトリrootでのローカル検証は`python3 -m unittest discover -s ansible/truenas/tests -v`で実行できる。
+
+
 nas-01 (192.168.20.191) / nas-02 (192.168.20.192) の **ZFS データセットと NFS share** を
 コードで宣言的に管理する。UI での手作業 ([docs/truenas-nfs-setup.md](../../docs/truenas-nfs-setup.md)) を置き換えるもの。
 
