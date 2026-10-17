@@ -1,0 +1,523 @@
+{
+  "base": "9c09eedd7926183cce2261c242c030372cfe5ee3",
+  "head": "7e7623dff6cc29b4dda0900b74238772123d0615",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [
+          {
+            "id": "definitions.resources.r_54a59a031677dd",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+                "resourceType": "grafana_dashboard",
+                "sourceFile": "terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/modules/monitoring/dashboard.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "grafana_dashboard / terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+              },
+              "title": "health",
+              "kind": "component",
+              "id": "definitions.resources.r_54a59a031677dd"
+            }
+          },
+          {
+            "id": "definitions.resources.r_794ba16de6c3c1",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+                "resourceType": "grafana_rule_group",
+                "sourceFile": "terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/modules/monitoring/main.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "grafana_rule_group / terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "title": "monitoring",
+              "kind": "component",
+              "id": "definitions.resources.r_794ba16de6c3c1"
+            }
+          },
+          {
+            "id": "definitions.resources.r_b5ef1869142f85",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+                "resourceType": "grafana_folder",
+                "sourceFile": "terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/modules/monitoring/main.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "grafana_folder / terraform/grafana-cloud/modules/monitoring/main.tf"
+              },
+              "title": "monitoring",
+              "kind": "component",
+              "id": "definitions.resources.r_b5ef1869142f85"
+            }
+          },
+          {
+            "id": "definitions.resources.r_c3f9132b5dec9e",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "terraform/grafana-cloud/main.tf:module:monitoring:",
+                "resourceType": "Terraform module",
+                "sourceFile": "terraform/grafana-cloud/main.tf"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/terraform/grafana-cloud/main.tf",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Terraform module / terraform/grafana-cloud/main.tf"
+              },
+              "title": "monitoring",
+              "kind": "component",
+              "id": "definitions.resources.r_c3f9132b5dec9e"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/kube-state-metrics.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "definitionRepository": "my-infra",
+                "application": "kube-state-metrics",
+                "sourceFile": "k8s/pve/argocd-apps/kube-state-metrics.yaml",
+                "namespace": "monitoring",
+                "scope": "homeSite.talos"
+              }
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "リソース定義",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_3640f48fa35880",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+                "resourceType": "Deployment",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Deployment / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_3640f48fa35880"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_3f5d25fceeebbb",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+                "resourceType": "ServiceAccount",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ServiceAccount / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_3f5d25fceeebbb"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_4430a54467b304",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+                "resourceType": "Service",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Service / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_4430a54467b304"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_cc04e28f21776c",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+                "resourceType": "ClusterRole",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ClusterRole / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "home-kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_cc04e28f21776c"
+            }
+          },
+          {
+            "id": "premises.home.kube_state_metrics.resources.r_e89754db4d2019",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "my-infra",
+                "referenceOnly": "false",
+                "resourceId": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+                "resourceType": "ClusterRoleBinding",
+                "sourceFile": "k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/kube-state-metrics/resources.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ClusterRoleBinding / k8s/pve/kube-state-metrics/resources.yaml"
+              },
+              "title": "home-kube-state-metrics",
+              "kind": "component",
+              "id": "premises.home.kube_state_metrics.resources.r_e89754db4d2019"
+            }
+          },
+          {
+            "id": "deployment:homeSite.talos.ns_monitoring.r_6e23e76ccc1190",
+            "status": "added",
+            "after": {
+              "id": "homeSite.talos.ns_monitoring.r_6e23e76ccc1190",
+              "element": "premises.home.kube_state_metrics",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/argocd-apps/kube-state-metrics.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "kube-state-metrics",
+              "style": {}
+            }
+          }
+        ],
+        "relations": [],
+        "views": [],
+        "specification": [],
+        "inventory": [
+          {
+            "id": "k8s/pve/argocd-apps/kube-state-metrics.yaml:Application:argocd:kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/argocd-apps/kube-state-metrics.yaml:Application:argocd:kube-state-metrics",
+              "type": "Application",
+              "name": "kube-state-metrics",
+              "namespace": "argocd",
+              "file": "k8s/pve/argocd-apps/kube-state-metrics.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+              "type": "ClusterRole",
+              "name": "home-kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+              "type": "ClusterRoleBinding",
+              "name": "home-kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+              "type": "Deployment",
+              "name": "kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+              "type": "Service",
+              "name": "kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+              "type": "ServiceAccount",
+              "name": "kube-state-metrics",
+              "namespace": "",
+              "file": "k8s/pve/kube-state-metrics/resources.yaml"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/main.tf:module:monitoring:",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/main.tf:module:monitoring:",
+              "type": "Terraform module",
+              "name": "monitoring",
+              "file": "terraform/grafana-cloud/main.tf"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+              "type": "grafana_dashboard",
+              "name": "health",
+              "file": "terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+              "type": "grafana_folder",
+              "name": "monitoring",
+              "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
+            }
+          },
+          {
+            "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+            "status": "added",
+            "after": {
+              "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+              "type": "grafana_rule_group",
+              "name": "monitoring",
+              "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
+            }
+          }
+        ]
+      },
+      "views": {
+        "access": {
+          "title": "入口・認証 / 原則Access・例外mTLS",
+          "before": true,
+          "after": true
+        },
+        "delivery": {
+          "title": "自宅基盤の変更・同期",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "home-k8sのサービスと接続",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "自宅インフラの全体",
+          "before": true,
+          "after": true
+        },
+        "loockit": {
+          "title": "Loockit / HAProxy → LXC → Bluetooth",
+          "before": true,
+          "after": true
+        },
+        "network": {
+          "title": "ネットワーク機器 / ルーター・SW・AP",
+          "before": true,
+          "after": true
+        },
+        "nextcloud": {
+          "title": "Nextcloud / DB・ロック・ファイル保存",
+          "before": true,
+          "after": true
+        },
+        "nfs": {
+          "title": "NFSの利用経路 / nas-01・nas-02",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "Proxmox VEクラスタ / 全VM・LXC",
+          "before": true,
+          "after": true
+        },
+        "platform": {
+          "title": "home-k8s / クラスタ基盤",
+          "before": true,
+          "after": true
+        },
+        "power": {
+          "title": "電源・安全停止 / UPS・NUTのcross-power",
+          "before": true,
+          "after": true
+        },
+        "recording": {
+          "title": "録画・配信 / PRD・STG",
+          "before": true,
+          "after": true
+        },
+        "recording_prd": {
+          "title": "TNLaStation PRD / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "recording_stg": {
+          "title": "TNLaStation STG / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        },
+        "storage": {
+          "title": "保存・バックアップ / 復元元の区別",
+          "before": true,
+          "after": true
+        },
+        "vlans": {
+          "title": "VLAN / native・タグ・経路",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}
