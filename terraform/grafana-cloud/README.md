@@ -35,7 +35,7 @@ UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知す�
 
 1. 対象stackのサービスアカウントを用意し、BSMに`GRAFANA_URL`と`GRAFANA_SERVICE_ACCOUNT_TOKEN`を登録する。APIにはdatasource read、folder/dashboard/alert provisioningの権限が必要。
 2. `python3 scripts/grafana-monitoring.py inventory` で既存のPrometheus UID、PDC network、通知先名を確認する。BSMのPDC tokenやCloud Metrics書込tokenは設定APIの認証には使えない。
-3. 確認済みの自宅UID・通知先を記載した`environments.tfvars`を利用する。接続先設定を変える場合は`terraform.tfvars.example`を参考に別の変数ファイルを用意する。既存の試作ルールは移管せず、新規folder `my-infra-home`へルールを作成する。
+3. 確認済みの自宅UID・通知先を記載した`environments.tfvars`を利用する。接続先設定を変える場合は`terraform.tfvars.example`を参考に別の変数ファイルを用意する。新規folder `my-infra-home`へルールを作成する。
 4. `python3 scripts/grafana-monitoring.py plan --var-file terraform/grafana-cloud/environments.tfvars` を実行する。無関係な削除・既存通知先の変更がないことを確認する。
 5. applyする実行環境にも`GRAFANA_URL`/`GRAFANA_AUTH`を設定し、確認したplanに従って反映する。`paused=true`が初期値で、アラート通知はまだ有効にならない。
 6. 収集側のGitOps同期、Grafana経由のquery、通知先の受信を確認した後に`paused=false`で再plan/applyする。通知テストは別途許可された範囲で実施する。
@@ -54,6 +54,7 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | `backups` | CronJob状態（`kubernetes`も必須） | KSMのlastSuccessfulTimeによる日次/毎時の鮮度・削除・suspend検知 |
 
 未収集のfeatureを有効化しない。
+Nextcloudのstatus probeは内部Serviceへ接続し、`Host: nextcloud.miutaku.work`を送る。Nextcloudのtrusted domain検証に合わせ、HTTP 200とinstalled/maintenance/needsDbUpgradeの本文を確認する。
 home用`targets.json`の必須系列は3分欠測+2分継続、UPS/停止guardは1分欠測+1分継続で通知する。Pod IPの変化や系列の部分消失を正常復旧と見なさず、固定instanceごとに検知する。
 通常ルールの条件なしは0を返す。datasource接続・queryエラーは`Error`として通知する。PDC全断では複数のDatasourceErrorが出る可能性があり、初回受信試験で件数・集約を確認する。
 
@@ -107,6 +108,6 @@ read-only検査で表示される「condition true」は継続時間未判定で
 | ESO/BSM更新・証明書期限、ArgoCD/TFC/ARC job遅延 | 各controllerのmetrics/API scrape。既存Pod/replica監視とは別 |
 | 拠点外heartbeat・metric/log canary | 独立した外部受信先/評価系。Grafanaからのdatasourceエラーは拠点heartbeatの代わりではない |
 
-有効化前には自宅のPDC接続、追加collectorの同期、通知先を確認する。既存試作ルールは今回変更しないため、新ルールと同じ障害の通知が重複しうる。旧ルールの停止・削除は切替時に別途行う。
+有効化前には自宅のPDC接続、追加collectorの同期、通知先を確認する。
 
 参照: [Grafana Terraform provisioning](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/terraform-provisioning/)、[欠測の扱い](https://grafana.com/docs/grafana/latest/alerting/guides/missing-data/)、[Provider rule schema](https://registry.terraform.io/providers/grafana/grafana/4.46.0/docs/resources/rule_group)。
