@@ -696,6 +696,20 @@
     "file": "k8s/pve/argocd-apps/external-secrets.yaml"
   },
   {
+    "id": "k8s/pve/argocd-apps/home-service-monitor.yaml:Application:argocd:home-service-monitor",
+    "type": "Application",
+    "name": "home-service-monitor",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/home-service-monitor.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/kube-state-metrics.yaml:Application:argocd:kube-state-metrics",
+    "type": "Application",
+    "name": "kube-state-metrics",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/kube-state-metrics.yaml"
+  },
+  {
     "id": "k8s/pve/argocd-apps/loockit.yaml:Application:argocd:loockit",
     "type": "Application",
     "name": "loockit",
@@ -1207,6 +1221,132 @@
     "file": "k8s/pve/external-secrets/cluster-secret-store.yaml"
   },
   {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-access",
+    "type": "ExternalSecret",
+    "name": "home-monitor-access",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-databases",
+    "type": "ExternalSecret",
+    "name": "home-monitor-databases",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-01",
+    "type": "ExternalSecret",
+    "name": "home-monitor-nas-01",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-nas-02",
+    "type": "ExternalSecret",
+    "name": "home-monitor-nas-02",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-pbs",
+    "type": "ExternalSecret",
+    "name": "home-monitor-pbs",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-s3",
+    "type": "ExternalSecret",
+    "name": "home-monitor-s3",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-unifi",
+    "type": "ExternalSecret",
+    "name": "home-monitor-unifi",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/external-secret.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/resources.yaml:ClusterRole::home-service-monitor",
+    "type": "ClusterRole",
+    "name": "home-service-monitor",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/resources.yaml:ClusterRoleBinding::home-service-monitor",
+    "type": "ClusterRoleBinding",
+    "name": "home-service-monitor",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/resources.yaml:Deployment::home-service-monitor",
+    "type": "Deployment",
+    "name": "home-service-monitor",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/resources.yaml:Service::home-service-monitor",
+    "type": "Service",
+    "name": "home-service-monitor",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/resources.yaml:ServiceAccount::home-service-monitor",
+    "type": "ServiceAccount",
+    "name": "home-service-monitor",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/vip.yaml:DaemonSet::home-vip-monitor",
+    "type": "DaemonSet",
+    "name": "home-vip-monitor",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/vip.yaml"
+  },
+  {
+    "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRole::home-kube-state-metrics",
+    "type": "ClusterRole",
+    "name": "home-kube-state-metrics",
+    "namespace": "",
+    "file": "k8s/pve/kube-state-metrics/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/kube-state-metrics/resources.yaml:ClusterRoleBinding::home-kube-state-metrics",
+    "type": "ClusterRoleBinding",
+    "name": "home-kube-state-metrics",
+    "namespace": "",
+    "file": "k8s/pve/kube-state-metrics/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/kube-state-metrics/resources.yaml:Deployment::kube-state-metrics",
+    "type": "Deployment",
+    "name": "kube-state-metrics",
+    "namespace": "",
+    "file": "k8s/pve/kube-state-metrics/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/kube-state-metrics/resources.yaml:Service::kube-state-metrics",
+    "type": "Service",
+    "name": "kube-state-metrics",
+    "namespace": "",
+    "file": "k8s/pve/kube-state-metrics/resources.yaml"
+  },
+  {
+    "id": "k8s/pve/kube-state-metrics/resources.yaml:ServiceAccount::kube-state-metrics",
+    "type": "ServiceAccount",
+    "name": "kube-state-metrics",
+    "namespace": "",
+    "file": "k8s/pve/kube-state-metrics/resources.yaml"
+  },
+  {
     "id": "k8s/pve/loockit/configmap.yaml:ConfigMap:app-loockit:loockit-config",
     "type": "ConfigMap",
     "name": "loockit-config",
@@ -1522,6 +1662,27 @@
     "file": "k8s/pve/nas-backup/cronjob.yaml"
   },
   {
+    "id": "k8s/pve/nas-backup/database-restore-check.yaml:ConfigMap:infra-backup:database-restore-check",
+    "type": "ConfigMap",
+    "name": "database-restore-check",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/database-restore-check.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/database-restore-check.yaml:CronJob:infra-backup:backup-restore-database",
+    "type": "CronJob",
+    "name": "backup-restore-database",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/database-restore-check.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/database-restore-check.yaml:ExternalSecret:infra-backup:backup-restore-s3",
+    "type": "ExternalSecret",
+    "name": "backup-restore-s3",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/database-restore-check.yaml"
+  },
+  {
     "id": "k8s/pve/nas-backup/external-secret.yaml:ExternalSecret:infra-backup:nas-backup-credentials",
     "type": "ExternalSecret",
     "name": "nas-backup-credentials",
@@ -1534,6 +1695,20 @@
     "name": "infra-backup",
     "namespace": "",
     "file": "k8s/pve/nas-backup/namespace.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/restore-check.yaml:ConfigMap:infra-backup:backup-restore-check",
+    "type": "ConfigMap",
+    "name": "backup-restore-check",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/restore-check.yaml"
+  },
+  {
+    "id": "k8s/pve/nas-backup/restore-check.yaml:CronJob:infra-backup:backup-restore-nas",
+    "type": "CronJob",
+    "name": "backup-restore-nas",
+    "namespace": "infra-backup",
+    "file": "k8s/pve/nas-backup/restore-check.yaml"
   },
   {
     "id": "k8s/pve/nas-backup/tnlastation-recorded-backup-script.yaml:ConfigMap:infra-backup:tnlastation-recorded-backup-script",
@@ -2426,6 +2601,30 @@
     "type": "cloudflare_zero_trust_gateway_settings",
     "name": "account",
     "file": "terraform/cloudflare/warp.tf"
+  },
+  {
+    "id": "terraform/grafana-cloud/main.tf:module:monitoring:",
+    "type": "Terraform module",
+    "name": "monitoring",
+    "file": "terraform/grafana-cloud/main.tf"
+  },
+  {
+    "id": "terraform/grafana-cloud/modules/monitoring/dashboard.tf:resource:grafana_dashboard:health",
+    "type": "grafana_dashboard",
+    "name": "health",
+    "file": "terraform/grafana-cloud/modules/monitoring/dashboard.tf"
+  },
+  {
+    "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_folder:monitoring",
+    "type": "grafana_folder",
+    "name": "monitoring",
+    "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
+  },
+  {
+    "id": "terraform/grafana-cloud/modules/monitoring/main.tf:resource:grafana_rule_group:monitoring",
+    "type": "grafana_rule_group",
+    "name": "monitoring",
+    "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
   },
   {
     "id": "terraform/home-k8s/main.tf:resource:proxmox_download_file:talos_iso",
