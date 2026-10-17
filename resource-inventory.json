@@ -2641,6 +2641,18 @@
     "file": "terraform/grafana-cloud/modules/monitoring/main.tf"
   },
   {
+    "id": "terraform/grafana-cloud/notifications.tf:resource:grafana_message_template:monitoring",
+    "type": "grafana_message_template",
+    "name": "monitoring",
+    "file": "terraform/grafana-cloud/notifications.tf"
+  },
+  {
+    "id": "terraform/grafana-cloud/notifications.tf:resource:terraform_data:discord_format",
+    "type": "terraform_data",
+    "name": "discord_format",
+    "file": "terraform/grafana-cloud/notifications.tf"
+  },
+  {
     "id": "terraform/home-k8s/main.tf:resource:proxmox_download_file:talos_iso",
     "type": "proxmox_download_file",
     "name": "talos_iso",
