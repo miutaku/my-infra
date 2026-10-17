@@ -11,5 +11,5 @@ contact_points = {
   critical = "Discord - grafana-critical"
 }
 
-# Enable only after GitOps collection, PDC queries and receiver checks pass.
-paused = true
+# Collection and PDC queries validated before enabling notifications.
+paused = false
