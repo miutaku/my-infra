@@ -82,11 +82,33 @@ def request(url, headers=None, ca=None, pinned=False):
         connection.close()
 
 
+class HTTPStatusError(ValueError):
+    def __init__(self, status):
+        super().__init__('unexpected HTTP status')
+        self.status = status
+
+
 def get_json(url, headers=None, ca=None, pinned=False):
     status, _, body, _ = request(url, headers, ca, pinned)
     if status != 200:
-        raise ValueError('unexpected HTTP status')
+        raise HTTPStatusError(status)
     return json.loads(body)
+
+
+def kubernetes_get_json(url, headers, ca):
+    # These are idempotent inventory reads, not availability probes. One fresh
+    # connection can recover a transient API/backend failure without discarding
+    # all namespace results. Persistent failures still fail the complete poll.
+    for attempt in range(2):
+        try:
+            return get_json(url, headers, ca)
+        except HTTPStatusError as error:
+            if error.status not in (429, 500, 502, 503, 504) or attempt:
+                raise
+        except (TimeoutError, ConnectionError, http.client.HTTPException):
+            if attempt:
+                raise
+        time.sleep(0.25)
 
 
 class Metrics:
@@ -327,7 +349,7 @@ def kubernetes(target, metrics):
     headers = {'Authorization': 'Bearer ' + Path('/var/run/secrets/kubernetes.io/serviceaccount/token').read_text().strip()}
     for namespace in target['namespaces']:
         path = f'/apis/external-secrets.io/v1beta1/namespaces/{namespace}/externalsecrets'
-        discovered = {item['metadata']['name']: item for item in get_json(base + path, headers, ca)['items']}
+        discovered = {item['metadata']['name']: item for item in kubernetes_get_json(base + path, headers, ca)['items']}
         expected = set(target['expected'].get(namespace, []))
         names = expected if namespace in ('arc-runners', 'monitoring') else expected | discovered.keys()
         for name in sorted(names):
@@ -343,7 +365,7 @@ def kubernetes(target, metrics):
             interval = item.get('spec', {}).get('refreshInterval', '1h')
             seconds = sum(float(n) * {'s': 1, 'm': 60, 'h': 3600}[unit] for n, unit in re.findall(r'([\d.]+)([smh])', interval))
             metrics.add('home_secret_refresh_interval_seconds', seconds, **labels)
-    requests = get_json(base + '/apis/certificates.k8s.io/v1/certificatesigningrequests', headers, ca)['items']
+    requests = kubernetes_get_json(base + '/apis/certificates.k8s.io/v1/certificatesigningrequests', headers, ca)['items']
     pending, denied = [], 0
     for csr in requests:
         if not csr['spec']['username'].startswith('system:node:'):

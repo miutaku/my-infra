@@ -93,6 +93,34 @@ class RecordingTests(unittest.TestCase):
 
 
 class KubernetesTests(unittest.TestCase):
+    def test_transient_read_failure_retries_once_without_changing_inventory(self):
+        inventory = {'items': [{'status': {'conditions': [{'type': 'Ready', 'status': 'False'}]}}]}
+        for error in [TimeoutError(), ConnectionResetError(), monitor.HTTPStatusError(503), monitor.HTTPStatusError(429)]:
+            with self.subTest(error=type(error).__name__), \
+                    patch.object(monitor, 'get_json', side_effect=[error, inventory]) as get, \
+                    patch.object(monitor.time, 'sleep') as sleep:
+                self.assertEqual(monitor.kubernetes_get_json('https://kubernetes.default.svc/api', {}, 'ca.pem'), inventory)
+                self.assertEqual(get.call_count, 2)
+                sleep.assert_called_once_with(0.25)
+
+    def test_persistent_timeout_fails_after_two_attempts(self):
+        with patch.object(monitor, 'get_json', side_effect=TimeoutError()) as get, \
+                patch.object(monitor.time, 'sleep'):
+            with self.assertRaises(TimeoutError):
+                monitor.kubernetes_get_json('https://kubernetes.default.svc/api', {}, 'ca.pem')
+            self.assertEqual(get.call_count, 2)
+
+    def test_auth_tls_and_invalid_data_fail_without_retry(self):
+        for error in [monitor.HTTPStatusError(401), monitor.HTTPStatusError(403),
+                      ssl.SSLCertVerificationError(), json.JSONDecodeError('invalid', '', 0)]:
+            with self.subTest(error=type(error).__name__), \
+                    patch.object(monitor, 'get_json', side_effect=error) as get, \
+                    patch.object(monitor.time, 'sleep') as sleep:
+                with self.assertRaises(type(error)):
+                    monitor.kubernetes_get_json('https://kubernetes.default.svc/api', {}, 'ca.pem')
+                get.assert_called_once()
+                sleep.assert_not_called()
+
     def evaluate(self, items):
         target = {'kind':'secrets','name':'home-secrets','namespaces':['monitoring'],
                   'expected':{'monitoring':['db-credentials']}}
