@@ -82,6 +82,10 @@ data:
       --one-way \
       --size-only
 
+    verified_at=$(date +%s)
+    printf 'home_backup_destination_checked_timestamp_seconds{backup="recorded"} %s\n' "${verified_at}" > /tmp/backup-metrics.prom
+    curl --fail --silent --show-error --max-time 10 --data-binary @/tmp/backup-metrics.prom \
+      http://victoria-metrics.monitoring.svc.cluster.local:8428/api/v1/import/prometheus >/dev/null || echo "Backup report delivery failed" >&2
     STATUS=success
     RESULT="TNLAStation録画バックアップ完了: files=${count}, bytes=${bytes}, skipped=${skipped}, destination=idrive:tv-rec/tnlastation"
     echo "${RESULT}"

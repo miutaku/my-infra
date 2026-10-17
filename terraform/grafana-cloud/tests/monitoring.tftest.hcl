@@ -94,3 +94,46 @@ run "reject_backups_without_collector" {
   }
   expect_failures = [var.environments]
 }
+
+run "functional_monitoring" {
+  command = plan
+  variables {
+    environments = {
+      home = {
+        datasource_uid = "home-metrics"
+        cluster        = "home-k8s"
+        features       = ["kubernetes", "probes", "backups", "access", "storage_api", "database", "recording", "backup_integrity", "control_plane", "network", "operations", "tfc"]
+      }
+    }
+  }
+  assert {
+    condition = (
+      contains(keys(output.rule_uids["home"]), "access-service-failed") &&
+      contains(keys(output.rule_uids["home"]), "missing-functional-access-tnlastation-staging") &&
+      contains(keys(output.rule_uids["home"]), "backup-restore-stale-pbs-vm-13201") &&
+      output.rule_settings["home"]["network-required-port-down"].receiver == "test-critical" &&
+      output.rule_settings["home"]["nas-pool-capacity-warn"].receiver == "test-warn"
+    )
+    error_message = "Functional monitoring must include Access, fixed required telemetry, VM restore reporting and severity routing."
+  }
+}
+
+run "reject_integrity_without_job_collector" {
+  command = plan
+  variables {
+    environments = {
+      home = { datasource_uid = "home", cluster = "home-k8s", features = ["backup_integrity"] }
+    }
+  }
+  expect_failures = [var.environments]
+}
+
+run "reject_control_plane_without_probes" {
+  command = plan
+  variables {
+    environments = {
+      home = { datasource_uid = "home", cluster = "home-k8s", features = ["control_plane"] }
+    }
+  }
+  expect_failures = [var.environments]
+}

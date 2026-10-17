@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - resources.yaml
+  - external-secret.yaml
+  - vip.yaml
+configMapGenerator:
+  - name: home-monitor-server-certificates
+    files:
+      - certificates/nas-01.pem
+      - certificates/nas-02.pem
+      - certificates/pbs.pem
+      - certificates/unifi.pem
+  - name: home-service-monitor-config
+    files: [targets.json]
+  - name: home-vip-monitor-config
+    literals:
+      - 'targets.json=[{"name":"api-vip","kind":"vip","address":"192.168.20.228","interval":15}]'

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: home-vip-monitor
+spec:
+  selector:
+    matchLabels: {app: home-vip-monitor}
+  template:
+    metadata:
+      labels: {app: home-vip-monitor}
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ''
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+        - {key: CriticalAddonsOnly, operator: Exists}
+      containers:
+        - name: monitor
+          image: ghcr.io/miutaku/home-service-monitor:main
+          imagePullPolicy: Always
+          args: [--port, '9811']
+          ports:
+            - {name: metrics, containerPort: 9811}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          resources:
+            requests: {cpu: 5m, memory: 32Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: home-vip-monitor-config}

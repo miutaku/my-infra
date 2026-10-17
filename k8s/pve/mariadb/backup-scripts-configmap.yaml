@@ -124,4 +124,9 @@ data:
     backup_postgres_cluster postgres-prod postgres.infra-db.svc.cluster.local
     backup_postgres_cluster postgres-staging postgres.infra-db-staging.svc.cluster.local
 
+    # All MariaDB/PostgreSQL objects have been downloaded and checksum-verified.
+    verified_at=$(date +%s)
+    printf 'home_backup_verified_timestamp_seconds{backup="database"} %s\n' "${verified_at}" > /tmp/backup-metrics.prom
+    curl --fail --silent --show-error --max-time 10 --data-binary @/tmp/backup-metrics.prom \
+      http://victoria-metrics.monitoring.svc.cluster.local:8428/api/v1/import/prometheus >/dev/null || echo "Backup report delivery failed" >&2
     STATUS=success

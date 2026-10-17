@@ -1,0 +1,204 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: backup-restore-s3
+  namespace: infra-backup
+spec:
+  refreshInterval: 24h
+  secretStoreRef: {name: bitwarden, kind: ClusterSecretStore}
+  target: {name: backup-restore-s3, creationPolicy: Owner}
+  data:
+    - secretKey: RCLONE_CONFIG_IDRIVE_ACCESS_KEY_ID
+      remoteRef: {key: MY_INFRA_IDRIVE_S3_ACCESS_KEY}
+    - secretKey: RCLONE_CONFIG_IDRIVE_SECRET_ACCESS_KEY
+      remoteRef: {key: MY_INFRA_IDRIVE_S3_SECRET_KEY}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-restore-check
+  namespace: infra-backup
+data:
+  download.py: |
+    import json
+    import os
+    from pathlib import Path
+    import re
+    import subprocess
+
+    os.umask(0o022)
+    os.environ.update({
+        'RCLONE_CONFIG_IDRIVE_TYPE': 's3',
+        'RCLONE_CONFIG_IDRIVE_PROVIDER': 'Other',
+        'RCLONE_CONFIG_IDRIVE_ENDPOINT': 'https://s3.ap-northeast-1.idrivee2.com',
+        'RCLONE_CONFIG_IDRIVE_REGION': 'ap-northeast-1',
+    })
+    base = 'idrive:miutaku-my-infra-db-backup/'
+
+    def listing(prefix):
+        result = subprocess.run(['rclone', 'lsjson', base + prefix, '--files-only'],
+                                check=True, capture_output=True, text=True)
+        return [item['Name'] for item in json.loads(result.stdout)]
+
+    names = [n for n in listing('mariadb') if re.fullmatch(r'mariadb-full-\d{8}-\d{6}\.sql\.gz', n)]
+    latest = max(names)  # empty/missing repository must fail
+    batch = latest.removeprefix('mariadb-full-').removesuffix('.sql.gz')
+    downloads = [('mariadb/' + latest, 'mariadb.sql.gz')]
+    for cluster, expected in [('postgres-prod', {'postgres', 'tnlastation', 'coupons'}),
+                              ('postgres-staging', {'postgres', 'tnlastation'})]:
+        files = [name for name in listing(cluster)
+                 if re.fullmatch(r'[A-Za-z0-9._-]+-' + re.escape(batch) + r'\.dump', name)]
+        databases = {n.removesuffix('-' + batch + '.dump') for n in files}
+        if not expected.issubset(databases):
+            raise SystemExit('Latest backup batch is missing a required database')
+        downloads.extend((cluster + '/' + name, cluster + '-' + name) for name in files)
+    for source, destination in downloads:
+        subprocess.run(['rclone', 'copyto', base + source, str(Path('/downloads') / destination)], check=True)
+  mariadb.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    mariadb-install-db --datadir=/scratch/mariadb --auth-root-authentication-method=normal \
+      --skip-test-db > /scratch/mysql-init.log 2>&1
+    mariadbd --datadir=/scratch/mariadb --skip-networking --skip-grant-tables \
+      --socket=/scratch/mysql.sock --pid-file=/scratch/mysql.pid \
+      --log-error=/scratch/mysql-error.log &
+    server=$!
+    trap 'kill "$server" 2>/dev/null || true; wait "$server" 2>/dev/null || true' EXIT
+    ready=0
+    for attempt in {1..90}; do
+      if mariadb-admin --socket=/scratch/mysql.sock ping >/dev/null 2>&1; then ready=1; break; fi
+      sleep 1
+    done
+    test "$ready" = 1
+    # Real SQL restore into a fresh local-only server. Keep SQL/error contents
+    # inside the ephemeral volume rather than exposing production data in logs.
+    if ! gzip -dc /downloads/mariadb.sql.gz | mariadb --socket=/scratch/mysql.sock > /scratch/mysql-restore.log 2>&1; then
+      echo 'MariaDB isolated restore failed' >&2
+      exit 1
+    fi
+    mariadb --socket=/scratch/mysql.sock --batch --skip-column-names \
+      -e 'SELECT 1' > /scratch/mysql-query.log
+  postgres.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    initdb -D /scratch/postgres --auth=trust > /scratch/pg-init.log 2>&1
+    pg_ctl -D /scratch/postgres -o "-c listen_addresses='' -c unix_socket_directories=/scratch" \
+      -l /scratch/pg-server.log start >/dev/null
+    trap 'pg_ctl -D /scratch/postgres -m immediate stop >/dev/null 2>&1 || true' EXIT
+    export PGHOST=/scratch PGUSER=postgres
+    count=0
+    for dump in /downloads/*.dump; do
+      test -f "$dump"
+      createdb restoretest
+      if ! pg_restore --exit-on-error --no-owner --no-privileges --dbname=restoretest "$dump" > /scratch/pg-restore.log 2>&1; then
+        echo 'PostgreSQL isolated restore failed' >&2
+        exit 1
+      fi
+      psql --dbname=restoretest --no-psqlrc -v ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null
+      dropdb restoretest
+      count=$((count+1))
+    done
+    test "$count" -ge 5
+    # The report contains no database names, rows, credentials or dump content.
+    now=$(date +%s)
+    printf 'home_backup_restore_success{backup="database"} 1\nhome_backup_restore_timestamp_seconds{backup="database"} %s\n' "$now" > /scratch/result.prom
+    # Reporting is separate from whether the isolated restore itself succeeded.
+    timeout 10 /bin/bash /scripts/report.sh /scratch/result.prom || echo 'Restore report delivery failed' >&2
+  report.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    exec 3<>/dev/tcp/victoria-metrics.monitoring.svc.cluster.local/8428
+    length=$(wc -c < "$1")
+    printf 'POST /api/v1/import/prometheus HTTP/1.1\r\nHost: victoria-metrics\r\nContent-Type: text/plain\r\nContent-Length: %s\r\nConnection: close\r\n\r\n' "$length" >&3
+    cat "$1" >&3
+    read -r status <&3
+    [[ "$status" == *' 204 '* || "$status" == *' 200 '* ]]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-restore-database
+  namespace: infra-backup
+spec:
+  schedule: '30 21 * * 6'
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 14400
+      ttlSecondsAfterFinished: 604800
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector: {node.miutaku/platform: pve}
+          securityContext: {fsGroup: 999, seccompProfile: {type: RuntimeDefault}}
+          initContainers:
+            - name: download
+              image: postgres:18-alpine
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  apk add --no-cache rclone python3 >/dev/null
+                  python3 /scripts/download.py
+              envFrom:
+                - secretRef: {name: backup-restore-s3}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {cpu: '1', memory: 512Mi}
+              securityContext: {allowPrivilegeEscalation: false}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: downloads, mountPath: /downloads}
+            - name: restore-mariadb
+              image: mariadb:11.8
+              command: [/bin/bash, /scripts/mariadb.sh]
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: '1', memory: 1Gi}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 999
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: downloads, mountPath: /downloads, readOnly: true}
+                - {name: scratch-mysql, mountPath: /scratch}
+                - {name: tmp-mysql, mountPath: /tmp}
+          containers:
+            - name: restore-postgres
+              image: postgres:18-bookworm
+              command: [/bin/bash, /scripts/postgres.sh]
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: '1', memory: 1Gi}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 999
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: downloads, mountPath: /downloads, readOnly: true}
+                - {name: scratch-postgres, mountPath: /scratch}
+                - {name: tmp-postgres, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: database-restore-check}
+            - name: downloads
+              emptyDir: {sizeLimit: 10Gi}
+            - name: scratch-mysql
+              emptyDir: {sizeLimit: 20Gi}
+            - name: scratch-postgres
+              emptyDir: {sizeLimit: 20Gi}
+            - name: tmp-mysql
+              emptyDir: {sizeLimit: 128Mi}
+            - name: tmp-postgres
+              emptyDir: {sizeLimit: 128Mi}

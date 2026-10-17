@@ -37,6 +37,21 @@ NIC品質は5分間のrateをIF別に比較し、loopback・一時的なコン�
 回線速度は5分間隔の測定を使い、直近結果が10分以上古い場合や15分内に3回未満しか結果がない場合は低速通知を出さない。
 UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知するため収集15秒、評価10秒。Grafana schedulerの10秒刻みに合わせる。Grafanaが利用不能でもNUTの自動停止は動作する。
 
+追加する機能監視は以下。HTTP/TCPの死活と別に評価する。
+
+| 対象 | warn | critical |
+| --- | --- | --- |
+| Cloudflare Access公開経路 | 公開TLS証明書の残り14日未満 | 専用Service Tokenで認証し、期待するHTTP 200/本文に到達できない状態2分。TLS残り3日未満 |
+| TrueNAS | pool物理使用率80%超、最終成功scrubから35日超 | pool物理使用率85%超、pool異常、disk/SMARTの重大alert、scrubエラー、最終成功から60日超 |
+| DB | 接続数80%超5分、lock待ち5分、60秒超queryが10分継続 | SELECT 1/統計取得失敗2分、接続数95%超5分 |
+| 録画 | 24時間内の予約競合、EPG更新24時間超、encode待ち10件超・録画終了から1日超 | 録画開始遅延/途中停止/完了後video欠落、tuner異常、EPG更新48時間超/未準備30分、encode待ち30件超・3日超 |
+| PBS | VM別backup鮮度4時間超、7日以内のverify済みsnapshotなし | backup鮮度8時間超、保持snapshotのverify失敗 |
+| S3/restic・復元 | NAS repository実object容量14 GB超、復元成功が28日以上なし | 17 GB超、DB read-back/NAS repository/録画保存先の確認が期限超過、復元Job失敗 |
+| 制御系 | etcd片系取得不可、CSR滞留10分超 | leaderを認識するetcdが2台未満、leader数が1以外、API VIP所有数が1以外、CSR拒否/失敗、API/kubelet証明書残り3日未満 |
+| switch/AP | 必須port台帳未設定 | US-8-60W/FS APの死活、必須portリンク断2分 |
+| 運用系 | ESO更新が各refreshIntervalの2倍+15分を超過、Argo OutOfSync 15分、ARC待ち15分、TFC待ち15分超 | ESO Ready=false 5分、Argo unhealthy 5分、TFC待ち60分超 |
+
+
 ## 設定と初回移管
 
 1. 対象stackのサービスアカウントを用意し、BSMに`GRAFANA_URL`と`GRAFANA_SERVICE_ACCOUNT_TOKEN`を登録する。APIにはdatasource read、folder/dashboard/alert provisioningの権限が必要。
@@ -58,8 +73,20 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | `kubernetes` | kube-state-metrics | home用Deployment/RBAC/ServiceとArgoCD登録、vmagent scrape。Secret値の取得権限は与えない |
 | `probes` | 新しいblackbox modulesとtarget | DNSの内部名/外部名、API readyz、DB/NFS TCP、TNLaStation・Loockit・coupon-manager、Nextcloud本文検証 |
 | `backups` | CronJob状態（`kubernetes`も必須） | KSMのlastSuccessfulTimeによる日次/毎時の鮮度・削除・suspend検知 |
+| `access` | home-service-monitor + Access Service Token | 自宅のAccess保護URL16件に認証付き/認証なしで接続し、期待本文・保護有無・公開TLS期限を確認 |
+| `storage_api` | TrueNAS read-only API key | 25.10 WebSocket APIのpool物理使用量・健全性・scrub・disk/SMART alert |
+| `database` | DBの専用monitoring user | MariaDB / PostgreSQL両系統へのSQL・接続数・lock/長時間query |
+| `recording` | Mirakurun/EPGStation/TNLaStation API | TV service別EPG更新時刻、tuner、予約と録画状態の照合、encode待ち。EPGStationの録画失敗hookも永続化 |
+| `backup_integrity` | PBS read-only API、S3、復元Job（`kubernetes`必須） | VM別backup/verify、S3 object実容量、保存先検証結果、隔離DB復元とresticサンプル復元、PBS実復元結果の受付 |
+| `control_plane` | etcd metrics patch、VIP DaemonSet、追加TLS probe（`probes`必須） | etcd member/leader、Talos API VIP所有数、API/kubelet証明書 |
+| `network` | ICMP + UniFi API key | FS AP・US-8-60Wの死活、台帳の必須port状態 |
+| `operations` | Argo metrics、ARC listener metrics、ESO/CSR read-only API | 同期/health、待ちJob、Secret更新、ノード証明書発行停止 |
+| `tfc` | HCP TerraformのRun read token | pve-home / cloudflareに限定したRun待ち時間 |
 
-未収集のfeatureを有効化しない。
+
+`environments.tfvars`は全機能を含めた計画を`paused=true`で確認するための入力。通知を有効化する前に、未収集・認証未設定のfeatureを外し、対象機能のquery/必須系列が揃っていることを確認する。
+必要なBSMキー名は`k8s/pve/home-service-monitor/external-secret.yaml`を参照。秘密値はBSM→ExternalSecret→投影volumeへ渡し、Terraform state/ConfigMap/ログへ入れない。
+内部APIの公開leaf証明書は`k8s/pve/home-service-monitor/certificates`へ固定し、期限・署名と証明書自体の一致を認証情報送信前に確認する。工場設定のhostnameを持つためhostname照合だけは使わない。証明書更新時はこの公開ファイルも更新する。公開Access probeは通常のCA/hostname検証を使う。
 Nextcloudのstatus probeは内部Serviceへ接続し、`Host: nextcloud.miutaku.work`を送る。Nextcloudのtrusted domain検証に合わせ、HTTP 200とinstalled/maintenance/needsDbUpgradeの本文を確認する。
 home用`targets.json`の必須系列は3分欠測+2分継続、UPS/停止guardは1分欠測+1分継続で通知する。Pod IPの変化や系列の部分消失を正常復旧と見なさず、固定instanceごとに検知する。
 通常ルールの条件なしは0を返す。datasource接続・queryエラーは`Error`として通知する。PDC全断では複数のDatasourceErrorが出る可能性があり、初回受信試験で件数・集約を確認する。
@@ -100,20 +127,17 @@ read-only検査で表示される「condition true」は継続時間未判定で
 - **backup**: CronJobの直近Jobとログ、保存先の検証結果を確認する。最終成功なしはCronJob作成時からの経過で判定する。DB jobはMariaDBとPostgreSQL両系統を含む。
 - **監視喪失**: vmagent targets/queue、保存先、PDCを順に確認する。古いサンプルの表示やMissingSeriesによる解消は実復旧ではない。
 
-## この変更だけでは検知できない項目
+## 収集・検証の前提と範囲
 
-以下は合意した監視範囲のうち、収集・認証・機能APIの追加が必要な項目。今回のルールに含まれると見なさない。
-
-| 項目 | 残る実装条件 |
-| --- | --- |
-| TrueNAS pool物理使用量・ZFS/SMART・scrub | TrueNAS read-only API/exporter。現状のSNMP容量やPVEのZFS状態で代用しない |
-| NFS read/write、DB query・lock/connection、WebDAV操作 | 専用の最小権限アカウント/テスト領域。今回はTCP・Pod状態・HTTP statusまで |
-| 録画開始失敗・中断、チューナー/EPG/encode queue | Mirakurun/EPGStation/TNLaStationの機能メトリクス。version API成功だけで録画成功としない |
-| PBS VM別backup/verify/restore・S3・restic容量予算 | PBS API、保存先検証結果の永続export。KSM Job成功は復元可能性の保証ではない |
-| etcd quorum、VIP重複、switch/AP、WAN外部probe、公開Access/TLS | 認証・対象機器/公開URLの台帳と専用probe。API readyz/内部probeだけでは不足 |
-| ESO/BSM更新・証明書期限、ArgoCD/TFC/ARC job遅延 | 各controllerのmetrics/API scrape。既存Pod/replica監視とは別 |
-| 拠点外heartbeat・metric/log canary | 独立した外部受信先/評価系。Grafanaからのdatasourceエラーは拠点heartbeatの代わりではない |
-
-有効化前には自宅のPDC接続、追加collectorの同期、通知先を確認する。
+- NFSの実read/write、NextcloudのWebDAV操作、拠点外heartbeat・metric/log canaryは追加対象外。既存のTCP/HTTP・収集欠測監視は維持する。
+- AccessはService Tokenによる機械認証を確認する。人間のIdPログイン/MFA操作や、接続先アプリ内のログイン・業務操作までは実行しない。ログイン画面へのredirectやHTTP 200のAccessログインHTMLは成功にしない。
+- switchの必須portは2026-10-17の実機`swctrl port show`のUP状態を基準に**1,2,3,4,7,8**へ固定した。5,6はDOWNで除外。再起動や一時的なリンク断から自動学習し直さない。FS APはICMP/TLS公開経路までで、SSID別の通信試験はしない。
+- TrueNAS 25.10では旧`smart.test.results`を使わず、TrueNAS自身のdisk/SMART alertを収集する。SMART生属性を独自採点するcollectorではない。scrubは成功時刻を90日窓で照会するが、現行VictoriaMetricsの保存期間は30日。直近scanが進行中でも保存中の前回成功を参照する。30日以上収集できなかった場合や前回成功を観測していない場合は、成功時刻不明として異常を出す。
+- EPGはTV serviceごとの`epgUpdatedAt`を使う。encode APIにenqueue時刻がないため、待ち時間は「待機中録画の終了時刻からの経過」として扱う。録画APIから消えた過去の失敗を完全に復元する監査ではなく、現在の予約/録画状態とEPGStationの失敗hookを確認する。
+- DBはSQLの実行・接続/lock状況まで。自動書き込みテストは実行しない。
+- DB backupの検証指標は全dumpのS3読み戻しchecksum一致後、NASは`restic check`後、録画実体は保存先の名前/size一致後に送信する。それぞれ検証の強さが異なる。S3容量は`restic stats`の論理量ではなくrepository prefix配下の実object byte合計。
+- 毎週の復元Jobは本番DBへ接続せず、S3のdumpを一時領域のMariaDB 11.8/PostgreSQL 18へ実復元する。PostgreSQLのowner/grantの復元は対象外。NASは最大1 MiBのファイルをresticから一時領域へ復元・検証するサンプル試験で、全ファイル/全アプリの復旧保証ではない。
+- PBS VMの実復元・起動確認は別途隔離環境で実施し、実施結果だけを`scripts/report-backup-restore.py`で登録する。自動でVMを作成/起動しない。VMごとに28日間成功報告がない場合warnとし、PBS backup/verify成功で代用しない。
+- Talosのetcd metrics patchは既存3ノードへ別途順次反映が必要。collector/Argo同期・API認証・Grafana queryが揃うまでは通知を有効にしない。
 
 参照: [Grafana Terraform provisioning](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/terraform-provisioning/)、[欠測の扱い](https://grafana.com/docs/grafana/latest/alerting/guides/missing-data/)、[Provider rule schema](https://registry.terraform.io/providers/grafana/grafana/4.46.0/docs/resources/rule_group)。

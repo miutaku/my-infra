@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--context", default="home-k8s")
     parser.add_argument("--namespace", default="monitoring")
     parser.add_argument("--service", default="victoria-metrics:8428")
-    parser.add_argument("--features", default="", help="Comma-separated deployed features: kubernetes,probes,backups")
+    parser.add_argument("--features", default="", help="Comma-separated features whose collectors are deployed and verified (see terraform/grafana-cloud/README.md)")
     parser.add_argument("--grafana-uid", help="Query this data source through Grafana/PDC instead of the Kubernetes proxy")
     args = parser.parse_args()
     features = set(filter(None, args.features.split(",")))

@@ -22,7 +22,8 @@ spec:
               type: RuntimeDefault
           containers:
             - name: restic
-              image: restic/restic:0.19.1
+              image: ghcr.io/miutaku/home-backup-tools:main
+              imagePullPolicy: Always
               command: ["/bin/sh", "/scripts/backup.sh"]
               envFrom:
                 - secretRef:

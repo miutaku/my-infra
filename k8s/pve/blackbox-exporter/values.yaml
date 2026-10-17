@@ -38,6 +38,16 @@ config:
       timeout: 5s
       tcp:
         preferred_ip_protocol: ip4
+    tls_certificate:
+      prober: tcp
+      timeout: 5s
+      tcp:
+        preferred_ip_protocol: ip4
+        tls: true
+        # Internal kubelet certificates use private cluster PKI. Expiration is
+        # checked explicitly; public Access probes use normal CA verification.
+        tls_config:
+          insecure_skip_verify: true
     https_kubernetes_ready:
       prober: http
       timeout: 5s

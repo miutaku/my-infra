@@ -1,0 +1,5 @@
+cluster:
+  etcd:
+    extraArgs:
+      # Read-only metrics on the private node network; no etcd client data API.
+      listen-metrics-urls: http://0.0.0.0:2381

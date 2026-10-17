@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-restore-check
+  namespace: infra-backup
+data:
+  nas.sh: |
+    #!/bin/sh
+    set -eu
+    umask 077
+    export RESTIC_REPOSITORY=${RESTIC_REPOSITORY:-s3:https://s3.ap-northeast-1.idrivee2.com/miutaku-my-infra-backup/nas-restic}
+    export RESTIC_CACHE_DIR=/tmp/cache
+    export AWS_REGION=ap-northeast-1
+    export AWS_DEFAULT_REGION=ap-northeast-1
+    # Restore a bounded nonempty file from the actual repository to ephemeral
+    # storage. This is a sample restore, not proof that all applications recover.
+    restic ls --json latest > /tmp/repository.json
+    selected=$(jq -r 'select(.type == "file" and .size > 0 and .size <= 1048576) | .path' /tmp/repository.json | head -n 1)
+    case "${selected}" in
+      /source/*) ;;
+      *) echo 'No suitable restore sample' >&2; exit 1 ;;
+    esac
+    case "${selected}" in *'/../'*) exit 1 ;; esac
+    restic restore latest --target /restore --include "${selected}" --verify >/dev/null
+    test -s "/restore${selected}"
+    now=$(date +%s)
+    printf 'home_backup_restore_success{backup="nas"} 1\nhome_backup_restore_timestamp_seconds{backup="nas"} %s\n' "${now}" > /tmp/result.prom
+    curl --fail --silent --show-error --max-time 10 --data-binary @/tmp/result.prom \
+      http://victoria-metrics.monitoring.svc.cluster.local:8428/api/v1/import/prometheus >/dev/null || echo "Backup report delivery failed" >&2
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-restore-nas
+  namespace: infra-backup
+spec:
+  schedule: '30 20 * * 6'
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 7200
+      ttlSecondsAfterFinished: 604800
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector: {node.miutaku/platform: pve}
+          containers:
+            - name: restore
+              image: ghcr.io/miutaku/home-backup-tools:main
+              imagePullPolicy: Always
+              command: [/bin/sh, /scripts/nas.sh]
+              envFrom:
+                - secretRef: {name: nas-backup-credentials}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 128Mi}
+                limits: {cpu: '1', memory: 512Mi, ephemeral-storage: 2Gi}
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+                seccompProfile: {type: RuntimeDefault}
+              volumeMounts:
+                - {name: script, mountPath: /scripts, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+                - {name: restore, mountPath: /restore}
+          securityContext: {fsGroup: 65534}
+          volumes:
+            - name: script
+              configMap: {name: backup-restore-check}
+            - name: tmp
+              emptyDir: {sizeLimit: 512Mi}
+            - name: restore
+              emptyDir: {sizeLimit: 1Gi}

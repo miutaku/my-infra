@@ -460,5 +460,341 @@
     "feature": "kubernetes",
     "severity": "critical",
     "service": "workloads"
+  },
+  {
+    "id": "functional-access-argocd-home-k8s",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-argocd-home-k8s\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-wol",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-wol\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-epgstation",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-epgstation\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-tnlastation",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-tnlastation\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-nextcloud",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-nextcloud\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-coupon-manager",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-coupon-manager\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-unifi",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-unifi\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-wifi-ap",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-wifi-ap\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-ix2215",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-ix2215\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-nas-01",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-nas-01\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-nas-02",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-nas-02\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-pve-x570",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-pve-x570\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-pve-b550m",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-pve-b550m\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-nanokvm-1",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-nanokvm-1\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-access-nanokvm-2",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-nanokvm-2\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "functional-nas-01",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"nas-01\",kind=\"truenas\"}",
+    "feature": "storage_api",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-nas-02",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"nas-02\",kind=\"truenas\"}",
+    "feature": "storage_api",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-pbs",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"pbs\",kind=\"pbs\"}",
+    "feature": "backup_integrity",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-mariadb",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"mariadb\",kind=\"database\"}",
+    "feature": "database",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-postgres",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"postgres\",kind=\"database\"}",
+    "feature": "database",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-postgres-staging",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"postgres-staging\",kind=\"database\"}",
+    "feature": "database",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-epgstation",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"epgstation\",kind=\"recorder\"}",
+    "feature": "recording",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-tnlastation",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"tnlastation\",kind=\"recorder\"}",
+    "feature": "recording",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-mirakurun",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"mirakurun\",kind=\"mirakurun\"}",
+    "feature": "recording",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-home-secrets",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"home-secrets\",kind=\"secrets\"}",
+    "feature": "operations",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-tfc-home",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"tfc-home\",kind=\"tfc\"}",
+    "feature": "tfc",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "functional-unifi-network",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"unifi-network\",kind=\"unifi\"}",
+    "feature": "network",
+    "severity": "critical",
+    "service": "observability"
+  },
+  {
+    "id": "etcd-controlplane-01-talos",
+    "selector": "up{job=\"etcd\",instance=\"controlplane-01-talos\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "etcd-controlplane-02-talos",
+    "selector": "up{job=\"etcd\",instance=\"controlplane-02-talos\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "etcd-controlplane-03-talos",
+    "selector": "up{job=\"etcd\",instance=\"controlplane-03-talos\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "vip-controlplane-01-talos-home-pve-amd64",
+    "selector": "home_vip_owned{job=\"home-vip-monitor\",instance=\"controlplane-01-talos-home-pve-amd64\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "vip-controlplane-02-talos-home-pve-amd64",
+    "selector": "home_vip_owned{job=\"home-vip-monitor\",instance=\"controlplane-02-talos-home-pve-amd64\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "vip-controlplane-03-talos-home-pve-amd64",
+    "selector": "home_vip_owned{job=\"home-vip-monitor\",instance=\"controlplane-03-talos-home-pve-amd64\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "functional-nas-repository",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"nas-repository\",kind=\"s3\"}",
+    "feature": "backup_integrity",
+    "service": "backups",
+    "severity": "critical"
+  },
+  {
+    "id": "ping-wifi-ap",
+    "selector": "probe_success{job=\"blackbox_icmp\",instance=\"wifi-ap\"}",
+    "feature": "network",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "ping-us-8-60w",
+    "selector": "probe_success{job=\"blackbox_icmp\",instance=\"us-8-60w\"}",
+    "feature": "network",
+    "severity": "critical",
+    "service": "connectivity"
+  },
+  {
+    "id": "argocd-home-state",
+    "selector": "argocd_app_info{job=\"argocd-home\"}",
+    "feature": "operations",
+    "service": "operations",
+    "severity": "warn"
+  },
+  {
+    "id": "arc-listener-talos-infra-admin",
+    "selector": "gha_assigned_jobs{job=\"arc-home\",scale_set=\"talos-infra-admin\"}",
+    "feature": "operations",
+    "service": "operations",
+    "severity": "warn"
+  },
+  {
+    "id": "arc-listener-architecture-automation-reader",
+    "selector": "gha_assigned_jobs{job=\"arc-home\",scale_set=\"architecture-automation-reader\"}",
+    "feature": "operations",
+    "service": "operations",
+    "severity": "warn"
+  },
+  {
+    "id": "arc-listener-architecture-automation-codex",
+    "selector": "gha_assigned_jobs{job=\"arc-home\",scale_set=\"architecture-automation-codex\"}",
+    "feature": "operations",
+    "service": "operations",
+    "severity": "warn"
+  },
+  {
+    "id": "tls-kubelet-controlplane-01",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-controlplane-01\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "tls-kubelet-controlplane-02",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-controlplane-02\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "tls-kubelet-controlplane-03",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-controlplane-03\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "tls-kubelet-worker-01",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-worker-01\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "tls-kubelet-worker-02",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-worker-02\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "tls-kubelet-worker-03",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-worker-03\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "tls-kubelet-worker-04",
+    "selector": "probe_success{job=\"blackbox_tls\",instance=\"kubelet-worker-04\"}",
+    "feature": "control_plane",
+    "severity": "critical",
+    "service": "kubernetes"
+  },
+  {
+    "id": "functional-access-tnlastation-staging",
+    "selector": "home_monitor_success{job=\"home-service-monitor\",target=\"access-tnlastation-staging\",kind=\"access\"}",
+    "feature": "access",
+    "severity": "critical",
+    "service": "connectivity"
   }
 ]
