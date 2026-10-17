@@ -1221,6 +1221,20 @@
     "file": "k8s/pve/external-secrets/cluster-secret-store.yaml"
   },
   {
+    "id": "k8s/pve/home-service-monitor/blackbox-api-rbac.yaml:ClusterRole::home-blackbox-api-readiness",
+    "type": "ClusterRole",
+    "name": "home-blackbox-api-readiness",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/blackbox-api-rbac.yaml"
+  },
+  {
+    "id": "k8s/pve/home-service-monitor/blackbox-api-rbac.yaml:ClusterRoleBinding::home-blackbox-api-readiness",
+    "type": "ClusterRoleBinding",
+    "name": "home-blackbox-api-readiness",
+    "namespace": "",
+    "file": "k8s/pve/home-service-monitor/blackbox-api-rbac.yaml"
+  },
+  {
     "id": "k8s/pve/home-service-monitor/external-secret.yaml:ExternalSecret::home-monitor-access",
     "type": "ExternalSecret",
     "name": "home-monitor-access",
