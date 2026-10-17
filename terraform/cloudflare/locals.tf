@@ -78,13 +78,13 @@ locals {
       no_tls_verify = true
     }
     "nanokvm-1" = {
-      # NanoKVM #1 (192.168.10.240)
-      backend       = "http://192.168.10.240"
+      # NanoKVM #1 (48:da:35:6f:c6:70), current management address
+      backend       = "http://192.168.0.2"
       no_tls_verify = false
     }
     "nanokvm-2" = {
-      # NanoKVM #2 (192.168.10.241)
-      backend       = "http://192.168.10.241"
+      # NanoKVM #2 (48:da:35:6f:b6:8b), current management address
+      backend       = "http://192.168.0.1"
       no_tls_verify = false
     }
   }

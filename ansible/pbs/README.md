@@ -356,3 +356,17 @@ sudo rm -f /etc/apt/sources.list.d/pbs-enterprise.list
 sudo rm -f /etc/apt/sources.list.d/pbs-enterprise.sources
 sudo apt update
 ```
+
+## バックアップの検証
+
+`pbs-s3-verify`は毎日06:00（PBSのタイムゾーンAsia/Tokyo）に実行する。
+検証済みのバックアップはスキップし、7日経過後に再検証する。
+S3読み取りは1スレッド、検証は2スレッドで実行する。
+
+verifyジョブだけの設定・更新:
+
+```bash
+cd ansible/pbs
+ansible-playbook -i hosts/prd verification.yml --check
+ansible-playbook -i hosts/prd verification.yml
+```

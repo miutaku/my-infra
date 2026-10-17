@@ -1,0 +1,11 @@
+---
+- name: Update managed NFS export access
+  hosts: truenas
+  gather_facts: false
+  become: true
+  serial: 1
+  vars:
+    truenas_nfs_access_only: true
+  tasks:
+    - name: Configure existing NFS exports
+      ansible.builtin.import_tasks: roles/truenas_storage/tasks/nfs-exports.yml

@@ -54,8 +54,8 @@ Email Workerを使う場合は、Workerを配備したうえでaction typeを `w
 | `nas-02.miutaku.work` | home-k8s | `https://192.168.20.192` | 必須 |
 | `pve-x570.miutaku.work` | home-k8s | `https://192.168.0.115:8006` | 必須 |
 | `pve-b550m.miutaku.work` | home-k8s | `https://192.168.0.119:8006` | 必須 |
-| `nanokvm-1.miutaku.work` | home-k8s | `http://192.168.10.240` | 必須 |
-| `nanokvm-2.miutaku.work` | home-k8s | `http://192.168.10.241` | 必須 |
+| `nanokvm-1.miutaku.work` | home-k8s | `http://192.168.0.2` | 必須 |
+| `nanokvm-2.miutaku.work` | home-k8s | `http://192.168.0.1` | 必須 |
 
 ### WARP 経由の private routes
 

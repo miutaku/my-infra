@@ -185,10 +185,6 @@ config:
         module: [ix2215]
         auth: [ix2215_v2]
       static_configs:
-        - targets: ["192.168.0.253"]
-          labels: {instance: wifi-ap}
-        - targets: ["192.168.0.252"]
-          labels: {instance: us-8-60w}
         - targets: ["192.168.0.254"]
           labels:
             instance: ix2215

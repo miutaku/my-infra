@@ -45,6 +45,11 @@ truenas_datasets:
 既存の UI 作成済み share もそのまま取り込める
 (share はパスで同定されるため重複作成されず、networks 等が宣言に収束する)。
 
+worker03・04はNFS接続元がVLAN10のため、`truenas_nfs_additional_networks`で
+`192.168.10.107/32`・`192.168.10.109/32`を各共有の許可先へ追加する。
+共有アクセスだけの更新は`ansible-playbook nfs-access.yml -K`で実行できる。
+このplaybookはデータセット作成、所有権・モード変更、NFSサービス再起動を行わない。
+
 ## 事前準備 (各 NAS で一度だけ、UI で実施)
 
 1. **System > Services > SSH** を有効化 (Start Automatically ✓)

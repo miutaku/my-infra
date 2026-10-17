@@ -193,9 +193,7 @@
         "epgstation-secrets",
         "ghcr-pull-secret"
       ],
-      "app-loockit": [
-        "loockit-keys"
-      ],
+      "app-loockit": [],
       "app-magic-mirror": [
         "magic-mirror-config"
       ],

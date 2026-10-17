@@ -7,3 +7,8 @@ ansible_become: true
 # NFS share のデフォルト値 (host_vars 側で個別上書き可)
 truenas_nfs_default_networks:
   - 192.168.20.0/24
+
+# RPi workers use VLAN10 for their node/NFS source addresses.
+truenas_nfs_additional_networks:
+  - 192.168.10.107/32 # worker-03
+  - 192.168.10.109/32 # worker-04

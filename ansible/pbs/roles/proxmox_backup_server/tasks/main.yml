@@ -323,3 +323,6 @@
     pbs_prune_jobs.rc != 0
     or (pbs_prune_jobs.stdout | from_json | selectattr('id', 'eq', pbs.datastore_name ~ '-prune') | list | length == 0)
   changed_when: true
+
+- name: Configure PBS verification
+  ansible.builtin.import_tasks: verification.yml

@@ -1,0 +1,13 @@
+---
+- name: Ensure NFS exports
+  arensb.truenas.sharing_nfs:
+    name: "{{ omit if truenas_nfs_access_only | default(false) else item.nfs.comment | default(item.name | basename) }}"
+    path: "/mnt/{{ item.name }}"
+    networks: "{{ (item.nfs.networks | default(truenas_nfs_default_networks)) | union(truenas_nfs_additional_networks | default([])) | sort }}"
+    maproot_user: "{{ omit if truenas_nfs_access_only | default(false) else item.nfs.maproot_user | default('root') }}"
+    maproot_group: "{{ omit if truenas_nfs_access_only | default(false) else item.nfs.maproot_group | default('root') }}"
+    enabled: "{{ omit if truenas_nfs_access_only | default(false) else true }}"
+    state: present
+  loop: "{{ truenas_datasets | selectattr('nfs', 'defined') | list }}"
+  loop_control:
+    label: "/mnt/{{ item.name }}"

@@ -34,6 +34,11 @@ pbs:
   keep_daily: 7
   keep_weekly: 4
   keep_monthly: 6
+  # Local time (Asia/Tokyo), after the nightly backups and pruning.
+  verify_schedule: "06:00"
+  verify_outdated_after: 7
+  verify_read_threads: 1
+  verify_threads: 2
 
 # BSM シークレット ID (bws secret list で確認)
 bsm_pbs_admin_password_id: "970b08a7-62be-44de-a842-b46000bd0e9f"
