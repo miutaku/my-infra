@@ -16,6 +16,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     super(ctx, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS hosts (host TEXT PRIMARY KEY, data TEXT NOT NULL)');
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, created INTEGER NOT NULL)');
+    this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS package_update (id INTEGER PRIMARY KEY CHECK(id=1), host TEXT NOT NULL, execution TEXT NOT NULL, failed INTEGER NOT NULL DEFAULT 0)');
   }
   private read(host: Host): RecordState {
     const row = this.ctx.storage.sql.exec<{ data: string }>('SELECT data FROM hosts WHERE host=?', host).toArray()[0];
@@ -44,7 +45,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     });
     return {
       content: `【${labels[plan.phase]}】${host}\n${formatJst(plan.target)}（日本時間）\n` +
-        (isPve(host) ? '更新・必要時再起動：承認と事前確認が必要です。' : 'パッケージ更新に伴う再起動です。作業を保存してください。') +
+        (isPve(host) ? 'パッケージは自動更新します。OS再起動は指定日時での承認と事前確認が必要です。' : 'パッケージ更新に伴う再起動です。作業を保存してください。') +
         (plan.reason ? `\n${plan.reason}` : ''),
       allowed_mentions: { parse: [] },
       components: [{ type: 1, components: [
@@ -76,15 +77,9 @@ export class MaintenanceFleet extends DurableObject<Env> {
       state.plan = undefined;
       this.audit(host, 'reboot-recovered');
     } else if (plan && plan.phase !== 'running' && plan.phase !== 'failed') {
-      if (plan.bootId !== snapshot.bootId || (!snapshot.required && (!isPve(host) || snapshot.updates === 0))) {
+      if (plan.bootId !== snapshot.bootId || !snapshot.required) {
         state.plan = undefined;
         this.audit(host, 'obsolete-plan-cleared');
-      } else if (isPve(host) && plan.fingerprint !== snapshot.fingerprint) {
-        plan.phase = plan.phase === 'held' ? 'held' : 'approval';
-        plan.fingerprint = snapshot.fingerprint;
-        plan.revision = crypto.randomUUID();
-        plan.notifiedRevision = undefined;
-        plan.reason = '更新候補が変わったため再承認が必要です。';
       }
     }
     this.write(host, state);
@@ -103,7 +98,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
       const state = this.read(host);
       const snapshot = state.snapshot;
       if (!state.plan && snapshot && now - snapshot.observedAt <= 10 * 60_000 &&
-          (snapshot.required || (isPve(host) && snapshot.updates > 0))) {
+          snapshot.required) {
         state.plan = {
           revision: crypto.randomUUID(), target: nextMorning(now),
           phase: isPve(host) ? 'approval' : 'scheduled', bootId: snapshot.bootId,
@@ -135,6 +130,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
   async claim(host: Host): Promise<{ executionId: string; target: number; fingerprint: string } | null> {
     const state = this.read(host);
     if (!due(host, state, Date.now())) return null;
+    if (isPve(host) && this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length) return null;
     if (isPve(host) && HOSTS.some(other => isPve(other) && other !== host &&
       ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
     const plan = state.plan!;
@@ -143,6 +139,30 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.write(host, state);
     this.audit(host, 'execution-claimed');
     return { executionId: plan.executionId, target: plan.target, fingerprint: plan.fingerprint };
+  }
+  async claimUpdate(host: Host): Promise<{ executionId: string } | null> {
+    const snapshot = this.read(host).snapshot;
+    if (!isPve(host) || !snapshot?.healthy || Date.now() - snapshot.observedAt > 120_000 ||
+        this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length ||
+        HOSTS.some(other => isPve(other) && ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
+    const executionId = crypto.randomUUID();
+    this.ctx.storage.sql.exec('INSERT INTO package_update (id,host,execution) VALUES (1,?,?)', host, executionId);
+    this.audit(host, 'automatic-update-claimed');
+    return { executionId };
+  }
+  async updateResult(host: Host, executionId: string, outcome: string): Promise<void> {
+    const eventId = `update:${host}:${executionId}`;
+    if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', eventId).toArray().length) return;
+    const lock = this.ctx.storage.sql.exec<{ host: string; execution: string }>('SELECT host,execution FROM package_update').toArray()[0];
+    if (lock?.host !== host || lock.execution !== executionId) throw new Error('Update execution mismatch');
+    if (outcome === 'failed') this.ctx.storage.sql.exec('UPDATE package_update SET failed=1 WHERE id=1');
+    else this.ctx.storage.sql.exec('DELETE FROM package_update WHERE id=1');
+    this.ctx.storage.sql.exec('INSERT INTO events VALUES (?,?)', eventId, Date.now());
+    this.audit(host, `automatic-update-${outcome}`);
+    if (outcome !== 'complete') await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages`, 'POST', {
+      content: `【PVEパッケージ更新${outcome === 'blocked' ? '見送り' : '失敗'}】${host}\nホストのjournalを確認してください。OS再起動は行っていません。` +
+        (outcome === 'failed' ? '\n他のPVE処理も手動確認まで停止します。' : ''), allowed_mentions: { parse: [] },
+    });
   }
   async result(host: Host, executionId: string, outcome: string): Promise<void> {
     const eventId = `result:${host}:${executionId}`;
@@ -166,7 +186,9 @@ export class MaintenanceFleet extends DurableObject<Env> {
   }
   async recover(host: Host): Promise<void> {
     const state = this.read(host);
-    if (!state.plan || !state.snapshot?.healthy || Date.now() - state.snapshot.observedAt > 120_000) throw new Error('Fresh healthy report required');
+    if (!state.snapshot?.healthy || Date.now() - state.snapshot.observedAt > 120_000) throw new Error('Fresh healthy report required');
+    this.ctx.storage.sql.exec('DELETE FROM package_update WHERE host=?', host);
+    if (!state.plan) { this.audit(host, 'manual-update-recovery'); return; }
     state.plan.phase = 'held';
     state.plan.revision = crypto.randomUUID();
     state.plan.notifiedRevision = undefined;
@@ -262,6 +284,11 @@ export default {
           return Response.json({ ok: true });
         }
         if (path === '/agent/claim') return Response.json(await fleet.claim(host));
+        if (path === '/agent/update-claim') return Response.json(await fleet.claimUpdate(host));
+        if (path === '/agent/update-result' && ['blocked', 'failed', 'complete'].includes(data.outcome)) {
+          await fleet.updateResult(host, data.executionId, data.outcome);
+          return Response.json({ ok: true });
+        }
         if (path === '/agent/recover') {
           await fleet.recover(host);
           return Response.json({ ok: true });

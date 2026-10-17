@@ -97,13 +97,13 @@ describe('maintenance scheduling', () => {
     expect((await read(target, 'dev-app-server')).plan!.notifiedRevision).toBeUndefined();
     expect(await target.claim('dev-app-server')).toBeNull();
   });
-  it('changed PVE packages revoke approval', async () => {
+  it('automatic package changes do not change reboot approval', async () => {
     const target = stub();
     const data = fixture();
     await seed(target, 'pve-x570', data);
     await target.report('pve-x570', { ...data.snapshot!, fingerprint: 'b'.repeat(64) });
-    expect((await read(target, 'pve-x570')).plan!.phase).toBe('approval');
-    expect(await target.claim('pve-x570')).toBeNull();
+    expect((await read(target, 'pve-x570')).plan!.phase).toBe('scheduled');
+    expect(await target.claim('pve-x570')).not.toBeNull();
   });
   it('only a healthy reboot report completes a running PVE execution', async () => {
     const target = stub();
@@ -123,6 +123,45 @@ describe('maintenance scheduling', () => {
     await target.report('pve-x570', { ...data.snapshot!, fingerprint: 'b'.repeat(64) });
     expect((await read(target, 'pve-x570')).plan!.phase).toBe('held');
     expect(await target.claim('pve-x570')).toBeNull();
+  });
+  it('automatic updates need no reboot approval and serialize both PVE hosts', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('held'));
+    await seed(target, 'pve-b550m', fixture('approval'));
+    const first = await target.claimUpdate('pve-x570');
+    expect(first).not.toBeNull();
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await target.updateResult('pve-x570', first!.executionId, 'complete');
+    expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+    expect((await read(target, 'pve-x570')).plan!.phase).toBe('held');
+  });
+  it('a running automatic update prevents an approved OS reboot', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture());
+    await seed(target, 'pve-b550m', fixture());
+    expect(await target.claimUpdate('pve-x570')).not.toBeNull();
+    expect(await target.claim('pve-x570')).toBeNull();
+    expect(await target.claim('pve-b550m')).toBeNull();
+  });
+  it('failed automatic updates keep the group blocked until manual recovery', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('held'));
+    await seed(target, 'pve-b550m', fixture());
+    const claim = await target.claimUpdate('pve-x570');
+    await target.updateResult('pve-x570', claim!.executionId, 'failed');
+    expect(await target.claim('pve-b550m')).toBeNull();
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await target.recover('pve-x570');
+    expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+  });
+  it('pending package upgrades without a reboot requirement do not create a reboot plan', async () => {
+    const target = stub();
+    const state = fixture();
+    state.plan = undefined;
+    state.snapshot!.required = false;
+    await seed(target, 'pve-x570', state);
+    await target.tick();
+    expect((await read(target, 'pve-x570')).plan).toBeUndefined();
   });
 });
 

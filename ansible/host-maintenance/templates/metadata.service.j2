@@ -1,9 +1,13 @@
 [Unit]
-Description=Refresh PVE package metadata without installing updates
+Description=Automatically upgrade PVE packages without OS reboot
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/apt-get update
-TimeoutStartSec=15m
+StateDirectory=host-maintenance
+StateDirectoryMode=0700
+LoadCredential=agent-config:/etc/host-maintenance/agent-config
+ExecStart=/usr/local/sbin/host-maintenance-agent --update
+UMask=0077
+TimeoutStartSec=3h

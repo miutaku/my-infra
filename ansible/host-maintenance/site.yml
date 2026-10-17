@@ -76,7 +76,7 @@
       loop: [dev-app-reboot-notify.timer, dev-app-reboot.timer]
       when: inventory_hostname == 'dev-app-server'
 
-    - name: Require explicit approval for PVE package installation and reboot
+    - name: Disable independent PVE updates and automatic OS reboots
       ansible.builtin.copy:
         dest: /etc/apt/apt.conf.d/99zz-host-maintenance
         content: |
@@ -87,7 +87,7 @@
         mode: '0644'
       when: inventory_hostname != 'dev-app-server'
 
-    - name: Install PVE metadata refresh units
+    - name: Install PVE automatic package update units
       ansible.builtin.template:
         src: "{{ item }}.j2"
         dest: "/etc/systemd/system/host-maintenance-{{ item }}"
@@ -98,7 +98,7 @@
       register: host_maintenance_metadata_units
       when: inventory_hostname != 'dev-app-server'
 
-    - name: Enable the PVE metadata refresh timer
+    - name: Enable the PVE automatic package update timer
       ansible.builtin.systemd_service:
         name: host-maintenance-metadata.timer
         daemon_reload: true

@@ -48,5 +48,5 @@ export function due(host: Host, state: RecordState, now: number): boolean {
   return !!plan && !!snapshot && plan.phase === 'scheduled' &&
     plan.notifiedRevision === plan.revision && snapshot.healthy &&
     now - snapshot.observedAt < 120_000 && now >= plan.target && now < plan.target + 5 * 60_000 &&
-    snapshot.bootId === plan.bootId && (!isPve(host) ? snapshot.required : snapshot.fingerprint === plan.fingerprint);
+    snapshot.bootId === plan.bootId && snapshot.required;
 }

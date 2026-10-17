@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 
 STATE = Path('/var/lib/host-maintenance/execution.json')
+UPDATE_STATE = Path('/var/lib/host-maintenance/update.json')
 BOOT = Path('/proc/sys/kernel/random/boot_id')
 REQUIRED = Path('/run/reboot-required')
 
@@ -67,6 +68,10 @@ def pve_preflight(host):
                             '--output-format', 'json'))
     if any(item.get('node') == host and item.get('status') != 'stopped' for item in guests):
         raise RuntimeError('Guests must be migrated or stopped before PVE maintenance')
+    pve_tasks_idle()
+
+
+def pve_tasks_idle():
     # Active cluster-wide tasks include backups, replication and migrations.
     for node in ['pve-x570', 'pve-b550m']:
         tasks = json.loads(run('pvesh', 'get', f'/nodes/{node}/tasks', '--source', 'active',
@@ -86,16 +91,77 @@ def api(config, endpoint, data):
         return json.load(response)
 
 
-def save(data):
-    temporary = STATE.with_suffix('.tmp')
+def save(data, path=None):
+    path = STATE if path is None else path
+    temporary = path.with_suffix('.tmp')
     temporary.write_text(json.dumps(data) + '\n')
-    temporary.replace(STATE)
+    temporary.replace(path)
+
+
+def update_packages(config):
+    """Automatic package installation; deliberately has no reboot call."""
+    host = config['host']
+    if not host.startswith('pve-'):
+        raise RuntimeError('Automatic updater is for PVE hosts only')
+    if STATE.exists() or UPDATE_STATE.exists():
+        print('Pending execution journal; investigate before another update')
+        return
+    if not pve_healthy():
+        print('Cluster or package manager not ready; update skipped')
+        return
+    run('apt-get', 'update')
+    count, fingerprint = updates()
+    api(config, 'report', {'bootId': BOOT.read_text().strip(), 'required': reboot_required(True),
+                          'updates': count, 'fingerprint': fingerprint, 'healthy': pve_healthy()})
+    if not count:
+        print('No package upgrades available')
+        return
+    claim = api(config, 'update-claim', {})
+    if not claim:
+        print('Another PVE maintenance is active; update skipped')
+        return
+    pending = {'bootId': BOOT.read_text().strip(), 'executionId': claim['executionId']}
+    save(pending, UPDATE_STATE)
+    try:
+        if not pve_healthy():
+            raise RuntimeError('PVE cluster or package manager changed state')
+        pve_tasks_idle()
+    except (RuntimeError, subprocess.SubprocessError):
+        pending['outcome'] = 'blocked'
+        save(pending, UPDATE_STATE)
+        api(config, 'update-result', {'executionId': pending['executionId'], 'outcome': 'blocked'})
+        UPDATE_STATE.unlink()
+        print('Active task or unhealthy cluster; update skipped')
+        return
+    try:
+        subprocess.run(['apt-get', '-y', '--no-remove', '-o', 'Dpkg::Options::=--force-confold',
+                        'dist-upgrade'], check=True, timeout=7200,
+                       env={**os.environ, 'DEBIAN_FRONTEND': 'noninteractive', 'NEEDRESTART_MODE': 'l'})
+    except subprocess.SubprocessError:
+        pending['outcome'] = 'failed'
+        save(pending, UPDATE_STATE)
+        api(config, 'update-result', {'executionId': pending['executionId'], 'outcome': 'failed'})
+        raise RuntimeError('Package update failed; inspect journal and use --recover') from None
+    pending['outcome'] = 'complete'
+    save(pending, UPDATE_STATE)
+    api(config, 'update-result', {'executionId': pending['executionId'], 'outcome': 'complete'})
+    UPDATE_STATE.unlink()
+    print('Packages updated; OS reboot requires separate explicit approval')
 
 
 def process(config):
     host = config['host']
     pve = host.startswith('pve-')
     boot_id = BOOT.read_text().strip()
+    if UPDATE_STATE.exists():
+        update = json.loads(UPDATE_STATE.read_text())
+        if update.get('outcome'):
+            api(config, 'update-result', {'executionId': update['executionId'], 'outcome': update['outcome']})
+            if update['outcome'] != 'failed':
+                UPDATE_STATE.unlink()
+        if UPDATE_STATE.exists():
+            print('Package update interrupted or failed; investigate and use --recover')
+            return
     if STATE.exists():
         pending = json.loads(STATE.read_text())
         if pending['bootId'] == boot_id:
@@ -125,8 +191,6 @@ def process(config):
             raise RuntimeError('Another package manager is active')
         if pve:
             pve_preflight(host)
-            if fingerprint != claim['fingerprint']:
-                raise RuntimeError('Package candidates changed after approval')
         elif not REQUIRED.exists():
             raise RuntimeError('Reboot no longer required')
     except (RuntimeError, subprocess.SubprocessError):
@@ -137,14 +201,7 @@ def process(config):
         print('Maintenance blocked by preflight; see cluster state and active guests/tasks')
         return
     try:
-        if pve:
-            subprocess.run(['apt-get', '-y', '--no-remove', '-o', 'Dpkg::Options::=--force-confold',
-                            'dist-upgrade'], check=True, timeout=7200,
-                           env={**os.environ, 'DEBIAN_FRONTEND': 'noninteractive', 'NEEDRESTART_MODE': 'l'})
         if reboot_required(pve):
-            # Repeat local preflight after package hooks before rebooting the hypervisor.
-            if pve:
-                pve_preflight(host)
             subprocess.run(['systemctl', 'reboot'], check=True, timeout=30)
         else:
             pending['outcome'] = 'complete'
@@ -163,6 +220,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--probe', action='store_true', help='Read-only local readiness report')
     parser.add_argument('--recover', action='store_true', help='After manual inspection, release interrupted execution into hold')
+    parser.add_argument('--update', action='store_true', help='Apply PVE package upgrades without rebooting')
     args = parser.parse_args()
     credential_dir = Path(os.environ.get('CREDENTIALS_DIRECTORY', '/etc/host-maintenance'))
     config = json.loads((credential_dir / 'agent-config').read_text())
@@ -189,6 +247,9 @@ def main():
                     'healthy': pve_healthy() if pve else True})
                 api(config, 'recover', {})
                 STATE.unlink(missing_ok=True)
+                UPDATE_STATE.unlink(missing_ok=True)
+        elif args.update:
+            update_packages(config)
         else:
             process(config)
 

@@ -25,7 +25,7 @@ ansible-playbook site.yml
 
 ## 自動更新と再起動
 
-Discordからの延期・日時指定・保留、およびPVEの承認付き更新は
+Discordからの延期・日時指定・保留、およびPVEの自動更新・承認付き再起動は
 [host-maintenance](../host-maintenance/README.md)で管理する。
 `dev_reboot_controller_enabled: true`の場合は、以下の旧ローカル通知・再起動timerを無効にする。
 パッケージの18時台の自動更新はこのplaybookで継続する。
