@@ -3,7 +3,9 @@ dev_group: miutaku
 dev_home: /home/miutaku
 
 # Times use the server's local timezone (Asia/Tokyo).
-dev_auto_upgrade_time: "04:00:00"
+dev_auto_upgrade_time: "18:00:00"
+dev_reboot_notify_time: "19:00:00"
+dev_reboot_webhook_secret: REBOOT_NOTIFY_WEBHOOK
 dev_auto_reboot_time: "05:00"
 dev_auto_upgrade_origins:
   - "site=download.docker.com"

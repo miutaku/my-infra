@@ -1,0 +1,17 @@
+[Unit]
+Description=Notify Discord of the next development server reboot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+StateDirectory=dev-app-maintenance
+StateDirectoryMode=0700
+LoadCredential=discord-webhook:/etc/dev-app-maintenance/discord-webhook
+ExecStart=/usr/local/sbin/dev-app-maintenance notify --reboot-time {{ dev_auto_reboot_time }}
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+TimeoutStartSec=120

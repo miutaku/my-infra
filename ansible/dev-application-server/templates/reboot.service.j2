@@ -1,0 +1,9 @@
+[Unit]
+Description=Reboot the development server only after advance notification
+
+[Service]
+Type=oneshot
+StateDirectory=dev-app-maintenance
+StateDirectoryMode=0700
+ExecStart=/usr/local/sbin/dev-app-maintenance reboot
+UMask=0077

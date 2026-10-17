@@ -1,0 +1,11 @@
+[Unit]
+Description=Check development server reboot requirements at 19:00 JST
+
+[Timer]
+OnCalendar=*-*-* {{ dev_reboot_notify_time }} Asia/Tokyo
+AccuracySec=1s
+Persistent=false
+Unit=dev-app-reboot-notify.service
+
+[Install]
+WantedBy=timers.target

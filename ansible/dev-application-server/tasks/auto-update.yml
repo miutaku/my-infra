@@ -1,4 +1,25 @@
 ---
+- name: Read notification credentials from Bitwarden Secrets Manager
+  ansible.builtin.command:
+    argv: [bws, secret, list, --output, json]
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  changed_when: false
+  register: dev_notification_secrets
+  no_log: true
+
+- name: Select the Discord webhook
+  ansible.builtin.set_fact:
+    dev_notification_webhook: "{{ (dev_notification_secrets.stdout | from_json | items2dict(key_name='key', value_name='value'))[dev_reboot_webhook_secret] }}"
+  no_log: true
+
+- name: Validate the Discord webhook
+  ansible.builtin.assert:
+    that:
+      - dev_notification_webhook is match('https://discord[.]com/api/webhooks/[0-9]+/.+')
+  no_log: true
+
 - name: Install automatic update and reboot notification support
   ansible.builtin.apt:
     name:
@@ -57,3 +78,53 @@
     daemon_reload: "{{ dev_auto_upgrade_schedule.changed }}"
     enabled: true
     state: "{{ 'restarted' if dev_auto_upgrade_schedule.changed else 'started' }}"
+
+- name: Create the maintenance credential directory
+  ansible.builtin.file:
+    path: /etc/dev-app-maintenance
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Install the Discord webhook credential
+  ansible.builtin.copy:
+    content: "{{ dev_notification_webhook }}\n"
+    dest: /etc/dev-app-maintenance/discord-webhook
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Install the notification and reboot guard
+  ansible.builtin.copy:
+    src: dev-app-maintenance.py
+    dest: /usr/local/sbin/dev-app-maintenance
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the notification and reboot units
+  ansible.builtin.template:
+    src: "{{ item.source }}"
+    dest: "/etc/systemd/system/dev-app-{{ item.name }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - { source: reboot-notify.service.j2, name: reboot-notify.service }
+    - { source: reboot-notify.timer.j2, name: reboot-notify.timer }
+    - { source: reboot.service.j2, name: reboot.service }
+    - { source: reboot.timer.j2, name: reboot.timer }
+  register: dev_reboot_units
+
+- name: Enable notification and guarded reboot timers
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    daemon_reload: "{{ dev_reboot_units.changed }}"
+    enabled: true
+    state: "{{ 'restarted' if dev_reboot_units.changed else 'started' }}"
+  loop:
+    - dev-app-reboot-notify.timer
+    - dev-app-reboot.timer
+  when: not (ansible_check_mode and dev_reboot_units.changed)

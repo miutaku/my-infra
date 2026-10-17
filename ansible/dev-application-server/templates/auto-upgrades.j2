@@ -8,6 +8,5 @@ Unattended-Upgrade::Origins-Pattern {
     "{{ pattern }}";
 {% endfor %}
 };
-Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
-Unattended-Upgrade::Automatic-Reboot-Time "{{ dev_auto_reboot_time }}";
+// Reboots require a successful notification on the previous evening.
+Unattended-Upgrade::Automatic-Reboot "false";

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the notified development server reboot at 05:00 JST
+
+[Timer]
+OnCalendar=*-*-* {{ dev_auto_reboot_time }}:00 Asia/Tokyo
+AccuracySec=1s
+Persistent=false
+Unit=dev-app-reboot.service
+
+[Install]
+WantedBy=timers.target
