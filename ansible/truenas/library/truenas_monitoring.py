@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""Provision TrueNAS 25.10 monitoring access; never return API secrets to Ansible."""
+"""Provision restricted TrueNAS monitoring access; never return secrets to Ansible."""
 import json
 import os
 from pathlib import Path
@@ -19,7 +19,13 @@ class Client:
             ['midclt', 'call', method] + [json.dumps(p) for p in params])
         if rc:
             raise SetupError('TrueNAS method failed: ' + method)
-        return json.loads(stdout)
+        # midclt prints scalar strings without JSON quoting on older releases.
+        if method == 'system.version':
+            return stdout.strip().strip('"')
+        try:
+            return json.loads(stdout)
+        except json.JSONDecodeError:
+            raise SetupError('Invalid TrueNAS response format: ' + method) from None
 
 
 def unique(items, label):
@@ -40,6 +46,42 @@ def atomic_json(path, value):
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
+
+
+LEGACY_ALLOWLIST = [{'method': 'CALL', 'resource': name} for name in ('pool.query', 'alert.list')]
+
+
+def provision_legacy(client, output, secret_name, check=False):
+    """23.10 keys are not user-linked. Grant exactly the two collector methods."""
+    key = unique(client.call('api_key.query', [['name', '=', 'home-monitoring']]), 'monitoring API key')
+    metadata = Path(str(output) + '.metadata.json')
+    if key and sorted(key.get('allowlist', []), key=lambda x: (x['method'], x['resource'])) != sorted(LEGACY_ALLOWLIST, key=lambda x: (x['method'], x['resource'])):
+        raise SetupError('Existing key is not restricted to pool.query and alert.list; no changes made')
+    if output.exists() or metadata.exists():
+        if not output.is_file() or not metadata.is_file() or output.is_symlink() or metadata.is_symlink():
+            raise SetupError('Incomplete or unsafe local API key files; do not reissue automatically')
+        saved = json.loads(output.read_text()).get(secret_name)
+        state = json.loads(metadata.read_text())
+        if not saved or not key or key['id'] != state.get('id') or state.get('secret_name') != secret_name:
+            raise SetupError('Local API key files differ from NAS; do not reissue automatically')
+    elif key:
+        raise SetupError('API key already exists but its local secret is missing; recover it from BWS, do not rotate automatically')
+    if check:
+        return key is None
+    output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if output.parent.is_symlink():
+        raise SetupError('Output directory must not be a symbolic link')
+    os.chmod(output.parent, 0o700)
+    if not key:
+        key = client.call('api_key.create', {'name': 'home-monitoring', 'allowlist': LEGACY_ALLOWLIST})
+        atomic_json(output, {secret_name: key['key']})
+        atomic_json(metadata, {'id': key['id'], 'secret_name': secret_name})
+        changed = True
+    else:
+        changed = False
+    os.chmod(output, 0o600)
+    os.chmod(metadata, 0o600)
+    return changed
 
 
 def provision(client, output, secret_name, check=False):
@@ -134,9 +176,13 @@ def main():
     try:
         client = Client(module)
         version = client.call('system.version')
-        if not version.startswith('TrueNAS-SCALE-25.10.'):
-            raise SetupError('This provisioner requires TrueNAS SCALE 25.10; found ' + version)
-        changed = provision(client, Path(module.params['output_file']), module.params['secret_name'], module.check_mode)
+        if version.startswith('TrueNAS-SCALE-25.10.'):
+            configure = provision
+        elif version.startswith('TrueNAS-SCALE-23.10.'):
+            configure = provision_legacy
+        else:
+            raise SetupError('Supported versions are TrueNAS SCALE 23.10 and 25.10; found ' + version)
+        changed = configure(client, Path(module.params['output_file']), module.params['secret_name'], module.check_mode)
     except Exception as error:
         message = str(error) if isinstance(error, SetupError) else 'TrueNAS provisioning failed (' + type(error).__name__ + '); no secret or response body logged'
         module.fail_json(msg=message)

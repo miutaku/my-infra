@@ -74,7 +74,7 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | `probes` | 新しいblackbox modulesとtarget | DNSの内部名/外部名、API readyz、DB/NFS TCP、TNLaStation・Loockit・coupon-manager、Nextcloud本文検証 |
 | `backups` | CronJob状態（`kubernetes`も必須） | KSMのlastSuccessfulTimeによる日次/毎時の鮮度・削除・suspend検知 |
 | `access` | home-service-monitor + Access Service Token | 自宅のAccess保護URL16件に認証付き/認証なしで接続し、期待本文・保護有無・公開TLS期限を確認 |
-| `storage_api` | TrueNAS read-only API key | 25.10 WebSocket APIのpool物理使用量・健全性・scrub・disk/SMART alert |
+| `storage_api` | TrueNAS read-only API key | 実機23.10のDDP WebSocket APIによるpool物理使用量・健全性・scrub・disk/SMART alert |
 | `database` | DBの専用monitoring user | MariaDB / PostgreSQL両系統へのSQL・接続数・lock/長時間query |
 | `recording` | Mirakurun/EPGStation/TNLaStation API | TV service別EPG更新時刻、tuner、予約と録画状態の照合、encode待ち。EPGStationの録画失敗hookも永続化 |
 | `backup_integrity` | PBS read-only API、S3、復元Job（`kubernetes`必須） | VM別backup/verify、S3 object実容量、保存先検証結果、隔離DB復元とresticサンプル復元、PBS実復元結果の受付 |
@@ -131,7 +131,7 @@ read-only検査で表示される「condition true」は継続時間未判定で
 - NFSの実read/write、NextcloudのWebDAV操作、拠点外heartbeat・metric/log canaryは追加対象外。既存のTCP/HTTP・収集欠測監視は維持する。
 - AccessはService Tokenによる機械認証を確認する。人間のIdPログイン/MFA操作や、接続先アプリ内のログイン・業務操作までは実行しない。ログイン画面へのredirectやHTTP 200のAccessログインHTMLは成功にしない。
 - switchの必須portは2026-10-17の実機`swctrl port show`のUP状態を基準に**1,2,3,4,7,8**へ固定した。5,6はDOWNで除外。再起動や一時的なリンク断から自動学習し直さない。FS APはICMP/TLS公開経路までで、SSID別の通信試験はしない。
-- TrueNAS 25.10では旧`smart.test.results`を使わず、TrueNAS自身のdisk/SMART alertを収集する。SMART生属性を独自採点するcollectorではない。scrubは成功時刻を90日窓で照会するが、現行VictoriaMetricsの保存期間は30日。直近scanが進行中でも保存中の前回成功を参照する。30日以上収集できなかった場合や前回成功を観測していない場合は、成功時刻不明として異常を出す。
+- TrueNAS実機23.10ではDDP WebSocket API（`/websocket`）を使い、`pool.query`と`alert.list`だけを許可したキーで収集する。TrueNAS自身のdisk/SMART alertを使用する。SMART生属性を独自採点するcollectorではない。scrubは成功時刻を90日窓で照会するが、現行VictoriaMetricsの保存期間は30日。直近scanが進行中でも保存中の前回成功を参照する。30日以上収集できなかった場合や前回成功を観測していない場合は、成功時刻不明として異常を出す。
 - EPGはTV serviceごとの`epgUpdatedAt`を使う。encode APIにenqueue時刻がないため、待ち時間は「待機中録画の終了時刻からの経過」として扱う。録画APIから消えた過去の失敗を完全に復元する監査ではなく、現在の予約/録画状態とEPGStationの失敗hookを確認する。
 - DBはSQLの実行・接続/lock状況まで。自動書き込みテストは実行しない。
 - DB backupの検証指標は全dumpのS3読み戻しchecksum一致後、NASは`restic check`後、録画実体は保存先の名前/size一致後に送信する。それぞれ検証の強さが異なる。S3容量は`restic stats`の論理量ではなくrepository prefix配下の実object byte合計。

@@ -98,18 +98,20 @@
   {
     "name": "nas-01",
     "kind": "truenas",
-    "url": "wss://nas-01.miutaku.internal/api/current",
+    "url": "wss://nas-01.miutaku.internal/websocket",
     "credential": "nas-01-api-key",
     "ca": "/certificates/nas-01.pem",
-    "interval": 300
+    "interval": 300,
+    "protocol": "ddp"
   },
   {
     "name": "nas-02",
     "kind": "truenas",
-    "url": "wss://nas-02.miutaku.internal/api/current",
+    "url": "wss://nas-02.miutaku.internal/websocket",
     "credential": "nas-02-api-key",
     "ca": "/certificates/nas-02.pem",
-    "interval": 300
+    "interval": 300,
+    "protocol": "ddp"
   },
   {
     "name": "pbs",

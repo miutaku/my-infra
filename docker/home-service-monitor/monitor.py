@@ -205,17 +205,20 @@ def recorder(target, metrics):
 def truenas(target, metrics):
     import websocket
     connection = websocket.create_connection(target['url'], timeout=TIMEOUT,
-        sslopt={'ca_certs': target['ca'], 'check_hostname': False}, suppress_origin=True)
+        sslopt={'ca_certs': target['ca'], 'check_hostname': False}, suppress_origin=True, redirect_limit=0)
     deadline = time.monotonic() + 40
     index = 0
+    legacy = target.get('protocol') == 'ddp'
 
     def rpc(method, params):
         nonlocal index
         index += 1
-        connection.send(json.dumps({'jsonrpc': '2.0', 'id': index, 'method': method, 'params': params}))
+        message = {'id': str(index) if legacy else index, 'method': method, 'params': params}
+        message.update({'msg': 'method'} if legacy else {'jsonrpc': '2.0'})
+        connection.send(json.dumps(message))
         while time.monotonic() < deadline:
             response = json.loads(connection.recv())
-            if response.get('id') != index:
+            if response.get('id') != message['id']:
                 continue
             if 'error' in response:
                 raise ValueError('TrueNAS API method failed')
@@ -224,7 +227,13 @@ def truenas(target, metrics):
 
     try:
         verify_leaf(connection.sock, target['ca'])
+        if connection.handshake_response.status != 101:
+            raise ValueError('TrueNAS endpoint did not upgrade to WebSocket')
         metrics.add('home_api_tls_expiry_seconds', ssl.cert_time_to_seconds(connection.sock.getpeercert()['notAfter']))
+        if legacy:
+            connection.send(json.dumps({'msg': 'connect', 'version': '1', 'support': ['1']}))
+            if json.loads(connection.recv()).get('msg') != 'connected':
+                raise ValueError('TrueNAS DDP negotiation failed')
         if rpc('auth.login_with_api_key', [secret(target['credential'])]) is not True:
             raise ValueError('TrueNAS authentication failed')
         pools = rpc('pool.query', [])
@@ -240,8 +249,7 @@ def truenas(target, metrics):
             metrics.add('home_nas_scrub_last_success_seconds', timestamp(scan['end_time']) if completed and not scan['errors'] else 0, pool=name)
             metrics.add('home_nas_scrub_errors', scan.get('errors') or 0, pool=name)
         alerts = rpc('alert.list', [])
-        # 25.10 removed smart.test.results. Consume TrueNAS's disk/SMART alerts
-        # rather than claiming a nonexistent raw SMART endpoint was collected.
+        # Read TrueNAS disk/SMART alerts; do not run raw disk commands or tests.
         smart = [a for a in alerts if not a.get('dismissed', False)
                  and re.search('smart|disk', a['klass'], re.I) and a['level'] in ('CRITICAL', 'ALERT', 'EMERGENCY', 'ERROR')]
         metrics.add('home_nas_disk_alerts', len(smart))

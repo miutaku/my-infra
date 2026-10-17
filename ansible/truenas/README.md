@@ -1,8 +1,8 @@
 # TrueNAS Scale ストレージ管理 (Ansible)
 
 監視用ユーザー・APIキーは、ストレージ変更を含まない`monitoring.yml`で管理する。
-TrueNAS 25.10の`midclt`をSSH経由で実行し、専用group/userと`READONLY_ADMIN` privilegeを作成する。
-adminへのSSH公開鍵登録とsudo利用は事前に設定する。API専用ユーザーにはSSH・SMB・passwordログインを許可しない。
+`midclt`をSSH経由で実行する。実機23.10では、`CALL pool.query`と`CALL alert.list`だけを許可するallowlist付きキーを作成し、ユーザーは追加しない。25.10では専用group/userと`READONLY_ADMIN` privilegeを作成する。
+adminへのSSH公開鍵登録とsudo利用は事前に設定する。25.10で作るAPI専用ユーザーにはSSH・SMB・passwordログインを許可しない。
 
 ```bash
 cd ansible/truenas

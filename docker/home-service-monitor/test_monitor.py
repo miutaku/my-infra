@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import ssl
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch, MagicMock
 
@@ -89,6 +90,61 @@ class RecordingTests(unittest.TestCase):
         with patch.object(monitor, 'get_json', return_value={'reserves':[],'total':5}):
             with self.assertRaises(ValueError):
                 monitor.pages('http://service/api/reserves', 'reserves')
+
+
+class TrueNASTests(unittest.TestCase):
+    def target(self, protocol='ddp'):
+        return {'name':'nas', 'kind':'truenas', 'url':'wss://nas/websocket',
+                'ca':'leaf.pem', 'credential':'nas-key', 'protocol':protocol}
+
+    def connection(self):
+        connection = MagicMock()
+        connection.handshake_response.status = 101
+        connection.sock.getpeercert.return_value = {'notAfter':'Oct 18 00:00:00 2027 GMT'}
+        return connection
+
+    def test_both_protocols_collect_only_allowed_methods(self):
+        pool = {'name':'data','healthy':True,'status':'ONLINE','allocated':10,'size':100,
+                'scan':{'function':'SCRUB','state':'FINISHED','end_time':1000,'errors':0}}
+        for protocol in ['ddp','jsonrpc']:
+            with self.subTest(protocol=protocol):
+                connection = self.connection()
+                replies = [{'id':str(i) if protocol=='ddp' else i,'result':v}
+                           for i,v in enumerate([True,[pool],[]],1)]
+                if protocol=='ddp':replies.insert(0,{'msg':'connected'})
+                connection.recv.side_effect = [json.dumps(r) for r in replies]
+                websocket = SimpleNamespace(create_connection=MagicMock(return_value=connection))
+                target = self.target(protocol)
+                metrics = monitor.Metrics(target)
+                with patch.dict('sys.modules', {'websocket':websocket}), patch.object(monitor,'verify_leaf'), patch.object(monitor,'secret',return_value='test-key'):
+                    monitor.truenas(target,metrics)
+                messages = [json.loads(c.args[0]) for c in connection.send.call_args_list]
+                self.assertEqual([m['method'] for m in messages if 'method' in m],
+                                 ['auth.login_with_api_key','pool.query','alert.list'])
+                values = {n:v for n,v,_ in metrics.samples}
+                self.assertEqual(values['home_nas_pool_healthy'],1)
+                self.assertEqual(values['home_nas_pool_used_ratio'],0.1)
+                connection.close.assert_called_once()
+
+    def test_redirect_never_receives_api_key(self):
+        connection = self.connection()
+        connection.handshake_response.status = 302
+        websocket = SimpleNamespace(create_connection=MagicMock(return_value=connection))
+        with patch.dict('sys.modules', {'websocket':websocket}), patch.object(monitor,'verify_leaf'), patch.object(monitor,'secret') as secret:
+            with self.assertRaises(ValueError):
+                monitor.truenas(self.target(),monitor.Metrics(self.target()))
+        secret.assert_not_called()
+        connection.send.assert_not_called()
+        connection.close.assert_called_once()
+
+    def test_changed_certificate_never_receives_api_key(self):
+        connection = self.connection()
+        websocket = SimpleNamespace(create_connection=MagicMock(return_value=connection))
+        with patch.dict('sys.modules', {'websocket':websocket}), patch.object(monitor,'verify_leaf',side_effect=ssl.SSLError()), patch.object(monitor,'secret') as secret:
+            with self.assertRaises(ssl.SSLError):
+                monitor.truenas(self.target(),monitor.Metrics(self.target()))
+        secret.assert_not_called()
+        connection.send.assert_not_called()
 
 
 class BackupTests(unittest.TestCase):

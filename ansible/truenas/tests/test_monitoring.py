@@ -117,5 +117,48 @@ class ProvisionTests(unittest.TestCase):
         self.assertEqual(self.api.mutations, [])
 
 
+class LegacyTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.output = Path(self.directory.name) / 'private/key.json'
+        self.api = API()
+        self.secret = 'HOME_MONITORING_NAS_01_API_KEY'
+
+    def setup_key(self, check=False):
+        return monitoring.provision_legacy(self.api, self.output, self.secret, check)
+
+    def test_only_two_read_methods_are_allowed(self):
+        self.assertTrue(self.setup_key())
+        self.assertEqual([m for m, _ in self.api.mutations], ['api_key.create'])
+        self.assertEqual(self.api.key['allowlist'], [
+            {'method': 'CALL', 'resource': 'pool.query'},
+            {'method': 'CALL', 'resource': 'alert.list'},
+        ])
+        self.api.mutations.clear()
+        self.assertFalse(self.setup_key())
+        self.assertEqual(self.api.mutations, [])
+        self.assertEqual(self.output.stat().st_mode & 0o777, 0o600)
+
+    def test_check_mode_never_issues_a_key(self):
+        self.assertTrue(self.setup_key(check=True))
+        self.assertEqual(self.api.mutations, [])
+        self.assertFalse(self.output.parent.exists())
+
+    def test_existing_full_access_key_is_not_adopted(self):
+        self.api.key = {'id': 71, 'allowlist': [{'method': '*', 'resource': '*'}]}
+        with self.assertRaises(monitoring.SetupError):
+            self.setup_key()
+        self.assertEqual(self.api.mutations, [])
+
+    def test_missing_saved_secret_is_not_rotated(self):
+        self.setup_key()
+        self.output.unlink()
+        self.api.mutations.clear()
+        with self.assertRaises(monitoring.SetupError):
+            self.setup_key()
+        self.assertEqual(self.api.mutations, [])
+
+
 if __name__ == '__main__':
     unittest.main()
