@@ -21,10 +21,75 @@ config:
     scrape_timeout: 30s
 
   scrape_configs:
+    - job_name: home-service-monitor
+      scrape_interval: 30s
+      static_configs:
+        - targets: [home-service-monitor.monitoring.svc.cluster.local:9810]
+
+    - job_name: home-vip-monitor
+      scrape_interval: 15s
+      kubernetes_sd_configs:
+        - role: pod
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
+          regex: monitoring;home-vip-monitor
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_container_port_name]
+          regex: metrics
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_node_name]
+          target_label: instance
+
+    - job_name: etcd
+      static_configs:
+        - targets: ['192.168.20.137:2381']
+          labels: {instance: controlplane-01-talos}
+        - targets: ['192.168.20.138:2381']
+          labels: {instance: controlplane-02-talos}
+        - targets: ['192.168.20.139:2381']
+          labels: {instance: controlplane-03-talos}
+
+    - job_name: argocd-home
+      static_configs:
+        - targets: [argocd-metrics.argocd.svc.cluster.local:8082]
+      metric_relabel_configs:
+        - source_labels: [dest_namespace, name]
+          regex: '((app-(annict.*|coredns|coupon-manager|epgstation|gptwol|loockit|magic-mirror|mirakurun(-staging)?|nextcloud|tnlastation(-staging)?)|infra-(backup|db(-staging)?)|monitoring|cloudflared|external-secrets|kube-system|kubelet-serving-cert-approver|metallb-system|arc-systems|tfc-agent);.*|argocd;(root-app|argocd|argocd-image-updater))'
+          action: keep
+
+    - job_name: arc-home
+      kubernetes_sd_configs:
+        - role: pod
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_actions_github_com_scale_set_name]
+          regex: 'arc-systems;(talos-infra-admin|architecture-automation-reader|architecture-automation-codex)'
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+          regex: runner-scale-set-listener
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_ip]
+          target_label: __address__
+          replacement: '$1:8080'
+        - source_labels: [__meta_kubernetes_pod_label_actions_github_com_scale_set_name]
+          target_label: scale_set
+
     - job_name: vmagent
       static_configs:
         - targets:
             - localhost:8429
+
+    - job_name: kube-state-metrics
+      static_configs:
+        - targets: ["kube-state-metrics.monitoring.svc.cluster.local:8080"]
+      metric_relabel_configs:
+        # Collect node/global metrics and the home services managed here.
+        - source_labels: [namespace]
+          regex: "(|app-(annict.*|coredns|coupon-manager|epgstation|gptwol|loockit|magic-mirror|mirakurun(-staging)?|nextcloud|tnlastation(-staging)?)|infra-(backup|db(-staging)?)|monitoring|argocd|cloudflared|external-secrets|kube-system|kubelet-serving-cert-approver|metallb-system|arc-systems|tfc-agent)"
+          action: keep
+
+    - job_name: victoria-metrics
+      static_configs:
+        - targets: ["victoria-metrics.monitoring.svc.cluster.local:8428"]
 
     - job_name: kubernetes-pods
       kubernetes_sd_configs:
@@ -120,6 +185,10 @@ config:
         module: [ix2215]
         auth: [ix2215_v2]
       static_configs:
+        - targets: ["192.168.0.253"]
+          labels: {instance: wifi-ap}
+        - targets: ["192.168.0.252"]
+          labels: {instance: us-8-60w}
         - targets: ["192.168.0.254"]
           labels:
             instance: ix2215
@@ -164,6 +233,8 @@ config:
 
     - job_name: nut
       metrics_path: /ups_metrics
+      scrape_interval: 15s
+      scrape_timeout: 10s
       static_configs:
         - targets: ["nut-exporter.monitoring.svc.cluster.local:9199"]
           labels:
@@ -240,6 +311,18 @@ config:
         - targets: ["http://nextcloud.app-nextcloud.svc.cluster.local:80/status.php"]
           labels:
             instance: nextcloud
+            module: nextcloud_status
+        - targets: ["http://tnlastation.app-tnlastation.svc.cluster.local:8888/api/version"]
+          labels:
+            instance: tnlastation
+            module: http_2xx
+        - targets: ["http://coupon-manager-api.app-coupon-manager.svc.cluster.local:8080/health"]
+          labels:
+            instance: coupon-manager
+            module: http_2xx
+        - targets: ["http://loockit.app-loockit.svc.cluster.local:8080/readyz"]
+          labels:
+            instance: loockit
             module: http_2xx
         - targets: ["https://192.168.0.132:11443"]
           labels:
@@ -255,12 +338,98 @@ config:
         - target_label: __address__
           replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
 
+    - job_name: blackbox_tls
+      metrics_path: /probe
+      params:
+        module: [tls_certificate]
+      static_configs:
+        - targets: ["192.168.20.137:10250"]
+          labels: {instance: kubelet-controlplane-01}
+        - targets: ["192.168.20.138:10250"]
+          labels: {instance: kubelet-controlplane-02}
+        - targets: ["192.168.20.139:10250"]
+          labels: {instance: kubelet-controlplane-03}
+        - targets: ["192.168.20.140:10250"]
+          labels: {instance: kubelet-worker-01}
+        - targets: ["192.168.20.141:10250"]
+          labels: {instance: kubelet-worker-02}
+        - targets: ["192.168.10.107:10250"]
+          labels: {instance: kubelet-worker-03}
+        - targets: ["192.168.10.109:10250"]
+          labels: {instance: kubelet-worker-04}
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    - job_name: blackbox_dns
+      metrics_path: /probe
+      static_configs:
+        - targets: ["192.168.20.201:53"]
+          labels:
+            instance: internal-dns
+            module: dns_internal
+        - targets: ["192.168.20.201:53"]
+          labels:
+            instance: external-dns
+            module: dns_external
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [module]
+          target_label: __param_module
+        - action: labeldrop
+          regex: module
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    - job_name: blackbox_api
+      metrics_path: /probe
+      params:
+        module: [https_kubernetes_ready]
+      static_configs:
+        - targets: ["https://192.168.20.228:6443/readyz"]
+          labels:
+            instance: home-k8s-api
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
+    # Transport availability only; authenticated DB queries and NFS writes are separate checks.
+    - job_name: blackbox_tcp
+      metrics_path: /probe
+      params:
+        module: [tcp_connect]
+      static_configs:
+        - targets: ["mariadb.infra-db.svc.cluster.local:3306"]
+          labels: {instance: mariadb}
+        - targets: ["postgres.infra-db.svc.cluster.local:5432"]
+          labels: {instance: postgres}
+        - targets: ["nextcloud-redis.app-nextcloud.svc.cluster.local:6379"]
+          labels: {instance: redis}
+        - targets: ["192.168.20.191:2049"]
+          labels: {instance: nas-01-nfs}
+        - targets: ["192.168.20.192:2049"]
+          labels: {instance: nas-02-nfs}
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
     - job_name: blackbox_icmp
       metrics_path: /probe
       scrape_interval: 30s
       params:
         module: [icmp]
       static_configs:
+        - targets: ["192.168.0.253"]
+          labels: {instance: wifi-ap}
+        - targets: ["192.168.0.252"]
+          labels: {instance: us-8-60w}
         - targets: ["192.168.0.254"]
           labels:
             instance: ix2215

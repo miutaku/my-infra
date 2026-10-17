@@ -1,0 +1,13 @@
+# Existing UID and contact point names: discover through Grafana before planning.
+environments = {
+  home = {
+    datasource_uid = "REPLACE_WITH_HOME_PROMETHEUS_UID"
+    cluster        = "home-k8s"
+    features       = ["kubernetes", "probes", "backups", "access", "storage_api", "database", "recording", "backup_integrity", "control_plane", "network", "operations"]
+  }
+}
+contact_points = {
+  warn     = "REPLACE_WITH_WARN_RECEIVER"
+  critical = "REPLACE_WITH_CRITICAL_RECEIVER"
+}
+paused = true

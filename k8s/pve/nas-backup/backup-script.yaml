@@ -52,6 +52,11 @@ data:
 
     restic forget --tag nas-02 --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune
     restic check
+    # Successful repository validation, separate from the Kubernetes Job state.
+    verified_at=$(date +%s)
+    printf 'home_backup_repository_checked_timestamp_seconds{backup="nas"} %s\n' "${verified_at}" > /tmp/backup-metrics.prom
+    wget -qO- --post-file=/tmp/backup-metrics.prom \
+      http://victoria-metrics.monitoring.svc.cluster.local:8428/api/v1/import/prometheus >/dev/null || echo "Backup report delivery failed" >&2
 
     after_bytes="$(restic stats --mode raw-data --json latest | jq -r '.total_size')"
     snapshot="$(restic snapshots --tag nas-02 --latest 1 --json | jq -r '.[0].short_id')"

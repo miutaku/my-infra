@@ -352,6 +352,14 @@ data:
     WEBHOOK="$1"
     LABEL="$2"
     MENTION="${3:-}"
+    case "$LABEL" in
+      録画準備失敗|録画失敗)
+        # Persist the event independently of the next API poll or Pod restart.
+        printf 'home_recording_failure_timestamp_seconds{service="epgstation"} %s\n' "$(date +%s)" | \
+          curl --fail --silent --show-error --max-time 5 --data-binary @- \
+          http://victoria-metrics.monitoring.svc.cluster.local:8428/api/v1/import/prometheus >/dev/null || true
+        ;;
+    esac
     if [ -z "$WEBHOOK" ]; then exit 0; fi
     if [ -n "$NAME" ] && [ -n "$CHANNELNAME" ]; then
       CONTENT="${LABEL}: [${CHANNELNAME}] ${NAME}"

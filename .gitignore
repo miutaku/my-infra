@@ -36,6 +36,7 @@ go.work.sum
 # terraform
 *.terraform*
 !terraform/home-k8s/.terraform.lock.hcl
+!terraform/grafana-cloud/.terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
 terraform/pve/.tmp/
@@ -49,6 +50,10 @@ talos/home-k8s/.generated/
 terraform/home-k8s/.state/
 terraform/home-k8s/*.tfplan
 terraform/home-k8s/terraform.tfvars
+terraform/grafana-cloud/.state/
+terraform/grafana-cloud/*.tfplan
+terraform/grafana-cloud/terraform.tfvars
+terraform/grafana-cloud/*.auto.tfvars*
 
 # SNMP MIB files (vendor licensing / NEC terms of use)
 *.mib

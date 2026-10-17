@@ -1,0 +1,276 @@
+[
+  {
+    "name": "access-argocd-home-k8s",
+    "kind": "access",
+    "url": "https://argocd-home-k8s.miutaku.work/healthz",
+    "expect": "^ok"
+  },
+  {
+    "name": "access-wol",
+    "kind": "access",
+    "url": "https://wol.miutaku.work/",
+    "expect": "gptwol|wake|<html"
+  },
+  {
+    "name": "access-epgstation",
+    "kind": "access",
+    "url": "https://epgstation.miutaku.work/api/version",
+    "expect": "\"version\""
+  },
+  {
+    "name": "access-tnlastation",
+    "kind": "access",
+    "url": "https://tnlastation.miutaku.work/api/version",
+    "expect": "\"version\""
+  },
+  {
+    "name": "access-tnlastation-staging",
+    "kind": "access",
+    "url": "https://tnlastation-staging.miutaku.work/api/version",
+    "expect": "\"version\""
+  },
+  {
+    "name": "access-nextcloud",
+    "kind": "access",
+    "url": "https://nextcloud.miutaku.work/status.php",
+    "expect": "\"installed\"\\s*:\\s*true"
+  },
+  {
+    "name": "access-coupon-manager",
+    "kind": "access",
+    "url": "https://coupon-manager.miutaku.work/",
+    "expect": "<html"
+  },
+  {
+    "name": "access-unifi",
+    "kind": "access",
+    "url": "https://unifi.miutaku.work/",
+    "expect": "UniFi|<html"
+  },
+  {
+    "name": "access-wifi-ap",
+    "kind": "access",
+    "url": "https://wifi-ap.miutaku.work/",
+    "expect": "<html"
+  },
+  {
+    "name": "access-ix2215",
+    "kind": "access",
+    "url": "https://ix2215.miutaku.work/",
+    "expect": "<html"
+  },
+  {
+    "name": "access-nas-01",
+    "kind": "access",
+    "url": "https://nas-01.miutaku.work/ui/",
+    "expect": "TrueNAS"
+  },
+  {
+    "name": "access-nas-02",
+    "kind": "access",
+    "url": "https://nas-02.miutaku.work/ui/",
+    "expect": "TrueNAS"
+  },
+  {
+    "name": "access-pve-x570",
+    "kind": "access",
+    "url": "https://pve-x570.miutaku.work/",
+    "expect": "Proxmox"
+  },
+  {
+    "name": "access-pve-b550m",
+    "kind": "access",
+    "url": "https://pve-b550m.miutaku.work/",
+    "expect": "Proxmox"
+  },
+  {
+    "name": "access-nanokvm-1",
+    "kind": "access",
+    "url": "https://nanokvm-1.miutaku.work/",
+    "expect": "NanoKVM|<html"
+  },
+  {
+    "name": "access-nanokvm-2",
+    "kind": "access",
+    "url": "https://nanokvm-2.miutaku.work/",
+    "expect": "NanoKVM|<html"
+  },
+  {
+    "name": "nas-01",
+    "kind": "truenas",
+    "url": "wss://nas-01.miutaku.internal/websocket",
+    "credential": "nas-01-api-key",
+    "ca": "/certificates/nas-01.pem",
+    "interval": 300,
+    "protocol": "ddp"
+  },
+  {
+    "name": "nas-02",
+    "kind": "truenas",
+    "url": "wss://nas-02.miutaku.internal/websocket",
+    "credential": "nas-02-api-key",
+    "ca": "/certificates/nas-02.pem",
+    "interval": 300,
+    "protocol": "ddp"
+  },
+  {
+    "name": "pbs",
+    "kind": "pbs",
+    "url": "https://pbs-01.miutaku.internal:8007",
+    "store": "pbs-s3",
+    "vms": [
+      "13201",
+      "60000",
+      "40000"
+    ],
+    "ca": "/certificates/pbs.pem",
+    "interval": 300
+  },
+  {
+    "name": "mariadb",
+    "kind": "database",
+    "engine": "mysql",
+    "host": "mariadb.infra-db.svc.cluster.local",
+    "credential": "mariadb-password"
+  },
+  {
+    "name": "postgres",
+    "kind": "database",
+    "engine": "postgres",
+    "host": "postgres.infra-db.svc.cluster.local",
+    "credential": "postgres-password"
+  },
+  {
+    "name": "postgres-staging",
+    "kind": "database",
+    "engine": "postgres",
+    "host": "postgres.infra-db-staging.svc.cluster.local",
+    "credential": "postgres-staging-password"
+  },
+  {
+    "name": "epgstation",
+    "kind": "recorder",
+    "url": "http://epgstation.app-epgstation.svc.cluster.local:8888"
+  },
+  {
+    "name": "tnlastation",
+    "kind": "recorder",
+    "url": "http://tnlastation.app-tnlastation.svc.cluster.local:8888"
+  },
+  {
+    "name": "mirakurun",
+    "kind": "mirakurun",
+    "url": "http://mirakurun.app-mirakurun.svc.cluster.local:40772",
+    "interval": 300
+  },
+  {
+    "name": "home-secrets",
+    "kind": "secrets",
+    "namespaces": [
+      "app-annict-scraper",
+      "app-coupon-manager",
+      "app-epgstation",
+      "app-loockit",
+      "app-magic-mirror",
+      "app-mirakurun",
+      "app-nextcloud",
+      "app-tnlastation",
+      "app-tnlastation-staging",
+      "arc-runners",
+      "cloudflared",
+      "infra-backup",
+      "infra-db",
+      "infra-db-staging",
+      "monitoring",
+      "tfc-agent"
+    ],
+    "expected": {
+      "app-annict-scraper": [],
+      "app-coupon-manager": [
+        "coupon-manager-secrets"
+      ],
+      "app-epgstation": [
+        "epgstation-secrets",
+        "ghcr-pull-secret"
+      ],
+      "app-loockit": [
+        "loockit-keys"
+      ],
+      "app-magic-mirror": [
+        "magic-mirror-config"
+      ],
+      "app-mirakurun": [
+        "ghcr-pull-secret",
+        "mirakurun-bcas-keys"
+      ],
+      "app-nextcloud": [
+        "nextcloud-secrets"
+      ],
+      "app-tnlastation": [
+        "tnlastation-secrets"
+      ],
+      "app-tnlastation-staging": [],
+      "arc-runners": [
+        "github-my-infra-token-secret"
+      ],
+      "cloudflared": [
+        "cloudflared-tunnel-token"
+      ],
+      "infra-backup": [
+        "backup-restore-s3",
+        "nas-backup-credentials",
+        "tnlastation-recorded-backup-credentials"
+      ],
+      "infra-db": [
+        "coupon-manager-db-user",
+        "db-backup-credentials",
+        "mariadb-credentials",
+        "nextcloud-db-user",
+        "postgres-credentials"
+      ],
+      "infra-db-staging": [],
+      "monitoring": [
+        "grafana-pdc-credentials",
+        "home-monitor-access",
+        "home-monitor-databases",
+        "home-monitor-nas-01",
+        "home-monitor-nas-02",
+        "home-monitor-pbs",
+        "home-monitor-s3",
+        "home-monitor-unifi",
+        "pve-exporter-config",
+        "tinytuya-device"
+      ],
+      "tfc-agent": [
+        "tfc-agent-credentials"
+      ]
+    }
+  },
+  {
+    "name": "unifi-network",
+    "kind": "unifi",
+    "url": "https://192.168.0.132:11443",
+    "ca": "/certificates/unifi.pem",
+    "devices": {
+      "18:e8:29:b3:48:f7": {
+        "name": "us-8-60w",
+        "ports": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          8
+        ]
+      }
+    }
+  },
+  {
+    "name": "nas-repository",
+    "kind": "s3",
+    "url": "https://s3.ap-northeast-1.idrivee2.com",
+    "bucket": "miutaku-my-infra-backup",
+    "prefix": "nas-restic/",
+    "interval": 3600
+  }
+]
