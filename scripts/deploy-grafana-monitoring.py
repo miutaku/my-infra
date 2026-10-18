@@ -109,7 +109,9 @@ def main():
     if not args.apply:
         print("Plan saved; no production changes made.")
         return
-    tf("apply", "-input=false", "-lock-timeout=5m", "-no-color", ".state/deployment.tfplan")
+    # Contact point PUTs share Grafana's Alertmanager config; serialize writes
+    # within a run as well as serializing runs through HCP/GitHub locks.
+    tf("apply", "-input=false", "-lock-timeout=5m", "-parallelism=1", "-no-color", ".state/deployment.tfplan")
     values = json.loads(tf("show", "-json").stdout)["values"]
     count = verify_deployment(client, values)
     tf("plan", "-input=false", "-lock-timeout=5m", "-detailed-exitcode", "-no-color", "-var-file=environments.tfvars")

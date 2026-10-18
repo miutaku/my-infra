@@ -231,7 +231,7 @@ mainへpushすると自動反映される。変更を戻す場合も同じCIでP
 [Grafana monitoring CI/CD](../../.github/workflows/grafana_monitoring.yml)は関連pathのmain pushを受け、次の順序で実行する。
 
 1. `validate`: Terraform fmt/validate/mock test、更新処理・デプロイ検証の単体テスト、collector、PromQL、復元テスト、Kustomize build。
-2. `apply`: validate成功時かつmain push時だけ起動する。GitHubのconcurrencyとHCPのstate lockで同時Applyを防止し、実行中Applyをcancelしない。
+2. `apply`: validate成功時かつmain push時だけ起動する。GitHubのconcurrencyとHCPのstate lockで同時Applyを防止し、実行中Applyをcancelしない。Apply内も`-parallelism=1`でGrafanaへの書き込みを直列化し、同じAlertmanager設定を更新する2 receiverの競合を避ける。
 3. `scripts/deploy-grafana-monitoring.py --apply`が既存共有stateと専用backendを確認する。stateが空・不完全・別folderなら停止し、281ルールを重複作成しない。
 4. 実Grafanaの303ケースのtemplate previewを実行し、Planをrunnerの非公開`.state/deployment.tfplan`へ保存して、その同じPlanをApplyする。
 5. APIで共通template、既存2 receiverのUID/書式、全管理ルールのAnnotations/Labels/pauseを照合し、追加Planが差分ゼロであることを確認する。

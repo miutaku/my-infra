@@ -100,3 +100,8 @@ HCP側は新しいstate lineageを作成したため旧ローカルのlineage/se
 
 既存のGitHub Secretsのみを利用し、新しいWebhook/tokenの登録は不要。通常のmain pushによる反映は承認済み運用となる。
 別途、通知テスト送信は行わない。コードのrollbackもmainへrevertして同じCIから反映する。
+
+本番反映は[CI run 39153291905](https://github.com/miutaku/my-infra/actions/runs/39153291905)で成功した。
+Planは3追加・6更新・削除なし。実エンジン303ケースに合格後、全281ルール・共通template・既存2 receiverの照合に成功し、反映後のPlanも差分ゼロだった。
+通知先の公開UIDは保持され、合成通知の送信は実行していない。
+今後の再反映でもAlertmanager設定の更新が競合しないよう、Applyは`-parallelism=1`で実行する。
