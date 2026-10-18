@@ -1,6 +1,6 @@
 # 通知改善の検証結果
 
-検証日: 2026-10-18（Asia/Tokyo）。本番Apply・設定APIのPUT・実通知送信は未実施。
+初回検証日: 2026-10-18（Asia/Tokyo）。この時点では本番Apply・設定APIのPUT・実通知送信は未実施。2026-10-19に自動Applyと本番反映を承認され、下記のCI/CD対応を追加した。
 コード変更とread-only Plan、合成データのtemplate previewまでを実施した。
 
 ## 変更ファイル
@@ -85,3 +85,18 @@ Notification Policy、Contact Pointの削除・再作成、評価停止、rule U
 - Annotationsのみの変更はGrafana公式仕様では評価状態resetの対象外。適用後に評価・受信書式を確認する。
 
 通知の変更前後の例とrollbackは[README](README.md#共通通知の設計と運用)を参照。
+
+## 2026-10-19: push後の自動Apply
+
+ユーザー承認に基づき、`.github/workflows/grafana_monitoring.yml`へmain push限定のapply jobを追加。
+検証成功後、303ケースの実エンジン検査、Plan、同一PlanのApply、API照合、差分ゼロの再Planを実行する。
+デプロイ処理は`scripts/deploy-grafana-monitoring.py`、安全性・drift検出の単体テストは`scripts/test-deploy-grafana-monitoring.py`（6件）。
+workflow構文はactionlint、Terraformはfmt/validate/mock testで検証する。
+
+`versions.tf`のbackendをHCPの`miutaku/grafana-cloud`へ移行した。execution modeはlocalで、runner上の既存PythonとBSM認証を利用する。
+旧stateをGit対象外にバックアップし、空の新規workspaceへ移行した後、全リソースとoutputsが一致することを確認した。
+HCP側は新しいstate lineageを作成したため旧ローカルのlineage/serialとは異なるが、folder/dashboard/6 rule group/データソースと281ルールの内容は不変。
+専用backendと既存folderを照合し、空のstateからのApplyを拒否する。
+
+既存のGitHub Secretsのみを利用し、新しいWebhook/tokenの登録は不要。通常のmain pushによる反映は承認済み運用となる。
+別途、通知テスト送信は行わない。コードのrollbackもmainへrevertして同じCIから反映する。

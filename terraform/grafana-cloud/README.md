@@ -58,10 +58,10 @@ UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知す�
 2. `python3 scripts/grafana-monitoring.py inventory` で既存のPrometheus UID、PDC network、通知先名を確認する。BSMのPDC tokenやCloud Metrics書込tokenは設定APIの認証には使えない。
 3. 確認済みの自宅UID・通知先を記載した`environments.tfvars`を利用する。接続先設定を変える場合は`terraform.tfvars.example`を参考に別の変数ファイルを用意する。新規folder `my-infra-home`へルールを作成する。
 4. `python3 scripts/grafana-monitoring.py plan --var-file terraform/grafana-cloud/environments.tfvars` を実行する。無関係な削除・既存通知先の変更がないことを確認する。
-5. applyする実行環境にも`GRAFANA_URL`/`GRAFANA_AUTH`を設定し、確認したplanに従って反映する。`paused=true`が初期値で、アラート通知はまだ有効にならない。
+5. mainへpushすると、検証成功後に下記のCIからPlan/Applyする。`paused=true`が初期値で、新規導入時のアラート通知はまだ有効にならない。
 6. 収集側のGitOps同期、Grafana経由のquery、通知先の受信を確認した後に`paused=false`で再plan/applyする。通知テストは別途許可された範囲で実施する。
 
-stateは他のroot moduleと分離した`.state/terraform.tfstate`。初回apply前に永続保存先を決め、stateを紛失・複製しない。共有運用でHCP Terraformを使う場合は専用workspaceのbackendへ移行し、このstateだけを管理する。
+stateはHCP Terraformの`miutaku/grafana-cloud`へ保存する。workspaceのexecution modeは`local`で、GitHub Actions runnerがPlan/Applyを実行し、HCPは共有state・履歴・lockを管理する。旧ローカルstateは移行済み。空のworkspaceで新規作成し直さず、既存stateを継続する。
 state・実入力・planはGit管理しない。Provider認証は環境変数から渡し、APIレスポンスの受信先設定や秘密値をログへ出さない。
 
 ### 収集機能の切替
@@ -197,7 +197,7 @@ terraform -chdir=terraform/grafana-cloud show -json .state/notifications.tfplan 
 
 `.state/notifications.tfplan`はGit対象外。`show -json`の全出力は秘密情報を含み得るため共有しない。
 既存281ルールではAnnotations以外の差分なし、削除なし、共通テンプレート1件と書式更新処理2件の作成だけであることを確認する。
-**本番Apply・設定APIのPUT・実通知送信は別途明示承認が必要。** 承認後は認証環境を設定し、レビュー済みplanを`terraform -chdir=terraform/grafana-cloud apply .state/notifications.tfplan`で適用する。Python 3と必要時の`bws`も同じ実行環境で必要。
+**2026-10-19にmain push後の自動Applyと今回の本番反映をユーザー承認済み。** 通常は下記CIで反映する。緊急の手動反映は同じ共有state・認証環境でレビュー済みplanを`terraform -chdir=terraform/grafana-cloud apply .state/notifications.tfplan`へ渡す。Python 3と必要時の`bws`も同じ実行環境で必要。合成通知の実送信テストは自動Applyに含めない。
 ルール差分はAnnotationsだけで、[公式仕様](https://grafana.com/docs/grafana-cloud/observe-and-act/alert-and-measure-reliability/alerting/fundamentals/alert-rule-evaluation/)では状態リセットの対象外。適用後も評価状態と次回の通知書式を確認する。
 
 `terraform_data`は任意のGUI編集をrefreshで検出しない。通知先の書式driftを調査する場合は、次のread-only検査をreceiverごとに実行する（環境変数は公開UIDとテンプレート参照のみ）。
@@ -216,7 +216,7 @@ GRAFANA_NOTIFICATION_CONFIG='{"name":"Discord - grafana-warning","uid":"afl6jwny
 `--live`は実Grafanaの**template preview APIだけ**へ合成アラートを送り、全281ルールとCRITICAL/WARNING/INFO、復旧、複数、欠損Labels/Annotations、任意Labels過多、No Data/Error、発生復旧混在、上限・優先順を検証する。
 実ユーザーの通知や実アラートを作成しない。CIではTerraform mock、更新処理の安全性、既存PromQLテストを実行し、実エンジンの検証は認証を持つ環境でApply前に実行する。
 
-適用前はコードを戻すだけで本番は変わらない。適用後は次の順序で戻す。
+mainへpushすると自動反映される。変更を戻す場合も同じCIでPlan/Applyする。次の順序で戻す。
 
 1. Annotations/テンプレートのみの問題なら該当変更をGitでrevertし、通常のplan/検証/承認済みApplyを行う。受信先名・UID・評価式は変更しない。
 2. 標準書式へ戻す場合は`notifications.tf`のtitleを`{{ template "discord.default.title" . }}`、messageを`{{ template "discord.default.message" . }}`へ戻してplanし、書式更新処理が再実行される承認済みApplyを行う。
@@ -225,6 +225,32 @@ GRAFANA_NOTIFICATION_CONFIG='{"name":"Discord - grafana-warning","uid":"afl6jwny
 
 [全ルール・必須系列の調査台帳](ALERT_INVENTORY.md)、[変更ファイル一覧・検証結果・Plan](NOTIFICATION_VALIDATION.md)も参照。
 公式仕様: [通知データと関数](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/template-notifications/reference/)、[No Data/Error](https://grafana.com/docs/grafana/latest/alerting/fundamentals/alert-rule-evaluation/nodata-and-error-states/)、[Discord notifier実装](https://github.com/grafana/alerting/blob/main/receivers/discord/v1/discord.go)、[固定ProviderのContact Point実装](https://github.com/grafana/terraform-provider-grafana/blob/v4.46.0/internal/resources/grafana/resource_alerting_contact_point.go)。
+
+## main push後の自動Apply
+
+[Grafana monitoring CI/CD](../../.github/workflows/grafana_monitoring.yml)は関連pathのmain pushを受け、次の順序で実行する。
+
+1. `validate`: Terraform fmt/validate/mock test、更新処理・デプロイ検証の単体テスト、collector、PromQL、復元テスト、Kustomize build。
+2. `apply`: validate成功時かつmain push時だけ起動する。GitHubのconcurrencyとHCPのstate lockで同時Applyを防止し、実行中Applyをcancelしない。
+3. `scripts/deploy-grafana-monitoring.py --apply`が既存共有stateと専用backendを確認する。stateが空・不完全・別folderなら停止し、281ルールを重複作成しない。
+4. 実Grafanaの303ケースのtemplate previewを実行し、Planをrunnerの非公開`.state/deployment.tfplan`へ保存して、その同じPlanをApplyする。
+5. APIで共通template、既存2 receiverのUID/書式、全管理ルールのAnnotations/Labels/pauseを照合し、追加Planが差分ゼロであることを確認する。
+
+既存GitHub Secretsの`TF_API_TOKEN`（HCP state）と`GH_MY_INFRA_BWS_ACCESS_TOKEN`（BSM認証）を利用する。
+Grafana URL/tokenはBSMの既存キーからメモリ内に読み込み、ログをmaskする。WebhookはGitHub Secretsへコピーせず、既存通知先から限定更新時だけメモリ内へ取得する。
+PR・forkにこれらのSecretsを渡さない。bwsは公式2.0.0のSHA256固定archive、Terraformは1.15.8を使用する。
+state・Plan・`terraform show -json`はArtifactへアップロードしない。HCP workspaceのexecution modeをremote/agentへ変えるとrunnerの認証・local-execと一致しなくなるため、`local`を維持する。
+
+Planだけ確認する場合は、HCPのCLI認証を設定した端末で次を実行する。Grafana認証は既存環境変数またはBSMを使う。
+
+```bash
+python3 scripts/deploy-grafana-monitoring.py
+```
+
+失敗した場合は該当GitHub Actions runを確認する。Apply途中の失敗でもstateはHCPへ保存されるため、古いローカルstateを戻さない。
+原因を修正してmainへpushするか、同じrunを再実行する。terraform_dataがtaintedなら再実行され、同UIDのPUTは冪等に処理する。
+receiverを書式だけGUI編集していた場合はread-only検証で失敗するため、前述の-replace手順で修復する。
+初回bootstrapやstate移行はCIで自動実行しない。専用workspaceの作成・空の移行先確認・バックアップ・`terraform init -migrate-state`・全リソース/outputsの一致検査を行ってからCIを有効化する。
 
 ## 確認方法
 
@@ -244,7 +270,7 @@ python3 scripts/check-grafana-monitoring.py --features kubernetes,probes,backups
 python3 scripts/check-grafana-monitoring.py --grafana-uid cfkolv57kzn5sd
 ```
 
-CIは認証不要のmock plan、PromQL構文と閾値/欠測/scale-to-zero等の回帰テスト、Kustomize buildを実行する。CIからのapplyは行わない。
+CIのvalidate jobは認証不要のmock plan、PromQL構文と閾値/欠測/scale-to-zero等の回帰テスト、Kustomize buildを実行する。mainのpushでは成功後にapply jobが続く。PRでは本番認証を渡さず、Applyしない。
 read-only検査で表示される「condition true」は継続時間未判定で、通知を送信しない。
 
 ## アラート受信時の入口

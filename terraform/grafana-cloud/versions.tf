@@ -8,8 +8,13 @@ terraform {
     }
   }
 
-  backend "local" {
-    path = ".state/terraform.tfstate"
+  # HCP holds shared state/locks; execution stays on the CI runner so the
+  # notification updater can use the checked-out scripts and BSM credentials.
+  backend "remote" {
+    organization = "miutaku"
+    workspaces {
+      name = "grafana-cloud"
+    }
   }
 }
 

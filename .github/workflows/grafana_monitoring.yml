@@ -1,4 +1,4 @@
-name: Grafana monitoring validation
+name: Grafana monitoring CI/CD
 
 on:
   pull_request:
@@ -11,6 +11,8 @@ on:
       - scripts/grafana-notifications.py
       - scripts/test-grafana-notifications.py
       - scripts/check-grafana-notification-plan.py
+      - scripts/deploy-grafana-monitoring.py
+      - scripts/test-deploy-grafana-monitoring.py
       - .github/workflows/grafana_monitoring.yml
       - k8s/pve/vmagent/**
       - k8s/pve/blackbox-exporter/**
@@ -34,6 +36,8 @@ on:
       - scripts/grafana-notifications.py
       - scripts/test-grafana-notifications.py
       - scripts/check-grafana-notification-plan.py
+      - scripts/deploy-grafana-monitoring.py
+      - scripts/test-deploy-grafana-monitoring.py
       - .github/workflows/grafana_monitoring.yml
       - k8s/pve/vmagent/**
       - k8s/pve/blackbox-exporter/**
@@ -67,7 +71,9 @@ jobs:
           terraform validate -no-color
           terraform test -no-color
       - name: Notification updater safety (no credentials or sends)
-        run: python3 scripts/test-grafana-notifications.py
+        run: |
+          python3 scripts/test-grafana-notifications.py
+          python3 scripts/test-deploy-grafana-monitoring.py
       - name: Install pinned Prometheus test tools
         run: |
           curl --fail --silent --show-error --location \
@@ -90,3 +96,35 @@ jobs:
           kubectl kustomize k8s/pve/kube-state-metrics > "$RUNNER_TEMP/kube-state-metrics.yaml"
           kubectl kustomize k8s/pve/home-service-monitor > "$RUNNER_TEMP/home-service-monitor.yaml"
           kubectl kustomize k8s/pve/nas-backup > "$RUNNER_TEMP/nas-backup.yaml"
+
+
+  apply:
+    name: Apply Grafana Cloud
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: grafana-cloud-apply
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - name: Install pinned Bitwarden Secrets Manager CLI
+        run: |
+          curl --fail --silent --show-error --location \
+            https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip \
+            --output "$RUNNER_TEMP/bws.zip"
+          echo "a8340ce01da609200441f2eca0e591173e124f012c88a16afda574279c052013  $RUNNER_TEMP/bws.zip" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/bws-bin"
+          unzip -q "$RUNNER_TEMP/bws.zip" -d "$RUNNER_TEMP/bws-bin"
+          chmod +x "$RUNNER_TEMP/bws-bin/bws"
+          echo "$RUNNER_TEMP/bws-bin" >> "$GITHUB_PATH"
+      - name: Plan, apply and verify Grafana Cloud
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.GH_MY_INFRA_BWS_ACCESS_TOKEN }}
+        run: python3 scripts/deploy-grafana-monitoring.py --apply

@@ -1,6 +1,6 @@
 # Grafana Cloud alert inventory
 
-2026-10-18調査。Terraform rootは`terraform/grafana-cloud`、backendはローカル専用state。Terragrunt定義なし。
+2026-10-18調査。Terraform rootは`terraform/grafana-cloud`、backendはHCPの専用workspace `miutaku/grafana-cloud`（2026-10-19にローカルstateから移行、CIで自動Apply）。Terragrunt定義なし。
 
 実機は405ルール。`my-infra-home`の281件（共通165 + 必須系列116）をこのrootで管理する。別folder `alerting-3sdsb6hvpfhxg`の124件はこのstateに含まれず、移管・編集・削除しない。
 
