@@ -116,21 +116,21 @@ Go templateとGrafana標準の`tmpl.Exec`、`reReplaceAll`等を使用する。�
 変更後:
 発生 1件 / 復旧 0件（本文表示 1/1件）
 🔴 FIRING | CRITICAL | Recording tuner unavailable
-📍 cluster=home-k8s environment=home
-🎯 service=recording target=mirakurun tuner=PT3-S0
-📝 チューナーが利用不可と報告されています。録画・EPG取得への影響を確認し、
+環境: cluster=home-k8s environment=home
+対象: service=recording target=mirakurun tuner=PT3-S0
+概要: チューナーが利用不可と報告されています。録画・EPG取得への影響を確認し、
    対象target/tunerのAPI状態とMirakurunログを調べてください。
 Grafanaで詳細を確認 / 対処手順
 発生: 2026-10-18 00:00:00 UTC
 
 🟢 RESOLVED | CRITICAL | Recording tuner unavailable
-📍 cluster=home-k8s environment=home
-🎯 service=recording target=mirakurun tuner=PT3-S0
+環境: cluster=home-k8s environment=home
+対象: service=recording target=mirakurun tuner=PT3-S0
 アラート条件が解消しました。必要に応じて実サービスを確認してください。
 復旧: 2026-10-18 00:10:00 UTC
 ```
 
-FIRINGはCRITICAL赤・WARNING橙・INFO青、RESOLVEDは緑で区別し、本文の各アラートにも状態・重要度を付ける。
+FIRINGはCRITICAL赤・WARNING橙・INFO青、RESOLVEDは緑の丸い状態アイコンで区別し、本文の各アラートにも状態・重要度を付ける。環境・対象・概要は文字の見出しだけにし、装飾アイコンは付けない。
 発生と復旧が混在しても個別の状態を保持し、critical発生→他の発生→復旧の順に表示する。
 復旧時は障害時のdescriptionを再掲せず、「条件解消」と表示する。MissingSeriesによる解消などもあり、実サービスの復旧と断定しない。
 

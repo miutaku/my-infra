@@ -93,11 +93,11 @@ def live_tests():
     for severity, word in [("critical", "CRITICAL"), ("warn", "WARNING"), ("warning", "WARNING"), ("info", "INFO")]:
         cases.append((severity, [alert({"severity": severity, "node": "node-1"})], ["FIRING", word, "node=node-1"], []))
     cases.extend([
-        ("resolved", [alert({"pod": "recovered-pod"}, resolved=True)], ["RESOLVED", "復旧:", "pod=recovered-pod"], ["📝"]),
+        ("resolved", [alert({"pod": "recovered-pod"}, resolved=True)], ["RESOLVED", "復旧:", "pod=recovered-pod"], ["概要:"]),
         ("multiple", [alert({"node": "node-1"}), alert({"node": "node-2"})], ["node=node-1", "node=node-2", "2/2件"], []),
         ("mixed", [alert({"pod": "bad"}), alert({"pod": "good"}, resolved=True)], ["FIRING", "RESOLVED", "pod=bad", "pod=good"], []),
         ("no-runbook-description", [alert(annotations={"summary": "summary fallback"})], ["summary fallback"], ["対処手順", "<no value>"]),
-        ("no-annotations", [alert(annotations={})], ["Example alert"], ["📝", "対処手順", "<no value>"]),
+        ("no-annotations", [alert(annotations={})], ["Example alert"], ["概要:", "対処手順", "<no value>"]),
         ("many-labels", [alert({"target": "database", "managed_by": "HIDE_ME", "rule_id": "HIDE_ME", "grafana_folder": "HIDE_ME",
                                "scope": "HIDE_ME", "job": "HIDE_ME", "instance": "HIDE_ME", "random": "HIDE_ME"})], ["target=database"], ["HIDE_ME", "A=1"]),
         ("tuner", [alert({"service": "recording", "target": "mirakurun", "tuner": "PT3-S0"})], ["tuner=PT3-S0"], []),
@@ -116,17 +116,17 @@ def live_tests():
                  | {"generatorURL": "https://example.com/" + "u" * 300}], ["本文表示 1/1件", "Grafanaで詳細", "対処手順"], []))
     sparse = alert(annotations={})
     sparse["labels"] = {}
-    cases.append(("sparse", [sparse], ["UNKNOWN", "Alert"], ["📍", "🎯", "<no value>"]))
+    cases.append(("sparse", [sparse], ["UNKNOWN", "Alert"], ["環境:", "対象:", "<no value>"]))
     # Every managed catalog and generated missing-series rule is rendered singly,
     # so a broken description cannot hide behind the grouping overflow fallback.
     catalog = json.loads((ROOT / "terraform/grafana-cloud/rules.json").read_text())
     targets = json.loads((ROOT / "terraform/grafana-cloud/targets.json").read_text())
     for r in catalog:
         cases.append((r["id"], [alert({"alertname": r["title"], "severity": r["severity"], "service": r["service"]},
-                                           {"summary": r["title"], "description": r["description"]})], ["本文表示 1/1件", "📝"], []))
+                                           {"summary": r["title"], "description": r["description"]})], ["本文表示 1/1件", "概要:"], []))
     for target in targets:
         cases.append(("missing-" + target["id"], [alert({"alertname": "Required telemetry missing: " + target["id"], "severity": target["severity"]},
-                      {"display_target": target["id"], "description": "必須の監視データが途絶しています。collectorと接続を確認してください。"})], [target["id"], "📝"], []))
+                      {"display_target": target["id"], "description": "必須の監視データが途絶しています。collectorと接続を確認してください。"})], [target["id"], "概要:"], []))
 
     def check(case):
         name, alerts, includes, excludes = case

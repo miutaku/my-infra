@@ -27,7 +27,7 @@
     {{- $place = printf "%s%s=%s " $place .Name .Value -}}
   {{- end -}}
 {{- end -}}
-{{- if $place }}📍 {{ printf "%.120s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " $place) }}{{ "\n" }}{{ end -}}
+{{- if $place }}環境: {{ printf "%.120s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " $place) }}{{ "\n" }}{{ end -}}
 {{- $target := "" -}}
 {{- range $l.SortedPairs -}}
   {{- if and .Value (match "^(service|target|namespace|node|pod|deployment|statefulset|daemonset|container|persistentvolumeclaim|persistentvolume|cronjob|job_name|owner_name|tuner|pool|zpool|device|mountpoint|hrStorageDescr|ifDescr|ifIndex|ups|name|id|vmid|backup|repository|port|service_id|scale_set|vip|condition|flag|datasource_uid|ref_id)$" .Name) -}}
@@ -40,17 +40,17 @@
 {{- end -}}
 {{- if not (or $l.target $l.instance $l.node $l.pod $l.deployment $l.statefulset $l.daemonset $l.persistentvolumeclaim $l.cronjob $l.job_name $l.tuner $l.name $l.ups $l.backup $l.repository $l.scale_set $l.datasource_uid) }}{{ with $l.job }}{{ $target = printf "%sjob=%s" $target . }}{{ end }}{{ end -}}
 {{- with .Annotations.display_target }}{{ $target = . }}{{ end -}}
-{{- if $target }}🎯 {{ printf "%.250s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " $target) }}{{ "\n" }}{{ end -}}
+{{- if $target }}対象: {{ printf "%.250s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " $target) }}{{ "\n" }}{{ end -}}
 {{- end }}
 
 {{ define "my-infra.alert" -}}
 **{{ template "my-infra.state" . }} | {{ template "my-infra.severity" . }} | {{ template "my-infra.name" . }}**
 {{ template "my-infra.context" . -}}
-{{- if eq .Labels.alertname "DatasourceError" }}{{ if eq .Status "resolved" }}評価エラー状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}⚠️ 評価エラー: 監視対象の障害・復旧は判定できません。{{ end }}
-{{ else if eq .Labels.alertname "DatasourceNoData" }}{{ if eq .Status "resolved" }}データなし状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}⚠️ データなし: 監視対象の障害・復旧は判定できません。{{ end }}
+{{- if eq .Labels.alertname "DatasourceError" }}{{ if eq .Status "resolved" }}評価エラー状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}評価エラー: 監視対象の障害・復旧は判定できません。{{ end }}
+{{ else if eq .Labels.alertname "DatasourceNoData" }}{{ if eq .Status "resolved" }}データなし状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}データなし: 監視対象の障害・復旧は判定できません。{{ end }}
 {{ else if eq .Status "resolved" }}アラート条件が解消しました。必要に応じて実サービスを確認してください。
 {{ else -}}
-{{- with or .Annotations.description .Annotations.summary }}📝 {{ printf "%.250s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " .) }}
+{{- with or .Annotations.description .Annotations.summary }}概要: {{ printf "%.250s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " .) }}
 {{ end -}}
 {{- end -}}
 {{- $url := or .GeneratorURL .DashboardURL -}}
@@ -89,6 +89,6 @@
 {{- end -}}
 発生 {{ len .Alerts.Firing }}件 / 復旧 {{ len .Alerts.Resolved }}件（本文表示 {{ len $shown }}/{{ len .Alerts }}件）
 {{ $body }}
-{{- if lt (len $shown) (len .Alerts) }}⚠️ 文字数上限のため一部省略。全対象はGrafanaで確認してください。{{ "\n" }}{{ end -}}
+{{- if lt (len $shown) (len .Alerts) }}文字数上限のため一部省略。全対象はGrafanaで確認してください。{{ "\n" }}{{ end -}}
 {{- if and (le (len .ExternalURL) 100) (match "^https?://[^<>\\s]+$" .ExternalURL) }}[全アラートをGrafanaで確認](<{{ reReplaceAll "/+$" "" .ExternalURL }}/alerting/list>){{ end }}
 {{- end }}
