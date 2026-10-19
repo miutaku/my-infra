@@ -229,13 +229,33 @@ PVE Web UI で作る場合の基本値:
 | Bandwidth limit | `20480` KiB/s から開始 |
 | Performance / Max workers | `1` から開始 |
 | Zstd threads | `1` から開始 |
+| Retention | `keep-all=1` (PVE では削除せず、PBS 側で prune) |
 
 > PVE の `zstd` は圧縮レベルではなく **zstd スレッド数**。大きくすると圧縮率が上がる
 > という意味ではなく、バックアップ元ノードとPBSへの投入並列度が上がる。
 
-保持ポリシーは PBS 側の prune job (`pbs-s3-prune`) に寄せる。PVE 側で別の retention を
-設定する場合は、PBS 側の `keep_last` / `keep_daily` / `keep_weekly` / `keep_monthly`
-と矛盾しないようにする。
+保持ポリシーは PBS 側の prune job (`pbs-s3-prune`) に寄せる。PVE の backup job は
+`prune-backups=keep-all=1` を明示し、storage 側の retention を上書きする。
+job の retention を単に削除すると、storage `pbs-home` の `keep-last=3` を継承するため、
+PBS 側への保持管理の統一にはならない。
+
+2026-10-19 に `pbs-home-x570` (全13VM、4時間ごと) の `keep-last=1` を
+`keep-all=1` に変更した。検証済み snapshot が次の backup 時に削除され、
+`PBS has no verified snapshot in 7 days` が再発していたため。
+この変更では backup の対象・時刻・有効状態は変えていない。
+PBS 側は日曜03:00に直近3・日次7・週次4・月次6の保持条件で prune し、
+verify は毎日06:00に実行する。PVE 側での即時削除がなくなる分、保持量は増える。
+
+PVE ジョブはこの Ansible playbook の管理対象外。現在の設定は次の読み取りで確認する:
+
+```bash
+pvesh get /cluster/backup/pbs-home-x570 --output-format json
+```
+
+verify のアラートは「現在保持されている snapshot のうち、backup 時刻が7日以内で
+verify 成功済みのものがあるか」を評価する。未検証の最新 backup があっても、
+条件を満たす検証済み世代が残っていれば発火しない。設定変更だけでは未検証世代に
+検証結果は付かないため、次の verify と監視メトリクス更新後に復旧を確認する。
 
 Packer で再生成できる template VM (`9001`, `9002` など) はバックアップ対象に含めない。
 template を PBS backup に含めると、停止 VM を backup 用 QEMU (`qmpstatus=prelaunch`) で
