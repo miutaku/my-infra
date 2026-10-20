@@ -202,6 +202,22 @@ class TrueNASTests(unittest.TestCase):
 
 
 class BackupTests(unittest.TestCase):
+    def test_vm_name_metadata_does_not_change_condition_labels(self):
+        metrics = monitor.Metrics({'kind':'pbs','name':'pbs'})
+        monitor.pbs_values([
+            {'backup-type':'vm','backup-id':'100','backup-time':100,'comment':'old-name','files':[{'filename':'index.json.blob'}]},
+            {'backup-type':'vm','backup-id':'100','backup-time':200,'comment':'current-name\nother notes','files':[{'filename':'index.json.blob'}]},
+        ], ['100'], metrics, {'100':'fallback-name'})
+        info = next(l for n, _, l in metrics.samples if n == 'home_pbs_vm_info')
+        self.assertEqual(info['vm_name'], 'current-name')
+        self.assertTrue(all('vm_name' not in l for n, _, l in metrics.samples if n != 'home_pbs_vm_info'))
+
+    def test_missing_snapshot_still_has_configured_vm_name(self):
+        metrics = monitor.Metrics({'kind':'pbs','name':'pbs'})
+        monitor.pbs_values([], ['100'], metrics, {'100':'known-vm'})
+        self.assertEqual(next(l['vm_name'] for n, _, l in metrics.samples if n == 'home_pbs_vm_info'), 'known-vm')
+        self.assertEqual(next(v for n, v, _ in metrics.samples if n == 'home_pbs_backup_last_success_seconds'), 0)
+
     def test_expected_vm_missing_is_explicit_zero(self):
         metrics = monitor.Metrics({'kind':'pbs','name':'pbs'})
         monitor.pbs_values([], ['100'], metrics)

@@ -167,7 +167,12 @@ Ref ID `A/B` は既存の発火条件専用、補足は`C-Z`を使用する。
 元のinstanceと同じLabelsで値を返す式にする。クエリ障害は通常どおり評価エラーになり得る。
 日時をLabelsへ入れると毎回別instanceになるため、snapshot時刻はAnnotationsだけに入れる。
 
-PBSの4ルールはVM番号、最新の完了snapshot、保持されている最新のverify成功snapshotを表示する。
+PBSの4ルールはVM名（VM番号）、最新の完了snapshot、保持されている最新のverify成功snapshotを表示する。
+VM名は`home_pbs_vm_info`の補足クエリ`E`からAnnotationsへ取り込む。
+collectorは最新の完了snapshotの注記の先頭行を使う（PVEジョブの`notes-template={{guestname}}`）。
+注記またはsnapshotがない場合は`home-service-monitor/targets.json`の`vm_names`を使う。
+VM追加・改名時はこの補助台帳も更新する。名前が得られなくてもVM番号は残す。
+名前は既存の条件メトリクスに付けず独立したinfoメトリクスへ保持し、改名でアラートinstanceを変えない。
 パス例は`vm/13201/2026-10-18T23:04:30Z`。日時は**backup作成時刻（UTC）**で、verify実行時刻ではない。
 0は1970年と表示せず「完了snapshotなし」「検証済みsnapshotなし」とする。
 `pbs-unverified`は7日以内のverify成功世代がないことを示し、最新backup自体がないとは限らない。
@@ -178,7 +183,8 @@ verify失敗ルールの最新/検証成功パスは参考情報であり、失�
 Loockitは待機系の`/readyz`が503を返す設計だが、blackboxは個々の待機系ではなく
 HAProxy経由のServiceを監視する。Serviceの503が3分続く場合はCRITICALを維持する。
 2026-10-21の調査では約13分の503と、両LXCのBLE接続エラー・leader交代が重なっていた。
-短い切替だけと判断してしきい値を緩めず、両LXCのreadiness、BLE接続、Lease/切替ログを確認する。
+BLE不安定は利用者が既知・許容としている制約で、電波干渉が疑われている。
+今回のVM名表示の変更ではLoockitの条件・しきい値は変更しない。
 
 ### No Data / Error・上限
 

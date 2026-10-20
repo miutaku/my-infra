@@ -1324,9 +1324,11 @@
     "description": "PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
-      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",
+      "E": "home_pbs_vm_info{job=\"home-service-monitor\"} or on(vm) (home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} * 0)"
     },
-    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}",
+    "display_target": "{{ if $labels.vm }}{{ with $values.E }}{{ with .Labels.vm_name }}{{ . }} {{ end }}{{ end }}(VM {{ $labels.vm }}) / PBS{{ end }}"
   },
   {
     "id": "pbs-backup-age-critical",
@@ -1340,9 +1342,11 @@
     "description": "PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
-      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",
+      "E": "home_pbs_vm_info{job=\"home-service-monitor\"} or on(vm) (home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} * 0)"
     },
-    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}",
+    "display_target": "{{ if $labels.vm }}{{ with $values.E }}{{ with .Labels.vm_name }}{{ . }} {{ end }}{{ end }}(VM {{ $labels.vm }}) / PBS{{ end }}"
   },
   {
     "id": "pbs-verification-failed",
@@ -1356,9 +1360,11 @@
     "description": "保持snapshotにverify失敗があります。下記は最新・検証成功世代の参考情報です。失敗した世代はPBSのverifyログで確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
-      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",
+      "E": "home_pbs_vm_info{job=\"home-service-monitor\"} or on(vm) (home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} * 0)"
     },
-    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}",
+    "display_target": "{{ if $labels.vm }}{{ with $values.E }}{{ with .Labels.vm_name }}{{ . }} {{ end }}{{ end }}(VM {{ $labels.vm }}) / PBS{{ end }}"
   },
   {
     "id": "pbs-unverified",
@@ -1372,9 +1378,11 @@
     "description": "7日以内のverify成功snapshotが保持されていません。最新backupの欠落とは限りません。verify Job・結果と世代削除履歴を確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
-      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",
+      "E": "home_pbs_vm_info{job=\"home-service-monitor\"} or on(vm) (home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} * 0)"
     },
-    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}",
+    "display_target": "{{ if $labels.vm }}{{ with $values.E }}{{ with .Labels.vm_name }}{{ . }} {{ end }}{{ end }}(VM {{ $labels.vm }}) / PBS{{ end }}"
   },
   {
     "id": "backup-verified-database",

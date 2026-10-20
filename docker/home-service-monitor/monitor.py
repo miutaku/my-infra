@@ -279,13 +279,19 @@ def truenas(target, metrics):
         connection.close()
 
 
-def pbs_values(snapshots, expected, metrics):
+def pbs_values(snapshots, expected, metrics, vm_names=None):
     for vm in expected:
         # An in-progress snapshot can already appear in this API. Its timestamp
         # is not a successful backup until the manifest has been written.
         candidates = [s for s in snapshots if s['backup-type'] == 'vm' and str(s['backup-id']) == str(vm)
                       and any(f.get('filename') == 'index.json.blob' for f in s.get('files', []))]
         latest = max(candidates, key=lambda item: item['backup-time'], default=None)
+        # PVE writes the guest name into the snapshot notes. Keep this metadata
+        # separate from condition metrics so a rename cannot reset alert identity.
+        comment = (latest or {}).get('comment') or ''
+        name = (comment.splitlines()[0].strip() if comment else '') or (vm_names or {}).get(str(vm), '')
+        if name:
+            metrics.add('home_pbs_vm_info', 1, vm=str(vm), vm_name=name[:200])
         metrics.add('home_pbs_backup_last_success_seconds', latest['backup-time'] if latest else 0, vm=str(vm))
         verification = (latest or {}).get('verification') or {}
         metrics.add('home_pbs_verification_ok', verification.get('state') == 'ok', vm=str(vm))
@@ -301,7 +307,7 @@ def pbs(target, metrics):
         raise ValueError('PBS API request failed')
     metrics.add('home_api_tls_expiry_seconds', expires)
     data = json.loads(body)
-    pbs_values(data['data'], target['vms'], metrics)
+    pbs_values(data['data'], target['vms'], metrics, target.get('vm_names'))
 
 
 def database(target, metrics):

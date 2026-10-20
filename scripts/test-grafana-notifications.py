@@ -106,7 +106,8 @@ def live_tests():
         return client.request("POST", "/api/v1/rule/test/grafana", {
             "folderUid": "my-infra-home", "ruleGroup": "annotation-preview",
             "rule": {"for": "0s", "labels": {"severity": "warn", "target": "pbs"},
-                     "annotations": {"description": config["description"], "details": config["details"]},
+                     "annotations": {"description": config["description"], "details": config["details"],
+                                     **({"display_target": config["display_target"]} if config.get("display_target") else {})},
                      "grafana_alert": {"title": "Annotation preview only", "condition": "B", "data": data,
                                        "no_data_state": "OK", "exec_err_state": "Error"}}})
 
@@ -125,7 +126,34 @@ def live_tests():
         assert all(word in detail for word in expected), (name, detail)
         assert "{{" not in detail and "<no value>" not in detail, (name, detail)
         cases.append((name, [alert({"target": "pbs", "vm": "13201"}, rows[0]["annotations"])],
-                      ["vm=13201", *expected], []))
+                      ["VM 13201", *expected], []))
+    for name in ("unifi-os-server", ""):
+        expression = vm_value(1)
+        if name:
+            expression = f'label_replace({expression}, "vm_name", "{name}", "", "")'
+        rendered = rule_preview(pbs, {"A": vm_value(1), "C": vm_value(1792364670), "D": vm_value(0), "E": expression})
+        row = next(r for r in rendered if r["labels"].get("vm") == "13201")
+        target = row["annotations"]["display_target"]
+        assert "(VM 13201)" in target and "<no value>" not in target
+        assert "vm_name" not in row["labels"], "VM rename must not change alert identity"
+        if name:
+            assert name in target, target
+        cases.append(("pbs-vm-name-" + (name or "missing"), [alert({"target": "pbs", "vm": "13201"}, row["annotations"])],
+                      ["(VM 13201)", name] if name else ["(VM 13201)"], ["<no value>"]))
+    ids = {"13201": "unifi-os-server", "60000": "work-windows"}
+    expressions = {ref: " or ".join(f'label_replace(vector({value}), "vm", "{vm}", "", "")' for vm in ids)
+                   for ref, value in {"A": 1, "C": 1792364670, "D": 0}.items()}
+    expressions["E"] = " or ".join(
+        f'label_replace(label_replace(vector(1), "vm", "{vm}", "", ""), "vm_name", "{name}", "", "")'
+        for vm, name in ids.items())
+    named = rule_preview(pbs, expressions)
+    assert len(named) == len(ids)
+    for row in named:
+        vm = row["labels"]["vm"]
+        assert ids[vm] in row["annotations"]["display_target"], "VM name joined to wrong instance"
+        assert "vm_name" not in row["labels"]
+    cases.append(("pbs-named-group", [alert({"target": "pbs", "vm": row["labels"]["vm"]}, row["annotations"]) for row in named],
+                  [*ids.values(), "2/2件"], []))
     cases.append(("pbs-snapshot-group", [
         alert({"target": "pbs", "vm": vm},
               {k: v.replace("13201", vm) for k, v in rows[0]["annotations"].items()})

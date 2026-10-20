@@ -124,7 +124,12 @@
       "40000"
     ],
     "ca": "/certificates/pbs.pem",
-    "interval": 300
+    "interval": 300,
+    "vm_names": {
+      "13201": "unifi-os-01-server-ubuntu-26-04-home-amd64",
+      "60000": "work-windows-home-amd64",
+      "40000": "dev-application-server-01-docker-ubuntu-26-04-home-amd64"
+    }
   },
   {
     "name": "mariadb",
