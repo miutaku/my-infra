@@ -8,17 +8,25 @@ variable "contact_points" {
 }
 variable "catalog" {
   type = list(object({
-    id             = string
-    title          = string
-    expression     = string
-    duration       = string
-    severity       = string
-    service        = string
-    group          = string
-    feature        = string
-    description    = string
-    display_target = optional(string)
+    id              = string
+    title           = string
+    expression      = string
+    duration        = string
+    severity        = string
+    service         = string
+    group           = string
+    feature         = string
+    description     = string
+    display_target  = optional(string)
+    details         = optional(string)
+    context_queries = optional(map(string), {})
   }))
+  validation {
+    condition = alltrue(flatten([
+      for rule in var.catalog : [for ref in keys(rule.context_queries) : can(regex("^[C-Z]$", ref))]
+    ]))
+    error_message = "Informational queries must use C-Z; A and B are reserved for the alert condition."
+  }
 }
 variable "targets" {
   type = list(object({

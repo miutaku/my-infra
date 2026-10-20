@@ -140,13 +140,14 @@ FIRINGはCRITICAL赤・WARNING橙・INFO青、RESOLVEDは緑の丸い状態ア�
 | --- | --- |
 | `environment`, `cluster` | 環境を識別。任意の`region/site/datacenter/zone`も存在時に表示 |
 | `severity`, `service` | 既存値を保持。表示だけ`warn`/`warning`をWARNINGへ正規化。未指定はUNKNOWN |
-| 対象Labels | `target`, `namespace`, `node`, `pod`, controller, PVC, `cronjob`, `job_name`, `owner_name`, `tuner`, pool, device, mountpoint, SNMP IF, UPS, `name/id/vmid`, backup, repository, port, `service_id`, `scale_set`, VIP, condition/flagを存在時だけ表示 |
+| 対象Labels | `target`, `namespace`, `node`, `pod`, controller, PVC, `cronjob`, `job_name`, `owner_name`, `tuner`, pool, device, mountpoint, SNMP IF, UPS, `name/id/vm/vmid`, backup, repository, port, `service_id`, `scale_set`, VIP, condition/flagを存在時だけ表示 |
 | `instance` | 実対象を示すtarget/node/pod等がなければ表示。共通collectorのアドレスを無条件に併記しない |
 | `job` | 他の実対象・instanceがないときのfallback。通常の内部scrape情報は非表示 |
 | `managed_by/rule_id/scope/grafana_folder`等 | 評価・検索・routing用に保持し、通知には列挙しない。生の評価値も非表示 |
 | `summary` | 短い障害名。現行は安定したrule titleを使用し、名前/UIDを変更しない |
 | `description` | 条件、影響の可能性、確認先を式・collectorの実装に基づいて記述。対象は通知の識別欄と併読。原因を断定せずsummaryを繰り返さない |
 | `display_target` | 任意の人間向け対象表記。標準Labelsで識別できない新しい対象/集約式で指定する。欠測ルールでは対象台帳のIDを表示し、生のselectorを通知しない |
+| `details` | 任意の補足情報。HTTP応答コードやsnapshotパスなど、現在の評価で得た具体的な対象を最大380文字で表示。未指定なら省略 |
 | `runbook_url` | 任意のHTTPS URL。現行は本READMEの初動一覧へリンク。存在しなければ項目ごと省略 |
 
 名前とLabelsの改行・Markdown制御文字・mention文字を除去する。名前100文字、環境120文字、対象250文字、説明250文字までの概要を表示し、全文はGrafanaで確認する。
@@ -156,6 +157,28 @@ Grafanaリンクは個別ルールのGeneratorURL、なければDashboardURL。�
 新規追加時は`rules.json`へ既存スキーマで定義し、短いtitle、意味のあるdescription、severity、serviceを指定する。
 namespace/target等を評価式のLabelsとして残す。集約で対象が失われる場合は`display_target`を付ける。テンプレートへサービス名の条件分岐を追加しない。
 Labelsの追加・変更はアラートの識別やsilenceに影響するため、通知上の表記だけで済む場合はAnnotationsを使う。
+
+#### HTTPとPBSの具体的な対象情報
+
+`rules.json`の任意項目`context_queries`は、Annotationsに使う瞬時クエリを追加する。
+Ref ID `A/B` は既存の発火条件専用、補足は`C-Z`を使用する。
+`details`はGrafanaのルール評価時に`$labels`と`$values.C.Value`等を使って展開され、
+共通通知テンプレートは展開済みの文字列を表示する。補足クエリは条件に含めず、
+元のinstanceと同じLabelsで値を返す式にする。クエリ障害は通常どおり評価エラーになり得る。
+日時をLabelsへ入れると毎回別instanceになるため、snapshot時刻はAnnotationsだけに入れる。
+
+PBSの4ルールはVM番号、最新の完了snapshot、保持されている最新のverify成功snapshotを表示する。
+パス例は`vm/13201/2026-10-18T23:04:30Z`。日時は**backup作成時刻（UTC）**で、verify実行時刻ではない。
+0は1970年と表示せず「完了snapshotなし」「検証済みsnapshotなし」とする。
+`pbs-unverified`は7日以内のverify成功世代がないことを示し、最新backup自体がないとは限らない。
+verify失敗ルールの最新/検証成功パスは参考情報であり、失敗世代の特定にはPBSのverifyログを使う。
+保持ポリシーは[PBS運用手順](../../ansible/pbs/README.md)を参照する。
+
+`http-service`はHTTPコードも表示し、0は「HTTP応答なし」と区別する。
+Loockitは待機系の`/readyz`が503を返す設計だが、blackboxは個々の待機系ではなく
+HAProxy経由のServiceを監視する。Serviceの503が3分続く場合はCRITICALを維持する。
+2026-10-21の調査では約13分の503と、両LXCのBLE接続エラー・leader交代が重なっていた。
+短い切替だけと判断してしきい値を緩めず、両LXCのreadiness、BLE接続、Lease/切替ログを確認する。
 
 ### No Data / Error・上限
 
@@ -198,7 +221,10 @@ terraform -chdir=terraform/grafana-cloud show -json .state/notifications.tfplan 
 `.state/notifications.tfplan`はGit対象外。`show -json`の全出力は秘密情報を含み得るため共有しない。
 既存281ルールではAnnotations以外の差分なし、削除なし、共通テンプレート1件と書式更新処理2件の作成だけであることを確認する。
 **2026-10-19にmain push後の自動Applyと今回の本番反映をユーザー承認済み。** 通常は下記CIで反映する。緊急の手動反映は同じ共有state・認証環境でレビュー済みplanを`terraform -chdir=terraform/grafana-cloud apply .state/notifications.tfplan`へ渡す。Python 3と必要時の`bws`も同じ実行環境で必要。合成通知の実送信テストは自動Applyに含めない。
-ルール差分はAnnotationsだけで、[公式仕様](https://grafana.com/docs/grafana-cloud/observe-and-act/alert-and-measure-reliability/alerting/fundamentals/alert-rule-evaluation/)では状態リセットの対象外。適用後も評価状態と次回の通知書式を確認する。
+Annotationsだけの変更は[公式仕様](https://grafana.com/docs/grafana-cloud/observe-and-act/alert-and-measure-reliability/alerting/fundamentals/alert-rule-evaluation/)で状態リセットの対象外。
+補足クエリの追加はquery定義の変更なので、対象5ルールの評価状態がリセットされる可能性がある。
+発火条件・継続時間は維持するが、適用直後はHTTPの3分、PBSの15分の再判定期間に注意する。
+適用後も評価状態と次回の通知書式を確認する。
 
 `terraform_data`は任意のGUI編集をrefreshで検出しない。通知先の書式driftを調査する場合は、次のread-only検査をreceiverごとに実行する（環境変数は公開UIDとテンプレート参照のみ）。
 
@@ -214,6 +240,7 @@ GRAFANA_NOTIFICATION_CONFIG='{"name":"Discord - grafana-warning","uid":"afl6jwny
 
 `test-grafana-notifications.py`は秘密値なしの偽APIで、read-only既定、同UIDのPUT、全設定保持、冪等性、誤ったUID/type・復旧無効・redacted secretの拒否を検証する。
 `--live`は実Grafanaの**template preview APIだけ**へ合成アラートを送り、全281ルールとCRITICAL/WARNING/INFO、復旧、複数、欠損Labels/Annotations、任意Labels過多、No Data/Error、発生復旧混在、上限・優先順を検証する。
+`--live`では非保存の`/api/v1/rule/test/grafana`も使用し、snapshotなし・未検証・旧検証済み世代・HTTP 503/応答なしのAnnotations展開と、実クエリへの補足追加前後のinstance Labels一致を検証する。
 実ユーザーの通知や実アラートを作成しない。CIではTerraform mock、更新処理の安全性、既存PromQLテストを実行し、実エンジンの検証は認証を持つ環境でApply前に実行する。
 
 mainへpushすると自動反映される。変更を戻す場合も同じCIでPlan/Applyする。次の順序で戻す。

@@ -39,7 +39,7 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | management-unreachable | Management host unreachable | warn → warning | management / base | 管理ホストへのICMP probeが失敗しています。対象instanceの電源とネットワーク経路を確認してください。 |
 | lb-degraded | Load balancer redundancy lost | warn → warning | load-balancer / base | lb-01/02の2台中1台だけがICMPに応答しています。冗長性が低下しています。両ホストの死活とHAProxy/Keepalivedの状態を確認してください。 |
 | lb-down | Both load balancers unreachable | critical → critical | load-balancer / base | lb-01/02のICMP応答の合計が0です。ロードバランサ経路への影響を確認し、両ホストの電源・ネットワークを調べてください。 |
-| http-service | Home application unavailable | critical → critical | applications / base | アプリケーションのHTTP probeが失敗しています。利用経路に影響する可能性があります。対象instanceのHTTP応答、probeログ、backendの状態を確認してください。 |
+| http-service | Home application unavailable | critical → critical | applications / base | HTTP probeの失敗が3分継続しています。対象instanceの応答・アプリケーションと転送先を確認してください。HTTP 503では稼働中でもリクエストを処理できない場合があります。 |
 | http-management | Management UI unavailable | warn → warning | management / base | 管理UIのHTTP probeが失敗しています。対象instanceのHTTP応答、プロセス、接続経路を確認してください。 |
 | probe-critical | DNS, API or database transport unavailable | critical → critical | connectivity / probes | DNS/API/transport probe failed. TCP success alone does not prove authenticated DB queries or NFS writes work. |
 | exporter-down | Exporter scrape failed | warn → warning | observability / base | exporterのscrapeが失敗しています。対象instanceのメトリクスが更新されません。exporterの稼働状態と収集側からの到達性を確認してください。 |
@@ -139,8 +139,8 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | encode-recording-age-critical | Oldest recording waiting for encoding critical | critical → critical | recording / recording | encode待ちの最古録画が終了から3日超経過しています。対象targetのqueue、該当録画とworkerログを確認してください。 |
 | pbs-backup-age-warn | PBS VM backup age warn | warn → warning | backups / backup_integrity | PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。 |
 | pbs-backup-age-critical | PBS VM backup age critical | critical → critical | backups / backup_integrity | PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。 |
-| pbs-verification-failed | PBS snapshot verification failed | critical → critical | backups / backup_integrity | PBSの保持snapshotにverify失敗があります。対象backupのverifyログとストレージ状態を確認してください。backup完了だけでは復元可能性を保証できません。 |
-| pbs-unverified | PBS has no verified snapshot in 7 days | warn → warning | backups / backup_integrity | 7日以内にverify済みのbackupがありません。対象backupのverify Jobと結果を確認してください。verify成功だけでは実復元の成功を保証できません。 |
+| pbs-verification-failed | PBS snapshot verification failed | critical → critical | backups / backup_integrity | 保持snapshotにverify失敗があります。下記は最新・検証成功世代の参考情報です。失敗した世代はPBSのverifyログで確認してください。 |
+| pbs-unverified | PBS has no verified snapshot in 7 days | warn → warning | backups / backup_integrity | 7日以内のverify成功snapshotが保持されていません。最新backupの欠落とは限りません。verify Job・結果と世代削除履歴を確認してください。 |
 | backup-verified-database | database backup read-back verification stale | critical → critical | backups / backup_integrity | DB backupのread-back検証成功が48時間以上ありません。backup Jobと検証ログを確認してください。backup完了だけでは保存内容や復元可能性を保証できません。 |
 | backup-verified-nas | NAS repository metadata validation stale | critical → critical | backups / backup_integrity | restic check verifies repository references; full data reads and recovery are separate checks. |
 | backup-verified-recorded | Recorded media destination check stale | critical → critical | backups / backup_integrity | Destination names and sizes must match selected completed recordings. This is not a full content checksum or playback test. |

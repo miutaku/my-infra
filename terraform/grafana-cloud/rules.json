@@ -239,7 +239,11 @@
     "service": "applications",
     "group": "availability",
     "feature": "",
-    "description": "アプリケーションのHTTP probeが失敗しています。利用経路に影響する可能性があります。対象instanceのHTTP応答、probeログ、backendの状態を確認してください。"
+    "description": "HTTP probeの失敗が3分継続しています。対象instanceの応答・アプリケーションと転送先を確認してください。HTTP 503では稼働中でもリクエストを処理できない場合があります。",
+    "context_queries": {
+      "C": "probe_http_status_code{job=\"blackbox_http\",instance=~\"nextcloud|mirakurun|epgstation|tnlastation|coupon-manager|loockit\"}"
+    },
+    "details": "{{ with $values.C }}{{ if gt .Value 0.0 }}HTTP応答: {{ printf \"%.0f\" .Value }}{{ else }}HTTP応答なし（接続・timeout等を確認）{{ end }}{{ else }}HTTP応答コード情報なし{{ end }}"
   },
   {
     "id": "http-management",
@@ -1317,7 +1321,12 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。"
+    "description": "PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。",
+    "context_queries": {
+      "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+    },
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
   },
   {
     "id": "pbs-backup-age-critical",
@@ -1328,7 +1337,12 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。"
+    "description": "PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。",
+    "context_queries": {
+      "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+    },
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
   },
   {
     "id": "pbs-verification-failed",
@@ -1339,7 +1353,12 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBSの保持snapshotにverify失敗があります。対象backupのverifyログとストレージ状態を確認してください。backup完了だけでは復元可能性を保証できません。"
+    "description": "保持snapshotにverify失敗があります。下記は最新・検証成功世代の参考情報です。失敗した世代はPBSのverifyログで確認してください。",
+    "context_queries": {
+      "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+    },
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
   },
   {
     "id": "pbs-unverified",
@@ -1350,7 +1369,12 @@
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "7日以内にverify済みのbackupがありません。対象backupのverify Jobと結果を確認してください。verify成功だけでは実復元の成功を保証できません。"
+    "description": "7日以内のverify成功snapshotが保持されていません。最新backupの欠落とは限りません。verify Job・結果と世代削除履歴を確認してください。",
+    "context_queries": {
+      "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
+      "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}"
+    },
+    "details": "{{ if $labels.vm }}VM {{ $labels.vm }}: {{ with $values.C }}{{ if gt .Value 0.0 }}最新 vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}完了snapshotなし{{ end }}{{ else }}最新snapshot情報なし{{ end }} / {{ with $values.D }}{{ if gt .Value 0.0 }}検証済み vm/{{ $labels.vm }}/{{ (toTime .Value).UTC.Format \"2006-01-02T15:04:05Z\" }}{{ else }}検証済みsnapshotなし{{ end }}{{ else }}検証済みsnapshot情報なし{{ end }}{{ end }}"
   },
   {
     "id": "backup-verified-database",

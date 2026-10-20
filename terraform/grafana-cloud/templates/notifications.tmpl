@@ -30,7 +30,7 @@
 {{- if $place }}環境: {{ printf "%.120s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " $place) }}{{ "\n" }}{{ end -}}
 {{- $target := "" -}}
 {{- range $l.SortedPairs -}}
-  {{- if and .Value (match "^(service|target|namespace|node|pod|deployment|statefulset|daemonset|container|persistentvolumeclaim|persistentvolume|cronjob|job_name|owner_name|tuner|pool|zpool|device|mountpoint|hrStorageDescr|ifDescr|ifIndex|ups|name|id|vmid|backup|repository|port|service_id|scale_set|vip|condition|flag|datasource_uid|ref_id)$" .Name) -}}
+  {{- if and .Value (match "^(service|target|namespace|node|pod|deployment|statefulset|daemonset|container|persistentvolumeclaim|persistentvolume|cronjob|job_name|owner_name|tuner|pool|zpool|device|mountpoint|hrStorageDescr|ifDescr|ifIndex|ups|name|id|vm|vmid|backup|repository|port|service_id|scale_set|vip|condition|flag|datasource_uid|ref_id)$" .Name) -}}
     {{- $target = printf "%s%s=%s " $target .Name .Value -}}
   {{- end -}}
 {{- end -}}
@@ -53,6 +53,7 @@
 {{- with or .Annotations.description .Annotations.summary }}概要: {{ printf "%.250s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " .) }}
 {{ end -}}
 {{- end -}}
+{{- with .Annotations.details }}詳細: {{ printf "%.380s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " .) }}{{ "\n" }}{{ end -}}
 {{- $url := or .GeneratorURL .DashboardURL -}}
 {{- if and $url (le (len $url) 350) (match "^https?://[^<>\\s]+$" $url) }}[Grafanaで詳細を確認](<{{ $url }}>){{ "\n" }}{{ end -}}
 {{- with .Annotations.runbook_url -}}

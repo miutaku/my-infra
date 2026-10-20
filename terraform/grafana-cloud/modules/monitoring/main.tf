@@ -59,12 +59,12 @@ resource "grafana_rule_group" "monitoring" {
         severity    = rule.value.severity
         rule_id     = rule.key
       }
-      annotations = {
+      annotations = merge({
         display_target = try(rule.value.display_target, null) == null ? "" : rule.value.display_target
         summary        = rule.value.title
         description    = rule.value.description
         runbook_url    = local.runbook
-      }
+      }, try(rule.value.details, null) == null ? {} : { details = rule.value.details })
 
       data {
         ref_id         = "A"
@@ -88,6 +88,26 @@ resource "grafana_rule_group" "monitoring" {
           to   = 0
         }
         model = jsonencode({ refId = "B", type = "math", expression = "$A > 0" })
+      }
+
+      # Informational instant queries for annotations. A/B remain the condition;
+      # snapshot timestamps belong in annotations, never in identity labels.
+      dynamic "data" {
+        for_each = try(rule.value.context_queries, {})
+        iterator = context_query
+        content {
+          ref_id         = context_query.key
+          datasource_uid = var.datasource_uid
+          relative_time_range {
+            from = 600
+            to   = 0
+          }
+          model = jsonencode({
+            refId      = context_query.key, expr = context_query.value, instant = true, range = false,
+            datasource = { type = "prometheus", uid = var.datasource_uid },
+            intervalMs = each.value.interval * 1000, maxDataPoints = 43200
+          })
+        }
       }
 
       # Rule-level routing does not replace unrelated teams' notification policies.
