@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import worker from '../src/index';
 import { due, parseJst, nextMorning, formatJst, type Host, type RecordState } from '../src/policy';
 
+type DiscordPayload = { content: string; nonce?: string; enforce_nonce?: boolean; components?: unknown[] };
+
 function fixture(phase: 'scheduled' | 'approval' | 'held' = 'scheduled'): RecordState {
   const now = Date.now();
   return {
@@ -115,6 +117,75 @@ describe('maintenance scheduling', () => {
     expect((await read(target, 'pve-x570')).plan!.phase).toBe('running');
     await target.report('pve-x570', { ...rebooted, healthy: true });
     expect((await read(target, 'pve-x570')).plan).toBeUndefined();
+  });
+  it('posts a distinct reboot success only after changed boot ID and healthy report, once', async () => {
+    const target = stub();
+    const data = fixture();
+    data.plan!.messageId = 'original';
+    await seed(target, 'pve-x570', data);
+    await target.claim('pve-x570');
+    const deliveries: { method: string; payload: DiscordPayload }[] = [];
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async (_path: string, method: string, payload: DiscordPayload) => {
+        deliveries.push({ method, payload }); return { id: 'sent' };
+      },
+    }));
+    await target.report('pve-x570', data.snapshot!);
+    const rebooted = { ...data.snapshot!, bootId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' };
+    await target.report('pve-x570', { ...rebooted, healthy: false });
+    expect(deliveries).toHaveLength(0);
+    await target.report('pve-x570', rebooted);
+    await target.report('pve-x570', rebooted);
+    expect(deliveries.map(item => item.method)).toEqual(['POST', 'PATCH']);
+    expect(deliveries[0].payload.content).toContain('【再起動完了】pve-x570');
+    expect(deliveries[0].payload.content).toContain('quorum');
+    expect(deliveries[0].payload.enforce_nonce).toBe(true);
+    expect(deliveries[1].payload.components).toEqual([]);
+  });
+  it('persists a failed completion delivery and retries without another reboot', async () => {
+    const target = stub();
+    const data = fixture();
+    await seed(target, 'pve-x570', data);
+    await target.claim('pve-x570');
+    const payloads: DiscordPayload[] = [];
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async (_path: string, _method: string, payload: DiscordPayload) => {
+        payloads.push(payload);
+        if (payloads.length === 1) throw new Error('timeout after sending');
+        return { id: 'sent' };
+      },
+    }));
+    const rebooted = { ...data.snapshot!, required: false, bootId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' };
+    await target.report('pve-x570', rebooted);
+    expect((await read(target, 'pve-x570')).plan).toBeUndefined();
+    expect(await runInDurableObject(target, (_instance, ctx) =>
+      ctx.storage.sql.exec('SELECT id FROM notifications').toArray().length)).toBe(1);
+    await target.report('pve-x570', rebooted);
+    await target.report('pve-x570', rebooted);
+    expect(payloads).toHaveLength(2);
+    expect(payloads[1].nonce).toBe(payloads[0].nonce);
+    expect(await runInDurableObject(target, (_instance, ctx) =>
+      ctx.storage.sql.exec('SELECT id FROM notifications').toArray().length)).toBe(0);
+  });
+  it('never calls a cancelled or unnecessary plan a successful reboot', async () => {
+    for (const changedBoot of [false, true]) {
+      const target = stub();
+      const data = fixture('held');
+      data.plan!.messageId = 'original';
+      await seed(target, 'pve-x570', data);
+      const deliveries: { method: string; content: string }[] = [];
+      await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+        configurable: true, value: async (_path: string, method: string, payload: DiscordPayload) => {
+          deliveries.push({ method, content: payload.content }); return { id: 'sent' };
+        },
+      }));
+      await target.report('pve-x570', { ...data.snapshot!, required: false,
+        bootId: changedBoot ? 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' : data.snapshot!.bootId });
+      expect(deliveries).toHaveLength(1);
+      expect(deliveries[0].method).toBe('PATCH');
+      expect(deliveries[0].content).toContain('【予定解除】');
+      expect(deliveries[0].content).not.toContain('【再起動完了】');
+    }
   });
   it('new update candidates do not release an operator hold', async () => {
     const target = stub();

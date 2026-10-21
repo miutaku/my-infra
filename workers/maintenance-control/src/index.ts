@@ -12,9 +12,11 @@ const reply = (content: string) => ({ type: 4, data: { content, flags: 64, allow
 
 // These three hosts share a maintenance group: its object serializes PVE execution.
 export class MaintenanceFleet extends DurableObject<Env> {
+  private delivering = new Set<Host>();
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS hosts (host TEXT PRIMARY KEY, data TEXT NOT NULL)');
+    this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, host TEXT NOT NULL, message TEXT, content TEXT NOT NULL)');
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, created INTEGER NOT NULL)');
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS package_update (id INTEGER PRIMARY KEY CHECK(id=1), host TEXT NOT NULL, execution TEXT NOT NULL, failed INTEGER NOT NULL DEFAULT 0)');
   }
@@ -68,12 +70,43 @@ export class MaintenanceFleet extends DurableObject<Env> {
     current.plan.lastReminder = jstDate(Date.now());
     this.write(host, current);
   }
+  private queueCompletion(host: Host, plan: Plan, recoveredAt: number): void {
+    const content = `【再起動完了】${host}\n正常復帰確認: ${formatJst(recoveredAt)}（日本時間）\n` +
+      (isPve(host) ? '起動IDの変更、両PVEノードのonline・quorum・管理サービス・dpkgの健全性を確認しました。' :
+        '起動IDの変更とパッケージ管理の健全性を確認しました。') +
+      '\nVM・アプリケーション個別の正常性は、この確認には含みません。';
+    // Persist delivery separately from the plan so a Discord failure cannot lose it.
+    const id = crypto.randomUUID().replaceAll('-', '').slice(0, 25);
+    this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)', id, host, null, content);
+    if (plan.messageId) this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)',
+      `${id}-edit`, host, plan.messageId, content);
+  }
+  private async deliverCompletions(host: Host): Promise<void> {
+    if (this.delivering.has(host)) return;
+    this.delivering.add(host);
+    try {
+      const pending = this.ctx.storage.sql.exec<{ id: string; message: string | null; content: string }>(
+        'SELECT id,message,content FROM notifications WHERE host=? ORDER BY rowid', host).toArray();
+      for (const item of pending) {
+        try {
+          await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages${item.message ? `/${item.message}` : ''}`,
+            item.message ? 'PATCH' : 'POST', {
+              content: item.content, allowed_mentions: { parse: [] },
+              ...(item.message ? { components: [] } : { nonce: item.id, enforce_nonce: true }),
+            });
+          this.ctx.storage.sql.exec('DELETE FROM notifications WHERE id=?', item.id);
+        } catch { console.error(JSON.stringify({ event: 'completion-notification-failed', host })); }
+      }
+    } finally { this.delivering.delete(host); }
+  }
   async report(host: Host, snapshot: Snapshot): Promise<void> {
     const state = this.read(host);
     snapshot.observedAt = Date.now();
     state.snapshot = snapshot;
     const plan = state.plan;
-    if (plan?.phase === 'running' && plan.bootId !== snapshot.bootId && snapshot.healthy) {
+    const recovered = plan?.phase === 'running' && plan.bootId !== snapshot.bootId && snapshot.healthy;
+    if (recovered) {
+      this.queueCompletion(host, plan!, snapshot.observedAt);
       state.plan = undefined;
       this.audit(host, 'reboot-recovered');
     } else if (plan && plan.phase !== 'running' && plan.phase !== 'failed') {
@@ -83,10 +116,11 @@ export class MaintenanceFleet extends DurableObject<Env> {
       }
     }
     this.write(host, state);
-    if (plan && !state.plan && plan.messageId) {
+    await this.deliverCompletions(host);
+    if (plan && !state.plan && !recovered && plan.messageId) {
       try {
         await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages/${plan.messageId}`, 'PATCH', {
-          content: `【完了・予定解除】${host}\n再起動後の復帰、またはメンテナンス不要を確認しました。`,
+          content: `【予定解除】${host}\n起動セッションの変更、または再起動不要を確認しました。予約した再起動の正常完了を示す通知ではありません。`,
           components: [], allowed_mentions: { parse: [] },
         });
       } catch { console.error(JSON.stringify({ event: 'completion-notification-failed', host })); }
@@ -95,6 +129,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
   async tick(): Promise<void> {
     const now = Date.now();
     for (const host of HOSTS) {
+      await this.deliverCompletions(host);
       const state = this.read(host);
       const snapshot = state.snapshot;
       if (!state.plan && snapshot && now - snapshot.observedAt <= 10 * 60_000 &&
