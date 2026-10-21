@@ -64,10 +64,8 @@ def pve_healthy():
 def pve_preflight(host):
     if not pve_healthy():
         raise RuntimeError('PVE cluster or package state is unhealthy')
-    guests = json.loads(run('pvesh', 'get', '/cluster/resources', '--type', 'vm',
-                            '--output-format', 'json'))
-    if any(item.get('node') == host and item.get('status') != 'stopped' for item in guests):
-        raise RuntimeError('Guests must be migrated or stopped before PVE maintenance')
+    # Running guests are allowed by the operator's reboot approval. The normal
+    # PVE shutdown/startup sequence handles them; never bypass active tasks.
     pve_tasks_idle()
 
 
@@ -198,7 +196,7 @@ def process(config):
         save(pending)
         api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'blocked'})
         STATE.unlink()
-        print('Maintenance blocked by preflight; see cluster state and active guests/tasks')
+        print('Maintenance blocked by preflight; see cluster/package state and active tasks')
         return
     try:
         if reboot_required(pve):

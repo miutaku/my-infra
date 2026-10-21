@@ -27,18 +27,22 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertNotEqual(before, after)
 
-    def test_active_guest_prevents_hypervisor_reboot(self):
+    def test_running_guests_do_not_prevent_hypervisor_reboot(self):
+        def pvesh(*args):
+            if '/cluster/resources' in args:
+                return json.dumps([{'node': 'pve-x570', 'status': 'running'}])
+            return '[]'
         with patch.object(agent, 'pve_healthy', return_value=True), \
-             patch.object(agent, 'run', return_value=json.dumps([{'node': 'pve-x570', 'status': 'running'}])):
-            with self.assertRaisesRegex(RuntimeError, 'Guests'):
-                agent.pve_preflight('pve-x570')
+             patch.object(agent, 'run', side_effect=pvesh):
+            agent.pve_preflight('pve-x570')
 
     def test_backups_on_either_node_prevent_reboot(self):
-        responses = ['[]', '[]', '[{"type":"vzdump"}]']
-        with patch.object(agent, 'pve_healthy', return_value=True), \
-             patch.object(agent, 'run', side_effect=responses):
-            with self.assertRaisesRegex(RuntimeError, 'Active PVE task'):
-                agent.pve_preflight('pve-x570')
+        for responses in [['[{"type":"vzdump"}]'], ['[]', '[{"type":"vzdump"}]']]:
+            with self.subTest(responses=responses), \
+                 patch.object(agent, 'pve_healthy', return_value=True), \
+                 patch.object(agent, 'run', side_effect=responses):
+                with self.assertRaisesRegex(RuntimeError, 'Active PVE task'):
+                    agent.pve_preflight('pve-x570')
 
     def test_failed_peer_or_quorum_prevents_reboot(self):
         with patch.object(agent, 'pve_healthy', return_value=False):
@@ -78,7 +82,7 @@ class AgentTests(unittest.TestCase):
                  patch.object(agent, 'updates', return_value=(2, 'a' * 64)), \
                  patch.object(agent, 'pve_healthy', return_value=True), \
                  patch.object(agent, 'reboot_required', return_value=True), \
-                 patch.object(agent, 'pve_preflight', side_effect=RuntimeError('guests active')), \
+                 patch.object(agent, 'pve_preflight', side_effect=RuntimeError('active backup task')), \
                  patch.object(agent, 'package_idle', return_value=True), \
                  patch.object(agent, 'api', side_effect=[{}, {'executionId': 'test', 'fingerprint': 'a' * 64}, {}]), \
                  patch.object(agent.subprocess, 'run') as execute:
