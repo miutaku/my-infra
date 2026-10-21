@@ -199,7 +199,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
         (outcome === 'failed' ? '\n他のPVE処理も手動確認まで停止します。' : ''), allowed_mentions: { parse: [] },
     });
   }
-  async result(host: Host, executionId: string, outcome: string): Promise<void> {
+  async result(host: Host, executionId: string, outcome: string, reason?: string): Promise<void> {
     const eventId = `result:${host}:${executionId}`;
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', eventId).toArray().length) return;
     const state = this.read(host);
@@ -207,7 +207,10 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (outcome === 'complete') state.plan = undefined;
     else {
       state.plan.phase = outcome === 'blocked' ? 'held' : 'failed';
-      state.plan.reason = outcome === 'blocked' ? '事前確認で停止しました。ホストのjournalを確認してください。' : '処理に失敗しました。他のPVEも停止しています。手動確認が必要です。';
+      state.plan.reason = outcome === 'blocked' ?
+        (reason === 'availability' ? 'Kubernetes・共有ストレージの退避、またはLoockit待機系の正常性を確認できないため、再起動を保留しました。ホストのjournalを確認してください。' :
+          '事前確認で停止しました。ホストのjournalを確認してください。') :
+        '処理に失敗しました。他のPVEも停止しています。手動確認が必要です。';
       state.plan.revision = crypto.randomUUID();
       state.plan.notifiedRevision = undefined;
     }
@@ -329,7 +332,7 @@ export default {
           return Response.json({ ok: true });
         }
         if (path === '/agent/result' && ['blocked', 'failed', 'complete'].includes(data.outcome)) {
-          await fleet.result(host, data.executionId, data.outcome);
+          await fleet.result(host, data.executionId, data.outcome, data.reason === 'availability' ? 'availability' : undefined);
           return Response.json({ ok: true });
         }
       } catch { return new Response('Request failed', { status: 400 }); }

@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import socket
 import subprocess
 import urllib.error
 import urllib.request
@@ -14,6 +15,73 @@ STATE = Path('/var/lib/host-maintenance/execution.json')
 UPDATE_STATE = Path('/var/lib/host-maintenance/update.json')
 BOOT = Path('/proc/sys/kernel/random/boot_id')
 REQUIRED = Path('/run/reboot-required')
+AVAILABILITY_POLICY = Path('/etc/host-maintenance/availability-policy.json')
+
+
+class AvailabilityBlocked(RuntimeError):
+    pass
+
+
+def availability_check(host, reboot=False):
+    """Read-only guard: keep Kubernetes and its storage outside the reboot host."""
+    try:
+        policy = json.loads(AVAILABILITY_POLICY.read_text())
+        required = set(policy['required_vm_ids'])
+        if (not required or not policy['protected_tags'] or not policy['storage_endpoints'] or
+                set(policy['loockit_endpoints']) != {'pve-x570', 'pve-b550m'}):
+            raise ValueError('Incomplete availability policy')
+        guests = json.loads(run('pvesh', 'get', '/cluster/resources', '--type', 'vm',
+                                '--output-format', 'json'))
+        protected = [vm for vm in guests if vm.get('vmid') in required or
+                     set(vm.get('tags', '').split(';')) & set(policy['protected_tags'])]
+        if not required.issubset({vm['vmid'] for vm in protected}):
+            raise AvailabilityBlocked('Required Kubernetes/storage VM missing from inventory')
+        if any(vm.get('status') != 'running' for vm in protected):
+            raise AvailabilityBlocked('Kubernetes/storage VM is not running')
+        if any(vm.get('node') not in policy['loockit_endpoints'] for vm in protected):
+            raise AvailabilityBlocked('Kubernetes/storage VM placement is unknown')
+        if reboot:
+            local = [f"{vm['vmid']} ({vm.get('name', 'unknown')})" for vm in protected if vm.get('node') == host]
+            if local:
+                raise AvailabilityBlocked('Kubernetes/storage VMs still on reboot host: ' + ', '.join(local))
+        # A standby normally returns 503 from /readyz. Before reboot the peer
+        # must already serve; after reboot require two live processes and one
+        # serving leader, rather than falsely waiting for two active leaders.
+        ready = 0
+        for node, url in policy['loockit_endpoints'].items():
+            if reboot and node == host:
+                continue
+            if not reboot:
+                with urllib.request.urlopen(url.removesuffix('/readyz') + '/healthz', timeout=5) as response:
+                    if response.status != 200:
+                        raise AvailabilityBlocked('Loockit process health failed')
+            try:
+                with urllib.request.urlopen(url, timeout=5) as response:
+                    if response.status != 200:
+                        raise AvailabilityBlocked('Loockit readiness failed')
+                    ready += 1
+            except urllib.error.HTTPError as error:
+                if reboot or error.code != 503 or json.loads(error.read(1024)).get('detail') != 'standby replica':
+                    raise AvailabilityBlocked('Loockit readiness failed') from None
+        if ready != 1:
+            raise AvailabilityBlocked('Exactly one serving Loockit leader required')
+        for address in policy['storage_endpoints']:
+            with socket.create_connection((address, 2049), timeout=5):
+                pass
+    except AvailabilityBlocked:
+        raise
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        raise AvailabilityBlocked('Availability policy or service check failed; reboot denied') from None
+
+
+def pve_recovered(host):
+    if not pve_healthy():
+        return False
+    try:
+        availability_check(host)
+        return True
+    except AvailabilityBlocked:
+        return False
 
 
 def run(*args):
@@ -64,9 +132,10 @@ def pve_healthy():
 def pve_preflight(host):
     if not pve_healthy():
         raise RuntimeError('PVE cluster or package state is unhealthy')
-    # Running guests are allowed by the operator's reboot approval. The normal
-    # PVE shutdown/startup sequence handles them; never bypass active tasks.
+    # Ordinary running guests are allowed; critical Kubernetes/storage guests
+    # must be moved away first. This guard never stops or migrates a guest.
     pve_tasks_idle()
+    availability_check(host, reboot=True)
 
 
 def pve_tasks_idle():
@@ -165,16 +234,17 @@ def process(config):
         if pending['bootId'] == boot_id:
             # A process interruption is never treated as permission to retry an upgrade.
             if pending.get('outcome'):
-                api(config, 'result', {'executionId': pending['executionId'], 'outcome': pending['outcome']})
+                api(config, 'result', {'executionId': pending['executionId'], 'outcome': pending['outcome'],
+                                      'reason': pending.get('reason', 'preflight')})
                 STATE.unlink()
             else:
                 print('Execution is awaiting reboot or manual investigation')
             return
-        if pve and not pve_healthy():
-            print('Rebooted; waiting for healthy PVE cluster before releasing maintenance lock')
+        if pve and not pve_recovered(host):
+            print('Rebooted; waiting for PVE, Kubernetes/storage VMs and Loockit before releasing maintenance lock')
             return
     count, fingerprint = updates()
-    healthy = pve_healthy() if pve else package_idle()
+    healthy = pve_recovered(host) if pve else package_idle()
     api(config, 'report', {'bootId': boot_id, 'required': reboot_required(pve),
                           'updates': count, 'fingerprint': fingerprint, 'healthy': healthy})
     if STATE.exists():
@@ -191,11 +261,14 @@ def process(config):
             pve_preflight(host)
         elif not REQUIRED.exists():
             raise RuntimeError('Reboot no longer required')
-    except (RuntimeError, subprocess.SubprocessError):
+    except (RuntimeError, subprocess.SubprocessError) as error:
         pending['outcome'] = 'blocked'
+        pending['reason'] = 'availability' if isinstance(error, AvailabilityBlocked) else 'preflight'
         save(pending)
-        api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'blocked'})
+        api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'blocked', 'reason': pending['reason']})
         STATE.unlink()
+        if isinstance(error, AvailabilityBlocked):
+            print(str(error))
         print('Maintenance blocked by preflight; see cluster/package state and active tasks')
         return
     try:
@@ -227,9 +300,16 @@ def main():
     if not config['controller'].startswith('https://'):
         raise RuntimeError('HTTPS controller required')
     if args.probe:
-        print(json.dumps({'host': config['host'], 'updates': updates()[0],
+        result = {'host': config['host'], 'updates': updates()[0],
                           'rebootRequired': reboot_required(config['host'].startswith('pve-')),
-                          'healthy': pve_healthy() if config['host'].startswith('pve-') else True}))
+                          'healthy': pve_recovered(config['host']) if config['host'].startswith('pve-') else True}
+        if config['host'].startswith('pve-'):
+            try:
+                pve_preflight(config['host'])
+                result['rebootSafe'] = True
+            except (RuntimeError, subprocess.SubprocessError) as error:
+                result.update(rebootSafe=False, rebootBlockReason=str(error))
+        print(json.dumps(result))
         return
     with open('/run/lock/host-maintenance.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

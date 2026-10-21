@@ -195,6 +195,17 @@ describe('maintenance scheduling', () => {
     expect((await read(target, 'pve-x570')).plan!.phase).toBe('held');
     expect(await target.claim('pve-x570')).toBeNull();
   });
+  it('holds an approved reboot with an explicit service availability reason', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture());
+    const claim = await target.claim('pve-x570');
+    await target.result('pve-x570', claim!.executionId, 'blocked', 'availability');
+    const state = await read(target, 'pve-x570');
+    expect(state.plan!.phase).toBe('held');
+    expect(state.plan!.reason).toContain('Kubernetes・共有ストレージ');
+    expect(state.plan!.reason).toContain('Loockit');
+    expect(await target.claim('pve-x570')).toBeNull();
+  });
   it('automatic updates need no reboot approval and serialize both PVE hosts', async () => {
     const target = stub();
     await seed(target, 'pve-x570', fixture('held'));

@@ -50,6 +50,15 @@
         mode: '0600'
       no_log: true
 
+    - name: Install the PVE service availability policy
+      ansible.builtin.copy:
+        src: availability-policy.json
+        dest: /etc/host-maintenance/availability-policy.json
+        owner: root
+        group: root
+        mode: '0644'
+      when: inventory_hostname != 'dev-app-server'
+
     - name: Install the maintenance agent
       ansible.builtin.copy:
         src: maintenance-agent.py
