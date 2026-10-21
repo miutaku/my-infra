@@ -211,11 +211,9 @@ S3-backed datastore は、バックアップ開始直後に多数の chunk を S
 
 | Job ID | Node | VMID | Schedule | 主な負荷制限 |
 |---|---|---|---|---|
-| `pbs-home-x570` | `pve-x570` | `13201,60000` | `*/2:05` | `bwlimit=20480`, `performance=max-workers=1`, `zstd=1` |
-| `pbs-home-b550m` | `pve-b550m` | `40000` | `*/2:35` | `bwlimit=20480`, `performance=max-workers=1`, `zstd=1` |
+| `pbs-home-x570` | ノード制限なし | 運用中13 VM/CT (`9001,9002`を除く) | `*/4:00` | `bwlimit=20480`, `performance=max-workers=1`, `zstd=1` |
 
-旧い全ノード同時ジョブ `backup-2836eac5-c20c` は、戻せるように削除せず `enabled=0`
-で残している。
+2026-10-21のAPI確認時点の構成。この作業では既存定期ジョブの対象・スケジュールは変更しない。
 
 PVE Web UI で作る場合の基本値:
 
@@ -257,9 +255,10 @@ verify 成功済みのものがあるか」を評価する。未検証の最新 
 条件を満たす検証済み世代が残っていれば発火しない。設定変更だけでは未検証世代に
 検証結果は付かないため、次の verify と監視メトリクス更新後に復旧を確認する。
 
-Packer で再生成できる template VM (`9001`, `9002` など) はバックアップ対象に含めない。
-template を PBS backup に含めると、停止 VM を backup 用 QEMU (`qmpstatus=prelaunch`) で
-起動したまま進捗が止まることがある。テンプレートは `packer/` から再ビルドする運用に寄せる。
+Packer template VM (`9001`, `9002`) は4時間周期の定期ジョブには含めず、
+Packerによる再生成後に下記の方法でPBSへ取得し、verifyまで確認する。
+2026-10-21にユーザー承認で、再生成だけに依存する従来方針からPBSにも正常世代を保持する方針へ変更した。
+`qmpstatus=prelaunch`は停止VMのバックアップで使う通常の状態で、これだけではハングとは判断しない。
 
 追加後の確認:
 
@@ -341,27 +340,46 @@ sudo systemctl restart proxmox-backup-proxy
 `permission check failed` になる。`proxmox_backup_server` ロールを再実行すると
 `/` に `Admin` role を付与する。実行直後は Web UI をログアウトして入り直す。
 
-### PVE backup が template VM で止まる
+### PackerテンプレートのPBSバックアップ
 
-`template-ubuntu-...` などの Packer template VM (`9001`, `9002`) で以下のように止まる場合:
-
-```text
-INFO: status = stopped
-INFO: backup mode: stop
-INFO: starting kvm to execute backup task
-INFO: qmpstatus=prelaunch のまま進まない
-```
-
-PVE backup job から template VM を除外する。PVE Web UI では
-`Datacenter` → `Backup` → 対象ジョブ → `Edit` で `9001`, `9002` を外す。
-ハング中の task は PVE Web UI の task viewer から `Stop` する。
-
-停止後、対象 template VM の lock が残る場合は PVE ノードで確認する:
+テンプレートは9001が`pve-x570`、9002が`pve-b550m`にある。
+停止・`template=1`・既存backup/lockなしを確認し、ノード側で1台ずつ実行する。
+下記は9001の例で、9002は対応ノードとIDに置き換える。
 
 ```bash
-qm status 9001
-qm status 9002
+systemd-run --unit=pbs-template-backup-9001 --collect \
+  --property=Nice=10 --property=RuntimeMaxSec=2h \
+  --property=KillSignal=SIGINT --property=TimeoutStopSec=120 \
+  /usr/bin/vzdump 9001 --storage pbs-home --mode snapshot \
+  --bwlimit 20480 --performance max-workers=1 --zstd 1 \
+  --prune-backups keep-all=1 --notes-template '{{guestname}}' --lockwait 1
+journalctl -u pbs-template-backup-9001 --no-pager -n 20
 ```
+
+接続側の短いtimeout付き`pvesh create .../vzdump`で長時間ジョブを実行しない。
+CLI実行は完了まで接続を使い、切断で`broken pipe`になってQEMU側の転送が残る場合がある。
+`systemd-run`によりSSH切断から独立させ、nativeタスクの`OK`と元の停止状態への復帰を確認する。
+停止テンプレートはバックアップ用QEMUを`prelaunch`で動かし、ゲストOSは再開しない。
+進捗率・転送量が増えているかを見る。`prelaunch`だけを根拠に停止しない。
+
+PBSのsnapshot一覧で、取得した**正確な時刻**に`index.json.blob`とディスクの`.fidx`があることを確認し、
+PBSホストでその1世代だけをverifyする（`BACKUP_EPOCH`はsnapshotの`backup-time`）。
+
+```bash
+proxmox-backup-debug api create /admin/datastore/pbs-s3/verify \
+  --backup-type vm --backup-id 9001 --backup-time "$BACKUP_EPOCH" \
+  --read-threads 1 --verify-threads 2 --ignore-verified true --outdated-after 7 \
+  --output-format json
+```
+
+verifyのタスク結果`OK`とsnapshotの`verification.state=ok`を両方確認する。
+この確認はデータ整合性検査で、別VMへの実復元・起動試験の代用にはならない。
+設定・認証情報をログや一時ファイルへ書き出さない。
+
+古いmanifest欠落世代は、新しい正常世代のbackup・verify成功後に整理する。
+backup IDだけで一括削除せず、対象時刻、未完了（manifestなし）、非protected、
+他のbackup/verifyが対象へアクセスしていないことを再確認して、その世代だけ削除する。
+新しい正常世代と元テンプレートVMは削除しない。
 
 ### キャッシュディスクが見つからない
 

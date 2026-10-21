@@ -40,7 +40,7 @@ criticalの条件と継続時間、未完了snapshotを成功扱いしない判�
 過去8回のAlerting遷移時刻の実測値で新旧の式を再評価し、旧式は8回とも1、
 新式は8回とも0になることを確認した。発火していない時点や将来の遅延を保証する検証ではない。
 
-## 定期verifyジョブ全体に残る問題
+## 調査時点の定期verifyジョブ全体の問題
 
 10/20 06:00〜09:14のverifyジョブは、次の2snapshotでmanifestがなく失敗していた。
 
@@ -54,8 +54,35 @@ PBSのファイル一覧には`qemu-server.conf.blob`しかなく、`index.json.
 したがって、監視VMの`home_pbs_verification_failed=0`はverifyジョブ全体の成功を意味しない。
 
 再検証だけではこのmanifest欠落は解消しない。古い未完了snapshotの削除は別途確認して扱う。
-今回、snapshot削除・verify対象除外・保持ポリシー変更・追加のbackup/verify実行は行っていない。
+この調査の段階では、snapshot削除・verify対象除外・保持ポリシー変更・追加のbackup/verify実行は行っていない。
 実データ破損のアラートを抑止する変更も行っていない。
+
+## 承認後の対応完了（2026-10-21）
+
+ユーザー承認により、9001/9002もPBSへ正常な世代を取得し、対象世代のverifyまで実施した。
+
+| VM | 新しいsnapshot（UTC） | backup結果 | verify結果 |
+| --- | --- | --- | --- |
+| 9001 | `vm/9001/2026-10-21T00:49:22Z` | OK（10:06:34 JST完了） | タスクOK、snapshot state=ok |
+| 9002 | `vm/9002/2026-10-21T01:09:16Z` | OK（10:26:26 JST完了） | タスクOK、snapshot state=ok |
+
+両世代に`qemu-server.conf.blob`、`drive-scsi0.img.fidx`、`index.json.blob`があり、
+PVEの`pbs-home`復元元一覧でも`pbs-vm`として認識されている。
+元VMは`template=1`・停止・lockなし、元の`local-zfs:base-9001-disk-0` /
+`base-9002-disk-0`を維持している。ゲストOSを起動・復元する試験は行っていない。
+
+初回9001取得は接続側の30秒timeoutで`broken pipe`となった。
+残った当該UUIDのQEMU転送をキャンセルし、prelaunch専用プロセスを停止してから、
+接続に依存しないsystemd一時サービスで再取得した。中断世代はキャンセル処理で除去され、
+当該PIDの一時ディレクトリも残っていない。最終的な再取得タスクは上表のとおり成功した。
+
+各新世代のverify成功、旧世代のmanifest欠落・非protected・対象へのアクセスなしを確認後、
+6月5日の9001/9002の未完了世代だけをPBS APIで削除した。
+完了確認時、datastoreのsnapshot一覧にmanifest欠落世代はなく、実行中のPBSタスクもなかった。
+以前のverifyジョブ失敗は履歴に残る。ジョブ全体の再実行はせず、次回毎日06:00の通常実行で確認する。
+
+既存13台の4時間周期ジョブは変更せず、テンプレートはPacker再生成後に取得・verifyする運用とする。
+再取得方法は[PBS手順](../../ansible/pbs/README.md#packerテンプレートのpbsバックアップ)に記載した。
 
 ## 再確認用の読み取り
 
