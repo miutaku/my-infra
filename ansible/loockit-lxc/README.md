@@ -100,3 +100,17 @@ DNSだけのロールバックは`loockit_independent_tunnel_enabled=false`と�
 BLEの電波干渉、物理機器、LAN/ルーター・インターネット・Cloudflareの障害は残る。
 PVE同時停止には対応しない。KubernetesとNASの保護条件を外す変更ではないため、
 PVEの再起動には別途Kubernetes VM・共有ストレージの保護が必要。
+
+
+## 2026-10-21の移行・検証結果
+
+専用Tunnel・WorkerドメインとDOを配備し、両LXCを独立Leaseへ切り替えた。
+公開DNSのIDは維持して専用Tunnelへ更新した（切替Plan: 追加0・変更1・削除0）。
+BLE再接続失敗を受けてb550mからx570へ選出が交代し、intercom-botのready復帰を確認した。
+初回ツールの240秒待ちは超過したため、再デプロイせず復帰を確認し、確認上限を480秒へ改めた。
+
+`python3 scripts/verify-loockit-independence.py --isolate`で両BLEプロセスだけから
+Kubernetes API VIP・control plane IP・Pod CIDR・Service CIDRへ到達できない状態を作り、
+40秒・6回の観測でleader readinessと両LXC内proxyを維持し、15秒の期限を超えてLease更新が
+続くことを確認した。一時経路はすべて除去した。本番Kubernetesは停止していない。
+クライアント証明書なしの公開APIは403を維持。実際のclick/unlockは送信していない。

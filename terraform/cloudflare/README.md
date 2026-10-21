@@ -320,3 +320,11 @@ CNAME の `proxied = true` のため、実際の tunnel IP は隠蔽される。
 
 WARP 接続中の DNS は Gateway 側で解決される。
 `miutaku.internal` は `cloudflare_zero_trust_device_default_profile_local_domain_fallback.default_warp` で CoreDNS (`192.168.20.201`) へ向ける。
+
+
+Loockit公開APIは専用Tunnel `loockit-independent-managed-by-tf`を使い、connectorは
+LXC 12902/12903で動作する。`home_k8s_services["loockit-api"]`は既存DNS resourceと
+互換ingressを維持するため残すが、`loockit_independent_tunnel_enabled=true`ではDNSだけ
+専用Tunnelへ向ける。hostname・クライアント証明書・公開操作・rate limitは維持する。
+選出用の`loockit-lease`専用WorkerドメインだけBIC/UA検査を除外し、tokenで認証する。
+[配備・切替・ロールバック](../../ansible/loockit-lxc/README.md)を参照。

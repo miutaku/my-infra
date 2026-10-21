@@ -94,13 +94,17 @@ export function generateCatalog(root){
   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
   const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
   const name=match[1],key=id('hostname:'+name);
+  const independentLoockit=name==='loockit-api';
+  const tunnel=independentLoockit?'external.edge.loockit_tunnel':'external.edge.tunnel';
   const accessMode=authenticationMode(name,protectedNames,mtlsNames);
   const dedicated=isReventerDedicated({file:'terraform/cloudflare/locals.tf',name});
   const group=accessMode==='access'?'protected':'exceptions',modelRef=dedicated?`consumers.reventer.definitions.${key}`:`external.edge.routes.${group}.${key}`;
   const kind=/^(architecture-review|argocd-|unifi$|wifi-ap$|ix2215$|nas-|pve-|nanokvm-)/.test(name)?'admin':'runtime';
-  routeElements[dedicated?'dedicated':group].push(`component ${key} ${q(name)} { description ${q(backend+' / '+(accessMode==='access'?'Cloudflare Access保護':'mTLS・証明書と操作パス制限'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" metadata { owner ${q(dedicated?'reventer':'my-infra')} referenceOnly ${q(dedicated?'true':'false')} accessMode ${q(accessMode)} trafficKind ${q(kind)} } }`);
-  routeLinks.push(`external.edge.tunnel .${kind} ${modelRef} "hostname転送"`);
-  if(targets[name]&&!dedicated){
+  routeElements[dedicated?'dedicated':group].push(`component ${key} ${q(name)} { description ${q((independentLoockit?'LXC loopback HAProxy :18080 / 専用Tunnel':backend)+' / '+(accessMode==='access'?'Cloudflare Access保護':'mTLS・証明書と操作パス制限'))} link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/locals.tf "hostname定義" metadata { owner ${q(dedicated?'reventer':'my-infra')} referenceOnly ${q(dedicated?'true':'false')} accessMode ${q(accessMode)} trafficKind ${q(kind)} } }`);
+  routeLinks.push(`${tunnel} .${kind} ${modelRef} "hostname転送"`);
+  if(independentLoockit){
+   for(const target of ['premises.pve.loockit_a','premises.pve.loockit_b'])routeLinks.push(`${modelRef} .runtime ${target} "独立LXC proxy / ready leader"`);
+  }else if(targets[name]&&!dedicated){
    routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
    routeLinks.push(`external.edge.tunnel .${kind} ${targets[name]} ${q(name+' / '+(url.port||(url.protocol==='https:'?'443':'80'))+' / '+(accessMode==='access'?'Access':'mTLS'))}`);
   }

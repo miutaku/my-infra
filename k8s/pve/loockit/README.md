@@ -1,5 +1,12 @@
 # loockit
 
+Production BLE controllers run in LXC 12902/12903. Their election and public REST
+API use an independent Cloudflare Durable Object and dedicated Tunnel; they do
+not depend on this Kubernetes Service. This directory retains the LAN-compatible
+REST/gRPC proxy and the previous service account for rollback. See
+[Loockit LXC](../../../ansible/loockit-lxc/README.md) for deployment and migration.
+The legacy deployment/configuration files below are not included in kustomization.
+
 The REST and gRPC APIs have no built-in authentication. The Service is therefore
 `ClusterIP` only, and the pod does not use `hostNetwork` (Bluetooth works through
 the mounted host D-Bus socket). Do not expose it with a LoadBalancer or Ingress

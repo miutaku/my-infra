@@ -21,6 +21,8 @@ model {
   }
   actor client '専用クライアント'
   extend external.edge {
+    component loockit_lease 'Loockit Lease / Durable Object' { description 'Kubernetes非依存。単一DOでBLE leaderを選出し、CAS・15秒の期限・ホスト別tokenで制御する。' }
+    component loockit_tunnel 'Loockit専用Tunnel / 2 LXC' { description '各Loockit LXCのcloudflaredとloopback HAProxyで公開REST APIを転送。クラスタDNSを使わない。' }
     component mtls 'mTLS / 専用APIの例外' { description 'loockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/loockit-api.tf '例外の定義' }
     component warp 'WARP / private CIDR routes' { description 'Cloudflare One Clientからprivate CIDRへ。公開hostnameのTunnel/Accessとは別。' link https://github.com/miutaku/my-infra/blob/main/terraform/cloudflare/warp.tf '設定' }
   }
@@ -43,7 +45,7 @@ model {
     component cert_approver 'kubelet-serving-cert-approver' { description 'kubelet serving証明書のCSRを承認する。' }
   } }
   extend premises.home {
-    system loockit 'Loockit / BLEスマートロック' { description 'KubernetesのHAProxyが2台のLXCのreadyzを監視しactiveへ転送。APIはmTLS、実機のBLE操作はLXC/BlueZが担当。' component proxy 'HAProxy / :8080・:50051' }
+    system loockit 'Loockit / BLEスマートロック' { description '公開RESTは専用TunnelとLXC内HAProxyがactiveへ転送。BLE選出はDurable Object。APIはmTLS、Kubernetes ServiceはLAN互換用。' component proxy '互換HAProxy / :8080・:50051' }
     system coupon_manager 'Coupon Manager' { description 'Web → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。' component web 'Web / :80' component api 'API / :8080' }
     component wol 'Wake-on-LAN' { description 'app-gptwol。LANにMagic Packetを送信して対象PCを起動する。' }
     component magic_mirror 'MagicMirror / ダッシュボード' { description 'app-magic-mirror / HTTP:8080。VLAN40のDisplayLink kiosk VM5000で表示。' }
@@ -139,13 +141,15 @@ model {
 
   premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
   client .runtime external.edge.mtls 'クライアント証明書'
-  external.edge.mtls .authenticate external.edge.tunnel 'mTLS検証済みのAPIリクエスト'
+  external.edge.mtls .authenticate external.edge.loockit_tunnel 'mTLS検証済みのAPIリクエスト'
+  external.edge.loockit_tunnel .runtime premises.pve.loockit_a 'LXC内HAProxy / loopback :18080'
+  external.edge.loockit_tunnel .runtime premises.pve.loockit_b 'LXC内HAProxy / loopback :18080'
   premises.home.loockit.proxy .runtime premises.pve.loockit_a 'readyz / leaderのみ'
   premises.home.loockit.proxy .runtime premises.pve.loockit_b 'readyz / leaderのみ'
   premises.pve.loockit_a .runtime premises.pve.bluez 'pve-x570 / read-only D-Bus'
   premises.pve.loockit_b .runtime premises.pve.bluez 'pve-b550m / read-only D-Bus'
-  premises.pve.loockit_a .runtime premises.home.platform.api 'Lease leader election'
-  premises.pve.loockit_b .runtime premises.home.platform.api 'Lease leader election'
+  premises.pve.loockit_a .runtime external.edge.loockit_lease 'HTTPS / BLE Lease'
+  premises.pve.loockit_b .runtime external.edge.loockit_lease 'HTTPS / BLE Lease'
   premises.home.coupon_manager.web .runtime premises.home.coupon_manager.api '内部API'
   premises.home.coupon_manager.api .runtime premises.home.databases.postgres 'PostgreSQL'
   premises.home.coupon_manager.api .runtime external.ai 'AI API'

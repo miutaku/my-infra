@@ -116,3 +116,17 @@ test('public access keeps authentication separate from traffic purpose and rejec
  assert.ok(model.views.access.nodes.some(node=>node.modelRef==='external.edge.mtls'));
  assert.ok(!model.views.index.edges.some(edge=>['deploy','admin'].includes(edge.kind)&&edge.target==='consumers.reventer'));
 });
+
+
+test('Loockit public API and BLE election have no Kubernetes runtime dependency',()=>{
+ const relations=Object.values(model.relations);
+ const has=(source,target)=>relations.some(r=>r.source.model===source&&r.target.model===target&&r.kind==='runtime');
+ const route=coverage.records.find(row=>row.type==='Tunnel hostname'&&row.name==='loockit-api');
+ assert.ok(has('external.edge.loockit_tunnel',route.modelRef));
+ assert.ok(!has('external.edge.tunnel',route.modelRef));
+ for(const source of ['premises.pve.loockit_a','premises.pve.loockit_b']){
+  assert.ok(has(source,'external.edge.loockit_lease'));
+  assert.ok(!has(source,'premises.home.platform.api'));
+  assert.ok(has(route.modelRef,source));
+ }
+});
