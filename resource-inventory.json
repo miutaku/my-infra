@@ -2551,6 +2551,12 @@
     "file": "terraform/cloudflare/loockit-api.tf"
   },
   {
+    "id": "terraform/cloudflare/loockit-api.tf:resource:cloudflare_workers_custom_domain:loockit_lease",
+    "type": "cloudflare_workers_custom_domain",
+    "name": "loockit_lease",
+    "file": "terraform/cloudflare/loockit-api.tf"
+  },
+  {
     "id": "terraform/cloudflare/loockit-api.tf:resource:cloudflare_zero_trust_tunnel_cloudflared_config:loockit",
     "type": "cloudflare_zero_trust_tunnel_cloudflared_config",
     "name": "loockit",
