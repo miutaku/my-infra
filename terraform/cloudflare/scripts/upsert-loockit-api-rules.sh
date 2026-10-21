@@ -6,6 +6,7 @@ set -euo pipefail
 
 hostname="${1:?hostname is required}"
 fingerprint="${2:?client certificate fingerprint is required}"
+lease_hostname="${3:?lease hostname is required}"
 api="https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/rulesets"
 auth_header="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
 
@@ -48,6 +49,12 @@ upsert_rule() {
   fi
 }
 
+# The existing Loockit urllib client is a machine client, not a browser.
+# Exempt only the coordinator hostname from BIC/UA checks, retaining token auth,
+# all managed rules, and the separate door API's mTLS/surface/rate-limit rules.
+lease_payload="$(jq -cn --arg expression "(http.host eq \"${lease_hostname}\")" '{ref:"loockit_lease_machine_client",description:"Permit authenticated machine clients on the Loockit coordinator",expression:$expression,action:"skip",action_parameters:{products:["bic","uaBlock"]},logging:{enabled:true},enabled:true}')"
+upsert_rule http_request_firewall_custom loockit_lease_machine_client "${lease_payload}"
+
 mtls_expression="(http.host eq \"${hostname}\" and (not cf.tls_client_auth.cert_verified or cf.tls_client_auth.cert_revoked or cf.tls_client_auth.cert_fingerprint_sha256 ne \"${fingerprint}\"))"
 mtls_payload="$(jq -cn --arg expression "${mtls_expression}" '{ref:"loockit_api_require_exact_client_certificate",description:"Require the active Android client certificate",expression:$expression,action:"block",enabled:true}')"
 upsert_rule http_request_firewall_custom loockit_api_require_exact_client_certificate "${mtls_payload}"
@@ -61,6 +68,7 @@ rate_payload="$(jq -cn --arg expression "${rate_expression}" '{ref:"loockit_api_
 upsert_rule http_ratelimit loockit_api_click_rate_limit "${rate_payload}"
 
 for phase_and_ref in \
+  'http_request_firewall_custom loockit_lease_machine_client' \
   'http_request_firewall_custom loockit_api_require_exact_client_certificate' \
   'http_request_firewall_custom loockit_api_allow_click_only' \
   'http_ratelimit loockit_api_click_rate_limit'; do

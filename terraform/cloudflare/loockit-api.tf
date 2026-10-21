@@ -19,7 +19,7 @@ resource "terraform_data" "loockit_api_edge_rules" {
   ]
 
   provisioner "local-exec" {
-    command = "${path.module}/scripts/upsert-loockit-api-rules.sh '${local.loockit_api_hostname}' '${local.loockit_android_fingerprint}'"
+    command = "${path.module}/scripts/upsert-loockit-api-rules.sh '${local.loockit_api_hostname}' '${local.loockit_android_fingerprint}' 'loockit-lease.${var.domain}'"
     environment = {
       CLOUDFLARE_API_TOKEN = var.cloudflare_api_token
       CLOUDFLARE_ZONE_ID   = var.zone_id
@@ -71,4 +71,12 @@ variable "loockit_independent_tunnel_enabled" {
   description = "Switch existing Loockit DNS only after both independent connectors and the BLE coordinator are verified."
   type        = bool
   default     = false
+}
+
+
+resource "cloudflare_workers_custom_domain" "loockit_lease" {
+  account_id = var.account_id
+  zone_id    = var.zone_id
+  hostname   = "loockit-lease.${var.domain}"
+  service    = "home-maintenance-control"
 }
