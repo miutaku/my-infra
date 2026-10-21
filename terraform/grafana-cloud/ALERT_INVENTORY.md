@@ -137,7 +137,7 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | encode-backlog-critical | Encoding backlog critical | critical → critical | recording / recording | encode待ちが30件超です。録画後処理が滞留しています。対象targetのqueueとworker状態・ログを確認してください。 |
 | encode-recording-age-warn | Oldest recording waiting for encoding warn | warn → warning | recording / recording | encode待ちの最古録画が終了から1日超3日以下経過しています。対象targetのqueue、該当録画とworkerログを確認してください。 |
 | encode-recording-age-critical | Oldest recording waiting for encoding critical | critical → critical | recording / recording | encode待ちの最古録画が終了から3日超経過しています。対象targetのqueue、該当録画とworkerログを確認してください。 |
-| pbs-backup-age-warn | PBS VM backup age warn | warn → warning | backups / backup_integrity | PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。 |
+| pbs-backup-age-warn | PBS VM backup age warn | warn → warning | backups / backup_integrity | PBSの最新完了snapshotの作成から5時間超8時間以下です。4時間周期の実行・処理・収集に1時間の猶予を設けています。対象VMのbackup Job結果と保存先を確認してください。 |
 | pbs-backup-age-critical | PBS VM backup age critical | critical → critical | backups / backup_integrity | PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。 |
 | pbs-verification-failed | PBS snapshot verification failed | critical → critical | backups / backup_integrity | 保持snapshotにverify失敗があります。下記は最新・検証成功世代の参考情報です。失敗した世代はPBSのverifyログで確認してください。 |
 | pbs-unverified | PBS has no verified snapshot in 7 days | warn → warning | backups / backup_integrity | 7日以内のverify成功snapshotが保持されていません。最新backupの欠落とは限りません。verify Job・結果と世代削除履歴を確認してください。 |

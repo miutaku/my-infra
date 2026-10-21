@@ -177,6 +177,11 @@ def live_tests():
     for severity, word in [("critical", "CRITICAL"), ("warn", "WARNING"), ("warning", "WARNING"), ("info", "INFO")]:
         cases.append((severity, [alert({"severity": severity, "node": "node-1"})], ["FIRING", word, "node=node-1"], []))
     cases.extend([
+        ("missing-series-resolved", [alert({"target": "pbs", "vm": "60000"},
+             {"grafana_state_reason": "MissingSeries"}, resolved=True)],
+         ["RESOLVED", "監視データ欠測", "復旧は未確認", "終了:"], ["アラート条件が解消", "復旧:"]),
+        ("updated-rule-resolved", [alert(annotations={"grafana_state_reason": "Updated"}, resolved=True)],
+         ["RESOLVED", "Updated", "復旧は未確認", "終了:"], ["アラート条件が解消", "復旧:"]),
         ("resolved", [alert({"pod": "recovered-pod"}, resolved=True)], ["RESOLVED", "復旧:", "pod=recovered-pod"], ["概要:"]),
         ("multiple", [alert({"node": "node-1"}), alert({"node": "node-2"})], ["node=node-1", "node=node-2", "2/2件"], []),
         ("mixed", [alert({"pod": "bad"}), alert({"pod": "good"}, resolved=True)], ["FIRING", "RESOLVED", "pod=bad", "pod=good"], []),

@@ -224,6 +224,11 @@ def main():
     case("batch content verification remains visible after instant lookback expires", {
         'home_backup_verified_timestamp_seconds{backup="database"}': "1 stale",
     }, {"backup-verified-database": 0})
+    for age, warning, critical in [(15613, 0, 0), (18000, 0, 0), (18001, 1, 0),
+                                   (28800, 1, 0), (28801, 0, 1)]:
+        case(f"PBS backup age {age}s", {
+            'home_pbs_backup_last_success_seconds{job="home-service-monitor",vm="60000"}': f"{36000-age}+0x10",
+        }, {"pbs-backup-age-warn": warning, "pbs-backup-age-critical": critical}, at="10h", interval="1h")
     for refresh, interval, expected in [(0, 86400, 0), (0, 60, 1), (0, 0, 0)]:
         case(f"ExternalSecret interval={interval}", {
             'home_secret_last_refresh_seconds{job="home-service-monitor",target="secrets",namespace="monitoring",name="test"}': f"{refresh}+0x240",
@@ -268,6 +273,25 @@ def main():
             ]},
         ]}))
         subprocess.run([args.promtool, "test", "rules", str(durationfile)], check=True)
+        backupfile = folder / "pbs.json"
+        backupfile.write_text(json.dumps({"groups": [{"name": "pbs", "interval": "1m", "rules": [
+            r for r in exported if r["alert"] in ("pbs-backup-age-warn", "pbs-backup-age-critical")
+        ]}]}))
+        backup_tests = folder / "pbs-tests.json"
+        backup_tests.write_text(json.dumps({"rule_files": [str(backupfile)], "evaluation_interval": "1m", "tests": [
+            {"interval": "1m", "input_series": [
+                {"series": 'home_pbs_backup_last_success_seconds{job="home-service-monitor",vm="60000"}', "values": "0+0x500"}
+            ], "alert_rule_test": [
+                {"eval_time": at, "alertname": rid, "exp_alerts": [
+                    {"exp_labels": {"job": "home-service-monitor", "vm": "60000"}}
+                ] if firing else []}
+                for at, rid, firing in [("5h15m", "pbs-backup-age-warn", False),
+                                        ("5h16m", "pbs-backup-age-warn", True),
+                                        ("8h15m", "pbs-backup-age-critical", False),
+                                        ("8h16m", "pbs-backup-age-critical", True)]
+            ]}
+        ]}))
+        subprocess.run([args.promtool, "test", "rules", str(backup_tests)], check=True)
     print(f"Validated {len(catalog)} catalog rules, {len(targets)} required targets and {len(cases)} behavioral cases")
 
 

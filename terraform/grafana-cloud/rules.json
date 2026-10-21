@@ -1315,13 +1315,13 @@
   {
     "id": "pbs-backup-age-warn",
     "title": "PBS VM backup age warn",
-    "expression": "((time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 14400) and (time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} <= 28800)) or vector(0)",
+    "expression": "((time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 18000) and (time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} <= 28800)) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS backupの最終成功から4時間超8時間以下です。対象backupのスケジュール、Job結果と保存先を確認してください。",
+    "description": "PBSの最新完了snapshotの作成から5時間超8時間以下です。4時間周期の実行・処理・収集に1時間の猶予を設けています。対象VMのbackup Job結果と保存先を確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
       "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",

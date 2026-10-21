@@ -46,7 +46,9 @@
 {{ define "my-infra.alert" -}}
 **{{ template "my-infra.state" . }} | {{ template "my-infra.severity" . }} | {{ template "my-infra.name" . }}**
 {{ template "my-infra.context" . -}}
-{{- if eq .Labels.alertname "DatasourceError" }}{{ if eq .Status "resolved" }}評価エラー状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}評価エラー: 監視対象の障害・復旧は判定できません。{{ end }}
+{{- if and (eq .Status "resolved") (eq .Annotations.grafana_state_reason "MissingSeries") }}監視データ欠測によりアラートが終了しました。復旧は未確認です。
+{{ else if and (eq .Status "resolved") .Annotations.grafana_state_reason }}監視状態が終了しました（{{ printf "%.40s" (reReplaceAll "[\\r\\n*_`<>@\\[\\]]" " " .Annotations.grafana_state_reason) }}）。復旧は未確認です。
+{{ else if eq .Labels.alertname "DatasourceError" }}{{ if eq .Status "resolved" }}評価エラー状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}評価エラー: 監視対象の障害・復旧は判定できません。{{ end }}
 {{ else if eq .Labels.alertname "DatasourceNoData" }}{{ if eq .Status "resolved" }}データなし状態が解消しました。実サービスの復旧を意味するものではありません。{{ else }}データなし: 監視対象の障害・復旧は判定できません。{{ end }}
 {{ else if eq .Status "resolved" }}アラート条件が解消しました。必要に応じて実サービスを確認してください。
 {{ else -}}
@@ -60,7 +62,7 @@
 {{- if and (le (len .) 300) (match "^https?://[^<>\\s]+$" .) }}[対処手順](<{{ . }}>){{ "\n" }}{{ end -}}
 {{- end -}}
 {{- if eq .Status "resolved" -}}
-  {{- if not .EndsAt.IsZero }}復旧: {{ .EndsAt.UTC.Format "2006-01-02 15:04:05 UTC" }}{{ "\n" }}{{ end -}}
+  {{- if not .EndsAt.IsZero }}{{ if .Annotations.grafana_state_reason }}終了{{ else }}復旧{{ end }}: {{ .EndsAt.UTC.Format "2006-01-02 15:04:05 UTC" }}{{ "\n" }}{{ end -}}
 {{- else -}}
   {{- if not .StartsAt.IsZero }}発生: {{ .StartsAt.UTC.Format "2006-01-02 15:04:05 UTC" }}{{ "\n" }}{{ end -}}
 {{- end -}}

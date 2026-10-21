@@ -45,7 +45,7 @@ UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知す�
 | TrueNAS | pool物理使用率80%超、最終成功scrubから35日超 | pool物理使用率85%超、pool異常、disk/SMARTの重大alert、scrubエラー、最終成功から60日超 |
 | DB | 接続数80%超5分、lock待ち5分、60秒超queryが10分継続 | SELECT 1/統計取得失敗2分、接続数95%超5分 |
 | 録画 | 24時間内の予約競合、EPG更新24時間超、encode待ち10件超・録画終了から1日超 | 録画開始遅延/途中停止/完了後video欠落、tuner異常、EPG更新48時間超/未準備30分、encode待ち30件超・3日超 |
-| PBS | VM別backup鮮度4時間超、7日以内のverify済みsnapshotなし | backup鮮度8時間超、保持snapshotのverify失敗 |
+| PBS | VM別backup鮮度5時間超、7日以内のverify済みsnapshotなし | backup鮮度8時間超、保持snapshotのverify失敗 |
 | S3/restic・復元 | NAS repository実object容量14 GB超、復元成功が28日以上なし | 17 GB超、DB read-back/NAS repository/録画保存先の確認が期限超過、復元Job失敗 |
 | 制御系 | etcd片系取得不可、CSR滞留10分超 | leaderを認識するetcdが2台未満、leader数が1以外、API VIP所有数が1以外、CSR拒否/失敗、API/kubelet証明書残り3日未満 |
 | switch/AP | 必須port台帳未設定 | US-8-60W/FS APの死活、必須portリンク断2分 |
@@ -178,6 +178,8 @@ VM追加・改名時はこの補助台帳も更新する。名前が得られな
 `pbs-unverified`は7日以内のverify成功世代がないことを示し、最新backup自体がないとは限らない。
 verify失敗ルールの最新/検証成功パスは参考情報であり、失敗世代の特定にはPBSのverifyログを使う。
 保持ポリシーは[PBS運用手順](../../ansible/pbs/README.md)を参照する。
+4時間周期の処理・収集待ちを考慮し、backup鮮度のwarningは5時間超・15分継続とする。
+criticalは8時間超・15分継続を維持する。経緯と実測は[バックアップアラート調査](BACKUP_ALERT_REVIEW.md)を参照。
 
 `http-service`はHTTPコードも表示し、0は「HTTP応答なし」と区別する。
 Loockitは待機系の`/readyz`が503を返す設計だが、blackboxは個々の待機系ではなく
@@ -191,6 +193,8 @@ BLE不安定は利用者が既知・許容としている制約で、電波干�
 現行281ルールは`no_data_state=OK`, `exec_err_state=Error`を維持する。
 データ欠落は主に116件の必須系列監視で明示的に検出する。クエリ失敗時は別インスタンス`DatasourceError`になり、通常の障害判定と区別して「評価エラー・判定不能」と表示する。
 将来NoData設定を使う場合の`DatasourceNoData`も「データなし・判定不能」と表示する。
+`grafana_state_reason=MissingSeries`のRESOLVEDはデータ欠測による終了で、復旧未確認と表示する。
+Updated/Paused等の理由付き終了も同様に扱い、時刻は「終了」とする。
 これらは元のLabelsが欠けることがあるため、`datasource_uid/ref_id`とalertnameで識別し、severityがなければUNKNOWNとする。復旧も「評価エラー/データなし状態が解消」と表示する。
 既存のdirect routingと待機時間は変更しない。PDC全断時は複数ルールのDatasourceErrorが集まる可能性が残る。
 
