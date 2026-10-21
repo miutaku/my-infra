@@ -48,3 +48,27 @@ output "loockit_android_client_certificate_pem" {
 output "loockit_android_client_certificate_fingerprint_sha256" {
   value = try(cloudflare_client_certificate.loockit_android[0].fingerprint_sha256, null)
 }
+
+# Dedicated connectors run in both Loockit LXCs, outside home-k8s.
+resource "cloudflare_zero_trust_tunnel_cloudflared" "loockit" {
+  account_id = var.account_id
+  name       = "loockit-independent-managed-by-tf"
+  config_src = "cloudflare"
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "loockit" {
+  account_id = var.account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.loockit.id
+  config = {
+    ingress = [
+      { hostname = local.loockit_api_hostname, service = "http://127.0.0.1:18080" },
+      { service = "http_status:404" }
+    ]
+  }
+}
+
+variable "loockit_independent_tunnel_enabled" {
+  description = "Switch existing Loockit DNS only after both independent connectors and the BLE coordinator are verified."
+  type        = bool
+  default     = false
+}

@@ -16,6 +16,10 @@
       {
         "name": "FLEET",
         "class_name": "MaintenanceFleet"
+      },
+      {
+        "name": "LOOCKIT_LEASE",
+        "class_name": "LoockitLease"
       }
     ]
   },
@@ -25,7 +29,8 @@
       "new_sqlite_classes": [
         "MaintenanceFleet"
       ]
-    }
+    },
+    { "tag": "v2-loockit", "new_sqlite_classes": ["LoockitLease"] }
   ],
   "triggers": {
     "crons": [

@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { timingSafeEqual } from 'node:crypto';
+import { LEASE_PATH, LEASE_NAME } from './loockit-lease';
+export { LoockitLease } from './loockit-lease';
 import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due,
   type Host, type Plan, type Snapshot, type RecordState } from './policy';
 
@@ -306,6 +308,24 @@ async function authorized(request: Request, expected: string): Promise<boolean> 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path === LEASE_PATH || path === `${LEASE_PATH}/${LEASE_NAME}`) {
+      const secret = (env as Env & { LOOCKIT_LEASE_TOKENS_JSON?: string }).LOOCKIT_LEASE_TOKENS_JSON;
+      if (!secret) return new Response('Unavailable', { status: 503 });
+      const tokens: Record<string, string> = JSON.parse(secret);
+      let identity: string | undefined;
+      for (const name of ['loockit-x570', 'loockit-b550m']) {
+        if (tokens[name]?.length >= 32 && await authorized(request, tokens[name])) identity = name;
+      }
+      if (!identity) return new Response('Forbidden', { status: 403 });
+      if (!(request.method === 'GET' && path.endsWith(`/${LEASE_NAME}`)) &&
+          !(request.method === 'POST' && path === LEASE_PATH) &&
+          !(request.method === 'PUT' && path.endsWith(`/${LEASE_NAME}`))) return new Response('Not allowed', { status: 405 });
+      try {
+        const data = request.method === 'GET' ? null : JSON.parse(await boundedText(request, 4096));
+        const result = await env.LOOCKIT_LEASE.getByName('loockit-ble-leader').operate(request.method, data, identity);
+        return Response.json(result.body, { status: result.status, headers: { 'Cache-Control': 'no-store' } });
+      } catch { return new Response('Invalid request', { status: 400 }); }
+    }
     if (request.method !== 'POST') return new Response('Not found', { status: 404 });
     const fleet = env.FLEET.getByName('home-pve');
     if (path.startsWith('/agent/')) {

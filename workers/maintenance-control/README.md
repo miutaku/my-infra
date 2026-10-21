@@ -163,3 +163,18 @@ pve-x570が05:00:03、pve-b550mが05:01:03に事前確認で保留へ戻って�
 確認時点で両ホストの健全性は正常、再起動要否はtrue。
 この調査後、ユーザー承認により稼働中guestによる再起動の保留条件を撤廃した。
 既存の保留はそのまま維持する。次回実行するにはDiscordで将来日時を指定し、再承認する。
+
+
+## Loockitの独立BLE Lease
+
+同じWorkerに`LoockitLease`を追加するが、`MaintenanceFleet`と別のSQLite DOで管理する。
+固定した1 LeaseのGET/POST/PUTのみ提供し、Kubernetesには接続しない。
+認証はBSMの`LOOCKIT_COORDINATOR_TOKENS_JSON`からWorker secret
+`LOOCKIT_LEASE_TOKENS_JSON`へ登録する。`setup-loockit.py --deploy`を使用する。
+手順・安全な初回切替・独立Tunnel・ロールバックは
+[Loockit LXC README](../../ansible/loockit-lxc/README.md)を参照。
+
+競合create/CAS、期限前の横取り拒否、期限後の交代、旧ownerの更新拒否、server時刻、
+認証identity、過大body、永続化をCloudflareのローカル実行環境で検証する。
+DOを追加したmigration v2より前のWorkerへ戻す場合は、稼働中BLE Leaseの移行も必要になる。
+Loockitが利用中のDO class/bindingを通常のメンテナンス修正で削除しない。
