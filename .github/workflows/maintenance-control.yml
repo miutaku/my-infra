@@ -1,0 +1,47 @@
+name: Maintenance control Worker
+on:
+  push:
+    branches: [main]
+    paths:
+      - workers/maintenance-control/**
+      - .github/workflows/maintenance-control.yml
+  pull_request:
+    paths:
+      - workers/maintenance-control/**
+      - .github/workflows/maintenance-control.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: maintenance-control-production
+  cancel-in-progress: false
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: workers/maintenance-control
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: workers/maintenance-control/package-lock.json
+      - run: npm ci
+      - run: cp .dev.vars.example .dev.vars
+      - run: npm run check && npm test
+      - name: Install BSM CLI
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0/bws-x86_64-unknown-linux-gnu-2.0.0.zip -o "$RUNNER_TEMP/bws.zip"
+          unzip -q "$RUNNER_TEMP/bws.zip" bws -d "$RUNNER_TEMP/bin"
+          chmod +x "$RUNNER_TEMP/bin/bws"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Deploy Worker and retain existing secrets
+        if: github.event_name != 'pull_request'
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.GH_MY_INFRA_BWS_ACCESS_TOKEN }}
+        run: python3 setup-loockit.py --deploy

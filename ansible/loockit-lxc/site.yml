@@ -74,27 +74,8 @@
             apt-get install -y -qq docker.io ca-certificates curl bluez sudo openssh-server)
       changed_when: true
 
-    - name: Create Kubernetes service account directory in LXC
-      ansible.builtin.command:
-        argv: [pct, exec, "{{ loockit_ct_id | string }}", --, install, -d, -m, "0700", /etc/loockit/kubernetes]
-      changed_when: true
-
-    - name: Stage Kubernetes service account files on Proxmox host
-      ansible.builtin.copy:
-        src: "{{ lookup('env', 'LOOCKIT_KUBE_SA_DIR') }}/{{ item }}"
-        dest: "/run/loockit-kube-{{ item }}"
-        owner: root
-        group: root
-        mode: "0600"
-      loop: [token, ca.crt, namespace]
-      no_log: true
-
-    - name: Copy Kubernetes service account files into LXC
-      ansible.builtin.command:
-        argv: [pct, push, "{{ loockit_ct_id | string }}", "/run/loockit-kube-{{ item }}", "/etc/loockit/kubernetes/{{ item }}", --perms, "0600"]
-      loop: [token, ca.crt, namespace]
-      no_log: true
-      changed_when: true
+    - name: Provision independent coordinator and API connectors
+      ansible.builtin.import_tasks: tasks/independent.yml
 
     - name: Stage Loockit configuration on Proxmox host
       ansible.builtin.copy:
@@ -210,13 +191,6 @@
       ansible.builtin.file:
         path: /run/loockit.env
         state: absent
-
-    - name: Remove staged Kubernetes service account files
-      ansible.builtin.file:
-        path: "/run/loockit-kube-{{ item }}"
-        state: absent
-      loop: [token, ca.crt, namespace]
-      no_log: true
 
   handlers:
     - name: Restart Loockit D-Bus proxy

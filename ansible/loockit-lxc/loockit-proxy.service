@@ -1,0 +1,14 @@
+[Unit]
+Description=Kubernetes-independent Loockit API proxy
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+[Service]
+Restart=always
+RestartSec=5
+ExecStartPre=-/usr/bin/docker rm -f loockit-proxy
+ExecStart=/usr/bin/docker run --rm --name loockit-proxy --network host --user 99:99 --cap-drop ALL --security-opt no-new-privileges --read-only -v /etc/loockit/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:3.2.9-alpine haproxy -W -db -f /usr/local/etc/haproxy/haproxy.cfg
+ExecStop=/usr/bin/docker stop -t 10 loockit-proxy
+TimeoutStopSec=20
+[Install]
+WantedBy=multi-user.target

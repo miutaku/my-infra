@@ -178,3 +178,6 @@ pve-x570が05:00:03、pve-b550mが05:01:03に事前確認で保留へ戻って�
 認証identity、過大body、永続化をCloudflareのローカル実行環境で検証する。
 DOを追加したmigration v2より前のWorkerへ戻す場合は、稼働中BLE Leaseの移行も必要になる。
 Loockitが利用中のDO class/bindingを通常のメンテナンス修正で削除しない。
+
+mainへのpush時は`Maintenance control Worker`のCIがcheck/test後に配備する。
+このCIはGitHub hosted runnerで実行し、home-k8sの停止に依存しない。

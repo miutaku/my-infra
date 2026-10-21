@@ -1,0 +1,14 @@
+[Unit]
+Description=Kubernetes-independent Loockit Cloudflare Tunnel
+After=docker.service loockit-proxy.service network-online.target
+Requires=docker.service loockit-proxy.service
+Wants=network-online.target
+[Service]
+Restart=always
+RestartSec=5
+ExecStartPre=-/usr/bin/docker rm -f loockit-tunnel
+ExecStart=/usr/bin/docker run --rm --name loockit-tunnel --network host --dns 1.1.1.1 --dns 1.0.0.1 --user 0:0 --cap-drop ALL --security-opt no-new-privileges --read-only -v /etc/loockit/tunnel-token:/run/secrets/tunnel-token:ro cloudflare/cloudflared:2026.10.2 tunnel --no-autoupdate --metrics 127.0.0.1:20241 run --token-file /run/secrets/tunnel-token
+ExecStop=/usr/bin/docker stop -t 10 loockit-tunnel
+TimeoutStopSec=20
+[Install]
+WantedBy=multi-user.target

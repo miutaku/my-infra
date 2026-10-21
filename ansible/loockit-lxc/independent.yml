@@ -1,0 +1,7 @@
+---
+- name: Provision independent Loockit coordination and API path without restarting BLE
+  hosts: loockit_hosts
+  become: true
+  gather_facts: false
+  tasks:
+    - ansible.builtin.import_tasks: tasks/independent.yml

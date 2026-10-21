@@ -1,0 +1,140 @@
+---
+- name: Read BSM configuration in memory
+  ansible.builtin.command:
+    argv: [bws, secret, list, --output, json]
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  check_mode: false
+  register: independent_bws
+  no_log: true
+
+- name: Select independent coordination credentials
+  ansible.builtin.set_fact:
+    independent_secrets: "{{ independent_bws.stdout | from_json | items2dict(key_name='key', value_name='value') }}"
+  no_log: true
+
+- name: Locate dedicated Cloudflare Tunnel
+  ansible.builtin.uri:
+    url: https://api.cloudflare.com/client/v4/accounts/d1221137443d7862cbdd136bdffb2dc5/cfd_tunnel?name=loockit-independent-managed-by-tf&is_deleted=false
+    headers:
+      Authorization: "Bearer {{ independent_secrets.TF_CLOUDFLARE_API_TOKEN }}"
+    return_content: true
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  register: independent_tunnel
+  no_log: true
+
+- name: Require exactly one dedicated Tunnel
+  ansible.builtin.assert:
+    that: independent_tunnel.json.result | length == 1
+
+- name: Retrieve dedicated connector token
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/accounts/d1221137443d7862cbdd136bdffb2dc5/cfd_tunnel/{{ independent_tunnel.json.result[0].id }}/token"
+    headers:
+      Authorization: "Bearer {{ independent_secrets.TF_CLOUDFLARE_API_TOKEN }}"
+    return_content: true
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  register: independent_tunnel_token
+  no_log: true
+
+- name: Install coordinator credentials directly inside LXC
+  ansible.builtin.command:
+    argv:
+      - pct
+      - exec
+      - "{{ loockit_ct_id | string }}"
+      - --
+      - python3
+      - -c
+      - |
+        import json,os,sys,pathlib
+        data=json.load(sys.stdin)
+        root=pathlib.Path('/etc/loockit/coordinator')
+        root.mkdir(mode=0o700,parents=True,exist_ok=True)
+        os.chmod(root,0o700)
+        for name,value in data.items():
+            path=(root.parent if name == "tunnel-token" else root)/name
+            fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
+            with os.fdopen(fd,'w') as out: out.write(value+'\n')
+            os.chmod(path,0o600)
+    stdin: "{{ {'host': 'loockit-lease.miutaku.work', 'namespace': 'app-loockit', 'token': (independent_secrets.LOOCKIT_COORDINATOR_TOKENS_JSON | from_json)[loockit_identity], 'tunnel-token': independent_tunnel_token.json.result} | to_json }}"
+  changed_when: true
+  when: not ansible_check_mode
+  no_log: true
+
+- name: Copy system CA bundle for coordinator TLS verification
+  ansible.builtin.command:
+    argv: [pct, exec, "{{ loockit_ct_id | string }}", --, cp, /etc/ssl/certs/ca-certificates.crt, /etc/loockit/coordinator/ca.crt]
+  changed_when: true
+  when: not ansible_check_mode
+
+- name: Stage public independent runtime configuration
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/run/{{ item }}"
+    mode: '0644'
+  loop: [haproxy.cfg, loockit-proxy.service, loockit-tunnel.service]
+
+- name: Install independent runtime configuration inside LXC
+  ansible.builtin.command:
+    argv: [pct, push, "{{ loockit_ct_id | string }}", "/run/{{ item.src }}", "{{ item.dest }}", --perms, '0644']
+  loop:
+    - {src: haproxy.cfg, dest: /etc/loockit/haproxy.cfg}
+    - {src: loockit-proxy.service, dest: /etc/systemd/system/loockit-proxy.service}
+    - {src: loockit-tunnel.service, dest: /etc/systemd/system/loockit-tunnel.service}
+  changed_when: true
+  when: not ansible_check_mode
+
+- name: Validate proxy and enable independent connectors without touching BLE
+  ansible.builtin.command:
+    argv:
+      - pct
+      - exec
+      - "{{ loockit_ct_id | string }}"
+      - --
+      - bash
+      - -ec
+      - >-
+        docker pull haproxy:3.2.9-alpine >/dev/null;
+        docker pull cloudflare/cloudflared:2026.10.2 >/dev/null;
+        docker run --rm --network none -v /etc/loockit/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:3.2.9-alpine haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg;
+        systemctl daemon-reload;
+        systemctl enable --now loockit-proxy.service loockit-tunnel.service
+  changed_when: true
+  when: not ansible_check_mode
+
+- name: Remove staged public runtime files
+  ansible.builtin.file:
+    path: "/run/{{ item }}"
+    state: absent
+  loop: [haproxy.cfg, loockit-proxy.service, loockit-tunnel.service]
+
+- name: Install coordinator-aware host deploy script
+  ansible.builtin.copy:
+    src: deploy-container.sh
+    dest: /usr/local/sbin/deploy-loockit-lxc
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Stage coordinator-aware restricted deploy script
+  ansible.builtin.copy:
+    src: deploy-container-local.sh
+    dest: /run/deploy-loockit-local
+    mode: '0755'
+
+- name: Install restricted deploy script inside LXC
+  ansible.builtin.command:
+    argv: [pct, push, "{{ loockit_ct_id | string }}", /run/deploy-loockit-local, /usr/local/sbin/deploy-loockit-local, --perms, '0755']
+  changed_when: true
+  when: not ansible_check_mode
+
+- name: Remove staged deploy script
+  ansible.builtin.file:
+    path: /run/deploy-loockit-local
+    state: absent

@@ -6,6 +6,7 @@ image="${LOOCKIT_IMAGE:?LOOCKIT_IMAGE is required}"
 address="${LOOCKIT_ADDRESS:-192.168.20.133}"
 identity="${LOOCKIT_IDENTITY:-loockit-x570}"
 log_level="${LOOCKIT_LOG_LEVEL:-INFO}"
+coordinator_host="$(pct exec "$ct_id" -- cat /etc/loockit/coordinator/host)"
 name=loockit
 rollback_name=loockit-rollback
 
@@ -31,19 +32,20 @@ trap rollback ERR
 pct exec "$ct_id" -- docker run -d \
   --name "$name" \
   --restart unless-stopped \
+  --dns 1.1.1.1 --dns 1.0.0.1 \
   --env-file /etc/loockit/loockit.env \
   -e LOOCKIT_LOG_LEVEL="$log_level" \
   -e LOOCKIT_LEADER_ELECTION=true \
   -e LOOCKIT_REQUIRED_DEVICES=intercom-bot \
   -e LOOCKIT_LEADER_LABEL_POD=false \
   -e POD_NAME="$identity" \
-  -e KUBERNETES_SERVICE_HOST=192.168.20.228 \
-  -e KUBERNETES_SERVICE_PORT_HTTPS=6443 \
+  -e KUBERNETES_SERVICE_HOST="$coordinator_host" \
+  -e KUBERNETES_SERVICE_PORT_HTTPS=443 \
   -e DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket \
   -p 8080:8080 \
   -p 50051:50051 \
   -v /etc/loockit/config.toml:/config/config.toml:ro \
-  -v /etc/loockit/kubernetes:/var/run/secrets/kubernetes.io/serviceaccount:ro \
+  -v /etc/loockit/coordinator:/var/run/secrets/kubernetes.io/serviceaccount:ro \
   -v /mnt/host-dbus/system_bus_socket:/run/dbus/system_bus_socket:ro \
   "$image" run --config /config/config.toml >/dev/null
 

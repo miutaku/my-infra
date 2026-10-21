@@ -70,7 +70,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "loockit" {
 variable "loockit_independent_tunnel_enabled" {
   description = "Switch existing Loockit DNS only after both independent connectors and the BLE coordinator are verified."
   type        = bool
-  default     = false
+  default     = true
 }
 
 

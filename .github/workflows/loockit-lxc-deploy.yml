@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - ansible/loockit-lxc/**
+      - ansible/loockit-lxc/image.env
   workflow_dispatch:
 
 concurrency:
@@ -61,12 +61,13 @@ jobs:
               -o StrictHostKeyChecking=accept-new \
               "loockit-deploy@${host}" "deploy ${image}"
           done
-          for attempt in $(seq 1 48); do
+          for attempt in $(seq 1 96); do
             if curl -fsS --max-time 5 \
-              http://loockit.app-loockit.svc.cluster.local:8080/readyz >/dev/null; then
+              http://192.168.20.133:8080/readyz >/dev/null || \
+              curl -fsS --max-time 5 http://192.168.20.134:8080/readyz >/dev/null; then
               exit 0
             fi
             sleep 5
           done
-          echo 'Loockit HA service did not recover within 240 seconds' >&2
+          echo 'Loockit HA service did not recover within 480 seconds' >&2
           exit 1
