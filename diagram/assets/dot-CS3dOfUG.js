@@ -613,7 +613,6 @@ var e=e=>{switch(e){case`index`:return`digraph {
                 exceptions [color="#475569",
                     fillcolor="#64748b",
                     fontcolor="#f8fafc",
-                    group="external.edge",
                     height=1.389,
                     label=<<FONT POINT-SIZE="20">例外 / mTLS専用API</FONT>>,
                     likec4_id="external.edge.routes.exceptions",
@@ -634,7 +633,6 @@ var e=e=>{switch(e){case`index`:return`digraph {
             mtls [color="#475569",
                 fillcolor="#64748b",
                 fontcolor="#f8fafc",
-                group="external.edge",
                 height=1.389,
                 label=<<FONT POINT-SIZE="20">mTLS / 専用APIの例外</FONT>>,
                 likec4_id="external.edge.mtls",
@@ -776,8 +774,8 @@ var e=e=>{switch(e){case`index`:return`digraph {
         fontcolor="#bbfcd3",
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">クライアント証明書</FONT></TD></TR></TABLE>>,
         likec4_id="1ligfsb",
-        minlen=1,
-        style=dashed];
+        style=dashed,
+        weight=3];
     access -> tunnel [arrowhead=normal,
         color="#6366f1",
         fontcolor="#cbd0fd",
@@ -785,26 +783,11 @@ var e=e=>{switch(e){case`index`:return`digraph {
         likec4_id="163m3wm",
         style=solid,
         weight=4];
-    mtls -> tunnel [arrowhead=normal,
-        color="#6366f1",
-        fontcolor="#cbd0fd",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">mTLS検証済みのAPIリクエスト</FONT></TD></TR></TABLE>>,
-        likec4_id=advadg,
-        style=solid,
-        weight=4];
     tunnel -> protected [arrowhead=normal,
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">hostname転送</FONT></TD></TR></TABLE>>,
         likec4_id=ozucx8,
         style=dashed,
         weight=6];
-    tunnel -> exceptions [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">hostname転送</FONT></TD></TR></TABLE>>,
-        likec4_id=vlxw4i,
-        minlen=1,
-        style=dashed,
-        weight=3];
     tunnel -> reventer [arrowhead=normal,
         color="#6366f1",
         fontcolor="#cbd0fd",
@@ -817,7 +800,6 @@ var e=e=>{switch(e){case`index`:return`digraph {
         fontcolor="#cbd0fd",
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">認証後の内部接続</FONT></TD></TR></TABLE>>,
         likec4_id="17gztw1",
-        minlen=1,
         style=dashed,
         weight=3];
     protected -> argo [arrowhead=normal,
@@ -835,6 +817,13 @@ var e=e=>{switch(e){case`index`:return`digraph {
         minlen=1,
         style=dashed,
         weight=2];
+    exceptions -> pve [arrowhead=normal,
+        color="#15803d",
+        fontcolor="#bbfcd3",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">独立LXC proxy / ready leader</FONT></TD></TR></TABLE>>,
+        likec4_id=ufnten,
+        minlen=1,
+        style=dashed];
 }
 `;case`delivery`:return`digraph {
     graph [TBbalance=min,
@@ -2946,8 +2935,9 @@ var e=e=>{switch(e){case`index`:return`digraph {
         fontcolor="#bbfcd3",
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">クライアント証明書</FONT></TD></TR></TABLE>>,
         likec4_id="1ligfsb",
-        minlen=1,
-        style=dashed];
+        minlen=0,
+        style=dashed,
+        weight=3];
     tunnel [color="#475569",
         fillcolor="#64748b",
         fontcolor="#f8fafc",
@@ -2957,49 +2947,6 @@ var e=e=>{switch(e){case`index`:return`digraph {
         likec4_level=0,
         margin="0.139,0.139",
         width=2.5];
-    mtls -> tunnel [arrowhead=normal,
-        color="#6366f1",
-        fontcolor="#cbd0fd",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">mTLS検証済みのAPIリクエスト</FONT></TD></TR></TABLE>>,
-        likec4_id=advadg,
-        style=solid,
-        weight=6];
-    proxy [color="#475569",
-        fillcolor="#64748b",
-        fontcolor="#f8fafc",
-        height=1.389,
-        label=<<FONT POINT-SIZE="20">HAProxy / :8080・:50051</FONT>>,
-        likec4_id="premises.home.loockit.proxy",
-        likec4_level=0,
-        margin="0.139,0.139",
-        width=2.5];
-    tunnel -> proxy [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">loockit-api / 8080 / mTLS</FONT></TD></TR></TABLE>>,
-        likec4_id="1i1mamm",
-        style=dashed];
-    proxy -> loockit_a [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">readyz / leaderのみ</FONT></TD></TR></TABLE>>,
-        likec4_id="176ivh6",
-        style=dashed,
-        weight=3];
-    proxy -> loockit_b [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">readyz / leaderのみ</FONT></TD></TR></TABLE>>,
-        likec4_id="176ivh5",
-        style=dashed,
-        weight=3];
-    loockit_a -> bluez [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">pve-x570 / read-only D-Bus</FONT></TD></TR></TABLE>>,
-        likec4_id=iicjgp,
-        style=dashed,
-        weight=4];
     api [color="#475569",
         fillcolor="#64748b",
         fontcolor="#f8fafc",
@@ -3009,12 +2956,35 @@ var e=e=>{switch(e){case`index`:return`digraph {
         likec4_level=0,
         margin="0.139,0.139",
         width=2.5];
-    loockit_a -> api [arrowhead=normal,
+    tunnel -> api [style=invis];
+    proxy [color="#475569",
+        fillcolor="#64748b",
+        fontcolor="#f8fafc",
+        height=1.389,
+        label=<<FONT POINT-SIZE="20">互換HAProxy / :8080・:50051</FONT>>,
+        likec4_id="premises.home.loockit.proxy",
+        likec4_level=0,
+        margin="0.139,0.139",
+        width=2.5];
+    proxy -> loockit_a [arrowhead=normal,
         color="#15803d",
         fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">Lease leader election</FONT></TD></TR></TABLE>>,
-        likec4_id="1a72uo8",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">readyz / leaderのみ</FONT></TD></TR></TABLE>>,
+        likec4_id="176ivh6",
         style=dashed];
+    proxy -> loockit_b [arrowhead=normal,
+        color="#15803d",
+        fontcolor="#bbfcd3",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">readyz / leaderのみ</FONT></TD></TR></TABLE>>,
+        likec4_id="176ivh5",
+        style=dashed];
+    loockit_a -> bluez [arrowhead=normal,
+        color="#15803d",
+        fontcolor="#bbfcd3",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">pve-x570 / read-only D-Bus</FONT></TD></TR></TABLE>>,
+        likec4_id=iicjgp,
+        style=dashed,
+        weight=4];
     loockit_b -> bluez [arrowhead=normal,
         color="#15803d",
         fontcolor="#bbfcd3",
@@ -3022,12 +2992,6 @@ var e=e=>{switch(e){case`index`:return`digraph {
         likec4_id="1ps4mne",
         style=dashed,
         weight=4];
-    loockit_b -> api [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">Lease leader election</FONT></TD></TR></TABLE>>,
-        likec4_id="164717v",
-        style=dashed];
 }
 `;case`recording`:return`digraph {
     graph [TBbalance=min,
@@ -4806,61 +4770,61 @@ var e=e=>{switch(e){case`index`:return`digraph {
 <!-- Generated by graphviz version 15.0.0 (0)
  -->
 <!-- Pages: 1 -->
-<svg width="2307pt" height="881pt"
- viewBox="0.00 0.00 2307.00 881.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(15.05 866.05)">
+<svg width="2330pt" height="1006pt"
+ viewBox="0.00 0.00 2330.00 1006.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(15.05 991.05)">
 <g id="clust1" class="cluster">
 <title>cluster_external</title>
-<polygon fill="#1c417d" stroke="#1c356c" points="371.57,-201 371.57,-768 1745.86,-768 1745.86,-201 371.57,-201"/>
+<polygon fill="#1c417d" stroke="#1c356c" points="371.57,-201 371.57,-768 1684.41,-768 1684.41,-201 371.57,-201"/>
 <text xml:space="preserve" text-anchor="start" x="379.57" y="-755.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">外部サービス / SAAS・公開サービス</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_edge</title>
-<polygon fill="#51321f" stroke="#3f2717" points="403.57,-233 403.57,-715 1713.86,-715 1713.86,-233 403.57,-233"/>
+<polygon fill="#51321f" stroke="#3f2717" points="403.57,-233 403.57,-715 1652.41,-715 1652.41,-233 403.57,-233"/>
 <text xml:space="preserve" text-anchor="start" x="411.57" y="-702.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#f9b27c" fill-opacity="0.701961">CLOUDFLARE</text>
 </g>
 <g id="clust3" class="cluster">
 <title>cluster_routes</title>
-<polygon fill="#3e4651" stroke="#2d333d" points="1371.54,-273 1371.54,-654 1673.86,-654 1673.86,-273 1371.54,-273"/>
-<text xml:space="preserve" text-anchor="start" x="1379.54" y="-641.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#cbd5e1" fill-opacity="0.701961">公開HOSTNAME / 設定から抽出</text>
+<polygon fill="#3e4651" stroke="#2d333d" points="1310.09,-273 1310.09,-654 1612.41,-654 1612.41,-273 1310.09,-273"/>
+<text xml:space="preserve" text-anchor="start" x="1318.09" y="-641.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#cbd5e1" fill-opacity="0.701961">公開HOSTNAME / 設定から抽出</text>
 </g>
 <g id="clust4" class="cluster">
 <title>cluster_consumers</title>
-<polygon fill="#3e4651" stroke="#2d333d" points="1400.7,-8 1400.7,-193 1644.7,-193 1644.7,-8 1400.7,-8"/>
-<text xml:space="preserve" text-anchor="start" x="1408.7" y="-180.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#cbd5e1" fill-opacity="0.701961">基盤の利用側 / 別リポジトリ</text>
+<polygon fill="#3e4651" stroke="#2d333d" points="1339.25,-8 1339.25,-193 1583.25,-193 1583.25,-8 1339.25,-8"/>
+<text xml:space="preserve" text-anchor="start" x="1347.25" y="-180.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#cbd5e1" fill-opacity="0.701961">基盤の利用側 / 別リポジトリ</text>
 </g>
 <g id="clust5" class="cluster">
 <title>cluster_premises</title>
-<polygon fill="#1a468d" stroke="#1c3979" points="1863.21,-184 1863.21,-843 2268.87,-843 2268.87,-184 1863.21,-184"/>
-<text xml:space="preserve" text-anchor="start" x="1871.21" y="-830.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">自宅</text>
+<polygon fill="#1a468d" stroke="#1c3979" points="1886.6,-309 1886.6,-968 2292.25,-968 2292.25,-309 1886.6,-309"/>
+<text xml:space="preserve" text-anchor="start" x="1894.6" y="-955.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">自宅</text>
 </g>
 <g id="clust6" class="cluster">
 <title>cluster_home</title>
-<polygon fill="#194b9e" stroke="#1b3d88" points="1944.04,-597 1944.04,-782 2188.04,-782 2188.04,-597 1944.04,-597"/>
-<text xml:space="preserve" text-anchor="start" x="1952.04" y="-769.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">HOME&#45;K8S（TALOS LINUX）</text>
+<polygon fill="#194b9e" stroke="#1b3d88" points="1967.43,-722 1967.43,-907 2211.43,-907 2211.43,-722 1967.43,-722"/>
+<text xml:space="preserve" text-anchor="start" x="1975.43" y="-894.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">HOME&#45;K8S（TALOS LINUX）</text>
 </g>
 <g id="clust7" class="cluster">
 <title>cluster_hardware</title>
-<polygon fill="#194b9e" stroke="#1b3d88" points="1944.04,-372 1944.04,-557 2188.04,-557 2188.04,-372 1944.04,-372"/>
-<text xml:space="preserve" text-anchor="start" x="1952.04" y="-544.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">物理・ネットワーク</text>
+<polygon fill="#194b9e" stroke="#1b3d88" points="1967.43,-497 1967.43,-682 2211.43,-682 2211.43,-497 1967.43,-497"/>
+<text xml:space="preserve" text-anchor="start" x="1975.43" y="-669.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#bfdbfe" fill-opacity="0.701961">物理・ネットワーク</text>
 </g>
 <!-- protected -->
 <g id="node1" class="node">
 <title>protected</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1633.86,-413 1411.54,-413 1411.54,-313 1633.86,-313 1633.86,-413"/>
-<text xml:space="preserve" text-anchor="start" x="1421.55" y="-355" font-family="Arial" font-size="20.00" fill="#f8fafc">Access保護のhostname</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1572.41,-593 1350.09,-593 1350.09,-493 1572.41,-493 1572.41,-593"/>
+<text xml:space="preserve" text-anchor="start" x="1360.1" y="-535" font-family="Arial" font-size="20.00" fill="#f8fafc">Access保護のhostname</text>
 </g>
 <!-- exceptions -->
 <g id="node2" class="node">
 <title>exceptions</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1617.17,-593 1428.23,-593 1428.23,-493 1617.17,-493 1617.17,-593"/>
-<text xml:space="preserve" text-anchor="start" x="1438.24" y="-535" font-family="Arial" font-size="20.00" fill="#f8fafc">例外 / mTLS専用API</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1555.72,-413 1366.78,-413 1366.78,-313 1555.72,-313 1555.72,-413"/>
+<text xml:space="preserve" text-anchor="start" x="1376.78" y="-355" font-family="Arial" font-size="20.00" fill="#f8fafc">例外 / mTLS専用API</text>
 </g>
 <!-- access -->
 <g id="node3" class="node">
 <title>access</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="758.13,-573 443.57,-573 443.57,-473 758.13,-473 758.13,-573"/>
-<text xml:space="preserve" text-anchor="start" x="453.58" y="-515" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Access / 共通の認証入口</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="758.13,-593 443.57,-593 443.57,-493 758.13,-493 758.13,-593"/>
+<text xml:space="preserve" text-anchor="start" x="453.58" y="-535" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Access / 共通の認証入口</text>
 </g>
 <!-- mtls -->
 <g id="node4" class="node">
@@ -4871,44 +4835,44 @@ var e=e=>{switch(e){case`index`:return`digraph {
 <!-- tunnel -->
 <g id="node5" class="node">
 <title>tunnel</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1220.72,-413 1040.72,-413 1040.72,-313 1220.72,-313 1220.72,-413"/>
-<text xml:space="preserve" text-anchor="start" x="1051.79" y="-355" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Tunnel</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1159.27,-593 979.27,-593 979.27,-493 1159.27,-493 1159.27,-593"/>
+<text xml:space="preserve" text-anchor="start" x="990.33" y="-535" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Tunnel</text>
 </g>
 <!-- reventer -->
 <g id="node6" class="node">
 <title>reventer</title>
-<polygon fill="#3b82f6" stroke="#2563eb" stroke-width="0" points="1612.7,-140 1432.7,-140 1432.7,-40 1612.7,-40 1612.7,-140"/>
-<text xml:space="preserve" text-anchor="start" x="1477.68" y="-82" font-family="Arial" font-size="20.00" fill="#eff6ff">Re:Venter</text>
+<polygon fill="#3b82f6" stroke="#2563eb" stroke-width="0" points="1551.25,-140 1371.25,-140 1371.25,-40 1551.25,-40 1551.25,-140"/>
+<text xml:space="preserve" text-anchor="start" x="1416.22" y="-82" font-family="Arial" font-size="20.00" fill="#eff6ff">Re:Venter</text>
 </g>
 <!-- argo -->
 <g id="node7" class="node">
 <title>argo</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2156.04,-729 1976.04,-729 1976.04,-629 2156.04,-629 2156.04,-729"/>
-<text xml:space="preserve" text-anchor="start" x="2013.8" y="-671" font-family="Arial" font-size="20.00" fill="#f8fafc">自宅ArgoCD</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2179.43,-854 1999.43,-854 1999.43,-754 2179.43,-754 2179.43,-854"/>
+<text xml:space="preserve" text-anchor="start" x="2037.19" y="-796" font-family="Arial" font-size="20.00" fill="#f8fafc">自宅ArgoCD</text>
 </g>
 <!-- network -->
 <g id="node8" class="node">
 <title>network</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2156.04,-504 1976.04,-504 1976.04,-404 2156.04,-404 2156.04,-504"/>
-<text xml:space="preserve" text-anchor="start" x="1999.36" y="-446" font-family="Arial" font-size="20.00" fill="#f8fafc">ネットワーク機器</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2179.43,-629 1999.43,-629 1999.43,-529 2179.43,-529 2179.43,-629"/>
+<text xml:space="preserve" text-anchor="start" x="2022.75" y="-571" font-family="Arial" font-size="20.00" fill="#f8fafc">ネットワーク機器</text>
 </g>
 <!-- pve -->
 <g id="node9" class="node">
 <title>pve</title>
-<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="2228.87,-324 1903.21,-324 1903.21,-224 2228.87,-224 2228.87,-324"/>
-<text xml:space="preserve" text-anchor="start" x="1913.22" y="-266" font-family="Arial" font-size="20.00" fill="#f8fafc">Proxmox VEクラスタ（2ノード構成）</text>
+<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="2252.25,-449 1926.6,-449 1926.6,-349 2252.25,-349 2252.25,-449"/>
+<text xml:space="preserve" text-anchor="start" x="1936.61" y="-391" font-family="Arial" font-size="20.00" fill="#f8fafc">Proxmox VEクラスタ（2ノード構成）</text>
 </g>
 <!-- user -->
 <g id="node10" class="node">
 <title>user</title>
-<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="180,-753 0,-753 0,-653 180,-653 180,-753"/>
-<text xml:space="preserve" text-anchor="start" x="65" y="-695" font-family="Arial" font-size="20.00" fill="#f8fafc">利用者</text>
+<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="180,-763 0,-763 0,-663 180,-663 180,-763"/>
+<text xml:space="preserve" text-anchor="start" x="65" y="-705" font-family="Arial" font-size="20.00" fill="#f8fafc">利用者</text>
 </g>
 <!-- operator -->
 <g id="node11" class="node">
 <title>operator</title>
-<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="180,-573 0,-573 0,-473 180,-473 180,-573"/>
-<text xml:space="preserve" text-anchor="start" x="65" y="-515" font-family="Arial" font-size="20.00" fill="#f8fafc">管理者</text>
+<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="180,-583 0,-583 0,-483 180,-483 180,-583"/>
+<text xml:space="preserve" text-anchor="start" x="65" y="-525" font-family="Arial" font-size="20.00" fill="#f8fafc">管理者</text>
 </g>
 <!-- client -->
 <g id="node12" class="node">
@@ -4917,84 +4881,76 @@ var e=e=>{switch(e){case`index`:return`digraph {
 <text xml:space="preserve" text-anchor="start" x="23.32" y="-335" font-family="Arial" font-size="20.00" fill="#f8fafc">専用クライアント</text>
 </g>
 <!-- protected&#45;&gt;argo -->
-<g id="edge10" class="edge">
+<g id="edge8" class="edge">
 <title>protected&#45;&gt;argo</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1633.78,-396.93C1671.11,-411.15 1711.92,-429.83 1745.86,-453 1777.2,-474.39 1832.79,-554.33 1863.21,-577 1894.86,-600.58 1932.77,-621.37 1967.14,-637.92"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1965.63,-640.11 1973.53,-640.96 1967.89,-635.37 1965.63,-640.11"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1753.86,-566.56 1753.86,-589.36 1853.21,-589.36 1853.21,-566.56 1753.86,-566.56"/>
-<text xml:space="preserve" text-anchor="start" x="1756.86" y="-572.36" font-family="Arial" font-size="14.00" fill="#cbd0fd">認証後の内部接続</text>
+<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1572.39,-588.91C1690.67,-638.21 1876.83,-715.8 1990.25,-763.08"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1988.92,-765.37 1996.85,-765.83 1990.94,-760.52 1988.92,-765.37"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1734.83,-712.13 1734.83,-734.93 1834.18,-734.93 1834.18,-712.13 1734.83,-712.13"/>
+<text xml:space="preserve" text-anchor="start" x="1737.83" y="-717.93" font-family="Arial" font-size="14.00" fill="#cbd0fd">認証後の内部接続</text>
 </g>
 <!-- protected&#45;&gt;network -->
-<g id="edge11" class="edge">
+<g id="edge9" class="edge">
 <title>protected&#45;&gt;network</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1633.58,-381.47C1730.98,-397.84 1871.97,-421.54 1965.97,-437.35"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1965.52,-439.93 1973.35,-438.59 1966.39,-434.75 1965.52,-439.93"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1753.86,-416.65 1753.86,-439.45 1853.21,-439.45 1853.21,-416.65 1753.86,-416.65"/>
-<text xml:space="preserve" text-anchor="start" x="1756.86" y="-422.45" font-family="Arial" font-size="14.00" fill="#cbd0fd">認証後の内部接続</text>
+<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1572.39,-549.33C1690.31,-556.11 1875.71,-566.77 1989.23,-573.3"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1988.98,-575.91 1996.62,-573.72 1989.29,-570.67 1988.98,-575.91"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1734.83,-566.33 1734.83,-589.13 1834.18,-589.13 1834.18,-566.33 1734.83,-566.33"/>
+<text xml:space="preserve" text-anchor="start" x="1737.83" y="-572.13" font-family="Arial" font-size="14.00" fill="#cbd0fd">認証後の内部接続</text>
 </g>
 <!-- protected&#45;&gt;pve -->
-<g id="edge9" class="edge">
+<g id="edge7" class="edge">
 <title>protected&#45;&gt;pve</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1633.74,-329.25C1671.51,-318.79 1714.24,-308.2 1753.86,-301.2 1798.67,-293.29 1847.53,-287.64 1892.98,-283.62"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1892.97,-286.26 1900.21,-283 1892.52,-281.03 1892.97,-286.26"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1753.86,-301.2 1753.86,-324 1853.21,-324 1853.21,-301.2 1753.86,-301.2"/>
-<text xml:space="preserve" text-anchor="start" x="1756.86" y="-307" font-family="Arial" font-size="14.00" fill="#cbd0fd">認証後の内部接続</text>
+<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1572.39,-517.67C1667.59,-495.78 1806.78,-463.77 1916.62,-438.51"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1917.14,-441.08 1923.86,-436.84 1915.97,-435.97 1917.14,-441.08"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1734.83,-488.13 1734.83,-510.93 1834.18,-510.93 1834.18,-488.13 1734.83,-488.13"/>
+<text xml:space="preserve" text-anchor="start" x="1737.83" y="-493.93" font-family="Arial" font-size="14.00" fill="#cbd0fd">認証後の内部接続</text>
+</g>
+<!-- exceptions&#45;&gt;pve -->
+<g id="edge10" class="edge">
+<title>exceptions&#45;&gt;pve</title>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1555.54,-352.48C1639.73,-344.81 1766.83,-337.72 1876.6,-350.2 1889.67,-351.69 1903.11,-353.67 1916.58,-356"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1916.05,-358.57 1923.9,-357.3 1916.97,-353.4 1916.05,-358.57"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1692.41,-350.2 1692.41,-373 1876.6,-373 1876.6,-350.2 1692.41,-350.2"/>
+<text xml:space="preserve" text-anchor="start" x="1695.41" y="-356" font-family="Arial" font-size="14.00" fill="#bbfcd3">独立LXC proxy / ready leader</text>
 </g>
 <!-- access&#45;&gt;tunnel -->
 <g id="edge4" class="edge">
 <title>access&#45;&gt;tunnel</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" d="M758.09,-475.64C846.57,-448.82 954.55,-416.1 1031.26,-392.84"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1031.62,-395.48 1038.03,-390.79 1030.1,-390.45 1031.62,-395.48"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="838.86,-457.33 838.86,-480.13 959.99,-480.13 959.99,-457.33 838.86,-457.33"/>
-<text xml:space="preserve" text-anchor="start" x="841.86" y="-463.13" font-family="Arial" font-size="14.00" fill="#cbd0fd">Access認証後の転送</text>
-</g>
-<!-- mtls&#45;&gt;tunnel -->
-<g id="edge5" class="edge">
-<title>mtls&#45;&gt;tunnel</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" d="M703.63,-346.86C797.91,-350.43 937.27,-355.71 1030.67,-359.25"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1030.36,-361.86 1037.95,-359.52 1030.56,-356.62 1030.36,-361.86"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="808.13,-357.64 808.13,-380.44 990.72,-380.44 990.72,-357.64 808.13,-357.64"/>
-<text xml:space="preserve" text-anchor="start" x="811.13" y="-363.44" font-family="Arial" font-size="14.00" fill="#cbd0fd">mTLS検証済みのAPIリクエスト</text>
+<path fill="none" stroke="#6366f1" stroke-width="2" d="M757.81,-543C827.53,-543 907.63,-543 969.01,-543"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="968.94,-545.63 976.44,-543 968.94,-540.38 968.94,-545.63"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="808.13,-543 808.13,-565.8 929.27,-565.8 929.27,-543 808.13,-543"/>
+<text xml:space="preserve" text-anchor="start" x="811.13" y="-548.8" font-family="Arial" font-size="14.00" fill="#cbd0fd">Access認証後の転送</text>
 </g>
 <!-- tunnel&#45;&gt;protected -->
-<g id="edge6" class="edge">
+<g id="edge5" class="edge">
 <title>tunnel&#45;&gt;protected</title>
-<path fill="none" stroke="#8d8d8d" stroke-width="2" stroke-dasharray="5,2" d="M1220.7,-363C1274.25,-363 1343.12,-363 1401.47,-363"/>
-<polygon fill="#8d8d8d" stroke="#8d8d8d" stroke-width="2" points="1401.33,-365.63 1408.83,-363 1401.33,-360.38 1401.33,-365.63"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1270.72,-363 1270.72,-385.8 1361.54,-385.8 1361.54,-363 1270.72,-363"/>
-<text xml:space="preserve" text-anchor="start" x="1273.72" y="-368.8" font-family="Arial" font-size="14.00" fill="#c9c9c9">hostname転送</text>
-</g>
-<!-- tunnel&#45;&gt;exceptions -->
-<g id="edge7" class="edge">
-<title>tunnel&#45;&gt;exceptions</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1220.7,-404.07C1279.72,-431.31 1357.35,-467.14 1418.99,-495.59"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1417.69,-497.88 1425.6,-498.64 1419.89,-493.12 1417.69,-497.88"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1270.72,-463.78 1270.72,-486.58 1361.54,-486.58 1361.54,-463.78 1270.72,-463.78"/>
-<text xml:space="preserve" text-anchor="start" x="1273.72" y="-469.58" font-family="Arial" font-size="14.00" fill="#bbfcd3">hostname転送</text>
+<path fill="none" stroke="#8d8d8d" stroke-width="2" stroke-dasharray="5,2" d="M1159.25,-543C1212.8,-543 1281.67,-543 1340.01,-543"/>
+<polygon fill="#8d8d8d" stroke="#8d8d8d" stroke-width="2" points="1339.88,-545.63 1347.38,-543 1339.88,-540.38 1339.88,-545.63"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1209.27,-543 1209.27,-565.8 1300.09,-565.8 1300.09,-543 1209.27,-543"/>
+<text xml:space="preserve" text-anchor="start" x="1212.27" y="-548.8" font-family="Arial" font-size="14.00" fill="#c9c9c9">hostname転送</text>
 </g>
 <!-- tunnel&#45;&gt;reventer -->
-<g id="edge8" class="edge">
+<g id="edge6" class="edge">
 <title>tunnel&#45;&gt;reventer</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1202.8,-313.25C1270.35,-265.95 1371.79,-194.94 1442.05,-145.76"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1443.34,-148.06 1447.98,-141.61 1440.33,-143.76 1443.34,-148.06"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1270.72,-258.98 1270.72,-281.78 1361.54,-281.78 1361.54,-258.98 1270.72,-258.98"/>
-<text xml:space="preserve" text-anchor="start" x="1273.72" y="-264.78" font-family="Arial" font-size="14.00" fill="#cbd0fd">hostname転送</text>
+<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M1110.21,-493.07C1157.18,-434.74 1237.9,-335.68 1310.09,-253 1341.23,-217.33 1377.13,-178.28 1406.02,-147.35"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="1407.93,-149.15 1411.14,-141.88 1404.1,-145.56 1407.93,-149.15"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1209.27,-371.2 1209.27,-394 1300.09,-394 1300.09,-371.2 1209.27,-371.2"/>
+<text xml:space="preserve" text-anchor="start" x="1212.27" y="-377" font-family="Arial" font-size="14.00" fill="#cbd0fd">hostname転送</text>
 </g>
 <!-- user&#45;&gt;access -->
 <g id="edge1" class="edge">
 <title>user&#45;&gt;access</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M179.93,-671.54C254.07,-645.32 361.33,-607.37 448.89,-576.4"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="449.6,-578.93 455.79,-573.96 447.85,-573.99 449.6,-578.93"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="230,-652.28 230,-675.08 363.57,-675.08 363.57,-652.28 230,-652.28"/>
-<text xml:space="preserve" text-anchor="start" x="233" y="-658.08" font-family="Arial" font-size="14.00" fill="#bbfcd3">HTTPS / 利用時の認証</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M179.93,-683.29C251.73,-659.3 354.6,-624.94 440.54,-596.22"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="441.25,-598.75 447.53,-593.89 439.59,-593.77 441.25,-598.75"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="230,-665.1 230,-687.9 363.57,-687.9 363.57,-665.1 230,-665.1"/>
+<text xml:space="preserve" text-anchor="start" x="233" y="-670.9" font-family="Arial" font-size="14.00" fill="#bbfcd3">HTTPS / 利用時の認証</text>
 </g>
 <!-- operator&#45;&gt;access -->
 <g id="edge2" class="edge">
 <title>operator&#45;&gt;access</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M179.93,-523C249.73,-523 348.9,-523 433.34,-523"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="433.3,-525.63 440.8,-523 433.3,-520.38 433.3,-525.63"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="230,-523 230,-545.8 363.57,-545.8 363.57,-523 230,-523"/>
-<text xml:space="preserve" text-anchor="start" x="233" y="-528.8" font-family="Arial" font-size="14.00" fill="#cbd0fd">HTTPS / 管理時の認証</text>
+<path fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,2" d="M179.93,-534.75C249.73,-536.12 348.9,-538.07 433.34,-539.73"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="433.25,-542.35 440.8,-539.87 433.35,-537.1 433.25,-542.35"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="230,-538.3 230,-561.1 363.57,-561.1 363.57,-538.3 230,-538.3"/>
+<text xml:space="preserve" text-anchor="start" x="233" y="-544.1" font-family="Arial" font-size="14.00" fill="#cbd0fd">HTTPS / 管理時の認証</text>
 </g>
 <!-- client&#45;&gt;mtls -->
 <g id="edge3" class="edge">
@@ -6294,133 +6250,102 @@ var e=e=>{switch(e){case`index`:return`digraph {
 <!-- Generated by graphviz version 15.0.0 (0)
  -->
 <!-- Pages: 1 -->
-<svg width="2449pt" height="529pt"
- viewBox="0.00 0.00 2449.00 529.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(15.05 514.05)">
+<svg width="1292pt" height="744pt"
+ viewBox="0.00 0.00 1292.00 744.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(15.05 729.05)">
 <g id="clust1" class="cluster">
 <title>cluster_pve</title>
-<polygon fill="#2c4e32" stroke="#1e3524" points="1603.5,-140 1603.5,-491 2410.41,-491 2410.41,-140 1603.5,-140"/>
-<text xml:space="preserve" text-anchor="start" x="1611.5" y="-478.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#c2f0c2" fill-opacity="0.701961">PROXMOX VEクラスタ（2ノード構成）</text>
+<polygon fill="#2c4e32" stroke="#1e3524" points="436.77,-8 436.77,-359 1254.24,-359 1254.24,-8 436.77,-8"/>
+<text xml:space="preserve" text-anchor="start" x="444.77" y="-346.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#c2f0c2" fill-opacity="0.701961">PROXMOX VEクラスタ（2ノード構成）</text>
 </g>
 <!-- loockit_a -->
 <g id="node1" class="node">
 <title>loockit_a</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1853.63,-430.01 1643.5,-430.01 1643.5,-330 1853.63,-330 1853.63,-430.01"/>
-<text xml:space="preserve" text-anchor="start" x="1653.51" y="-372" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 01 / CT12902</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="686.9,-298 476.77,-298 476.77,-198 686.9,-198 686.9,-298"/>
+<text xml:space="preserve" text-anchor="start" x="486.77" y="-240" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 01 / CT12902</text>
 </g>
 <!-- loockit_b -->
 <g id="node2" class="node">
 <title>loockit_b</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1853.63,-280.01 1643.5,-280.01 1643.5,-180 1853.63,-180 1853.63,-280.01"/>
-<text xml:space="preserve" text-anchor="start" x="1653.51" y="-222" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 02 / CT12903</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="686.9,-148 476.77,-148 476.77,-48 686.9,-48 686.9,-148"/>
+<text xml:space="preserve" text-anchor="start" x="486.77" y="-90" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 02 / CT12903</text>
 </g>
 <!-- bluez -->
 <g id="node3" class="node">
 <title>bluez</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2370.41,-337.01 2102.49,-337.01 2102.49,-237 2370.41,-237 2370.41,-337.01"/>
-<text xml:space="preserve" text-anchor="start" x="2112.5" y="-279" font-family="Arial" font-size="20.00" fill="#f8fafc">BlueZ / Bluetooth（2ノード）</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1214.24,-205 946.33,-205 946.33,-105 1214.24,-105 1214.24,-205"/>
+<text xml:space="preserve" text-anchor="start" x="956.34" y="-147" font-family="Arial" font-size="20.00" fill="#f8fafc">BlueZ / Bluetooth（2ノード）</text>
 </g>
 <!-- client -->
 <g id="node4" class="node">
 <title>client</title>
-<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="180,-355.01 0,-355.01 0,-255 180,-255 180,-355.01"/>
-<text xml:space="preserve" text-anchor="start" x="23.32" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">専用クライアント</text>
+<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="228.41,-564 48.41,-564 48.41,-464 228.41,-464 228.41,-564"/>
+<text xml:space="preserve" text-anchor="start" x="71.73" y="-506" font-family="Arial" font-size="20.00" fill="#f8fafc">専用クライアント</text>
 </g>
 <!-- mtls -->
 <g id="node5" class="node">
 <title>mtls</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="556.63,-355.01 351.02,-355.01 351.02,-255 556.63,-255 556.63,-355.01"/>
-<text xml:space="preserve" text-anchor="start" x="361.03" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">mTLS / 専用APIの例外</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="241.22,-391 35.61,-391 35.61,-291 241.22,-291 241.22,-391"/>
+<text xml:space="preserve" text-anchor="start" x="45.61" y="-333" font-family="Arial" font-size="20.00" fill="#f8fafc">mTLS / 専用APIの例外</text>
 </g>
 <!-- tunnel -->
 <g id="node6" class="node">
 <title>tunnel</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="979.22,-355.01 799.22,-355.01 799.22,-255 979.22,-255 979.22,-355.01"/>
-<text xml:space="preserve" text-anchor="start" x="810.29" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Tunnel</text>
-</g>
-<!-- proxy -->
-<g id="node7" class="node">
-<title>proxy</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1443.56,-355.01 1200.07,-355.01 1200.07,-255 1443.56,-255 1443.56,-355.01"/>
-<text xml:space="preserve" text-anchor="start" x="1210.08" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">HAProxy / :8080・:50051</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="228.41,-714 48.41,-714 48.41,-614 228.41,-614 228.41,-714"/>
+<text xml:space="preserve" text-anchor="start" x="59.48" y="-656" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Tunnel</text>
 </g>
 <!-- api -->
-<g id="node8" class="node">
+<g id="node7" class="node">
 <title>api</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2352.09,-100.01 2120.82,-100.01 2120.82,0 2352.09,0 2352.09,-100.01"/>
-<text xml:space="preserve" text-anchor="start" x="2130.83" y="-42" font-family="Arial" font-size="20.00" fill="#f8fafc">Kubernetes API / Lease</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="697.47,-714 466.2,-714 466.2,-614 697.47,-614 697.47,-714"/>
+<text xml:space="preserve" text-anchor="start" x="476.21" y="-656" font-family="Arial" font-size="20.00" fill="#f8fafc">Kubernetes API / Lease</text>
+</g>
+<!-- proxy -->
+<g id="node8" class="node">
+<title>proxy</title>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="276.82,-241 0,-241 0,-141 276.82,-141 276.82,-241"/>
+<text xml:space="preserve" text-anchor="start" x="10.01" y="-183" font-family="Arial" font-size="20.00" fill="#f8fafc">互換HAProxy / :8080・:50051</text>
 </g>
 <!-- loockit_a&#45;&gt;bluez -->
-<g id="edge6" class="edge">
+<g id="edge5" class="edge">
 <title>loockit_a&#45;&gt;bluez</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1853.5,-360.11C1923.14,-346.78 2015.74,-329.06 2092.32,-314.4"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="2092.69,-317 2099.56,-313.01 2091.7,-311.85 2092.69,-317"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1889.86,-352.52 1889.86,-375.32 2066.27,-375.32 2066.27,-352.52 1889.86,-352.52"/>
-<text xml:space="preserve" text-anchor="start" x="1892.86" y="-358.32" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;x570 / read&#45;only D&#45;Bus</text>
-</g>
-<!-- loockit_a&#45;&gt;api -->
-<g id="edge7" class="edge">
-<title>loockit_a&#45;&gt;api</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1830.72,-330.08C1839.26,-322.46 1847.17,-314.07 1853.63,-305 1880.51,-267.29 1852.97,-239.91 1883.63,-205.2 1915.53,-169.1 2023.31,-124.37 2111.25,-92.22"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="2112.05,-94.72 2118.21,-89.69 2110.26,-89.79 2112.05,-94.72"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1908.52,-205.2 1908.52,-228 2047.61,-228 2047.61,-205.2 1908.52,-205.2"/>
-<text xml:space="preserve" text-anchor="start" x="1911.52" y="-211" font-family="Arial" font-size="14.00" fill="#bbfcd3">Lease leader election</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M686.6,-228.56C758.98,-215 856.48,-196.74 936.22,-181.8"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="936.48,-184.42 943.37,-180.46 935.52,-179.26 936.48,-184.42"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="733.69,-220.52 733.69,-243.32 910.1,-243.32 910.1,-220.52 733.69,-220.52"/>
+<text xml:space="preserve" text-anchor="start" x="736.69" y="-226.32" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;x570 / read&#45;only D&#45;Bus</text>
 </g>
 <!-- loockit_b&#45;&gt;bluez -->
-<g id="edge8" class="edge">
+<g id="edge6" class="edge">
 <title>loockit_b&#45;&gt;bluez</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1853.42,-237.3C1916.84,-242.28 1999.51,-249.69 2072.49,-259.2 2079.09,-260.06 2085.83,-261 2092.63,-261.98"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="2091.83,-264.51 2099.63,-263.01 2092.6,-259.32 2091.83,-264.51"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1883.63,-259.2 1883.63,-282 2072.49,-282 2072.49,-259.2 1883.63,-259.2"/>
-<text xml:space="preserve" text-anchor="start" x="1886.63" y="-265" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;b550m / read&#45;only D&#45;Bus</text>
-</g>
-<!-- loockit_b&#45;&gt;api -->
-<g id="edge9" class="edge">
-<title>loockit_b&#45;&gt;api</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1773.69,-180.11C1796.07,-140.03 1833.47,-86.41 1883.63,-61.2 1953.11,-26.29 2040.44,-23.31 2110.71,-29.15"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="2110.23,-31.75 2117.93,-29.81 2110.7,-26.52 2110.23,-31.75"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1908.52,-61.2 1908.52,-84 2047.61,-84 2047.61,-61.2 1908.52,-61.2"/>
-<text xml:space="preserve" text-anchor="start" x="1911.52" y="-67" font-family="Arial" font-size="14.00" fill="#bbfcd3">Lease leader election</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M686.72,-104.9C752.64,-109.83 839.66,-117.32 916.33,-127.2 922.93,-128.05 929.67,-128.97 936.47,-129.95"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="935.67,-132.49 943.47,-130.98 936.43,-127.29 935.67,-132.49"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="727.47,-127.2 727.47,-150 916.33,-150 916.33,-127.2 727.47,-127.2"/>
+<text xml:space="preserve" text-anchor="start" x="730.47" y="-133" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;b550m / read&#45;only D&#45;Bus</text>
 </g>
 <!-- client&#45;&gt;mtls -->
 <g id="edge1" class="edge">
 <title>client&#45;&gt;mtls</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M179.98,-305C228.53,-305 289.11,-305 340.85,-305"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="340.55,-307.63 348.05,-305 340.55,-302.38 340.55,-307.63"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="210,-305 210,-327.8 321.02,-327.8 321.02,-305 210,-305"/>
-<text xml:space="preserve" text-anchor="start" x="213" y="-310.8" font-family="Arial" font-size="14.00" fill="#bbfcd3">クライアント証明書</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M138.41,-464.12C138.41,-444.35 138.41,-421.46 138.41,-400.82"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="141.04,-401.1 138.41,-393.6 135.79,-401.1 141.04,-401.1"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="68.5,-416.1 68.5,-438.9 179.52,-438.9 179.52,-416.1 68.5,-416.1"/>
+<text xml:space="preserve" text-anchor="start" x="71.5" y="-421.9" font-family="Arial" font-size="14.00" fill="#bbfcd3">クライアント証明書</text>
 </g>
-<!-- mtls&#45;&gt;tunnel -->
-<g id="edge2" class="edge">
-<title>mtls&#45;&gt;tunnel</title>
-<path fill="none" stroke="#6366f1" stroke-width="2" d="M556.44,-305C626.67,-305 719.61,-305 789.26,-305"/>
-<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="788.84,-307.63 796.34,-305 788.84,-302.38 788.84,-307.63"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="586.63,-305 586.63,-327.8 769.22,-327.8 769.22,-305 586.63,-305"/>
-<text xml:space="preserve" text-anchor="start" x="589.63" y="-310.8" font-family="Arial" font-size="14.00" fill="#cbd0fd">mTLS検証済みのAPIリクエスト</text>
-</g>
-<!-- tunnel&#45;&gt;proxy -->
-<g id="edge3" class="edge">
-<title>tunnel&#45;&gt;proxy</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M979.18,-305C1039.97,-305 1121.54,-305 1189.74,-305"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1189.6,-307.63 1197.1,-305 1189.6,-302.38 1189.6,-307.63"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1009.22,-305 1009.22,-327.8 1170.07,-327.8 1170.07,-305 1009.22,-305"/>
-<text xml:space="preserve" text-anchor="start" x="1012.22" y="-310.8" font-family="Arial" font-size="14.00" fill="#bbfcd3">loockit&#45;api / 8080 / mTLS</text>
-</g>
+<!-- tunnel&#45;&gt;api -->
 <!-- proxy&#45;&gt;loockit_a -->
-<g id="edge4" class="edge">
+<g id="edge3" class="edge">
 <title>proxy&#45;&gt;loockit_a</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1443.39,-326.3C1503.1,-336.84 1574.78,-349.49 1633.56,-359.87"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1632.81,-362.41 1640.65,-361.13 1633.72,-357.24 1632.81,-362.41"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1473.56,-351.43 1473.56,-374.23 1595.5,-374.23 1595.5,-351.43 1473.56,-351.43"/>
-<text xml:space="preserve" text-anchor="start" x="1476.56" y="-357.23" font-family="Arial" font-size="14.00" fill="#bbfcd3">readyz / leaderのみ</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M276.66,-208.72C337.66,-216.6 408.64,-225.76 466.68,-233.26"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="466.21,-235.85 473.99,-234.2 466.88,-230.64 466.21,-235.85"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="306.82,-227.94 306.82,-250.74 428.77,-250.74 428.77,-227.94 306.82,-227.94"/>
+<text xml:space="preserve" text-anchor="start" x="309.82" y="-233.74" font-family="Arial" font-size="14.00" fill="#bbfcd3">readyz / leaderのみ</text>
 </g>
 <!-- proxy&#45;&gt;loockit_b -->
-<g id="edge5" class="edge">
+<g id="edge4" class="edge">
 <title>proxy&#45;&gt;loockit_b</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1443.39,-283.71C1503.1,-273.17 1574.78,-260.51 1633.56,-250.13"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1633.72,-252.77 1640.65,-248.88 1632.81,-247.6 1633.72,-252.77"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1473.56,-276.43 1473.56,-299.23 1595.5,-299.23 1595.5,-276.43 1473.56,-276.43"/>
-<text xml:space="preserve" text-anchor="start" x="1476.56" y="-282.23" font-family="Arial" font-size="14.00" fill="#bbfcd3">readyz / leaderのみ</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M276.66,-162.08C337.79,-149.21 408.93,-134.22 467.04,-121.97"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="467.23,-124.62 474.03,-120.5 466.15,-119.48 467.23,-124.62"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="306.82,-155.56 306.82,-178.36 428.77,-178.36 428.77,-155.56 306.82,-155.56"/>
+<text xml:space="preserve" text-anchor="start" x="309.82" y="-161.36" font-family="Arial" font-size="14.00" fill="#bbfcd3">readyz / leaderのみ</text>
 </g>
 </g>
 </svg>

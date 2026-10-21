@@ -237,7 +237,7 @@ rectangle "home-k8s（Talos Linux）" <<PremisesHome>> as PremisesHome {
   rectangle "==内部DNS / MetalLB\\n\\nmiutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。" <<PremisesHomeDns>> as PremisesHomeDns
   rectangle "==Nextcloud\\n\\nファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。" <<PremisesHomeNextcloud>> as PremisesHomeNextcloud
   rectangle "==録画・配信 / EPGStation・TNLaStation\\n\\nEPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。" <<PremisesHomeRecording>> as PremisesHomeRecording
-  rectangle "==Loockit / BLEスマートロック\\n\\nKubernetesのHAProxyが2台のLXCのreadyzを監視しactiveへ転送。APIはmTLS、実機のBLE操作はLXC/BlueZが担当。" <<PremisesHomeLoockit>> as PremisesHomeLoockit
+  rectangle "==Loockit / BLEスマートロック\\n\\n公開RESTは専用TunnelとLXC内HAProxyがactiveへ転送。BLE選出はDurable Object。APIはmTLS、Kubernetes ServiceはLAN互換用。" <<PremisesHomeLoockit>> as PremisesHomeLoockit
   rectangle "==Coupon Manager\\n\\nWeb → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。" <<PremisesHomeCoupon_manager>> as PremisesHomeCoupon_manager
   rectangle "==Wake-on-LAN\\n\\napp-gptwol。LANにMagic Packetを送信して対象PCを起動する。" <<PremisesHomeWol>> as PremisesHomeWol
   rectangle "==DB / アプリ共有基盤" <<PremisesHomeDatabases>> as PremisesHomeDatabases
@@ -559,17 +559,17 @@ skinparam person<<Client>>{
   FontColor #f8fafc
   BorderColor #2d5d39
 }
-skinparam rectangle<<ExternalEdgeMtls>>{
-  BackgroundColor #64748b
-  FontColor #f8fafc
-  BorderColor #475569
-}
 skinparam rectangle<<ExternalEdgeTunnel>>{
   BackgroundColor #64748b
   FontColor #f8fafc
   BorderColor #475569
 }
 skinparam rectangle<<PremisesHomeLoockitProxy>>{
+  BackgroundColor #64748b
+  FontColor #f8fafc
+  BorderColor #475569
+}
+skinparam rectangle<<ExternalEdgeMtls>>{
   BackgroundColor #64748b
   FontColor #f8fafc
   BorderColor #475569
@@ -595,9 +595,9 @@ skinparam rectangle<<PremisesHomePlatformApi>>{
   BorderColor #475569
 }
 person "==専用クライアント" <<Client>> as Client
-rectangle "==mTLS / 専用APIの例外\\n\\nloockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。" <<ExternalEdgeMtls>> as ExternalEdgeMtls
 rectangle "==Cloudflare Tunnel\\n\\n自宅基盤のcloudflaredが外向き接続を確立。公開hostnameのHTTPを内部Serviceへ転送する。" <<ExternalEdgeTunnel>> as ExternalEdgeTunnel
-rectangle "==HAProxy / :8080・:50051" <<PremisesHomeLoockitProxy>> as PremisesHomeLoockitProxy
+rectangle "==互換HAProxy / :8080・:50051" <<PremisesHomeLoockitProxy>> as PremisesHomeLoockitProxy
+rectangle "==mTLS / 専用APIの例外\\n\\nloockit-apiのみ。指定クライアント証明書・操作パスの制限。Accessによるブラウザ認証とは別。" <<ExternalEdgeMtls>> as ExternalEdgeMtls
 rectangle "Proxmox VEクラスタ（2ノード構成）" <<PremisesPve>> as PremisesPve {
   skinparam RectangleBorderColor<<PremisesPve>> #428a4f
   skinparam RectangleFontColor<<PremisesPve>> #428a4f
@@ -610,14 +610,10 @@ rectangle "Proxmox VEクラスタ（2ノード構成）" <<PremisesPve>> as Prem
 rectangle "==Kubernetes API / Lease" <<PremisesHomePlatformApi>> as PremisesHomePlatformApi
 
 Client .[#15803d,thickness=2].> ExternalEdgeMtls : <color:#15803d>クライアント証明書
-ExternalEdgeMtls .[#6366f1,thickness=2].> ExternalEdgeTunnel : <color:#6366f1>mTLS検証済みのAPIリクエスト
-ExternalEdgeTunnel .[#15803d,thickness=2].> PremisesHomeLoockitProxy : <color:#15803d>loockit-api / 8080 / mTLS
 PremisesHomeLoockitProxy .[#15803d,thickness=2].> PremisesPveLoockit_a : <color:#15803d>readyz / leaderのみ
 PremisesHomeLoockitProxy .[#15803d,thickness=2].> PremisesPveLoockit_b : <color:#15803d>readyz / leaderのみ
 PremisesPveLoockit_a .[#15803d,thickness=2].> PremisesPveBluez : <color:#15803d>pve-x570 / read-only D-Bus
 PremisesPveLoockit_b .[#15803d,thickness=2].> PremisesPveBluez : <color:#15803d>pve-b550m / read-only D-Bus
-PremisesPveLoockit_a .[#15803d,thickness=2].> PremisesHomePlatformApi : <color:#15803d>Lease leader election
-PremisesPveLoockit_b .[#15803d,thickness=2].> PremisesHomePlatformApi : <color:#15803d>Lease leader election
 @enduml
 `;case`nfs`:return`@startuml
 title "nas-01・nas-02"
@@ -1936,10 +1932,9 @@ User .[#15803d,thickness=2].> ExternalEdgeAccess : <color:#15803d>HTTPS / 利用
 Operator .[#6366f1,thickness=2].> ExternalEdgeAccess : <color:#6366f1>HTTPS / 管理時の認証
 Client .[#15803d,thickness=2].> ExternalEdgeMtls : <color:#15803d>クライアント証明書
 ExternalEdgeAccess .[#6366f1,thickness=2].> ExternalEdgeTunnel : <color:#6366f1>Access認証後の転送
-ExternalEdgeMtls .[#6366f1,thickness=2].> ExternalEdgeTunnel : <color:#6366f1>mTLS検証済みのAPIリクエスト
 ExternalEdgeTunnel .[#8D8D8D,thickness=2].> ExternalEdgeRoutesProtected : <color:#8D8D8D>hostname転送
-ExternalEdgeTunnel .[#15803d,thickness=2].> ExternalEdgeRoutesExceptions : <color:#15803d>hostname転送
 ExternalEdgeRoutesProtected .[#6366f1,thickness=2].> PremisesPve : <color:#6366f1>認証後の内部接続
+ExternalEdgeRoutesExceptions .[#15803d,thickness=2].> PremisesPve : <color:#15803d>独立LXC proxy / ready leader
 ExternalEdgeRoutesProtected .[#6366f1,thickness=2].> PremisesHomeManagementArgo : <color:#6366f1>認証後の内部接続
 ExternalEdgeTunnel .[#6366f1,thickness=2].> ConsumersReventer : <color:#6366f1>hostname転送
 ExternalEdgeRoutesProtected .[#6366f1,thickness=2].> PremisesHardwareNetwork : <color:#6366f1>認証後の内部接続

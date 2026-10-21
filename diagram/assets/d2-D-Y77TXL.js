@@ -285,14 +285,14 @@ Client: {
   label: "専用クライアント"
   shape: c4-person
 }
-ExternalEdgeMtls: {
-  label: "mTLS / 専用APIの例外"
-}
 ExternalEdgeTunnel: {
   label: "Cloudflare Tunnel"
 }
 PremisesHomeLoockitProxy: {
-  label: "HAProxy / :8080・:50051"
+  label: "互換HAProxy / :8080・:50051"
+}
+ExternalEdgeMtls: {
+  label: "mTLS / 専用APIの例外"
 }
 PremisesPve: {
   label: "Proxmox VEクラスタ（2ノード構成）"
@@ -312,14 +312,10 @@ PremisesHomePlatformApi: {
 }
 
 Client -> ExternalEdgeMtls: "クライアント証明書"
-ExternalEdgeMtls -> ExternalEdgeTunnel: "mTLS検証済みのAPIリクエスト"
-ExternalEdgeTunnel -> PremisesHomeLoockitProxy: "loockit-api / 8080 / mTLS"
 PremisesHomeLoockitProxy -> PremisesPve.Loockit_a: "readyz / leaderのみ"
 PremisesHomeLoockitProxy -> PremisesPve.Loockit_b: "readyz / leaderのみ"
 PremisesPve.Loockit_a -> PremisesPve.Bluez: "pve-x570 / read-only D-Bus"
 PremisesPve.Loockit_b -> PremisesPve.Bluez: "pve-b550m / read-only D-Bus"
-PremisesPve.Loockit_a -> PremisesHomePlatformApi: "Lease leader election"
-PremisesPve.Loockit_b -> PremisesHomePlatformApi: "Lease leader election"
 `;case`nfs`:return`direction: right
 
 PremisesHome: {
@@ -1038,10 +1034,9 @@ User -> External.Edge.Access: "HTTPS / 利用時の認証"
 Operator -> External.Edge.Access: "HTTPS / 管理時の認証"
 Client -> External.Edge.Mtls: "クライアント証明書"
 External.Edge.Access -> External.Edge.Tunnel: "Access認証後の転送"
-External.Edge.Mtls -> External.Edge.Tunnel: "mTLS検証済みのAPIリクエスト"
 External.Edge.Tunnel -> External.Edge.Routes.Protected: "hostname転送"
-External.Edge.Tunnel -> External.Edge.Routes.Exceptions: "hostname転送"
 External.Edge.Routes.Protected -> Premises.Pve: "認証後の内部接続"
+External.Edge.Routes.Exceptions -> Premises.Pve: "独立LXC proxy / ready leader"
 External.Edge.Routes.Protected -> Premises.Home.ManagementArgo: "認証後の内部接続"
 External.Edge.Tunnel -> Consumers.Reventer: "hostname転送"
 External.Edge.Routes.Protected -> Premises.Hardware.Network: "認証後の内部接続"

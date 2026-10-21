@@ -140,9 +140,9 @@ title: "HAProxy → LXC → Bluetooth"
 ---
 graph LR
   Client@{ icon: "fa:user", shape: rounded, label: "専用クライアント" }
-  ExternalEdgeMtls@{ shape: rectangle, label: "mTLS / 専用APIの例外" }
   ExternalEdgeTunnel@{ shape: rectangle, label: "Cloudflare Tunnel" }
-  PremisesHomeLoockitProxy@{ shape: rectangle, label: "HAProxy / :8080・:50051" }
+  PremisesHomeLoockitProxy@{ shape: rectangle, label: "互換HAProxy / :8080・:50051" }
+  ExternalEdgeMtls@{ shape: rectangle, label: "mTLS / 専用APIの例外" }
   subgraph PremisesPve["\`Proxmox VEクラスタ（2ノード構成）\`"]
     PremisesPve.Loockit_a@{ shape: rectangle, label: "Loockit 01 / CT12902" }
     PremisesPve.Loockit_b@{ shape: rectangle, label: "Loockit 02 / CT12903" }
@@ -150,14 +150,10 @@ graph LR
   end
   PremisesHomePlatformApi@{ shape: rectangle, label: "Kubernetes API / Lease" }
   Client -. "\`クライアント証明書\`" .-> ExternalEdgeMtls
-  ExternalEdgeMtls -. "\`mTLS検証済みのAPIリクエスト\`" .-> ExternalEdgeTunnel
-  ExternalEdgeTunnel -. "\`loockit-api / 8080 / mTLS\`" .-> PremisesHomeLoockitProxy
   PremisesHomeLoockitProxy -. "\`readyz / leaderのみ\`" .-> PremisesPve.Loockit_a
   PremisesHomeLoockitProxy -. "\`readyz / leaderのみ\`" .-> PremisesPve.Loockit_b
   PremisesPve.Loockit_a -. "\`pve-x570 / read-only D-Bus\`" .-> PremisesPve.Bluez
   PremisesPve.Loockit_b -. "\`pve-b550m / read-only D-Bus\`" .-> PremisesPve.Bluez
-  PremisesPve.Loockit_a -. "\`Lease leader election\`" .-> PremisesHomePlatformApi
-  PremisesPve.Loockit_b -. "\`Lease leader election\`" .-> PremisesHomePlatformApi
 `;case`nfs`:return`---
 title: "nas-01・nas-02"
 ---
@@ -509,10 +505,9 @@ graph LR
   Operator -. "\`HTTPS / 管理時の認証\`" .-> External.Edge.Access
   Client -. "\`クライアント証明書\`" .-> External.Edge.Mtls
   External.Edge.Access -. "\`Access認証後の転送\`" .-> External.Edge.Tunnel
-  External.Edge.Mtls -. "\`mTLS検証済みのAPIリクエスト\`" .-> External.Edge.Tunnel
   External.Edge.Tunnel -. "\`hostname転送\`" .-> External.Edge.Routes.Protected
-  External.Edge.Tunnel -. "\`hostname転送\`" .-> External.Edge.Routes.Exceptions
   External.Edge.Routes.Protected -. "\`認証後の内部接続\`" .-> Premises.Pve
+  External.Edge.Routes.Exceptions -. "\`独立LXC proxy / ready leader\`" .-> Premises.Pve
   External.Edge.Routes.Protected -. "\`認証後の内部接続\`" .-> Premises.Home.ManagementArgo
   External.Edge.Tunnel -. "\`hostname転送\`" .-> Consumers.Reventer
   External.Edge.Routes.Protected -. "\`認証後の内部接続\`" .-> Premises.Hardware.Network
