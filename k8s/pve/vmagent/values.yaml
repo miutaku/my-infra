@@ -87,6 +87,29 @@ config:
           regex: "(|app-(annict.*|coredns|coupon-manager|epgstation|gptwol|loockit|magic-mirror|mirakurun(-staging)?|nextcloud|tnlastation(-staging)?)|infra-(backup|db(-staging)?)|monitoring|argocd|cloudflared|external-secrets|kube-system|kubelet-serving-cert-approver|metallb-system|arc-systems|tfc-agent)"
           action: keep
 
+    # Keep actual container memory history for sizing; kube-state-metrics only
+    # reports configured requests/limits. Use the existing nodes/metrics grant
+    # with verified kubelet TLS, without granting nodes/proxy permissions.
+    - job_name: kubelet-container-memory
+      scrape_interval: 30s
+      scheme: https
+      metrics_path: /metrics/cadvisor
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      kubernetes_sd_configs:
+        - role: node
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_node_name]
+          target_label: node
+      metric_relabel_configs:
+        - source_labels: [__name__]
+          regex: 'container_memory_(working_set_bytes|rss|usage_bytes|max_usage_bytes)'
+          action: keep
+        - source_labels: [namespace, container]
+          regex: 'app-tnlastation(-staging)?;backend'
+          action: keep
+
     - job_name: victoria-metrics
       static_configs:
         - targets: ["victoria-metrics.monitoring.svc.cluster.local:8428"]

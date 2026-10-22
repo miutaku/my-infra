@@ -154,9 +154,9 @@ spec:
           resources:
             requests:
               cpu: 100m
-              # This exceeds the 2GB Pi's allocatable memory (~1.3Gi), while
-              # leaving headroom above the observed ~800Mi backend usage.
-              memory: 1536Mi
+              # Largest available observation: 845.3Mi in the OOM log.
+              # Add 20%, then round up to 64Mi: ceil(845.3 * 1.2 / 64) * 64.
+              memory: 1Gi
             limits:
               cpu: "2"
               memory: 2Gi

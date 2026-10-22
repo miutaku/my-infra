@@ -31,11 +31,22 @@ Kubernetesの配置判定は`requests`を使い、`limits`の値でノードを�
 RPi 4GBにも配置され得る。同じコア数でもRPiとPVEの処理性能の差は判定されないため、
 この2種類だけはPVE workerを明示する。軽量なreader・review・配備runnerは自由配置を維持する。
 
-TNLAStation backendは本番・stagingともメモリのrequestsを1536Mi、limitsを2Giにする。
-256Miの予約では、PVE再起動後に2GB RPiへ配置され、実使用量が約800Miへ増えた際に
-ノード全体のOOMと監視Podの停止を引き起こした。1536Miは2GB RPiのallocatable（約1.3Gi）を超えるため、
-そのノードを配置候補から外し、実測使用量にも余裕を持たせる。2Giの予約では現在のstaging用余力が足りない。
-特定のplatformやホストには固定せず、予約分の空きがあるPVE・4GB RPiからschedulerが選ぶ。
+TNLAStation backendは本番・stagingともメモリのrequestsを1Gi、limitsを2Giにする。
+予約は特定nodeを除外する値から決めず、確認できる使用量の最大値に20%を加え、64Mi単位で切り上げる。
+2026-10-23のOOMログではbackendのanon-rss 803184Ki + file-rss 108Ki + shmem 62288Ki = 845.3Mi。
+`ceil(845.3 * 1.2 / 64) * 64 = 1024Mi`のため1Giとした。これは既存ログから確認できた最大の観測値で、
+過去全期間の最大値ではない。ノードのOOMは他のPodとの合計使用量によるものであり、backend単体の2Gi超過を示さない。
+以前の1536Miは2GB RPiの除外を目的にした値だったため撤回した。空きがあれば2GB RPiにも配置できる。
+
+この変更以前はコンテナ別メモリ履歴を保存していなかった。VictoriaMetrics・Grafana Cloudの過去30日の照会も該当データなし。
+vmagentの`kubelet-container-memory`で本番・staging backendのworking set・RSS・usage・cgroup peakを30秒ごとに保存する。
+VictoriaMetricsの保持期間は30日。次回の見直しでは、例えば以下の式で取得できる期間の最大値を調べる。
+`container_memory_max_usage_bytes`は稼働中cgroupの起動後ピークで、回収可能なcacheも含むためworking setと併せて確認する。
+
+```promql
+max by (namespace) (max_over_time(container_memory_working_set_bytes{job="kubelet-container-memory",container="backend"}[30d]))
+max by (namespace) (max_over_time(container_memory_max_usage_bytes{job="kubelet-container-memory",container="backend"}[30d]))
+```
 
 共有NFSへのアクセスは特定nodeのローカルディスクではないため、それだけでPVEに固定しない。
 アプリのCPU・メモリ要求、対応image、PDBやHA制約は引き続き守る。
