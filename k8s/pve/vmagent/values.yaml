@@ -320,6 +320,9 @@ config:
           labels:
             instance: loockit
             module: http_2xx
+            # Per-target timing; preserve the blackbox_http job/instance labels.
+            __scrape_interval__: 15s
+            __scrape_timeout__: 10s
         - targets: ["https://192.168.0.132:11443"]
           labels:
             instance: unifi-os-server
