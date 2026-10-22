@@ -28,8 +28,18 @@ OS再起動だけがDiscordでの日時指定・承認と事前確認を必要�
 `--probe`で`rebootSafe`とLoockitを含む具体的な`rebootBlockReason`を確認できる。
 再起動後は両Loockitプロセスの健全性とreadyなleaderが1台であることを確認する。
 実行条件はcontroller READMEの可用性保護を参照。
-クラスタの健全性・両ノードのactive task・パッケージ状態の確認と、PVE同士の排他は維持する。
+クラスタ・パッケージの健全性とPVE同士の排他を維持する。バックアップ以外のactive taskは保留条件とする。
 再起動を保留していてもパッケージの自動更新は継続する。
 
 Tunnelは配置固定せず物理ホスト単位に分散する。再起動前は対象PVE以外のworkerで `/ready` が200の接続を最低1つ要求する。
 workerのIP・PVE所属を変更する場合はavailability-policy.jsonも更新する。externalTrafficPolicy: LocalのNodePort 32000番を内部LANから確認し、Kubernetes APIには依存しない。
+
+承認済み再起動は実行中バックアップより優先する。Loockit/Tunnelの確認後に両PVEの`vzdump`を
+Proxmoxのタスク停止APIで止め、正常に終了したことを確認してから再起動する。
+対象とオプションは停止前に`/var/lib/host-maintenance/backup-replay.json`へ保存し、
+再起動後にPVEとPBS/NASの復帰を待って同じ内容で最初から再実行する。
+再起動が事前確認で取り止めになった場合は、同じ起動のままバックアップを再実行する。
+`--probe`は読み取り専用で、バックアップの停止・再実行をしない。
+履歴は`backup-replay-last.json`とjournalで確認できる。
+再実行の受付結果が不明な記録はタスク履歴と照合し、解決しない場合は手動調査する。
+`--recover`で中断した再起動を保留へ戻す場合、残っているバックアップ記録も再実行対象へ戻す。

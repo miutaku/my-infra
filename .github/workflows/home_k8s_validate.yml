@@ -30,6 +30,9 @@ jobs:
           mapfile -t files < <(git ls-files '*.yaml' '*.yml')
           ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_stream(File.read(f)) }' "${files[@]}"
 
+      - name: Test host maintenance and backup recovery
+        run: python3 -m unittest discover -s ansible/host-maintenance/tests -q
+
       - name: Check home workload placement policy
         run: |
           ruby tests/test_home_placement.rb

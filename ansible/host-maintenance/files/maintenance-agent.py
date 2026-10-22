@@ -5,6 +5,8 @@ import fcntl
 import hashlib
 import json
 import os
+import shlex
+import time
 from pathlib import Path
 import subprocess
 import urllib.error
@@ -12,6 +14,8 @@ import urllib.request
 
 STATE = Path('/var/lib/host-maintenance/execution.json')
 UPDATE_STATE = Path('/var/lib/host-maintenance/update.json')
+BACKUP_STATE = Path('/var/lib/host-maintenance/backup-replay.json')
+BACKUP_LAST = Path('/var/lib/host-maintenance/backup-replay-last.json')
 BOOT = Path('/proc/sys/kernel/random/boot_id')
 REQUIRED = Path('/run/reboot-required')
 AVAILABILITY_POLICY = Path('/etc/host-maintenance/availability-policy.json')
@@ -134,17 +138,194 @@ def pve_preflight(host):
         raise RuntimeError('PVE cluster or package state is unhealthy')
     # Running Kubernetes/storage guests are allowed to stop with the host.
     # Loockit and a Tunnel connector must survive; no guests are migrated.
-    pve_tasks_idle()
+    pve_tasks_idle(allow_backups=True)
     availability_check(host, reboot=True)
 
 
-def pve_tasks_idle():
-    # Active cluster-wide tasks include backups, replication and migrations.
+def pve_tasks_idle(allow_backups=False):
+    backups = []
     for node in ['pve-x570', 'pve-b550m']:
         tasks = json.loads(run('pvesh', 'get', f'/nodes/{node}/tasks', '--source', 'active',
-                               '--output-format', 'json'))
-        if tasks:
-            raise RuntimeError('Active PVE task; maintenance deferred')
+                               '--limit', '1000', '--output-format', 'json'))
+        if len(tasks) >= 1000:
+            raise RuntimeError('PVE task inventory is incomplete')
+        for task in tasks:
+            if not allow_backups or task.get('type') != 'vzdump':
+                raise RuntimeError(f"Active PVE task on {node}: {task.get('type', 'unknown')}; maintenance deferred")
+            backups.append({**task, 'node': node})
+    return backups
+
+
+# Options printed by vzdump's own task log, with explicit values. Do not execute
+# log text in a shell. stdout/stop backups cannot be replayed as background jobs.
+BACKUP_OPTIONS = set(('all bwlimit compress dumpdir exclude exclude-path fleecing '
+    'ionice job-id lockwait mailnotification mailto mode notes-template notification-mode '
+    'pbs-change-detection-mode performance pigz pool protected prune-backups quiet '
+    'remove script stdexcludes stopwait storage tmpdir zstd').split())
+
+
+def backup_arguments(node, upid):
+    if node not in ['pve-x570', 'pve-b550m'] or not upid.startswith(f'UPID:{node}:') or ':vzdump:' not in upid:
+        raise RuntimeError('Invalid backup task identity')
+    log = json.loads(run('pvesh', 'get', f'/nodes/{node}/tasks/{upid}/log',
+                         '--start', '0', '--limit', '1', '--output-format', 'json'))
+    prefix = 'INFO: starting new backup job: vzdump '
+    if not log or not log[0].get('t', '').startswith(prefix):
+        raise RuntimeError('Cannot preserve backup arguments; reboot denied')
+    words = shlex.split(log[0]['t'][len(prefix):])
+    guests, arguments = [], []
+    while words and words[0].isdigit():
+        guests.append(words.pop(0))
+    if guests:
+        arguments += ['--vmid', ','.join(guests)]
+    while words:
+        option = words.pop(0)
+        if not option.startswith('--') or option[2:] not in BACKUP_OPTIONS or not words:
+            raise RuntimeError('Unsupported backup arguments; reboot denied')
+        arguments += [option, words.pop(0)]
+    if not guests and '--all' not in arguments and '--pool' not in arguments:
+        raise RuntimeError('Backup has no replayable guest selection')
+    return arguments
+
+
+def backup_status(item, upid):
+    return json.loads(run('pvesh', 'get', f"/nodes/{item['node']}/tasks/{upid}/status",
+                          '--output-format', 'json'))
+
+
+def backup_save(queue):
+    save(queue, BACKUP_STATE)
+    BACKUP_STATE.chmod(0o600)
+
+
+def backup_release(execution_id):
+    if BACKUP_STATE.exists():
+        queue = json.loads(BACKUP_STATE.read_text())
+        if queue['executionId'] == execution_id:
+            queue['resumeAllowed'] = True
+            backup_save(queue)
+
+
+def prepare_backups(host, pending):
+    """Called only after an approved claim and availability checks; never by probe."""
+    queue = json.loads(BACKUP_STATE.read_text()) if BACKUP_STATE.exists() else {'items': {}}
+    if queue.get('executionId') != pending['executionId']:
+        for item in queue['items'].values():
+            item.pop('stopRequested', None)
+    queue.update(bootId=pending['bootId'], executionId=pending['executionId'], resumeAllowed=False)
+    deadline = time.monotonic() + 120
+    while True:
+        active = pve_tasks_idle(allow_backups=True)
+        # Preserve every new task before stopping any of this batch.
+        fresh = [task for task in active if task['upid'] not in queue['items']]
+        captured = {task['upid']: {'node': task['node'], 'originalUpid': task['upid'],
+                    'arguments': backup_arguments(task['node'], task['upid']), 'state': 'pending'}
+                    for task in fresh}
+        for upid in captured:
+            # A later reboot may interrupt our own replay. The newest owner now
+            # handles that task; do not keep two replay requests for the same run.
+            queue['items'] = {key: item for key, item in queue['items'].items()
+                              if item.get('replayUpid') != upid}
+        queue['items'].update(captured)
+        if queue['items']:
+            backup_save(queue)
+        if not active:
+            return
+        for task in active:
+            item = queue['items'][task['upid']]
+            if item.get('stopRequested'):
+                continue
+            item['stopRequested'] = True
+            backup_save(queue)
+            try:
+                run('pvesh', 'delete', f"/nodes/{task['node']}/tasks/{task['upid']}")
+            except subprocess.SubprocessError:
+                if backup_status(item, task['upid'])['status'] != 'stopped':
+                    raise
+            print(f"Backup stop requested for approved reboot: {task['node']} {task['upid']}")
+        if time.monotonic() >= deadline:
+            raise RuntimeError('Backup did not stop cleanly within 120s; reboot denied')
+        time.sleep(2)
+
+
+def replay_backups():
+    """Durable, asynchronous replay after reboot, or after a blocked reboot."""
+    if not BACKUP_STATE.exists():
+        return
+    queue = json.loads(BACKUP_STATE.read_text())
+    if queue['bootId'] == BOOT.read_text().strip() and not queue['resumeAllowed']:
+        return
+    if not pve_healthy():
+        return
+    try:
+        pve_tasks_idle(allow_backups=True)
+    except RuntimeError:
+        return  # Wait for guest startup, migration or restore to finish.
+    for item in queue['items'].values():
+        try:
+            replay_backup_item(queue, item)
+        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+            print(f"Backup replay deferred on {item['node']}; durable journal retained")
+    if all(item['state'] in ['done', 'failed'] for item in queue['items'].values()):
+        save(queue, BACKUP_LAST)
+        BACKUP_STATE.unlink()
+
+
+def replay_backup_item(queue, item):
+    if item['state'] in ['done', 'failed']:
+        return
+    if item.get('replayUpid'):
+        status = backup_status(item, item['replayUpid'])
+        if status['status'] == 'stopped':
+            item['state'] = 'done' if status.get('exitstatus') == 'OK' else 'failed'
+            item['exitstatus'] = status.get('exitstatus', 'unknown')
+            print(f"Backup replay {item['state']}: {item['node']} {item['replayUpid']}")
+            backup_save(queue)
+        return
+    if item['state'] == 'submitting':
+        # A crash/timeout may lose the response after PVE accepted the job.
+        # Reconcile by the actual arguments in task history; never blind retry.
+        tasks = json.loads(run('pvesh', 'get', f"/nodes/{item['node']}/tasks",
+            '--source', 'all', '--since', str(item['submittedAt']), '--limit', '1000',
+            '--output-format', 'json'))
+        for task in tasks:
+            if task.get('type') == 'vzdump' and task['upid'] != item['originalUpid'] and \
+                    backup_arguments(item['node'], task['upid']) == item['arguments']:
+                item.update(replayUpid=task['upid'], state='running')
+                backup_save(queue)
+                break
+        else:
+            print(f"Backup submission unresolved on {item['node']}; inspect backup-replay.json before retrying")
+        return
+    original = backup_status(item, item['originalUpid'])
+    if original['status'] != 'stopped':
+        return
+    if original.get('exitstatus') == 'OK':
+        item['state'] = 'done'  # It finished between inspection and cancellation.
+        backup_save(queue)
+        return
+    # Do not stack two backup jobs on the same node, including a scheduled run.
+    active = json.loads(run('pvesh', 'get', f"/nodes/{item['node']}/tasks",
+        '--source', 'active', '--limit', '1000', '--output-format', 'json'))
+    if any(task.get('type') == 'vzdump' for task in active):
+        return
+    if '--storage' in item['arguments']:
+        storage = item['arguments'][item['arguments'].index('--storage') + 1]
+        status = json.loads(run('pvesh', 'get', f"/nodes/{item['node']}/storage/{storage}/status",
+                                '--output-format', 'json'))
+        if not status.get('active'):
+            return  # PBS/NAS guests can take longer than the PVE services.
+    item.update(state='submitting', submittedAt=int(time.time()))
+    backup_save(queue)
+    # Bind values with '=' so a note such as '--stop=1' stays a note, not a CLI option.
+    options = [f'{option}={value}' for option, value in zip(item['arguments'][::2], item['arguments'][1::2])]
+    upid = json.loads(run('pvesh', 'create', f"/nodes/{item['node']}/vzdump",
+                         *options, '--output-format', 'json'))
+    if not isinstance(upid, str) or not upid.startswith(f"UPID:{item['node']}:"):
+        raise RuntimeError('Backup submission response invalid; replay journal retained')
+    item.update(replayUpid=upid, state='running')
+    backup_save(queue)
+    print(f"Backup replay started: {item['node']} {upid}")
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -232,6 +413,8 @@ def process(config):
     host = config['host']
     pve = host.startswith('pve-')
     boot_id = BOOT.read_text().strip()
+    if pve:
+        replay_backups()
     if UPDATE_STATE.exists():
         update = json.loads(UPDATE_STATE.read_text())
         if update.get('outcome'):
@@ -273,25 +456,35 @@ def process(config):
             pve_preflight(host)
         elif not REQUIRED.exists():
             raise RuntimeError('Reboot no longer required')
+        will_reboot = reboot_required(pve)
+        if pve and will_reboot:
+            prepare_backups(host, pending)
+            # Cleanup can take time; recheck safety and reject any new task.
+            pve_preflight(host)
+            pve_tasks_idle()
     except (RuntimeError, subprocess.SubprocessError) as error:
+        if pve:
+            backup_release(pending['executionId'])
         pending['outcome'] = 'blocked'
         pending['reason'] = 'availability' if isinstance(error, AvailabilityBlocked) else 'preflight'
         save(pending)
         api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'blocked', 'reason': pending['reason']})
         STATE.unlink()
-        if isinstance(error, AvailabilityBlocked):
-            print(str(error))
+        print(str(error))
         print('Maintenance blocked by preflight; see cluster/package state and active tasks')
         return
     try:
-        if reboot_required(pve):
+        if will_reboot:
             subprocess.run(['systemctl', 'reboot'], check=True, timeout=30)
         else:
             pending['outcome'] = 'complete'
             save(pending)
             api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'complete'})
             STATE.unlink()
-    except (subprocess.SubprocessError, RuntimeError):
+    except (subprocess.SubprocessError, RuntimeError) as error:
+        if pve:
+            backup_release(pending['executionId'])
+        print(str(error))
         pending['outcome'] = 'failed'
         save(pending)
         api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'failed'})
@@ -336,6 +529,8 @@ def main():
                     'required': reboot_required(pve), 'updates': count, 'fingerprint': fingerprint,
                     'healthy': pve_healthy() if pve else True})
                 api(config, 'recover', {})
+                if pve and STATE.exists():
+                    backup_release(json.loads(STATE.read_text())['executionId'])
                 STATE.unlink(missing_ok=True)
                 UPDATE_STATE.unlink(missing_ok=True)
         elif args.update:

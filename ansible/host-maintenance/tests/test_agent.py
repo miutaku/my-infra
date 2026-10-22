@@ -19,6 +19,10 @@ class AgentTests(unittest.TestCase):
         availability = patch.object(agent, 'availability_check')
         self.availability = availability.start()
         self.addCleanup(availability.stop)
+        for name in ['prepare_backups', 'replay_backups', 'backup_release']:
+            stub = patch.object(agent, name)
+            stub.start()
+            self.addCleanup(stub.stop)
 
     def test_controller_requests_identify_the_agent(self):
         with patch.object(agent.API_OPENER, 'open', return_value=io.BytesIO(b'null')) as request:
@@ -57,12 +61,20 @@ class AgentTests(unittest.TestCase):
             agent.pve_preflight('pve-x570')
         self.availability.assert_called_once_with('pve-x570', reboot=True)
 
-    def test_backups_on_either_node_prevent_reboot(self):
-        for responses in [['[{"type":"vzdump"}]'], ['[]', '[{"type":"vzdump"}]']]:
+    def test_backups_on_either_node_are_allowed_by_read_only_preflight(self):
+        for responses in [['[{"type":"vzdump"}]', '[]'], ['[]', '[{"type":"vzdump"}]']]:
             with self.subTest(responses=responses), \
                  patch.object(agent, 'pve_healthy', return_value=True), \
-                 patch.object(agent, 'run', side_effect=responses):
-                with self.assertRaisesRegex(RuntimeError, 'Active PVE task'):
+                 patch.object(agent, 'run', side_effect=responses), \
+                 patch.object(agent, 'prepare_backups') as stop:
+                agent.pve_preflight('pve-x570')
+                stop.assert_not_called()
+
+    def test_other_tasks_still_prevent_reboot(self):
+        for task in ['qmigrate', 'replication', 'vzrestore']:
+            with self.subTest(task=task), patch.object(agent, 'pve_healthy', return_value=True), \
+                 patch.object(agent, 'run', return_value=json.dumps([{'type': task}])):
+                with self.assertRaisesRegex(RuntimeError, task):
                     agent.pve_preflight('pve-x570')
 
     def test_failed_peer_or_quorum_prevents_reboot(self):
@@ -142,6 +154,7 @@ class AgentTests(unittest.TestCase):
                  patch.object(agent, 'pve_healthy', return_value=True), \
                  patch.object(agent, 'package_idle', return_value=True), \
                  patch.object(agent, 'pve_preflight'), \
+                 patch.object(agent, 'pve_tasks_idle'), \
                  patch.object(agent, 'reboot_required', return_value=True), \
                  patch.object(agent, 'api', side_effect=[{}, {'executionId': 'reboot'}]), \
                  patch.object(agent.subprocess, 'run') as execute:
