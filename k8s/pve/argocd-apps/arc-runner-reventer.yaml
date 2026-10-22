@@ -33,8 +33,11 @@ spec:
             securityContext:
               fsGroup: 1001
               fsGroupChangePolicy: OnRootMismatch
+            # Heavy jobs need PVE worker performance; either PVE host is eligible.
             nodeSelector:
               kubernetes.io/os: linux
+              node.miutaku/platform: pve
+              node.miutaku/role: agent
             # Share package/provider caches; native home/tool caches stay Pod-local across CPU architectures.
             initContainers:
               - name: prepare-runner-cache

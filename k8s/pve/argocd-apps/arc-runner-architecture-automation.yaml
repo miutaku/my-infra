@@ -32,8 +32,11 @@ spec:
               fsGroupChangePolicy: OnRootMismatch
               seccompProfile:
                 type: RuntimeDefault
+            # Heavy jobs need PVE worker performance; either PVE host is eligible.
             nodeSelector:
               kubernetes.io/os: linux
+              node.miutaku/platform: pve
+              node.miutaku/role: agent
             containers:
             - name: runner
               image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807

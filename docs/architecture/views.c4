@@ -139,7 +139,7 @@ views {
   }
   view recording of premises.home.recording {
     title '録画・配信 / PRD・STG'
-    description 'TNLaStation・EPGStationはKubernetes Service名でMirakurun LXCへ接続。PRDは192.168.20.132、STGは192.168.20.142。STG MirakurunのBS/CSはPRDへのfallback。録画領域はnas-02上で分離。'
+    description 'TNLAStation・EPGStationはKubernetes Service名でMirakurun LXCへ接続。PRDは192.168.20.132、STGは192.168.20.142。STG MirakurunのBS/CSはPRDへのfallback。録画領域はnas-02上で分離。'
     include premises.pve
     include premises.home, premises.home.recording, premises.home.recording.epgstation, premises.home.recording.tnlastation, premises.home.recording.tnlastation_staging, premises.pve.tuner_prod, premises.pve.tuner_stg
     include premises.home.recording.tnlastation with { navigateTo recording_prd }
@@ -187,7 +187,7 @@ views {
     autoLayout LeftRight 80 60
   }
   view recording_prd of premises.home.recording.tnlastation {
-    title 'TNLaStation PRD / 制御・エンコード・配信'
+    title 'TNLAStation PRD / 制御・エンコード・配信'
     description 'GatewayからWeb・API・HLSへ。APIが録画とffmpeg workerを制御し、専用DBとnas-02の録画領域を使用。'
     include premises.pve
     include premises.home, premises.home.recording.tnlastation, premises.home.recording.tnlastation.*, premises.pve.tuner_prod, premises.home.databases.postgres, premises.pve.nas02
@@ -197,7 +197,7 @@ views {
     autoLayout LeftRight 55 40
   }
   view recording_stg of premises.home.recording.tnlastation_staging {
-    title 'TNLaStation STG / 制御・エンコード・配信'
+    title 'TNLAStation STG / 制御・エンコード・配信'
     description 'GatewayからWeb・API・HLSへ。APIが録画とffmpeg workerを制御し、専用DBとnas-02の録画領域を使用。'
     include premises.pve
     include premises.home, premises.home.recording.tnlastation_staging, premises.home.recording.tnlastation_staging.*, premises.pve.tuner_stg, premises.home.databases.postgres_staging, premises.pve.nas02

@@ -3,6 +3,11 @@
 require 'yaml'
 
 ROOT = File.expand_path('..', __dir__)
+# These jobs can fit in RPi requests but require stronger per-core performance.
+HEAVY_RUNNERS = [
+  'k8s/pve/argocd-apps/arc-runner-reventer.yaml',
+  'k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml'
+].freeze
 HOST_KEYS = ['kubernetes.io/hostname', 'topology.miutaku/proxmox-node', 'node.miutaku/platform'].freeze
 
 def check_placement(value, file, errors, trail = [])
@@ -12,7 +17,9 @@ def check_placement(value, file, errors, trail = [])
       at = (trail + [key]).join('.')
       if key == 'nodeSelector' && child.is_a?(Hash)
         child.each do |label, selected|
-          bad = HOST_KEYS.include?(label) ||
+          heavy_worker = label == 'node.miutaku/platform' && selected == 'pve' &&
+                         child['node.miutaku/role'] == 'agent' && HEAVY_RUNNERS.include?(file)
+          bad = (HOST_KEYS.include?(label) && !heavy_worker) ||
                 label == 'kubernetes.io/arch' ||
                 (label == 'node-role.kubernetes.io/control-plane' && file != 'k8s/pve/home-service-monitor/vip.yaml')
           errors << "#{file}: #{at}: unnecessary #{label}=#{selected}" if bad

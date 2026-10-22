@@ -35,4 +35,13 @@ class HomePlacementTest < Minitest::Test
     file = 'k8s/pve/argocd-apps/arc-runner-my-infra.yaml'
     refute_empty violations({'nodeSelector' => {'kubernetes.io/arch' => 'amd64'}}, file)
   end
+
+  def test_heavy_runner_can_use_either_pve_worker_but_not_a_specific_host
+    HEAVY_RUNNERS.each do |file|
+      assert_empty violations({'nodeSelector' => {'node.miutaku/platform' => 'pve', 'node.miutaku/role' => 'agent'}}, file)
+      refute_empty violations({'nodeSelector' => {'node.miutaku/platform' => 'pve'}}, file)
+      refute_empty violations({'nodeSelector' => {'kubernetes.io/hostname' => 'worker-01'}}, file)
+    end
+    refute_empty violations({'nodeSelector' => {'node.miutaku/platform' => 'pve', 'node.miutaku/role' => 'agent'}})
+  end
 end

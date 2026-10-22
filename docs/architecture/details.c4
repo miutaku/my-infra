@@ -53,7 +53,7 @@ model {
   }
   extend premises.home.recording {
     component epgstation 'EPGStation'
-    system tnlastation 'TNLaStation PRD' {
+    system tnlastation 'TNLAStation PRD' {
       description 'app-tnlastation。PRDのMirakurun・PostgreSQLと録画領域を使用。'
       component gateway 'Gateway'
       component frontend 'Frontend'
@@ -62,7 +62,7 @@ model {
       component streaming 'ffmpeg streaming worker'
       component mediamtx 'MediaMTX / HLS配信'
     }
-    system tnlastation_staging 'TNLaStation STG' {
+    system tnlastation_staging 'TNLAStation STG' {
       description 'app-tnlastation-staging。STGのMirakurun・PostgreSQLと録画領域を使用。'
       component gateway 'Gateway'
       component frontend 'Frontend'
@@ -111,7 +111,7 @@ model {
     component unifi 'UniFi OS / VM13201' { description '192.168.0.132:11443 / native1。US-8-60Wの構成・監視を管理。' }
     component loockit_a 'Loockit 01 / CT12902' { description '192.168.20.133:8080 / :50051。x570のUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
     component loockit_b 'Loockit 02 / CT12903' { description '192.168.20.134:8080 / :50051。b550mのUSB Bluetooth・BlueZに接続。Leaseでactiveを選出。' }
-    component tuner_prod 'Mirakurun PRD / LXC12901' { description '192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。' }
+    component tuner_prod 'Mirakurun PRD / LXC12901' { description '192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLAStationへチューナーAPIを提供。' }
     component tuner_stg 'Mirakurun STG / LXC12904' { description '192.168.20.142:40772 / PX-S1UD。GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。' }
   }
   extend premises.hardware {

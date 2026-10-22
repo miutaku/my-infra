@@ -4,7 +4,7 @@ model {
       description 'Kubernetesクラスタ。Talos Linuxのcontrol-plane VM3台、worker VM2台とRaspberry Pi worker2台で構成。'
       link https://github.com/miutaku/my-infra/tree/main/talos/home-k8s 'Talos定義'
       component nextcloud 'Nextcloud' { description 'ファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/nextcloud '定義' }
-      component recording '録画・配信 / EPGStation・TNLaStation' { description 'EPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
+      component recording '録画・配信 / EPGStation・TNLAStation' { description 'EPGStation・TNLAStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/tnlastation '定義' }
       component dns '内部DNS / MetalLB' { description 'miutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/coredns '定義' }
       component eso 'External Secrets Operator' { description 'ClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/external-secrets '定義' }
       component agent '自宅監視基盤' { description 'vmagent・exporter・自宅VictoriaMetrics・PDC agent。OCI監視VMとは独立。' link https://github.com/miutaku/my-infra/tree/main/k8s/pve/vmagent '定義' }

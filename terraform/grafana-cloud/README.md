@@ -23,7 +23,7 @@
 | ホストload average | 5分loadのCPUコア数あたり値が1.5超で15分 | — |
 | 回線速度 | 15分内の3回以上の測定がすべてdownload 25 Mbps未満/upload 20 Mbps未満 | — |
 | lb-01/02 | 片系停止/HAProxy・Keepalived停止5分 | 両系停止/どちらかの必須サービスが全系停止2分 |
-| Nextcloud/Mirakurun/EPGStation/TNLaStation/Loockit/coupon-manager | replica不足10分 | HTTP probe失敗3分、重要Deployment/StatefulSetのReady=0が2分 |
+| Nextcloud/Mirakurun/EPGStation/TNLAStation/Loockit/coupon-manager | replica不足10分 | HTTP probe失敗3分、重要Deployment/StatefulSetのReady=0が2分 |
 | DNS/API/DB・NFS transport | — | DNS応答/答えの検証、API readyz、TCP接続失敗2分 |
 | UniFi/MagicMirror/開発VM | UI停止5分、開発VM疎通断10分、指定systemd service失敗15分 | 原則warn。データ危険は容量等の共通ルール |
 | Kubernetes | Node NotReady/Pressure5分、Pod Pending10分、再起動増加、PVC Pending | home control plane Ready<2が1分、home worker全停止2分、PVC Lost |
@@ -71,12 +71,12 @@ state・実入力・planはGit管理しない。Provider認証は環境変数か
 | feature | 必要な収集 | この変更で追加するもの |
 | --- | --- | --- |
 | `kubernetes` | kube-state-metrics | home用Deployment/RBAC/ServiceとArgoCD登録、vmagent scrape。Secret値の取得権限は与えない |
-| `probes` | 新しいblackbox modulesとtarget | DNSの内部名/外部名、API readyz、DB/NFS TCP、TNLaStation・Loockit・coupon-manager、Nextcloud本文検証 |
+| `probes` | 新しいblackbox modulesとtarget | DNSの内部名/外部名、API readyz、DB/NFS TCP、TNLAStation・Loockit・coupon-manager、Nextcloud本文検証 |
 | `backups` | CronJob状態（`kubernetes`も必須） | KSMのlastSuccessfulTimeによる日次/毎時の鮮度・削除・suspend検知 |
 | `access` | home-service-monitor + Access Service Token | 自宅のAccess保護URL16件に認証付き/認証なしで接続し、期待本文・保護有無・公開TLS期限を確認 |
 | `storage_api` | TrueNAS read-only API key | 実機23.10のDDP WebSocket APIによるpool物理使用量・健全性・scrub・disk/SMART alert |
 | `database` | DBの専用monitoring user | MariaDB / PostgreSQL両系統へのSQL・接続数・lock/長時間query |
-| `recording` | Mirakurun/EPGStation/TNLaStation API | TV service別EPG更新時刻、tuner、予約と録画状態の照合、encode待ち。EPGStationの録画失敗hookも永続化 |
+| `recording` | Mirakurun/EPGStation/TNLAStation API | TV service別EPG更新時刻、tuner、予約と録画状態の照合、encode待ち。EPGStationの録画失敗hookも永続化 |
 | `backup_integrity` | PBS read-only API、S3、復元Job（`kubernetes`必須） | VM別backup/verify、S3 object実容量、保存先検証結果、隔離DB復元とresticサンプル復元、PBS実復元結果の受付 |
 | `control_plane` | etcd metrics patch、VIP DaemonSet、追加TLS probe（`probes`必須） | etcd member/leader、Talos API VIP所有数、API/kubelet証明書 |
 | `network` | ICMP + UniFi API key | FS AP・US-8-60Wの死活、台帳の必須port状態 |

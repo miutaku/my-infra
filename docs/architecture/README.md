@@ -75,7 +75,7 @@ replica数・一時Job/runner Pod・各アプリの内部実装を個別サー�
 
 Windows VM60000はTerraform管理外だが省略しない。`npm run audit:pve` は既存SSH接続を使う読み取り専用の調査で、ゲスト名・ID・状態・bridge/tagのみ保存する。
 
-包含は線ではなく境界で表す。PVEは共通クラスタとして、その中にVM/LXC、さらにTalos LinuxやDockerを入れる。VMの物理ホストはmetadata、VLANは各ゲストの属性に保持し、配置図は全14 VM・4 LXCを一ページにまとめる。home-k8sのサービス・DB・監視・運用基盤もクラスタ内に入れる。全体は要約した接続だけを表示し、通信・保存先の詳細は要素を開いて確認する。TrueNASはrunner cache用nas-01とアプリデータ用nas-02を分け、TNLaStationはPRD/STGごとにチューナー・DB・NFSパスを対応させる。
+包含は線ではなく境界で表す。PVEは共通クラスタとして、その中にVM/LXC、さらにTalos LinuxやDockerを入れる。VMの物理ホストはmetadata、VLANは各ゲストの属性に保持し、配置図は全14 VM・4 LXCを一ページにまとめる。home-k8sのサービス・DB・監視・運用基盤もクラスタ内に入れる。全体は要約した接続だけを表示し、通信・保存先の詳細は要素を開いて確認する。TrueNASはrunner cache用nas-01とアプリデータ用nas-02を分け、TNLAStationはPRD/STGごとにチューナー・DB・NFSパスを対応させる。
 
 ネットワーク機器からIX2215・US-8-60W・FS APとPVEの接続、VLANを開ける。native1とtag10/20/30/31/40、VMのNIC tag、guest ACLを区別する。PVEはvmbr0とVLAN subinterface/bridgeを使用し、vlan-aware設定があるとは記載しない。設定上のDHCP予約を現在の管理IPと混同しない。正確なケーブルポートとAPのSSID別VLAN割当は未確認として残す。根拠と限界は `evidence/network.md`。
 

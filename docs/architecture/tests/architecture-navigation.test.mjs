@@ -48,7 +48,7 @@ test('Loockit dedicated Tunnel reaches LXC backends without the Kubernetes proxy
  }
  assert.ok(!relation(proxy,api,'runtime'));
 });
-test('TNLaStation PRD and STG each use their own tuner and DB as declared in Kustomize',()=>{
+test('TNLAStation PRD and STG each use their own tuner and DB as declared in Kustomize',()=>{
  const base=parse(readFileSync('../../k8s/pve/tnlastation/configmap.yaml','utf8'));
  const stg=parse(readFileSync('../../k8s/pve/tnlastation-staging/kustomization.yaml','utf8'));
  assert.match(base.data['config.yml'],/mirakurun\.app-mirakurun\.svc/);
