@@ -1,6 +1,6 @@
 # home-k8sの配置方針
 
-2026-10-22更新。特定のPVE・RPi・platformを既定の配置先にしない。性能が必要な重いrunnerはPVE workerを使う。
+2026-10-23更新。特定のPVE・RPi・platformを既定の配置先にしない。性能が必要な重いrunnerはPVE workerを使う。
 RPiの一律なNoSchedule taintを撤去し、リソース要求に合うworkerからKubernetesが選択する。
 既存Podを一斉に退避させる操作は行わない。再作成・スケール・既存deschedulerの対象だけが順次配置される。
 この方針はPodの配置に適用する。PVE上のVM・LXCの物理デバイスやディスクは移動しない。
@@ -30,6 +30,11 @@ Kubernetesの配置判定は`requests`を使い、`limits`の値でノードを�
 重いrunnerのrequestsは1 CPU / 1Gi（Codex runnerは補助container分を加算）、limitsは2 CPU / 4Giなので、
 RPi 4GBにも配置され得る。同じコア数でもRPiとPVEの処理性能の差は判定されないため、
 この2種類だけはPVE workerを明示する。軽量なreader・review・配備runnerは自由配置を維持する。
+
+TNLAStation backendは本番・stagingともメモリのrequests/limitsを2Giにする。
+256Miの予約では、PVE再起動後に2GB RPiへ配置され、実使用量が約800Miへ増えた際に
+ノード全体のOOMと監視Podの停止を引き起こした。メモリ予算を予約し、2GB RPiを配置候補から外す。
+特定のplatformやホストには固定せず、予約分の空きがあるPVE・4GB RPiからschedulerが選ぶ。
 
 共有NFSへのアクセスは特定nodeのローカルディスクではないため、それだけでPVEに固定しない。
 アプリのCPU・メモリ要求、対応image、PDBやHA制約は引き続き守る。
