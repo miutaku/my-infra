@@ -140,18 +140,20 @@ title: "HAProxy → LXC → Bluetooth"
 ---
 graph LR
   Client@{ icon: "fa:user", shape: rounded, label: "専用クライアント" }
-  ExternalEdgeTunnel@{ shape: rectangle, label: "Cloudflare Tunnel" }
-  PremisesHomeLoockitProxy@{ shape: rectangle, label: "互換HAProxy / :8080・:50051" }
   ExternalEdgeMtls@{ shape: rectangle, label: "mTLS / 専用APIの例外" }
+  ExternalEdgeLoockit_tunnel@{ shape: rectangle, label: "Loockit専用Tunnel / 2 LXC" }
   subgraph PremisesPve["\`Proxmox VEクラスタ（2ノード構成）\`"]
     PremisesPve.Loockit_a@{ shape: rectangle, label: "Loockit 01 / CT12902" }
     PremisesPve.Loockit_b@{ shape: rectangle, label: "Loockit 02 / CT12903" }
     PremisesPve.Bluez@{ shape: rectangle, label: "BlueZ / Bluetooth（2ノード）" }
   end
-  PremisesHomePlatformApi@{ shape: rectangle, label: "Kubernetes API / Lease" }
+  ExternalEdgeLoockit_lease@{ shape: rectangle, label: "Loockit Lease / Durable Object" }
   Client -. "\`クライアント証明書\`" .-> ExternalEdgeMtls
-  PremisesHomeLoockitProxy -. "\`readyz / leaderのみ\`" .-> PremisesPve.Loockit_a
-  PremisesHomeLoockitProxy -. "\`readyz / leaderのみ\`" .-> PremisesPve.Loockit_b
+  ExternalEdgeMtls -. "\`mTLS検証済みのAPIリクエスト\`" .-> ExternalEdgeLoockit_tunnel
+  ExternalEdgeLoockit_tunnel -. "\`LXC内HAProxy / loopback :18080\`" .-> PremisesPve.Loockit_a
+  PremisesPve.Loockit_a -. "\`HTTPS / BLE Lease\`" .-> ExternalEdgeLoockit_lease
+  ExternalEdgeLoockit_tunnel -. "\`LXC内HAProxy / loopback :18080\`" .-> PremisesPve.Loockit_b
+  PremisesPve.Loockit_b -. "\`HTTPS / BLE Lease\`" .-> ExternalEdgeLoockit_lease
   PremisesPve.Loockit_a -. "\`pve-x570 / read-only D-Bus\`" .-> PremisesPve.Bluez
   PremisesPve.Loockit_b -. "\`pve-b550m / read-only D-Bus\`" .-> PremisesPve.Bluez
 `;case`nfs`:return`---

@@ -2935,48 +2935,50 @@ var e=e=>{switch(e){case`index`:return`digraph {
         fontcolor="#bbfcd3",
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">クライアント証明書</FONT></TD></TR></TABLE>>,
         likec4_id="1ligfsb",
-        minlen=0,
-        style=dashed,
-        weight=3];
-    tunnel [color="#475569",
-        fillcolor="#64748b",
-        fontcolor="#f8fafc",
-        height=1.389,
-        label=<<FONT POINT-SIZE="20">Cloudflare Tunnel</FONT>>,
-        likec4_id="external.edge.tunnel",
-        likec4_level=0,
-        margin="0.139,0.139",
-        width=2.5];
-    api [color="#475569",
-        fillcolor="#64748b",
-        fontcolor="#f8fafc",
-        height=1.389,
-        label=<<FONT POINT-SIZE="20">Kubernetes API / Lease</FONT>>,
-        likec4_id="premises.home.platform.api",
-        likec4_level=0,
-        margin="0.139,0.139",
-        width=2.5];
-    tunnel -> api [style=invis];
-    proxy [color="#475569",
-        fillcolor="#64748b",
-        fontcolor="#f8fafc",
-        height=1.389,
-        label=<<FONT POINT-SIZE="20">互換HAProxy / :8080・:50051</FONT>>,
-        likec4_id="premises.home.loockit.proxy",
-        likec4_level=0,
-        margin="0.139,0.139",
-        width=2.5];
-    proxy -> loockit_a [arrowhead=normal,
-        color="#15803d",
-        fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">readyz / leaderのみ</FONT></TD></TR></TABLE>>,
-        likec4_id="176ivh6",
+        minlen=1,
         style=dashed];
-    proxy -> loockit_b [arrowhead=normal,
+    loockit_tunnel [color="#475569",
+        fillcolor="#64748b",
+        fontcolor="#f8fafc",
+        height=1.389,
+        label=<<FONT POINT-SIZE="20">Loockit専用Tunnel / 2 LXC</FONT>>,
+        likec4_id="external.edge.loockit_tunnel",
+        likec4_level=0,
+        margin="0.139,0.139",
+        width=2.5];
+    mtls -> loockit_tunnel [arrowhead=normal,
+        color="#6366f1",
+        fontcolor="#cbd0fd",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">mTLS検証済みのAPIリクエスト</FONT></TD></TR></TABLE>>,
+        likec4_id=o2fisi,
+        style=solid,
+        weight=5];
+    loockit_tunnel -> loockit_a [arrowhead=normal,
         color="#15803d",
         fontcolor="#bbfcd3",
-        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">readyz / leaderのみ</FONT></TD></TR></TABLE>>,
-        likec4_id="176ivh5",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">LXC内HAProxy / loopback :18080</FONT></TD></TR></TABLE>>,
+        likec4_id="7ww0zc",
+        style=dashed];
+    loockit_tunnel -> loockit_b [arrowhead=normal,
+        color="#15803d",
+        fontcolor="#bbfcd3",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">LXC内HAProxy / loopback :18080</FONT></TD></TR></TABLE>>,
+        likec4_id="7ww0zf",
+        style=dashed];
+    loockit_lease [color="#475569",
+        fillcolor="#64748b",
+        fontcolor="#f8fafc",
+        height=1.389,
+        label=<<FONT POINT-SIZE="20">Loockit Lease / Durable Object</FONT>>,
+        likec4_id="external.edge.loockit_lease",
+        likec4_level=0,
+        margin="0.139,0.139",
+        width=2.5];
+    loockit_a -> loockit_lease [arrowhead=normal,
+        color="#15803d",
+        fontcolor="#bbfcd3",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">HTTPS / BLE Lease</FONT></TD></TR></TABLE>>,
+        likec4_id="1nax0ry",
         style=dashed];
     loockit_a -> bluez [arrowhead=normal,
         color="#15803d",
@@ -2984,14 +2986,20 @@ var e=e=>{switch(e){case`index`:return`digraph {
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">pve-x570 / read-only D-Bus</FONT></TD></TR></TABLE>>,
         likec4_id=iicjgp,
         style=dashed,
-        weight=4];
+        weight=5];
+    loockit_b -> loockit_lease [arrowhead=normal,
+        color="#15803d",
+        fontcolor="#bbfcd3",
+        label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">HTTPS / BLE Lease</FONT></TD></TR></TABLE>>,
+        likec4_id=gbg3sd,
+        style=dashed];
     loockit_b -> bluez [arrowhead=normal,
         color="#15803d",
         fontcolor="#bbfcd3",
         label=<<TABLE BORDER="0" CELLPADDING="3" CELLSPACING="0" BGCOLOR="#18191BA0"><TR><TD ALIGN="TEXT" BALIGN="LEFT"><FONT POINT-SIZE="14">pve-b550m / read-only D-Bus</FONT></TD></TR></TABLE>>,
         likec4_id="1ps4mne",
         style=dashed,
-        weight=4];
+        weight=5];
 }
 `;case`recording`:return`digraph {
     graph [TBbalance=min,
@@ -6250,102 +6258,119 @@ var e=e=>{switch(e){case`index`:return`digraph {
 <!-- Generated by graphviz version 15.0.0 (0)
  -->
 <!-- Pages: 1 -->
-<svg width="1292pt" height="744pt"
- viewBox="0.00 0.00 1292.00 744.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(15.05 729.05)">
+<svg width="2160pt" height="529pt"
+ viewBox="0.00 0.00 2160.00 529.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(15.05 514.05)">
 <g id="clust1" class="cluster">
 <title>cluster_pve</title>
-<polygon fill="#2c4e32" stroke="#1e3524" points="436.77,-8 436.77,-359 1254.24,-359 1254.24,-8 436.77,-8"/>
-<text xml:space="preserve" text-anchor="start" x="444.77" y="-346.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#c2f0c2" fill-opacity="0.701961">PROXMOX VEクラスタ（2ノード構成）</text>
+<polygon fill="#2c4e32" stroke="#1e3524" points="1301.92,-140 1301.92,-491 2121.62,-491 2121.62,-140 1301.92,-140"/>
+<text xml:space="preserve" text-anchor="start" x="1309.92" y="-478.1" font-family="Arial" font-weight="bold" font-size="11.00" fill="#c2f0c2" fill-opacity="0.701961">PROXMOX VEクラスタ（2ノード構成）</text>
 </g>
 <!-- loockit_a -->
 <g id="node1" class="node">
 <title>loockit_a</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="686.9,-298 476.77,-298 476.77,-198 686.9,-198 686.9,-298"/>
-<text xml:space="preserve" text-anchor="start" x="486.77" y="-240" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 01 / CT12902</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1552.05,-430.01 1341.92,-430.01 1341.92,-330 1552.05,-330 1552.05,-430.01"/>
+<text xml:space="preserve" text-anchor="start" x="1351.92" y="-372" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 01 / CT12902</text>
 </g>
 <!-- loockit_b -->
 <g id="node2" class="node">
 <title>loockit_b</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="686.9,-148 476.77,-148 476.77,-48 686.9,-48 686.9,-148"/>
-<text xml:space="preserve" text-anchor="start" x="486.77" y="-90" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 02 / CT12903</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1552.05,-280.01 1341.92,-280.01 1341.92,-180 1552.05,-180 1552.05,-280.01"/>
+<text xml:space="preserve" text-anchor="start" x="1351.92" y="-222" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit 02 / CT12903</text>
 </g>
 <!-- bluez -->
 <g id="node3" class="node">
 <title>bluez</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1214.24,-205 946.33,-205 946.33,-105 1214.24,-105 1214.24,-205"/>
-<text xml:space="preserve" text-anchor="start" x="956.34" y="-147" font-family="Arial" font-size="20.00" fill="#f8fafc">BlueZ / Bluetooth（2ノード）</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2081.62,-337.01 1813.7,-337.01 1813.7,-237 2081.62,-237 2081.62,-337.01"/>
+<text xml:space="preserve" text-anchor="start" x="1823.71" y="-279" font-family="Arial" font-size="20.00" fill="#f8fafc">BlueZ / Bluetooth（2ノード）</text>
 </g>
 <!-- client -->
 <g id="node4" class="node">
 <title>client</title>
-<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="228.41,-564 48.41,-564 48.41,-464 228.41,-464 228.41,-564"/>
-<text xml:space="preserve" text-anchor="start" x="71.73" y="-506" font-family="Arial" font-size="20.00" fill="#f8fafc">専用クライアント</text>
+<polygon fill="#428a4f" stroke="#2d5d39" stroke-width="0" points="180,-355.01 0,-355.01 0,-255 180,-255 180,-355.01"/>
+<text xml:space="preserve" text-anchor="start" x="23.32" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">専用クライアント</text>
 </g>
 <!-- mtls -->
 <g id="node5" class="node">
 <title>mtls</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="241.22,-391 35.61,-391 35.61,-291 241.22,-291 241.22,-391"/>
-<text xml:space="preserve" text-anchor="start" x="45.61" y="-333" font-family="Arial" font-size="20.00" fill="#f8fafc">mTLS / 専用APIの例外</text>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="556.63,-355.01 351.02,-355.01 351.02,-255 556.63,-255 556.63,-355.01"/>
+<text xml:space="preserve" text-anchor="start" x="361.03" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">mTLS / 専用APIの例外</text>
 </g>
-<!-- tunnel -->
+<!-- loockit_tunnel -->
 <g id="node6" class="node">
-<title>tunnel</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="228.41,-714 48.41,-714 48.41,-614 228.41,-614 228.41,-714"/>
-<text xml:space="preserve" text-anchor="start" x="59.48" y="-656" font-family="Arial" font-size="20.00" fill="#f8fafc">Cloudflare Tunnel</text>
+<title>loockit_tunnel</title>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="1049.36,-355.01 799.22,-355.01 799.22,-255 1049.36,-255 1049.36,-355.01"/>
+<text xml:space="preserve" text-anchor="start" x="809.23" y="-297" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit専用Tunnel / 2 LXC</text>
 </g>
-<!-- api -->
+<!-- loockit_lease -->
 <g id="node7" class="node">
-<title>api</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="697.47,-714 466.2,-714 466.2,-614 697.47,-614 697.47,-714"/>
-<text xml:space="preserve" text-anchor="start" x="476.21" y="-656" font-family="Arial" font-size="20.00" fill="#f8fafc">Kubernetes API / Lease</text>
-</g>
-<!-- proxy -->
-<g id="node8" class="node">
-<title>proxy</title>
-<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="276.82,-241 0,-241 0,-141 276.82,-141 276.82,-241"/>
-<text xml:space="preserve" text-anchor="start" x="10.01" y="-183" font-family="Arial" font-size="20.00" fill="#f8fafc">互換HAProxy / :8080・:50051</text>
+<title>loockit_lease</title>
+<polygon fill="#64748b" stroke="#475569" stroke-width="0" points="2094.41,-100.01 1800.91,-100.01 1800.91,0 2094.41,0 2094.41,-100.01"/>
+<text xml:space="preserve" text-anchor="start" x="1810.92" y="-42" font-family="Arial" font-size="20.00" fill="#f8fafc">Loockit Lease / Durable Object</text>
 </g>
 <!-- loockit_a&#45;&gt;bluez -->
-<g id="edge5" class="edge">
+<g id="edge6" class="edge">
 <title>loockit_a&#45;&gt;bluez</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M686.6,-228.56C758.98,-215 856.48,-196.74 936.22,-181.8"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="936.48,-184.42 943.37,-180.46 935.52,-179.26 936.48,-184.42"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="733.69,-220.52 733.69,-243.32 910.1,-243.32 910.1,-220.52 733.69,-220.52"/>
-<text xml:space="preserve" text-anchor="start" x="736.69" y="-226.32" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;x570 / read&#45;only D&#45;Bus</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1551.91,-360.62C1624.87,-347.02 1723.34,-328.65 1803.69,-313.67"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1804.03,-316.27 1810.92,-312.32 1803.06,-311.11 1804.03,-316.27"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1588.27,-352.52 1588.27,-375.32 1764.69,-375.32 1764.69,-352.52 1588.27,-352.52"/>
+<text xml:space="preserve" text-anchor="start" x="1591.27" y="-358.32" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;x570 / read&#45;only D&#45;Bus</text>
+</g>
+<!-- loockit_a&#45;&gt;loockit_lease -->
+<g id="edge5" class="edge">
+<title>loockit_a&#45;&gt;loockit_lease</title>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1529.11,-330.07C1537.66,-322.44 1545.57,-314.06 1552.05,-305 1578.73,-267.67 1551.43,-240.39 1582.05,-206.2 1612.02,-172.74 1706.15,-132.81 1791.26,-101.7"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1792.05,-104.21 1798.2,-99.18 1790.26,-99.27 1792.05,-104.21"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1610.45,-206.2 1610.45,-229 1742.51,-229 1742.51,-206.2 1610.45,-206.2"/>
+<text xml:space="preserve" text-anchor="start" x="1613.45" y="-212" font-family="Arial" font-size="14.00" fill="#bbfcd3">HTTPS / BLE Lease</text>
 </g>
 <!-- loockit_b&#45;&gt;bluez -->
-<g id="edge6" class="edge">
+<g id="edge8" class="edge">
 <title>loockit_b&#45;&gt;bluez</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M686.72,-104.9C752.64,-109.83 839.66,-117.32 916.33,-127.2 922.93,-128.05 929.67,-128.97 936.47,-129.95"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="935.67,-132.49 943.47,-130.98 936.43,-127.29 935.67,-132.49"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="727.47,-127.2 727.47,-150 916.33,-150 916.33,-127.2 727.47,-127.2"/>
-<text xml:space="preserve" text-anchor="start" x="730.47" y="-133" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;b550m / read&#45;only D&#45;Bus</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1551.79,-237.62C1615.2,-242.71 1697.87,-250.14 1770.91,-259.2 1781.59,-260.53 1792.62,-262.01 1803.7,-263.58"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1803.09,-266.14 1810.89,-264.61 1803.84,-260.94 1803.09,-266.14"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1582.05,-259.2 1582.05,-282 1770.91,-282 1770.91,-259.2 1582.05,-259.2"/>
+<text xml:space="preserve" text-anchor="start" x="1585.05" y="-265" font-family="Arial" font-size="14.00" fill="#bbfcd3">pve&#45;b550m / read&#45;only D&#45;Bus</text>
+</g>
+<!-- loockit_b&#45;&gt;loockit_lease -->
+<g id="edge7" class="edge">
+<title>loockit_b&#45;&gt;loockit_lease</title>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1472.1,-180.1C1494.47,-140.01 1531.88,-86.38 1582.05,-61.2 1645.58,-29.32 1723.49,-23.24 1790.96,-26.47"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1790.6,-29.08 1798.24,-26.87 1790.89,-23.84 1790.6,-29.08"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1610.45,-61.2 1610.45,-84 1742.51,-84 1742.51,-61.2 1610.45,-61.2"/>
+<text xml:space="preserve" text-anchor="start" x="1613.45" y="-67" font-family="Arial" font-size="14.00" fill="#bbfcd3">HTTPS / BLE Lease</text>
 </g>
 <!-- client&#45;&gt;mtls -->
 <g id="edge1" class="edge">
 <title>client&#45;&gt;mtls</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M138.41,-464.12C138.41,-444.35 138.41,-421.46 138.41,-400.82"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="141.04,-401.1 138.41,-393.6 135.79,-401.1 141.04,-401.1"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="68.5,-416.1 68.5,-438.9 179.52,-438.9 179.52,-416.1 68.5,-416.1"/>
-<text xml:space="preserve" text-anchor="start" x="71.5" y="-421.9" font-family="Arial" font-size="14.00" fill="#bbfcd3">クライアント証明書</text>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M179.98,-305C228.53,-305 289.11,-305 340.85,-305"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="340.55,-307.63 348.05,-305 340.55,-302.38 340.55,-307.63"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="210,-305 210,-327.8 321.02,-327.8 321.02,-305 210,-305"/>
+<text xml:space="preserve" text-anchor="start" x="213" y="-310.8" font-family="Arial" font-size="14.00" fill="#bbfcd3">クライアント証明書</text>
 </g>
-<!-- tunnel&#45;&gt;api -->
-<!-- proxy&#45;&gt;loockit_a -->
+<!-- mtls&#45;&gt;loockit_tunnel -->
+<g id="edge2" class="edge">
+<title>mtls&#45;&gt;loockit_tunnel</title>
+<path fill="none" stroke="#6366f1" stroke-width="2" d="M556.48,-305C624.58,-305 714.99,-305 789.01,-305"/>
+<polygon fill="#6366f1" stroke="#6366f1" stroke-width="2" points="788.81,-307.63 796.31,-305 788.81,-302.38 788.81,-307.63"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="586.63,-305 586.63,-327.8 769.22,-327.8 769.22,-305 586.63,-305"/>
+<text xml:space="preserve" text-anchor="start" x="589.63" y="-310.8" font-family="Arial" font-size="14.00" fill="#cbd0fd">mTLS検証済みのAPIリクエスト</text>
+</g>
+<!-- loockit_tunnel&#45;&gt;loockit_a -->
 <g id="edge3" class="edge">
-<title>proxy&#45;&gt;loockit_a</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M276.66,-208.72C337.66,-216.6 408.64,-225.76 466.68,-233.26"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="466.21,-235.85 473.99,-234.2 466.88,-230.64 466.21,-235.85"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="306.82,-227.94 306.82,-250.74 428.77,-250.74 428.77,-227.94 306.82,-227.94"/>
-<text xml:space="preserve" text-anchor="start" x="309.82" y="-233.74" font-family="Arial" font-size="14.00" fill="#bbfcd3">readyz / leaderのみ</text>
+<title>loockit_tunnel&#45;&gt;loockit_a</title>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1049.35,-322.87C1135.11,-335.23 1248.35,-351.54 1331.87,-363.57"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1331.37,-366.15 1339.16,-364.62 1332.12,-360.95 1331.37,-366.15"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1079.36,-357.84 1079.36,-380.64 1293.92,-380.64 1293.92,-357.84 1079.36,-357.84"/>
+<text xml:space="preserve" text-anchor="start" x="1082.36" y="-363.64" font-family="Arial" font-size="14.00" fill="#bbfcd3">LXC内HAProxy / loopback :18080</text>
 </g>
-<!-- proxy&#45;&gt;loockit_b -->
+<!-- loockit_tunnel&#45;&gt;loockit_b -->
 <g id="edge4" class="edge">
-<title>proxy&#45;&gt;loockit_b</title>
-<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M276.66,-162.08C337.79,-149.21 408.93,-134.22 467.04,-121.97"/>
-<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="467.23,-124.62 474.03,-120.5 466.15,-119.48 467.23,-124.62"/>
-<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="306.82,-155.56 306.82,-178.36 428.77,-178.36 428.77,-155.56 306.82,-155.56"/>
-<text xml:space="preserve" text-anchor="start" x="309.82" y="-161.36" font-family="Arial" font-size="14.00" fill="#bbfcd3">readyz / leaderのみ</text>
+<title>loockit_tunnel&#45;&gt;loockit_b</title>
+<path fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="5,2" d="M1049.35,-287.13C1135.11,-274.78 1248.35,-258.47 1331.87,-246.44"/>
+<polygon fill="#15803d" stroke="#15803d" stroke-width="2" points="1332.12,-249.06 1339.16,-245.39 1331.37,-243.86 1332.12,-249.06"/>
+<polygon fill="#18191b" fill-opacity="0.627451" stroke="none" points="1079.36,-281.8 1079.36,-304.6 1293.92,-304.6 1293.92,-281.8 1079.36,-281.8"/>
+<text xml:space="preserve" text-anchor="start" x="1082.36" y="-287.6" font-family="Arial" font-size="14.00" fill="#bbfcd3">LXC内HAProxy / loopback :18080</text>
 </g>
 </g>
 </svg>

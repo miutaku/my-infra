@@ -285,14 +285,11 @@ Client: {
   label: "専用クライアント"
   shape: c4-person
 }
-ExternalEdgeTunnel: {
-  label: "Cloudflare Tunnel"
-}
-PremisesHomeLoockitProxy: {
-  label: "互換HAProxy / :8080・:50051"
-}
 ExternalEdgeMtls: {
   label: "mTLS / 専用APIの例外"
+}
+ExternalEdgeLoockit_tunnel: {
+  label: "Loockit専用Tunnel / 2 LXC"
 }
 PremisesPve: {
   label: "Proxmox VEクラスタ（2ノード構成）"
@@ -307,13 +304,16 @@ PremisesPve: {
     label: "BlueZ / Bluetooth（2ノード）"
   }
 }
-PremisesHomePlatformApi: {
-  label: "Kubernetes API / Lease"
+ExternalEdgeLoockit_lease: {
+  label: "Loockit Lease / Durable Object"
 }
 
 Client -> ExternalEdgeMtls: "クライアント証明書"
-PremisesHomeLoockitProxy -> PremisesPve.Loockit_a: "readyz / leaderのみ"
-PremisesHomeLoockitProxy -> PremisesPve.Loockit_b: "readyz / leaderのみ"
+ExternalEdgeMtls -> ExternalEdgeLoockit_tunnel: "mTLS検証済みのAPIリクエスト"
+ExternalEdgeLoockit_tunnel -> PremisesPve.Loockit_a: "LXC内HAProxy / loopback :18080"
+PremisesPve.Loockit_a -> ExternalEdgeLoockit_lease: "HTTPS / BLE Lease"
+ExternalEdgeLoockit_tunnel -> PremisesPve.Loockit_b: "LXC内HAProxy / loopback :18080"
+PremisesPve.Loockit_b -> ExternalEdgeLoockit_lease: "HTTPS / BLE Lease"
 PremisesPve.Loockit_a -> PremisesPve.Bluez: "pve-x570 / read-only D-Bus"
 PremisesPve.Loockit_b -> PremisesPve.Bluez: "pve-b550m / read-only D-Bus"
 `;case`nfs`:return`direction: right
