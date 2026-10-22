@@ -19,6 +19,7 @@ export interface Plan {
   fingerprint: string;
   messageId?: string;
   lastReminder?: string;
+  advanceNotice?: { target: number; nonce: string; sent: boolean };
   reason?: string;
   executionId?: string;
 }

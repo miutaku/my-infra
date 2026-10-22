@@ -16,6 +16,7 @@ const reply = (content: string) => ({ type: 4, data: { content, flags: 64, allow
 // These three hosts share a maintenance group: its object serializes PVE execution.
 export class MaintenanceFleet extends DurableObject<Env> {
   private delivering = new Set<Host>();
+  private reminding = new Set<Host>();
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS hosts (host TEXT PRIMARY KEY, data TEXT NOT NULL)');
@@ -84,6 +85,39 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (plan.messageId) this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)',
       `${id}-edit`, host, plan.messageId, content);
   }
+  private async notifyUpcoming(host: Host): Promise<void> {
+    const state = this.read(host);
+    const plan = state.plan;
+    const now = Date.now();
+    if (!plan || plan.phase !== 'scheduled' || plan.notifiedRevision !== plan.revision ||
+        now < plan.target - 5 * 60_000 || now >= plan.target || this.reminding.has(host) ||
+        (plan.advanceNotice?.target === plan.target && plan.advanceNotice.sent)) return;
+    if (plan.advanceNotice?.target !== plan.target) {
+      plan.advanceNotice = { target: plan.target, nonce: crypto.randomUUID().replaceAll('-', '').slice(0, 25), sent: false };
+      this.write(host, state);
+    }
+    this.reminding.add(host);
+    try {
+      await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages`, 'POST', {
+        content: `【再起動5分前】${host}\n予定: ${formatJst(plan.target)}（日本時間）\n` +
+          '再起動予定時刻が近づいています。作業を保存してください。事前確認を通った場合に再起動します。\n' +
+          '予定の変更・保留は下のボタンから操作できます。',
+        components: this.message(host, plan).components,
+        allowed_mentions: { parse: [] }, nonce: plan.advanceNotice!.nonce, enforce_nonce: true,
+      });
+      // Do not overwrite a hold, changed schedule or host report received during delivery.
+      const current = this.read(host);
+      if (current.plan?.revision === plan.revision && current.plan.advanceNotice?.nonce === plan.advanceNotice!.nonce) {
+        current.plan.advanceNotice.sent = true;
+        this.write(host, current);
+      }
+      this.audit(host, 'five-minute-notice-sent');
+    } catch { console.error(JSON.stringify({ event: 'five-minute-notice-failed', host })); }
+    finally { this.reminding.delete(host); }
+  }
+  async remindUpcoming(): Promise<void> {
+    for (const host of HOSTS) await this.notifyUpcoming(host);
+  }
   private async deliverCompletions(host: Host): Promise<void> {
     if (this.delivering.has(host)) return;
     this.delivering.add(host);
@@ -128,6 +162,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
         });
       } catch { console.error(JSON.stringify({ event: 'completion-notification-failed', host })); }
     }
+    await this.notifyUpcoming(host);
   }
   async tick(): Promise<void> {
     const now = Date.now();
@@ -401,5 +436,9 @@ export default {
     })());
     return Response.json({ type: 5, data: { flags: 64 } });
   },
-  async scheduled(_event, env): Promise<void> { await env.FLEET.getByName('home-pve').tick(); },
+  async scheduled(event, env): Promise<void> {
+    const fleet = env.FLEET.getByName('home-pve');
+    if (event.cron === '0 10 * * *') await fleet.tick();
+    await fleet.remindUpcoming();
+  },
 } satisfies ExportedHandler<Env>;

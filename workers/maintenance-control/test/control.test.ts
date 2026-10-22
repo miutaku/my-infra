@@ -30,6 +30,130 @@ function interaction(host: Host, action: string, revision = 'rev') {
     member: { user: { id: 'operator' } }, data: { custom_id: `${host}:${revision}:${action}` } };
 }
 
+describe('five-minute reboot notices', () => {
+  async function capture(target: ReturnType<typeof stub>, failFirst = false) {
+    const deliveries: { path: string; method: string; payload: DiscordPayload }[] = [];
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async (path: string, method: string, payload: DiscordPayload) => {
+        deliveries.push({ path, method, payload });
+        if (failFirst && deliveries.length === 1) throw new Error('response lost');
+        return { id: 'notice' };
+      },
+    }));
+    return deliveries;
+  }
+  it.each(['pve-x570', 'pve-b550m', 'dev-app-server'] as const)('notifies %s once and keeps the executable plan intact', async host => {
+    const target = stub();
+    const state = fixture();
+    state.plan!.target = Date.now() + 5 * 60_000 - 1000;
+    await seed(target, host, state);
+    const deliveries = await capture(target);
+    await Promise.all([target.remindUpcoming(), target.remindUpcoming()]);
+    await target.remindUpcoming();
+    await target.report(host, state.snapshot!);
+    expect(deliveries).toHaveLength(1);
+    expect(deliveries[0]).toMatchObject({ method: 'POST', payload: {
+      content: expect.stringContaining(`【再起動5分前】${host}`), enforce_nonce: true,
+    } });
+    expect(deliveries[0].payload.content).toContain(formatJst(state.plan!.target));
+    expect(deliveries[0].payload.components).toBeDefined();
+    expect((await read(target, host)).plan).toMatchObject({
+      revision: 'rev', notifiedRevision: 'rev', phase: 'scheduled', advanceNotice: { sent: true },
+    });
+  });
+  it.each(['approval', 'held', 'running', 'failed', 'unpublished', 'early', 'expired', 'cancelled'] as const)('does not notify a %s plan', async condition => {
+    const target = stub();
+    const state = fixture();
+    state.plan!.target = Date.now() + 4 * 60_000;
+    if (['approval', 'held', 'running', 'failed'].includes(condition)) {
+      state.plan!.phase = condition as 'approval' | 'held' | 'running' | 'failed';
+    }
+    if (condition === 'unpublished') state.plan!.notifiedRevision = undefined;
+    if (condition === 'early') state.plan!.target = Date.now() + 6 * 60_000;
+    if (condition === 'expired') state.plan!.target = Date.now() - 1000;
+    if (condition === 'cancelled') state.plan = undefined;
+    await seed(target, 'pve-x570', state);
+    const deliveries = await capture(target);
+    await target.remindUpcoming();
+    expect(deliveries).toHaveLength(0);
+  });
+  it('retries a failed delivery with the same nonce and stops after success', async () => {
+    const target = stub();
+    const state = fixture();
+    state.plan!.target = Date.now() + 4 * 60_000;
+    await seed(target, 'pve-x570', state);
+    const deliveries = await capture(target, true);
+    await target.remindUpcoming();
+    expect((await read(target, 'pve-x570')).plan!.advanceNotice!.sent).toBe(false);
+    await target.remindUpcoming();
+    await target.remindUpcoming();
+    expect(deliveries).toHaveLength(2);
+    expect(deliveries[0].payload.nonce).toBe(deliveries[1].payload.nonce);
+    expect((await read(target, 'pve-x570')).plan!.advanceNotice!.sent).toBe(true);
+  });
+  it('sends on host reports as well as cron and notifies again for a changed target', async () => {
+    const target = stub();
+    const state = fixture();
+    state.plan!.target = Date.now() + 4 * 60_000;
+    await seed(target, 'dev-app-server', state);
+    let deliveries = await capture(target);
+    await target.report('dev-app-server', state.snapshot!);
+    expect(deliveries).toHaveLength(1);
+    const previousNonce = deliveries[0].payload.nonce;
+    const updated = await read(target, 'dev-app-server');
+    updated.plan!.target += 30_000;
+    updated.plan!.revision = updated.plan!.notifiedRevision = 'new-date';
+    await seed(target, 'dev-app-server', updated);
+    deliveries = await capture(target);
+    await target.remindUpcoming();
+    expect(deliveries).toHaveLength(1);
+    expect(deliveries[0].payload.nonce).not.toBe(previousNonce);
+  });
+  it('does not retry a failed notice after the operator postpones or holds the plan', async () => {
+    for (const action of ['defer', 'hold']) {
+      const target = stub();
+      const state = fixture();
+      state.plan!.target = Date.now() + 4 * 60_000;
+      await seed(target, 'pve-x570', state);
+      await capture(target, true);
+      await target.remindUpcoming();
+      await target.interaction(interaction('pve-x570', action));
+      const deliveries = await capture(target);
+      await target.remindUpcoming();
+      expect(deliveries).toHaveLength(0);
+    }
+  });
+  it('does not overwrite a concurrent hold while delivering', async () => {
+    const target = stub();
+    const state = fixture();
+    state.plan!.target = Date.now() + 4 * 60_000;
+    await seed(target, 'pve-x570', state);
+    await runInDurableObject(target, (instance, ctx) => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async () => {
+        const current: RecordState = JSON.parse(ctx.storage.sql.exec<{ data: string }>('SELECT data FROM hosts WHERE host=?', 'pve-x570').one().data);
+        current.plan!.phase = 'held';
+        current.plan!.revision = 'concurrent-hold';
+        ctx.storage.sql.exec('UPDATE hosts SET data=? WHERE host=?', JSON.stringify(current), 'pve-x570');
+        return { id: 'notice' };
+      },
+    }));
+    await target.remindUpcoming();
+    expect((await read(target, 'pve-x570')).plan).toMatchObject({ phase: 'held', revision: 'concurrent-hold' });
+  });
+  it('keeps daily plan creation separate from the every-minute reminder cron', async () => {
+    const target = env.FLEET.getByName('home-pve');
+    for (const host of ['pve-x570', 'pve-b550m', 'dev-app-server'] as const) {
+      const state = fixture('held');
+      if (host === 'dev-app-server') state.plan = undefined;
+      await seed(target, host, state);
+    }
+    await worker.scheduled({ cron: '* * * * *', scheduledTime: Date.now(), noRetry() {} }, env);
+    expect((await read(target, 'dev-app-server')).plan).toBeUndefined();
+    await worker.scheduled({ cron: '0 10 * * *', scheduledTime: Date.now(), noRetry() {} }, env);
+    expect((await read(target, 'dev-app-server')).plan).toMatchObject({ phase: 'scheduled' });
+  });
+});
+
 describe('maintenance scheduling', () => {
   it('requires a fresh report, successful notification and matching boot session', () => {
     const state = fixture();
