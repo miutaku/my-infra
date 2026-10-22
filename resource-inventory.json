@@ -2575,6 +2575,18 @@
     "file": "terraform/cloudflare/loockit-api.tf"
   },
   {
+    "id": "terraform/cloudflare/maintenance-access.tf:resource:cloudflare_workers_custom_domain:maintenance",
+    "type": "cloudflare_workers_custom_domain",
+    "name": "maintenance",
+    "file": "terraform/cloudflare/maintenance-access.tf"
+  },
+  {
+    "id": "terraform/cloudflare/maintenance-access.tf:resource:cloudflare_zero_trust_access_application:maintenance_agents",
+    "type": "cloudflare_zero_trust_access_application",
+    "name": "maintenance_agents",
+    "file": "terraform/cloudflare/maintenance-access.tf"
+  },
+  {
     "id": "terraform/cloudflare/tunnels.tf:resource:cloudflare_zero_trust_tunnel_cloudflared_config:home_k8s",
     "type": "cloudflare_zero_trust_tunnel_cloudflared_config",
     "name": "home_k8s",
