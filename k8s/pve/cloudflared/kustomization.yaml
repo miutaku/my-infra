@@ -5,3 +5,4 @@ resources:
   - tunnel-secret.yaml
   - deployment.yaml
   - pdb.yaml
+  - readiness-service.yaml
