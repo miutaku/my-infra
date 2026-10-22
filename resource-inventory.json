@@ -2581,6 +2581,12 @@
     "file": "terraform/cloudflare/maintenance-access.tf"
   },
   {
+    "id": "terraform/cloudflare/maintenance-access.tf:resource:cloudflare_zero_trust_access_application:loockit_coordinator",
+    "type": "cloudflare_zero_trust_access_application",
+    "name": "loockit_coordinator",
+    "file": "terraform/cloudflare/maintenance-access.tf"
+  },
+  {
     "id": "terraform/cloudflare/maintenance-access.tf:resource:cloudflare_zero_trust_access_application:maintenance_agents",
     "type": "cloudflare_zero_trust_access_application",
     "name": "maintenance_agents",
