@@ -51,7 +51,6 @@ spec:
         spec:
           restartPolicy: Never
           automountServiceAccountToken: false
-          nodeSelector: {node.miutaku/platform: pve}
           containers:
             - name: restore
               image: ghcr.io/miutaku/home-backup-tools:main

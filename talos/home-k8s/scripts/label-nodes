@@ -34,8 +34,12 @@ label_rpi_by_ip() {
     "network.miutaku/l2=vlan10" \
     "hardware.miutaku/model=raspberry-pi-4b" \
     "hardware.miutaku/memory=${memory}"
-  KUBECONFIG="${kubeconfig}" kubectl --context "${context}" taint node "${node}" --overwrite \
-    "workload.miutaku/arm64=reviewed:NoSchedule"
+  # ARM64 images are checked per workload; do not make every Pod opt into RPi.
+  if KUBECONFIG="${kubeconfig}" kubectl --context "${context}" get node "${node}" -o json |
+    jq -e 'any(.spec.taints[]?; .key == "workload.miutaku/arm64" and .effect == "NoSchedule")' >/dev/null; then
+    KUBECONFIG="${kubeconfig}" kubectl --context "${context}" taint node "${node}" \
+      "workload.miutaku/arm64:NoSchedule-"
+  fi
 }
 
 label_by_ip 192.168.20.137 pve-x570 controlplane

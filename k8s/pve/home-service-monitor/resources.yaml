@@ -41,8 +41,6 @@ spec:
       labels: {app: home-service-monitor}
     spec:
       serviceAccountName: home-service-monitor
-      nodeSelector:
-        kubernetes.io/arch: amd64
       containers:
         - name: monitor
           image: ghcr.io/miutaku/home-service-monitor:main

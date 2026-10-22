@@ -21,6 +21,7 @@ jobs:
       - name: Validate shell and Terraform formatting
         run: |
           bash -n scripts/setup-kubeconfig
+          bash -n talos/home-k8s/scripts/label-nodes
           terraform fmt -check -recursive
 
       - name: Validate changed YAML syntax
@@ -28,6 +29,11 @@ jobs:
         run: |
           mapfile -t files < <(git ls-files '*.yaml' '*.yml')
           ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_stream(File.read(f)) }' "${files[@]}"
+
+      - name: Check home workload placement policy
+        run: |
+          ruby tests/test_home_placement.rb
+          ruby scripts/check-home-placement.rb
 
       - name: Test shared-backup migration integrity guards
         run: |

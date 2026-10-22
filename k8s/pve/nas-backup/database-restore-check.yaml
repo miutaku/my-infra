@@ -134,7 +134,6 @@ spec:
         spec:
           restartPolicy: Never
           automountServiceAccountToken: false
-          nodeSelector: {node.miutaku/platform: pve}
           securityContext: {fsGroup: 999, seccompProfile: {type: RuntimeDefault}}
           initContainers:
             - name: download

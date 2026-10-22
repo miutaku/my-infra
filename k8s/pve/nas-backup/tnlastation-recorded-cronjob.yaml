@@ -22,8 +22,6 @@ spec:
           securityContext:
             seccompProfile:
               type: RuntimeDefault
-          nodeSelector:
-            node.miutaku/platform: pve
           containers:
             - name: backup
               image: postgres:18-alpine

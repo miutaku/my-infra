@@ -31,23 +31,6 @@ spec:
             nodeSelector:
               kubernetes.io/arch: amd64
               kubernetes.io/os: linux
-            affinity:
-              nodeAffinity:
-                preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 100
-                  preference:
-                    matchExpressions:
-                    - key: topology.miutaku/proxmox-node
-                      operator: In
-                      values:
-                      - pve-x570
-                - weight: 20
-                  preference:
-                    matchExpressions:
-                    - key: topology.miutaku/proxmox-node
-                      operator: In
-                      values:
-                      - pve-b550m
             initContainers:
             - name: prepare-review-storage
               image: ghcr.io/actions/actions-runner:latest

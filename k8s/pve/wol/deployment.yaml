@@ -16,6 +16,8 @@ spec:
       labels:
         app: gptwol
     spec:
+      nodeSelector:
+        network.miutaku/l2: vlan20
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       initContainers:

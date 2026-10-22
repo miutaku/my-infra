@@ -15,8 +15,6 @@ spec:
       labels:
         app: magic-mirror
     spec:
-      nodeSelector:
-        kubernetes.io/arch: amd64
       containers:
         - name: magic-mirror
           image: docker.io/bastilimbach/docker-magicmirror:latest

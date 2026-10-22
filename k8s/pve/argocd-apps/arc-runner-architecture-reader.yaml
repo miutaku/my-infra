@@ -16,29 +16,54 @@ spec:
     targetRevision: 0.9.3
     helm:
       releaseName: architecture-automation-reader
-      values: "githubConfigUrl: https://github.com/miutaku/architecture-automation\n\
-        githubConfigSecret: github-automation-token-secret\ncontrollerServiceAccount:\n\
-        \  namespace: arc-systems\n  name: arc-systems-gha-rs-controller\nminRunners:\
-        \ 0\nmaxRunners: 1\ntemplate:\n  spec:\n    securityContext:\n      fsGroup:\
-        \ 1001\n      fsGroupChangePolicy: OnRootMismatch\n      seccompProfile:\n\
-        \        type: RuntimeDefault\n    nodeSelector:\n      kubernetes.io/arch:\
-        \ amd64\n      kubernetes.io/os: linux\n    affinity:\n      nodeAffinity:\n\
-        \        preferredDuringSchedulingIgnoredDuringExecution:\n        - weight:\
-        \ 100\n          preference:\n            matchExpressions:\n            -\
-        \ key: topology.miutaku/proxmox-node\n              operator: In\n       \
-        \       values:\n              - pve-x570\n        - weight: 20\n        \
-        \  preference:\n            matchExpressions:\n            - key: topology.miutaku/proxmox-node\n\
-        \              operator: In\n              values:\n              - pve-b550m\n\
-        \    containers:\n    - name: runner\n      image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807\n\
-        \      command:\n      - /home/runner/run.sh\n      env:\n      - name: RUNNER_TOOL_CACHE\n\
-        \        value: /opt/hostedtoolcache\n      resources:\n        requests:\n\
-        \          cpu: 100m\n          memory: 256Mi\n        limits:\n         \
-        \ cpu: '1'\n          memory: 1Gi\n      volumeMounts:\n      - name: toolcache\n\
-        \        mountPath: /opt/hostedtoolcache\n      securityContext:\n       \
-        \ allowPrivilegeEscalation: false\n        capabilities:\n          drop:\n\
-        \          - ALL\n    volumes:\n    - name: toolcache\n      emptyDir: {}\n\
-        \    automountServiceAccountToken: false\n  metadata:\n    labels:\n     \
-        \ architecture.miutaku/source-reader: 'true'\nrunnerScaleSetName: architecture-automation-reader\n"
+      values: |
+        githubConfigUrl: https://github.com/miutaku/architecture-automation
+        githubConfigSecret: github-automation-token-secret
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-systems-gha-rs-controller
+        minRunners: 0
+        maxRunners: 1
+        template:
+          spec:
+            securityContext:
+              fsGroup: 1001
+              fsGroupChangePolicy: OnRootMismatch
+              seccompProfile:
+                type: RuntimeDefault
+            nodeSelector:
+              kubernetes.io/os: linux
+            containers:
+            - name: runner
+              image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807
+              command:
+              - /home/runner/run.sh
+              env:
+              - name: RUNNER_TOOL_CACHE
+                value: /opt/hostedtoolcache
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: '1'
+                  memory: 1Gi
+              volumeMounts:
+              - name: toolcache
+                mountPath: /opt/hostedtoolcache
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+            volumes:
+            - name: toolcache
+              emptyDir: {}
+            automountServiceAccountToken: false
+          metadata:
+            labels:
+              architecture.miutaku/source-reader: 'true'
+        runnerScaleSetName: architecture-automation-reader
   destination:
     server: https://kubernetes.default.svc
     namespace: architecture-automation

@@ -146,9 +146,9 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 - 退避元候補: CPU 70%超またはメモリ55%超
 - 1サイクルのEvictionは1ノード最大1 Pod、クラスタ全体で最大2 Pod
 - 作成後30分未満のPod、DaemonSet、system-critical Podは保護
-- EPGStationはopt-inし、amd64のPVE worker間で再配置する
+- EPGStationはopt-inし、対応イメージ・resource requestの範囲でworker間を再配置する
 - TNLAStationはfrontendとffmpeg-worker-encodeだけを対象にする
-- ffmpeg-worker-encodeはamd64制約を維持し、PVE worker間でのみ移動する
+- ffmpeg-worker-encodeはamd64/arm64対応を確認し、特定ホスト・CPUへの固定をしない
 - backend、streaming、gateway、mediamtxはopt-inしないため対象外
 
 DeschedulerはPodを直接配置せず、Eviction後の配置は標準スケジューラへ委ねる。
@@ -173,21 +173,15 @@ Apply this bootstrap directory with `kubectl --context home-k8s apply --server-s
 It is not reconciled by an Argo CD Application; a Git push alone does not install it.
 
 - API, repo-server and Redis HAProxy: two replicas, required anti-affinity on
-  `topology.miutaku/proxmox-node`, one per PVE physical host. PDBs preserve one
-  available replica during voluntary eviction. Rolling updates use no surge and
-  at most one unavailable replica so strict anti-affinity on two hosts cannot
-  deadlock an update. Loss of one host leaves one serving replica; the replacement
-  waits for a second eligible host.
-- Redis/Sentinel: three ephemeral replicas, one each on the two PVE workers and
-  worker-04 (4GB RPi). The RPi toleration is limited to this Redis workload after
-  verifying the upstream Redis image supports arm64. Required hostname
-  anti-affinity and an explicit three-node allowlist prevent placing quorum
-  members together. The PDB preserves two members. Redis is a reconstructible
-  cache, not a persistent application database.
+  `topology.miutaku/failure-domain`. PVE and physical RPi workers are eligible.
+  PDBs preserve one replica during voluntary eviction; updates replace one at a time.
+- Redis/Sentinel: three ephemeral replicas on three distinct physical failure domains.
+  There is no hostname allowlist. Required physical anti-affinity and a PDB of two
+  preserve cache quorum during a single voluntary eviction. Redis is reconstructible.
 - Resource requests reserve capacity; memory limits bound cache/controller use.
   The management PriorityClass never preempts application Pods.
-- Application controller, Dex and notifications remain singletons on PVE workers.
-  They can be recreated on the other worker, but this is not uninterrupted HA.
+- Application controller, Dex and notifications remain singletons. They can be
+  recreated on any eligible worker, but this is not uninterrupted HA.
   Do not duplicate Dex's in-memory session store or run competing ImageUpdaters.
   Controller sharding is capacity distribution, not active/standby failover;
   dynamic cluster distribution is alpha in v3.3.10 and is not enabled.

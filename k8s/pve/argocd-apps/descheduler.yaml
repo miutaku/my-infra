@@ -32,9 +32,8 @@ spec:
             cpu: 200m
             memory: 128Mi
 
-        # Descheduler自体はPVE workerで実行し、RPiの容量を消費しない。
+        # 制御処理はPVE/RPiのどちらでも実行できる。
         nodeSelector:
-          node.miutaku/platform: pve
           node.miutaku/role: agent
 
         deschedulerPolicy:

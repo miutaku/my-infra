@@ -14,8 +14,6 @@ spec:
       labels:
         app: reventer-tfc-agent
     spec:
-      nodeSelector:
-        kubernetes.io/arch: amd64
       containers:
         - name: tfc-agent
           image: hashicorp/tfc-agent:1.28.8

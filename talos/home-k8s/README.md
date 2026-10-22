@@ -35,13 +35,16 @@ Piは`rpi_generic` schematic `ee21ef4a5ef808a9b7484cc0dda0f25075021691c8c09a2765
 `scripts/label-nodes`はPiへ`hardware.miutaku/model=raspberry-pi-4b`、RAM容量、agent roleを付ける。
 標準の`kubernetes.io/arch=arm64`と合わせ、arm64対応を確認したworkloadの配置制御に利用する。
 
-RPiには`workload.miutaku/arm64=reviewed:NoSchedule`を付け、arm64 manifestを確認したworkloadだけが
-明示的なtolerationで配置されるようにする。全nodeへ`node.miutaku/platform=pve|rpi`と
-`network.miutaku/l2=vlan20|vlan10`を付ける。VLAN 20のMetalLB speakerはPVE workerだけに限定する。
-複数replicaのworkloadはhostname単位のanti-affinityで分散する。tolerationはRPiを配置候補へ加えるだけで
-architectureを固定せず、
-schedulerがresource requestを基にPVE/RPiから選択する。DB、映像処理、GitOps/Secret基盤は
-PVEへ残す。
+PVE/RPiは標準で同じ配置候補とし、RPiの一律な`workload.miutaku/arm64` taintは撤去した。
+`scripts/label-nodes`は既存のこのtaintも除去する。他のtaintやcontrol-planeの保護は維持する。
+新しいworkloadは全container/initContainerのamd64/arm64対応を確認する。
+CPUやストレージに実際の制約がある場合だけ、理由を記載して個別に指定する。
+全nodeへ`node.miutaku/platform=pve|rpi`、`network.miutaku/l2=vlan20|vlan10`と
+`topology.miutaku/failure-domain`を付ける。platformラベルによる固定は行わない。
+VLAN 20のMetalLB speakerとWoLは既存のLAN区間を維持するためnetworkラベルで制御する。
+HAのreplicaは物理failure domain単位に分散する。schedulerがresource requestを基に配置を選ぶ。
+共有NFSはネットワークストレージなので、NASへの依存だけではPVE固定の理由にしない。
+残る制約と検証方法は[配置方針](../../docs/home-workload-placement.md)を参照。
 
 管理端末では資格情報そのものをshell設定へ埋め込まず、次のパスだけを環境変数に設定する。
 
