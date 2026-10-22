@@ -41,6 +41,7 @@ pct exec "$ct_id" -- docker run -d \
   -e POD_NAME="$identity" \
   -e KUBERNETES_SERVICE_HOST="$coordinator_host" \
   -e KUBERNETES_SERVICE_PORT_HTTPS=443 \
+  -e LOOCKIT_LEASE_ACCESS_FILE=/var/run/secrets/kubernetes.io/serviceaccount/access-headers.json \
   -e DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket \
   -p 8080:8080 \
   -p 50051:50051 \

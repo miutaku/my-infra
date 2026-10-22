@@ -352,7 +352,13 @@ async function authorized(request: Request, expected: string): Promise<boolean> 
 }
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const path = new URL(request.url).pathname;
+    const { pathname: path, hostname } = new URL(request.url);
+    // Access protects the machine hostnames. Never expose their APIs through
+    // the public Discord hostname or another alias of this Worker.
+    const permitted = (hostname === 'maintenance-discord.miutaku.work' && path === '/discord/interactions') ||
+      (hostname === 'maintenance.miutaku.work' && path.startsWith('/agent/')) ||
+      (hostname === 'loockit-lease.miutaku.work' && (path === LEASE_PATH || path === `${LEASE_PATH}/${LEASE_NAME}`));
+    if (!permitted) return new Response('Not found', { status: 404 });
     if (path === LEASE_PATH || path === `${LEASE_PATH}/${LEASE_NAME}`) {
       const secret = (env as Env & { LOOCKIT_LEASE_TOKENS_JSON?: string }).LOOCKIT_LEASE_TOKENS_JSON;
       if (!secret) return new Response('Unavailable', { status: 503 });
@@ -377,6 +383,7 @@ export default {
       const host = request.headers.get('X-Maintenance-Host') ?? '';
       const tokens: Record<string, string> = JSON.parse(env.AGENT_TOKENS_JSON);
       if (!isHost(host) || !tokens[host] || !await authorized(request, tokens[host])) return new Response('Forbidden', { status: 403 });
+      if (path === '/agent/auth-check') return Response.json({ ok: true, host });
       try {
         const data = JSON.parse(await boundedText(request));
         if (path === '/agent/report') {

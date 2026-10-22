@@ -48,3 +48,21 @@ resource "cloudflare_zero_trust_access_application" "maintenance_agents" {
     }]
   }]
 }
+
+resource "cloudflare_zero_trust_access_application" "loockit_coordinator" {
+  account_id                = var.account_id
+  name                      = "loockit-coordinator-managed-by-tf"
+  domain                    = "loockit-lease.${var.domain}"
+  type                      = "self_hosted"
+  app_launcher_visible      = false
+  options_preflight_bypass  = false
+  service_auth_401_redirect = false
+  policies = [{
+    name       = "loockit-coordinator-machines-only"
+    precedence = 1
+    decision   = "non_identity"
+    include = [for host in ["loockit-x570", "loockit-b550m"] : {
+      service_token = { token_id = one([for token in data.cloudflare_zero_trust_access_service_tokens.maintenance[host].result : token.id if token.name == local.maintenance_access_token_names[host]]) }
+    }]
+  }]
+}

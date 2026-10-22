@@ -80,6 +80,19 @@ def main():
     tokens = json.loads(values[KEY])
     agent_tokens = json.loads(values['REBOOT_AGENT_TOKENS_JSON'])
     lease_tokens = json.loads(values['LOOCKIT_COORDINATOR_TOKENS_JSON'])
+    def denied(label, url, auth=None, method='POST'):
+        try:
+            request(url, auth or {}, method, {} if method == 'POST' else None)
+        except urllib.error.HTTPError as error:
+            if error.code not in [401, 403, 404]:
+                raise RuntimeError(label + ': unexpected rejection status') from None
+            print(f'{label}: HTTP {error.code}')
+            return
+        raise RuntimeError(label + ': unexpectedly permitted')
+
+    denied('Unsigned Discord interaction', 'https://maintenance-discord.miutaku.work/discord/interactions')
+    denied('Discord hostname cannot expose agent API', 'https://maintenance-discord.miutaku.work/agent/auth-check')
+    denied('Legacy workers.dev route disabled', 'https://home-maintenance-control.mtakumi-0925.workers.dev/agent/auth-check')
     for identity, credential in tokens.items():
         is_lease = identity.startswith('loockit-')
         url = ('https://loockit-lease.miutaku.work/apis/coordination.k8s.io/v1/namespaces/app-loockit/leases/loockit-ble-leader'
@@ -88,6 +101,11 @@ def main():
                 'Authorization': 'Bearer ' + (lease_tokens if is_lease else agent_tokens)[identity]}
         if not is_lease:
             auth['X-Maintenance-Host'] = identity
+        denied(identity + ' without Access credentials', url, {key: value for key, value in auth.items() if not key.startswith('CF-Access-')}, 'GET' if is_lease else 'POST')
+        denied(identity + ' without application credentials', url, {key: value for key, value in auth.items() if key != 'Authorization'}, 'GET' if is_lease else 'POST')
+        other = tokens['pve-x570' if is_lease else 'loockit-x570']
+        denied(identity + ' with credentials from another service', url,
+               {**auth, 'CF-Access-Client-Id': other['client_id'], 'CF-Access-Client-Secret': other['client_secret']}, 'GET' if is_lease else 'POST')
         request(url, auth, 'GET' if is_lease else 'POST', None if is_lease else {})
         print(identity + ': Access and application authentication succeeded')
 

@@ -147,14 +147,26 @@ def pve_tasks_idle():
             raise RuntimeError('Active PVE task; maintenance deferred')
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+API_OPENER = urllib.request.build_opener(NoRedirect())
+
+
 def api(config, endpoint, data):
+    if not config.get('access_client_id') or not config.get('access_client_secret'):
+        raise RuntimeError('Cloudflare Access credentials are required')
     request = urllib.request.Request(config['controller'].rstrip('/') + '/agent/' + endpoint,
         data=json.dumps(data).encode(), headers={
             'Authorization': 'Bearer ' + config['token'],
             'X-Maintenance-Host': config['host'], 'Content-Type': 'application/json',
+            'CF-Access-Client-Id': config['access_client_id'],
+            'CF-Access-Client-Secret': config['access_client_secret'],
             'User-Agent': 'home-maintenance-agent/1.0',
         }, method='POST')
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with API_OPENER.open(request, timeout=30) as response:
         return json.load(response)
 
 

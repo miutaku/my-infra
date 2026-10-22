@@ -16,6 +16,7 @@ Cloudflare の DNS・Email Routing・Tunnel・Zero Trust Access・Tunnel private
 | `warp.tf` | default WARP client profile + Split Tunnel include + Local Domain Fallback + Gateway proxy |
 | `dns.tf` | published app 用 `cloudflare_dns_record` (CNAME, proxied) |
 | `access.tf` | published app 用 `cloudflare_zero_trust_access_application` + policy |
+| `maintenance-access.tf` | 再起動エージェント・Loockit専用のAccessサービス認証、Worker用ドメイン |
 | `email.tf` | Email Routingの有効化とMX/SPF設定（個別routing ruleは必要時に追加） |
 | `locals.tf` | published app、private route、internal DNS suffix の定義マップ |
 

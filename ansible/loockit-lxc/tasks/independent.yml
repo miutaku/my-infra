@@ -62,7 +62,7 @@
             fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
             with os.fdopen(fd,'w') as out: out.write(value+'\n')
             os.chmod(path,0o600)
-    stdin: "{{ {'host': 'loockit-lease.miutaku.work', 'namespace': 'app-loockit', 'token': (independent_secrets.LOOCKIT_COORDINATOR_TOKENS_JSON | from_json)[loockit_identity], 'tunnel-token': independent_tunnel_token.json.result} | to_json }}"
+    stdin: "{{ {'host': 'loockit-lease.miutaku.work', 'namespace': 'app-loockit', 'token': (independent_secrets.LOOCKIT_COORDINATOR_TOKENS_JSON | from_json)[loockit_identity], 'access-headers.json': {'CF-Access-Client-Id': (independent_secrets.MAINTENANCE_CF_ACCESS_TOKENS_JSON | from_json)[loockit_identity].client_id, 'CF-Access-Client-Secret': (independent_secrets.MAINTENANCE_CF_ACCESS_TOKENS_JSON | from_json)[loockit_identity].client_secret} | to_json, 'tunnel-token': independent_tunnel_token.json.result} | to_json }}"
   changed_when: true
   when: not ansible_check_mode
   no_log: true

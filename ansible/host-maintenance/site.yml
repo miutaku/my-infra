@@ -24,12 +24,15 @@
     - name: Select this host's credential
       ansible.builtin.set_fact:
         host_maintenance_token: "{{ ((host_maintenance_bws.stdout | from_json | items2dict(key_name='key', value_name='value'))[host_maintenance_agent_tokens_secret] | from_json)[inventory_hostname] }}"
+        host_maintenance_access: "{{ ((host_maintenance_bws.stdout | from_json | items2dict(key_name='key', value_name='value'))['MAINTENANCE_CF_ACCESS_TOKENS_JSON'] | from_json)[inventory_hostname] }}"
       no_log: true
 
     - name: Validate the agent token
       ansible.builtin.assert:
         that:
           - host_maintenance_token | length >= 32
+          - host_maintenance_access.client_id | length > 0
+          - host_maintenance_access.client_secret | length >= 32
       no_log: true
 
   tasks:
@@ -43,7 +46,7 @@
 
     - name: Install the agent credential
       ansible.builtin.copy:
-        content: "{{ {'controller': host_maintenance_controller_url, 'host': inventory_hostname, 'token': host_maintenance_token} | to_json }}\n"
+        content: "{{ {'controller': host_maintenance_controller_url, 'host': inventory_hostname, 'token': host_maintenance_token, 'access_client_id': host_maintenance_access.client_id, 'access_client_secret': host_maintenance_access.client_secret} | to_json }}\n"
         dest: /etc/host-maintenance/agent-config
         owner: root
         group: root

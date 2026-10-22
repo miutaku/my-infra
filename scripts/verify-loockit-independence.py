@@ -21,16 +21,23 @@ CIDRS = ['192.168.20.228/32', '192.168.20.137/32', '192.168.20.138/32', '192.168
          '10.244.0.0/16', '10.96.0.0/12']
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def lease():
     result = subprocess.run(['bws', 'secret', 'list', '--output', 'json'], capture_output=True)
     if result.returncode:
         raise RuntimeError('BSM read failed')
     values = {x['key']: x['value'] for x in json.loads(result.stdout)}
     token = json.loads(values['LOOCKIT_COORDINATOR_TOKENS_JSON'])['loockit-x570']
+    access = json.loads(values['MAINTENANCE_CF_ACCESS_TOKENS_JSON'])['loockit-x570']
     request = urllib.request.Request('https://' + migration.ORIGIN +
         '/apis/coordination.k8s.io/v1/namespaces/app-loockit/leases/loockit-ble-leader',
-        headers={'Authorization': 'Bearer ' + token})
-    with urllib.request.urlopen(request, timeout=10) as response:
+        headers={'Authorization': 'Bearer ' + token, 'CF-Access-Client-Id': access['client_id'],
+                 'CF-Access-Client-Secret': access['client_secret']})
+    with urllib.request.build_opener(NoRedirect()).open(request, timeout=10) as response:
         return json.load(response)
 
 

@@ -68,9 +68,7 @@ def main():
     subprocess.run(['npx', 'wrangler', 'deploy'], cwd=ROOT, env=env, check=True)
     subprocess.run(['npx', 'wrangler', 'secret', 'bulk'], cwd=ROOT, env=env, check=True,
                    input=json.dumps({'DISCORD_BOT_TOKEN': bot, 'AGENT_TOKENS_JSON': json.dumps(tokens)}).encode())
-    subdomain = get(f"https://api.cloudflare.com/client/v4/accounts/{config['account_id']}/workers/subdomain",
-                    {'Authorization': 'Bearer ' + values['TF_CLOUDFLARE_API_TOKEN']})['result']['subdomain']
-    origin = f"https://{config['name']}.{subdomain}.workers.dev"
+    origin = 'https://maintenance-discord.miutaku.work'
     request = urllib.request.Request('https://discord.com/api/v10/applications/@me',
         headers={**headers, 'Content-Type': 'application/json', 'User-Agent': 'DiscordBot (https://github.com/miutaku/my-infra, 1.0)'},
         method='PATCH', data=json.dumps({'interactions_endpoint_url': origin + '/discord/interactions'}).encode())
@@ -79,7 +77,7 @@ def main():
     if updated.get('interactions_endpoint_url') != origin + '/discord/interactions':
         raise SystemExit('Discord endpoint registration did not succeed; do not activate agents')
     print('Discord validated the signed interaction endpoint: ' + origin + '/discord/interactions')
-    print('Controller origin for host_maintenance_controller_url: ' + origin)
+    print('Controller origin for host_maintenance_controller_url: https://maintenance.miutaku.work')
 
 
 if __name__ == '__main__':

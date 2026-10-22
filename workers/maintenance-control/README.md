@@ -4,6 +4,34 @@ Discordのボタンで、dev-app-serverの再起動予定とPVEの再起動枠�
 操作・予定はCloudflare WorkersとSQLite-backed Durable Objectに保存し、PVE停止中も
 操作を受け付ける。3ホストを一つのmaintenance groupとして扱い、PVE同士の実行を排他する。
 
+## Cloudflare Accessの境界
+
+| 接続先 | 公開範囲・認証 |
+|---|---|
+| `maintenance-discord.miutaku.work/discord/interactions` | Discord署名・時刻・許可ユーザーを検証。Accessログインは要求しない |
+| `maintenance.miutaku.work/agent/*` | 各ホスト専用のAccessサービス認証と、既存のホスト別Bearer tokenの両方が必須 |
+| `loockit-lease.miutaku.work` | Loockit専用のAccessサービス認証と、既存のインスタンス別Bearer tokenの両方が必須 |
+
+Workerはホスト名とAPIパスの組み合わせも限定する。公開DiscordドメインやLoockitの
+ドメインから再起動APIへアクセスできない。`workers.dev`とpreview URLは無効にする。
+Accessポリシーは`terraform/cloudflare/maintenance-access.tf`で管理し、人間用のAllowや
+Bypassを機械用ドメインに設けない。監視用の`home-monitoring`資格情報も許可しない。
+
+Access資格情報5組は`MAINTENANCE_CF_ACCESS_TOKENS_JSON`としてBSMに保存する。
+`python3 scripts/maintenance-access.py provision`で初回登録し、Terraformには公開token IDだけを渡す。
+サービスのClient SecretはTerraform state・Git・イメージに保存しない。
+有効期間は1年。期限前にCloudflareで更新し、secretをローテーションした場合はBSMも更新して
+Ansibleを再配備する。ホストのagent-configとLoockitのaccess-headers.jsonはroot専用にする。
+Loockit v0.1.20以降は`LOOCKIT_LEASE_ACCESS_FILE`でこのJSONを読み、既存Bearerと併用する。
+認証付きクライアントはHTTPリダイレクトを拒否して資格情報の他宛先への転送を防ぐ。
+
+移行時は新ドメインとAccess資格情報を作成→全ホスト・Loockitのクライアントへ配備→
+Discord受付先を変更→LoockitのAccessを有効化→`workers.dev`無効化の順に行う。
+`python3 scripts/maintenance-access.py register-discord`はDiscord自身の署名付きPING検証を伴う。
+`python3 scripts/maintenance-access.py verify`で、全クライアントの認証成功、資格情報の不足・
+用途違いの拒否、公開ドメイン経由の迂回拒否、旧URLの無効化を状態変更なしで確認する。
+確認用`POST /agent/auth-check`は認証結果だけを返し、予定作成・実行権取得・再起動を行わない。
+
 ## 動作
 
 - dev-app-server: 18時台に従来のunattended-upgradesで更新。19時に再起動が必要なら

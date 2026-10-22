@@ -15,7 +15,11 @@ Kubernetes Lease形式のAPIだけを提供する。これはKubernetesのproxy�
 15秒の期限で競合を防ぐ。通信断時のBLE fencing・activation timeout・不健全時の譲渡は
 Loockit側の既存実装を維持する。外部コーディネータやインターネットの障害時はfail closedになる。
 
-`/etc/loockit/coordinator`にはhost・namespace・専用token・公開CA bundleだけを置く。
+`/etc/loockit/coordinator`にはhost・namespace・専用token・公開CA bundleと、
+Access用の`access-headers.json`を置き、資格情報はroot専用で保存する。BSMの
+`MAINTENANCE_CF_ACCESS_TOKENS_JSON`からインスタンス別に配備し、
+Loockit v0.1.20以降は`LOOCKIT_LEASE_ACCESS_FILE`で読み取る。
+`loockit-lease.miutaku.work`はAccessサービス認証と既存Bearerの両方で保護する。
 旧変数名`KUBERNETES_SERVICE_HOST/PORT_HTTPS`は互換用で、接続先は独立Workerの専用ドメイン`loockit-lease.miutaku.work:443`。
 機械クライアントのUser-AgentがBrowser Integrity Checkで拒否されないよう、
 この専用hostnameだけBIC/UAチェックを除外する。Workerのtoken認証と他のWAFルールは維持する。

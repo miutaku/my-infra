@@ -13,6 +13,9 @@ ansible-playbook site.yml
 controllerを配備し、DiscordのInteractions endpointを検証してから実行する。
 `group_vars/all.yml`にcontroller originを設定する。ホストごとの認証トークンは
 BSMの`REBOOT_AGENT_TOKENS_JSON`から取得し、root専用ファイルに保存する。
+controllerは`https://maintenance.miutaku.work`を使い、追加のAccess資格情報は
+`MAINTENANCE_CF_ACCESS_TOKENS_JSON`からホスト別に取得する。秘密値を出さず、
+Accessと既存Bearerの両方を送信する。認証付きリクエストはリダイレクトしない。
 
 PVEのguest停止やVM移行をこのplaybookから実行することはない。
 PVEは毎日18時台にパッケージを自動更新し、OS再起動が必要なら19時に通知する。

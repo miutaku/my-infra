@@ -415,14 +415,33 @@ describe('maintenance scheduling', () => {
 });
 
 describe('public ingress', () => {
+  it.each([
+    ['maintenance-discord.miutaku.work', '/agent/auth-check'],
+    ['maintenance-discord.miutaku.work', '/apis/coordination.k8s.io/v1/namespaces/app-loockit/leases'],
+    ['maintenance.miutaku.work', '/discord/interactions'],
+    ['loockit-lease.miutaku.work', '/agent/auth-check'],
+    ['home-maintenance-control.mtakumi-0925.workers.dev', '/agent/auth-check'],
+    ['unrecognized.example', '/discord/interactions'],
+  ])('rejects cross-host and legacy routes on %s%s', async (host, path) => {
+    const response = await worker.fetch(new Request(`https://${host}${path}`, {
+      method: 'POST', body: '{}', headers: { 'X-Maintenance-Host': 'pve-x570', Authorization: 'Bearer correct-token' },
+    }), { ...env, AGENT_TOKENS_JSON: JSON.stringify({ 'pve-x570': 'correct-token' }) }, {} as ExecutionContext);
+    expect(response.status).toBe(404);
+  });
+  it('provides a read-only per-host authentication check', async () => {
+    const response = await worker.fetch(new Request('https://maintenance.miutaku.work/agent/auth-check', {
+      method: 'POST', body: '{}', headers: { 'X-Maintenance-Host': 'pve-x570', Authorization: 'Bearer correct-token' },
+    }), { ...env, AGENT_TOKENS_JSON: JSON.stringify({ 'pve-x570': 'correct-token' }) }, {} as ExecutionContext);
+    expect(await response.json()).toEqual({ ok: true, host: 'pve-x570' });
+  });
   it('rejects unsigned Discord interactions', async () => {
-    const response = await worker.fetch(new Request('https://test/discord/interactions', {
+    const response = await worker.fetch(new Request('https://maintenance-discord.miutaku.work/discord/interactions', {
       method: 'POST', body: JSON.stringify({ type: 1 }),
     }), env, {} as ExecutionContext);
     expect(response.status).toBe(401);
   });
   it('rejects incorrect per-host tokens', async () => {
-    const response = await worker.fetch(new Request('https://test/agent/claim', {
+    const response = await worker.fetch(new Request('https://maintenance.miutaku.work/agent/claim', {
       method: 'POST', headers: { 'X-Maintenance-Host': 'pve-x570', Authorization: 'Bearer wrong' }, body: '{}',
     }), env, {} as ExecutionContext);
     expect(response.status).toBe(403);
@@ -436,7 +455,7 @@ async function signedRequest(payload: object, timestamp = String(Math.floor(Date
     new TextEncoder().encode(timestamp + body)));
   const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keys.publicKey));
   const hex = (bytes: Uint8Array) => [...bytes].map(value => value.toString(16).padStart(2, '0')).join('');
-  return { request: new Request('https://test/discord/interactions', { method: 'POST', body,
+  return { request: new Request('https://maintenance-discord.miutaku.work/discord/interactions', { method: 'POST', body,
     headers: { 'X-Signature-Timestamp': timestamp, 'X-Signature-Ed25519': hex(signature) } }),
     config: { ...env, DISCORD_PUBLIC_KEY: hex(publicKey), DISCORD_OPERATOR_IDS: 'operator', DISCORD_GUILD_ID: 'guild', DISCORD_CHANNEL_ID: 'channel' } };
 }

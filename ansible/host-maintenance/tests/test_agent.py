@@ -21,10 +21,23 @@ class AgentTests(unittest.TestCase):
         self.addCleanup(availability.stop)
 
     def test_controller_requests_identify_the_agent(self):
-        with patch.object(agent.urllib.request, 'urlopen', return_value=io.BytesIO(b'null')) as request:
+        with patch.object(agent.API_OPENER, 'open', return_value=io.BytesIO(b'null')) as request:
             self.assertIsNone(agent.api({'controller': 'https://controller.example',
-                'host': 'dev-app-server', 'token': 'test-token'}, 'claim', {}))
+                'host': 'dev-app-server', 'token': 'test-token',
+                'access_client_id': 'client-id', 'access_client_secret': 'client-secret'}, 'claim', {}))
             self.assertEqual(request.call_args.args[0].get_header('User-agent'), 'home-maintenance-agent/1.0')
+            self.assertEqual(request.call_args.args[0].get_header('Cf-access-client-id'), 'client-id')
+            self.assertEqual(request.call_args.args[0].get_header('Cf-access-client-secret'), 'client-secret')
+            self.assertEqual(request.call_args.args[0].get_header('Authorization'), 'Bearer test-token')
+
+    def test_access_credentials_are_required_before_sending(self):
+        with patch.object(agent.API_OPENER, 'open') as request:
+            with self.assertRaisesRegex(RuntimeError, 'Access credentials are required'):
+                agent.api({'controller': 'https://controller.example', 'host': 'pve-x570', 'token': 'token'}, 'claim', {})
+            request.assert_not_called()
+
+    def test_redirects_cannot_forward_credentials(self):
+        self.assertIsNone(agent.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://other.invalid'))
 
     def test_simulation_fingerprint_includes_removals(self):
         with patch.object(agent, 'run', return_value='Inst package-a (2)\nRemv old-package [1]\n'):

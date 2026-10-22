@@ -52,7 +52,7 @@ describe('independent BLE Lease', () => {
   });
   it('restricts public API auth, paths, methods and oversized bodies', async () => {
     const config = { ...env, LOOCKIT_LEASE_TOKENS_JSON: JSON.stringify({ 'loockit-x570': 'x'.repeat(48), 'loockit-b550m': 'b'.repeat(48) }) };
-    const send = (method: string, path: string, token = 'x'.repeat(48), body?: string) => worker.fetch(new Request(`https://test${path}`, {
+    const send = (method: string, path: string, token = 'x'.repeat(48), body?: string) => worker.fetch(new Request(`https://loockit-lease.miutaku.work${path}`, {
       method, headers: { Authorization: `Bearer ${token}` }, body,
     }), config, {} as ExecutionContext);
     expect((await send('GET', `${LEASE_PATH}/${LEASE_NAME}`, 'wrong')).status).toBe(403);
