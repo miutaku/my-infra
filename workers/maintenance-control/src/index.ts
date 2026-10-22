@@ -1,14 +1,15 @@
 import { DurableObject } from 'cloudflare:workers';
 import { timingSafeEqual } from 'node:crypto';
 import { LEASE_PATH, LEASE_NAME } from './loockit-lease';
+import { datePickerInteraction } from './date-picker';
 export { LoockitLease } from './loockit-lease';
-import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due,
+import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due, ScheduleInputError, validateLeadTime,
   type Host, type Plan, type Snapshot, type RecordState } from './policy';
 
 type Interaction = {
   id: string; type: number; token: string; application_id: string; guild_id?: string; channel_id?: string;
   member?: { user?: { id: string } };
-  data?: { custom_id?: string; components?: { components: { custom_id: string; value: string }[] }[] };
+  data?: { custom_id?: string; values?: string[]; components?: { components: { custom_id: string; value: string }[] }[] };
 };
 const reply = (content: string) => ({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] } } });
 
@@ -246,16 +247,16 @@ export class MaintenanceFleet extends DurableObject<Env> {
         plan.notifiedRevision === plan.revision && !['running', 'failed'].includes(plan.phase)
         ? this.message(host, plan).components : [] };
     }
-    catch { return { ok: false, content: '操作を完了できませんでした。古い通知・実行中・日時の入力を確認してください。通知更新に失敗した予定は実行されません。', components: [] }; }
+    catch (error) { return { ok: false, content: error instanceof ScheduleInputError ? error.message : '通知の更新に失敗しました。この予定は実行されません。最新の通知から操作をやり直してください。', components: [] }; }
   }
   private async applyInteraction(input: Interaction): Promise<string> {
     const now = Date.now();
     const [name, revision, action] = (input.data?.custom_id ?? '').split(':');
-    if (!isHost(name)) throw new Error('不明なホストです。');
+    if (!isHost(name)) throw new ScheduleInputError('不明なホストです。');
     const state = this.read(name);
     const plan = state.plan;
-    if (!plan || plan.revision !== revision) throw new Error('この通知は古くなっています。最新の通知を使ってください。');
-    if (['running', 'failed'].includes(plan.phase)) throw new Error('実行中または要確認のため変更できません。');
+    if (!plan || plan.revision !== revision) throw new ScheduleInputError('この通知は古くなっています。最新の通知を使ってください。');
+    if (['running', 'failed'].includes(plan.phase)) throw new ScheduleInputError('実行中または要確認のため変更できません。');
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', input.id).toArray().length) return '処理済みです。';
     if (action === 'hold') plan.phase = 'held';
     else if (action === 'defer') {
@@ -266,9 +267,9 @@ export class MaintenanceFleet extends DurableObject<Env> {
       plan.target = parseJst(text, now);
       plan.phase = isPve(name) ? 'approval' : 'scheduled';
     } else if (action === 'approve' && isPve(name)) {
-      if (plan.target < now + 10 * 60_000) throw new Error('10分以上先の日時を指定してから承認してください。');
+      validateLeadTime(plan.target, now);
       plan.phase = 'scheduled';
-    } else throw new Error('不明な操作です。');
+    } else throw new ScheduleInputError('不明な操作です。');
     plan.revision = crypto.randomUUID();
     plan.notifiedRevision = undefined;
     plan.reason = undefined;
@@ -377,13 +378,15 @@ export default {
     if (!env.DISCORD_OPERATOR_IDS.split(',').map(id => id.trim()).includes(input.member?.user?.id ?? '') ||
       input.guild_id !== env.DISCORD_GUILD_ID || input.channel_id !== env.DISCORD_CHANNEL_ID) return Response.json(reply('この操作を実行する権限がありません。'));
     if (input.type === 3 && input.data?.custom_id === 'maintenance-test') return Response.json(reply('操作を受信しました。認証・署名検証は正常です。再起動予定は変更していません。'));
-    if (input.type === 3 && input.data?.custom_id?.endsWith(':date')) {
-      const id = input.data.custom_id.replace(/:date$/, ':date-submit');
-      return Response.json({ type: 9, data: {
-        custom_id: id, title: '実行日時を指定（日本時間）', components: [{ type: 1, components: [{
-          type: 4, custom_id: 'target', label: 'YYYY-MM-DD HH:mm', style: 1, required: true, min_length: 16, max_length: 16,
-        }] }],
-      } });
+    if (input.type === 3 && /^(date|pick-)/.test(input.data?.custom_id?.split(':')[2] ?? '')) {
+      try {
+        const selection = datePickerInteraction(input.data!.custom_id!, input.data?.values);
+        if ('type' in selection) return Response.json(selection);
+        input = { ...input, data: { custom_id: selection.customId,
+          components: [{ components: [{ custom_id: 'target', value: selection.target }] }] } };
+      } catch (error) {
+        return Response.json(reply(error instanceof ScheduleInputError ? error.message : '日時の選択を開き直してください。'));
+      }
     }
     if (![3, 5].includes(input.type)) return Response.json(reply('未対応の操作です。'));
     ctx.waitUntil((async () => {

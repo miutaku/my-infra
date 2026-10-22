@@ -57,6 +57,18 @@ describe('maintenance scheduling', () => {
     await seed(target, 'pve-x570', fixture('approval'));
     expect(await target.claim('pve-x570')).toBeNull();
   });
+  it('returns distinct validation errors without changing the plan', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('approval'));
+    const old = await read(target, 'pve-x570');
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target', value: formatJst(Date.now()) }] }],
+    } });
+    expect(result).toMatchObject({ ok: false, content: expect.stringContaining('10分以上先'), components: [] });
+    expect(await read(target, 'pve-x570')).toEqual(old);
+    expect((await target.interaction(interaction('pve-x570', 'approve'))).content).toContain('10分以上先');
+    expect((await target.interaction(interaction('pve-x570', 'hold', 'stale'))).content).toContain('この通知は古くなっています');
+  });
   it.each(['date-submit', 'defer'])('returns usable approval buttons after %s and rejects stale buttons', async action => {
     const target = stub();
     await seed(target, 'pve-x570', fixture('approval'));
@@ -124,7 +136,9 @@ describe('maintenance scheduling', () => {
     await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
       configurable: true, value: async () => { throw new Error('delivery failed'); },
     }));
-    expect(await target.interaction(interaction('dev-app-server', 'defer'))).toMatchObject({ ok: false, components: [] });
+    expect(await target.interaction(interaction('dev-app-server', 'defer'))).toMatchObject({
+      ok: false, content: expect.stringContaining('通知の更新に失敗しました'), components: [],
+    });
     expect((await read(target, 'dev-app-server')).plan!.notifiedRevision).toBeUndefined();
     expect(await target.claim('dev-app-server')).toBeNull();
   });
@@ -303,13 +317,31 @@ async function signedRequest(payload: object, timestamp = String(Math.floor(Date
     config: { ...env, DISCORD_PUBLIC_KEY: hex(publicKey), DISCORD_OPERATOR_IDS: 'operator', DISCORD_GUILD_ID: 'guild', DISCORD_CHANNEL_ID: 'channel' } };
 }
 describe('Discord signature and operator authorization', () => {
-  it('includes the latest buttons in the deferred modal reply sent to Discord', async () => {
+  it('opens and updates the picker without changing the stored schedule', async () => {
     const target = env.FLEET.getByName('home-pve');
     await seed(target, 'pve-x570', fixture('approval'));
+    const old = await read(target, 'pve-x570');
+    const open = await signedRequest({ ...interaction('pve-x570', 'date'), guild_id: 'guild', channel_id: 'channel' });
+    const opened = await worker.fetch(open.request, open.config, {} as ExecutionContext);
+    const picker = await opened.json() as { type: number; data: { flags: number; components: { components: { custom_id: string }[] }[] } };
+    expect(picker.type).toBe(4);
+    expect(picker.data.flags).toBe(64);
+    const update = await signedRequest({ ...interaction('pve-x570', 'date'), guild_id: 'guild', channel_id: 'channel',
+      data: { custom_id: picker.data.components[1].components[0].custom_id, values: ['23'] },
+    });
+    expect(await (await worker.fetch(update.request, update.config, {} as ExecutionContext)).json()).toMatchObject({
+      type: 7, data: { content: expect.stringContaining('23:') },
+    });
+    expect(await read(target, 'pve-x570')).toEqual(old);
+  });
+  it.each(['modal', 'picker'])('includes approval buttons after a deferred %s confirmation', async mode => {
+    const target = env.FLEET.getByName('home-pve');
+    await seed(target, 'pve-x570', fixture('approval'));
+    const selectedTarget = nextMorning(Date.now());
     const { request, config } = await signedRequest({
-      ...interaction('pve-x570', 'date-submit'), type: 5, guild_id: 'guild', channel_id: 'channel',
-      data: { custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{
-        custom_id: 'target', value: formatJst(nextMorning(Date.now())),
+      ...interaction('pve-x570', 'date-submit'), type: mode === 'modal' ? 5 : 3, guild_id: 'guild', channel_id: 'channel',
+      data: mode === 'picker' ? { custom_id: `pve-x570:rev:pick-submit:${selectedTarget}:0` } : { custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{
+        custom_id: 'target', value: formatJst(selectedTarget),
       }] }] },
     });
     const outgoing = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
@@ -327,6 +359,7 @@ describe('Discord signature and operator authorization', () => {
         label: 'この日時で承認', custom_id: `pve-x570:${(await read(target, 'pve-x570')).plan!.revision}:approve`,
       }));
       expect(payload.allowed_mentions).toEqual({ parse: [] });
+      expect((await read(target, 'pve-x570')).plan).toMatchObject({ target: selectedTarget, phase: 'approval' });
     } finally { outgoing.mockRestore(); }
   });
   it('accepts a correctly signed endpoint verification ping', async () => {

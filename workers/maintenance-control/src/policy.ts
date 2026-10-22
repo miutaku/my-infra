@@ -35,12 +35,21 @@ export function nextMorning(now: number): number {
 export function formatJst(target: number): string {
   return new Date(target + 9 * 3600_000).toISOString().slice(0, 16).replace('T', ' ');
 }
-export function parseJst(text: string, now: number): number {
-  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(text)) throw new Error('YYYY-MM-DD HH:mm（日本時間）で入力してください。');
-  const target = Date.parse(text.replace(' ', 'T') + ':00+09:00');
-  if (!Number.isFinite(target) || formatJst(target) !== text || target < now + 10 * 60_000 || target > now + 90 * 86400_000) {
-    throw new Error('10分以上先、90日以内の有効な日時を指定してください。');
+export class ScheduleInputError extends Error {}
+export function validateLeadTime(target: number, now: number): void {
+  if (target < now + 10 * 60_000) {
+    const earliest = Math.ceil((now + 10 * 60_000) / 60_000) * 60_000;
+    throw new ScheduleInputError(`再起動日時は10分以上先にしてください。現在 ${formatJst(now)}（日本時間）、指定できるのは ${formatJst(earliest)} 以降です。`);
   }
+}
+export function parseJst(text: string, now: number): number {
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(text)) throw new ScheduleInputError('YYYY-MM-DD HH:mm（日本時間）で入力してください。');
+  const target = Date.parse(text.replace(' ', 'T') + ':00+09:00');
+  if (!Number.isFinite(target) || formatJst(target) !== text) {
+    throw new ScheduleInputError('存在する日付・時刻を選択してください。');
+  }
+  validateLeadTime(target, now);
+  if (target > now + 90 * 86400_000) throw new ScheduleInputError('再起動日時は90日以内にしてください。');
   return target;
 }
 export function due(host: Host, state: RecordState, now: number): boolean {
