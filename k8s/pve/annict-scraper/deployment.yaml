@@ -21,7 +21,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: annict-scraper
-          image: ghcr.io/miutaku/annict-subscription-scraper:sha-b9568db
+          image: ghcr.io/miutaku/annict-subscription-scraper:sha-d809115
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
