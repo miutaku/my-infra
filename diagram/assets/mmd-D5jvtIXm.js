@@ -42,7 +42,7 @@ graph LR
     PremisesHome.Eso@{ shape: rectangle, label: "External Secrets Operator" }
     PremisesHome.Dns@{ shape: rectangle, label: "内部DNS / MetalLB" }
     PremisesHome.Nextcloud@{ shape: rectangle, label: "Nextcloud" }
-    PremisesHome.Recording@{ shape: rectangle, label: "録画・配信 / EPGStation・TNLaStation" }
+    PremisesHome.Recording@{ shape: rectangle, label: "録画・配信 / EPGStation・TNLAStation" }
     PremisesHome.Loockit@{ shape: rectangle, label: "Loockit / BLEスマートロック" }
     PremisesHome.Coupon_manager@{ shape: rectangle, label: "Coupon Manager" }
     PremisesHome.Wol@{ shape: rectangle, label: "Wake-on-LAN" }
@@ -161,10 +161,10 @@ title: "nas-01・nas-02"
 ---
 graph LR
   subgraph PremisesHome["\`home-k8s（Talos Linux）\`"]
-    subgraph PremisesHome.Recording["\`録画・配信 / EPGStation・TNLaStation\`"]
+    subgraph PremisesHome.Recording["\`録画・配信 / EPGStation・TNLAStation\`"]
       PremisesHome.Recording.Epgstation@{ shape: rectangle, label: "EPGStation" }
-      PremisesHome.Recording.Tnlastation@{ shape: rectangle, label: "TNLaStation PRD" }
-      PremisesHome.Recording.Tnlastation_staging@{ shape: rectangle, label: "TNLaStation STG" }
+      PremisesHome.Recording.Tnlastation@{ shape: rectangle, label: "TNLAStation PRD" }
+      PremisesHome.Recording.Tnlastation_staging@{ shape: rectangle, label: "TNLAStation STG" }
     end
     PremisesHome.Shared@{ shape: rectangle, label: "共有PV / runner cache・状態" }
     PremisesHome.Nextcloud@{ shape: rectangle, label: "Nextcloud" }
@@ -271,7 +271,7 @@ title: "制御・エンコード・配信"
 ---
 graph LR
   subgraph PremisesHome["\`home-k8s（Talos Linux）\`"]
-    subgraph PremisesHome.RecordingTnlastation["\`TNLaStation PRD\`"]
+    subgraph PremisesHome.RecordingTnlastation["\`TNLAStation PRD\`"]
       PremisesHome.RecordingTnlastation.Resources@{ shape: rectangle, label: "リソース定義" }
       PremisesHome.RecordingTnlastation.Gateway@{ shape: rectangle, label: "Gateway" }
       PremisesHome.RecordingTnlastation.Frontend@{ shape: rectangle, label: "Frontend" }
@@ -301,7 +301,7 @@ title: "制御・エンコード・配信"
 ---
 graph LR
   subgraph PremisesHome["\`home-k8s（Talos Linux）\`"]
-    subgraph PremisesHome.RecordingTnlastation_staging["\`TNLaStation STG\`"]
+    subgraph PremisesHome.RecordingTnlastation_staging["\`TNLAStation STG\`"]
       PremisesHome.RecordingTnlastation_staging.Resources@{ shape: rectangle, label: "リソース定義" }
       PremisesHome.RecordingTnlastation_staging.Gateway@{ shape: rectangle, label: "Gateway" }
       PremisesHome.RecordingTnlastation_staging.Frontend@{ shape: rectangle, label: "Frontend" }
@@ -453,7 +453,7 @@ graph LR
       subgraph Premises.Home.Agent["\`自宅監視基盤\`"]
         Premises.Home.Agent.Local_store@{ shape: disk, label: "VictoriaMetrics / 自宅" }
       end
-      Premises.Home.Recording@{ shape: rectangle, label: "録画・配信 / EPGStation・TNLaStation" }
+      Premises.Home.Recording@{ shape: rectangle, label: "録画・配信 / EPGStation・TNLAStation" }
       Premises.Home.Databases@{ shape: rectangle, label: "DB / アプリ共有基盤" }
       subgraph Premises.Home.Backups["\`バックアップ処理\`"]
         Premises.Home.Backups.Nas@{ shape: rectangle, label: "NAS restic / home-k8s CronJob" }
@@ -518,10 +518,10 @@ title: "PRD・STG"
 ---
 graph LR
   subgraph PremisesHome["\`home-k8s（Talos Linux）\`"]
-    subgraph PremisesHome.Recording["\`録画・配信 / EPGStation・TNLaStation\`"]
+    subgraph PremisesHome.Recording["\`録画・配信 / EPGStation・TNLAStation\`"]
       PremisesHome.Recording.Epgstation@{ shape: rectangle, label: "EPGStation" }
-      PremisesHome.Recording.Tnlastation@{ shape: rectangle, label: "TNLaStation PRD" }
-      PremisesHome.Recording.Tnlastation_staging@{ shape: rectangle, label: "TNLaStation STG" }
+      PremisesHome.Recording.Tnlastation@{ shape: rectangle, label: "TNLAStation PRD" }
+      PremisesHome.Recording.Tnlastation_staging@{ shape: rectangle, label: "TNLAStation STG" }
     end
   end
   subgraph PremisesPve["\`Proxmox VEクラスタ（2ノード構成）\`"]

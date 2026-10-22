@@ -99,7 +99,7 @@ PremisesHome: {
     label: "Nextcloud"
   }
   Recording: {
-    label: "録画・配信 / EPGStation・TNLaStation"
+    label: "録画・配信 / EPGStation・TNLAStation"
   }
   Loockit: {
     label: "Loockit / BLEスマートロック"
@@ -322,16 +322,16 @@ PremisesHome: {
   label: "home-k8s（Talos Linux）"
 
   Recording: {
-    label: "録画・配信 / EPGStation・TNLaStation"
+    label: "録画・配信 / EPGStation・TNLAStation"
 
     Epgstation: {
       label: "EPGStation"
     }
     Tnlastation: {
-      label: "TNLaStation PRD"
+      label: "TNLAStation PRD"
     }
     Tnlastation_staging: {
-      label: "TNLaStation STG"
+      label: "TNLAStation STG"
     }
   }
   Shared: {
@@ -557,7 +557,7 @@ PremisesHome: {
   label: "home-k8s（Talos Linux）"
 
   RecordingTnlastation: {
-    label: "TNLaStation PRD"
+    label: "TNLAStation PRD"
 
     Resources: {
       label: "リソース定義"
@@ -614,7 +614,7 @@ PremisesHome: {
   label: "home-k8s（Talos Linux）"
 
   RecordingTnlastation_staging: {
-    label: "TNLaStation STG"
+    label: "TNLAStation STG"
 
     Resources: {
       label: "リソース定義"
@@ -921,7 +921,7 @@ Premises: {
       }
     }
     Recording: {
-      label: "録画・配信 / EPGStation・TNLaStation"
+      label: "録画・配信 / EPGStation・TNLAStation"
     }
     Databases: {
       label: "DB / アプリ共有基盤"
@@ -1046,16 +1046,16 @@ PremisesHome: {
   label: "home-k8s（Talos Linux）"
 
   Recording: {
-    label: "録画・配信 / EPGStation・TNLaStation"
+    label: "録画・配信 / EPGStation・TNLAStation"
 
     Epgstation: {
       label: "EPGStation"
     }
     Tnlastation: {
-      label: "TNLaStation PRD"
+      label: "TNLAStation PRD"
     }
     Tnlastation_staging: {
-      label: "TNLaStation STG"
+      label: "TNLAStation STG"
     }
   }
 }

@@ -236,7 +236,7 @@ rectangle "home-k8s（Talos Linux）" <<PremisesHome>> as PremisesHome {
   rectangle "==External Secrets Operator\\n\\nClusterSecretStoreを通してBWSからSecretを注入する。秘密値は図・生成一覧へ含めない。" <<PremisesHomeEso>> as PremisesHomeEso
   rectangle "==内部DNS / MetalLB\\n\\nmiutaku.internalはCoreDNS。MetalLBでLAN内Service IPを払い出す。" <<PremisesHomeDns>> as PremisesHomeDns
   rectangle "==Nextcloud\\n\\nファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。" <<PremisesHomeNextcloud>> as PremisesHomeNextcloud
-  rectangle "==録画・配信 / EPGStation・TNLaStation\\n\\nEPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。" <<PremisesHomeRecording>> as PremisesHomeRecording
+  rectangle "==録画・配信 / EPGStation・TNLAStation\\n\\nEPGStation・TNLAStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。" <<PremisesHomeRecording>> as PremisesHomeRecording
   rectangle "==Loockit / BLEスマートロック\\n\\n公開RESTは専用TunnelとLXC内HAProxyがactiveへ転送。BLE選出はDurable Object。APIはmTLS。Kubernetesプロキシは撤去済み。" <<PremisesHomeLoockit>> as PremisesHomeLoockit
   rectangle "==Coupon Manager\\n\\nWeb → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。" <<PremisesHomeCoupon_manager>> as PremisesHomeCoupon_manager
   rectangle "==Wake-on-LAN\\n\\napp-gptwol。LANにMagic Packetを送信して対象PCを起動する。" <<PremisesHomeWol>> as PremisesHomeWol
@@ -682,14 +682,14 @@ rectangle "home-k8s（Talos Linux）" <<PremisesHome>> as PremisesHome {
   skinparam RectangleFontColor<<PremisesHome>> #3b82f6
   skinparam RectangleBorderStyle<<PremisesHome>> dashed
 
-  rectangle "録画・配信 / EPGStation・TNLaStation" <<PremisesHomeRecording>> as PremisesHomeRecording {
+  rectangle "録画・配信 / EPGStation・TNLAStation" <<PremisesHomeRecording>> as PremisesHomeRecording {
     skinparam RectangleBorderColor<<PremisesHomeRecording>> #64748b
     skinparam RectangleFontColor<<PremisesHomeRecording>> #64748b
     skinparam RectangleBorderStyle<<PremisesHomeRecording>> dashed
 
     rectangle "==EPGStation" <<PremisesHomeRecordingEpgstation>> as PremisesHomeRecordingEpgstation
-    rectangle "==TNLaStation PRD\\n\\napp-tnlastation。PRDのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation>> as PremisesHomeRecordingTnlastation
-    rectangle "==TNLaStation STG\\n\\napp-tnlastation-staging。STGのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation_staging>> as PremisesHomeRecordingTnlastation_staging
+    rectangle "==TNLAStation PRD\\n\\napp-tnlastation。PRDのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation>> as PremisesHomeRecordingTnlastation
+    rectangle "==TNLAStation STG\\n\\napp-tnlastation-staging。STGのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation_staging>> as PremisesHomeRecordingTnlastation_staging
   }
   rectangle "==共有PV / runner cache・状態" <<PremisesHomeShared>> as PremisesHomeShared
   rectangle "==Nextcloud\\n\\nファイル共有 / app-nextcloud。MariaDB・Redisとnas-02のNFSを使用。" <<PremisesHomeNextcloud>> as PremisesHomeNextcloud
@@ -988,7 +988,7 @@ rectangle "Proxmox VEクラスタ（2ノード構成）" <<HomeSitePve>> as Home
       skinparam RectangleFontColor<<HomeSitePveTunersTuner_prod>> #64748b
       skinparam RectangleBorderStyle<<HomeSitePveTunersTuner_prod>> dashed
 
-      rectangle "==Docker / Mirakurun / PT3\\n\\n192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。" <<HomeSitePveTunersTuner_prodApp>> as HomeSitePveTunersTuner_prodApp
+      rectangle "==Docker / Mirakurun / PT3\\n\\n192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLAStationへチューナーAPIを提供。" <<HomeSitePveTunersTuner_prodApp>> as HomeSitePveTunersTuner_prodApp
     }
     rectangle "Mirakurun STG / CT12904・PX-S1UD / VLAN20" <<HomeSitePveTunersTuner_stg>> as HomeSitePveTunersTuner_stg {
       skinparam RectangleBorderColor<<HomeSitePveTunersTuner_stg>> #64748b
@@ -1104,7 +1104,7 @@ rectangle "home-k8s（Talos Linux）" <<PremisesHome>> as PremisesHome {
   skinparam RectangleFontColor<<PremisesHome>> #3b82f6
   skinparam RectangleBorderStyle<<PremisesHome>> dashed
 
-  rectangle "TNLaStation PRD" <<PremisesHomeRecordingTnlastation>> as PremisesHomeRecordingTnlastation {
+  rectangle "TNLAStation PRD" <<PremisesHomeRecordingTnlastation>> as PremisesHomeRecordingTnlastation {
     skinparam RectangleBorderColor<<PremisesHomeRecordingTnlastation>> #3b82f6
     skinparam RectangleFontColor<<PremisesHomeRecordingTnlastation>> #3b82f6
     skinparam RectangleBorderStyle<<PremisesHomeRecordingTnlastation>> dashed
@@ -1125,7 +1125,7 @@ rectangle "Proxmox VEクラスタ（2ノード構成）" <<PremisesPve>> as Prem
   skinparam RectangleBorderStyle<<PremisesPve>> dashed
 
   database "==nas-02 / TrueNAS VM69002\\n\\npve-b550m。192.168.20.192。録画・Nextcloud・DB・監視のNFS。USB disk passthrough上のZFS。" <<PremisesPveNas02>> as PremisesPveNas02
-  rectangle "==Mirakurun PRD / LXC12901\\n\\n192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。" <<PremisesPveTuner_prod>> as PremisesPveTuner_prod
+  rectangle "==Mirakurun PRD / LXC12901\\n\\n192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLAStationへチューナーAPIを提供。" <<PremisesPveTuner_prod>> as PremisesPveTuner_prod
 }
 
 PremisesHomeRecordingTnlastationGateway .[#15803d,thickness=2].> PremisesHomeRecordingTnlastationFrontend : <color:#15803d>Web
@@ -1209,7 +1209,7 @@ rectangle "home-k8s（Talos Linux）" <<PremisesHome>> as PremisesHome {
   skinparam RectangleFontColor<<PremisesHome>> #3b82f6
   skinparam RectangleBorderStyle<<PremisesHome>> dashed
 
-  rectangle "TNLaStation STG" <<PremisesHomeRecordingTnlastation_staging>> as PremisesHomeRecordingTnlastation_staging {
+  rectangle "TNLAStation STG" <<PremisesHomeRecordingTnlastation_staging>> as PremisesHomeRecordingTnlastation_staging {
     skinparam RectangleBorderColor<<PremisesHomeRecordingTnlastation_staging>> #3b82f6
     skinparam RectangleFontColor<<PremisesHomeRecordingTnlastation_staging>> #3b82f6
     skinparam RectangleBorderStyle<<PremisesHomeRecordingTnlastation_staging>> dashed
@@ -1765,7 +1765,7 @@ rectangle "自宅" <<Premises>> as Premises {
 
       database "==VictoriaMetrics / 自宅\\n\\n自宅のmetricsは自宅VictoriaMetricsに保存。OCI側VMへの送信とは別。" <<PremisesHomeAgentLocal_store>> as PremisesHomeAgentLocal_store
     }
-    rectangle "==録画・配信 / EPGStation・TNLaStation\\n\\nEPGStation・TNLaStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。" <<PremisesHomeRecording>> as PremisesHomeRecording
+    rectangle "==録画・配信 / EPGStation・TNLAStation\\n\\nEPGStation・TNLAStation・Mirakurun。チューナーLXCとKubernetesのアプリは別の実行基盤。" <<PremisesHomeRecording>> as PremisesHomeRecording
     rectangle "==DB / アプリ共有基盤" <<PremisesHomeDatabases>> as PremisesHomeDatabases
     rectangle "バックアップ処理" <<PremisesHomeBackups>> as PremisesHomeBackups {
       skinparam RectangleBorderColor<<PremisesHomeBackups>> #64748b
@@ -1981,14 +1981,14 @@ rectangle "home-k8s（Talos Linux）" <<PremisesHome>> as PremisesHome {
   skinparam RectangleFontColor<<PremisesHome>> #3b82f6
   skinparam RectangleBorderStyle<<PremisesHome>> dashed
 
-  rectangle "録画・配信 / EPGStation・TNLaStation" <<PremisesHomeRecording>> as PremisesHomeRecording {
+  rectangle "録画・配信 / EPGStation・TNLAStation" <<PremisesHomeRecording>> as PremisesHomeRecording {
     skinparam RectangleBorderColor<<PremisesHomeRecording>> #64748b
     skinparam RectangleFontColor<<PremisesHomeRecording>> #64748b
     skinparam RectangleBorderStyle<<PremisesHomeRecording>> dashed
 
     rectangle "==EPGStation" <<PremisesHomeRecordingEpgstation>> as PremisesHomeRecordingEpgstation
-    rectangle "==TNLaStation PRD\\n\\napp-tnlastation。PRDのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation>> as PremisesHomeRecordingTnlastation
-    rectangle "==TNLaStation STG\\n\\napp-tnlastation-staging。STGのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation_staging>> as PremisesHomeRecordingTnlastation_staging
+    rectangle "==TNLAStation PRD\\n\\napp-tnlastation。PRDのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation>> as PremisesHomeRecordingTnlastation
+    rectangle "==TNLAStation STG\\n\\napp-tnlastation-staging。STGのMirakurun・PostgreSQLと録画領域を使用。" <<PremisesHomeRecordingTnlastation_staging>> as PremisesHomeRecordingTnlastation_staging
   }
 }
 rectangle "Proxmox VEクラスタ（2ノード構成）" <<PremisesPve>> as PremisesPve {
@@ -1997,7 +1997,7 @@ rectangle "Proxmox VEクラスタ（2ノード構成）" <<PremisesPve>> as Prem
   skinparam RectangleBorderStyle<<PremisesPve>> dashed
 
   rectangle "==Mirakurun STG / LXC12904\\n\\n192.168.20.142:40772 / PX-S1UD。GRはlocal tuner、BS/CSは本番Mirakurunへの低優先度TCP fallback。" <<PremisesPveTuner_stg>> as PremisesPveTuner_stg
-  rectangle "==Mirakurun PRD / LXC12901\\n\\n192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLaStationへチューナーAPIを提供。" <<PremisesPveTuner_prod>> as PremisesPveTuner_prod
+  rectangle "==Mirakurun PRD / LXC12901\\n\\n192.168.20.132:40772。x570のPT3を使用。EPGStation/TNLAStationへチューナーAPIを提供。" <<PremisesPveTuner_prod>> as PremisesPveTuner_prod
 }
 
 PremisesHomeRecordingEpgstation .[#15803d,thickness=2].> PremisesPveTuner_prod : <color:#15803d>Service名で接続 / PRD :40772
