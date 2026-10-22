@@ -154,9 +154,9 @@ spec:
           resources:
             requests:
               cpu: 100m
-              # Reserve the memory budget when scheduling. A 256Mi request let
-              # this backend exhaust a 2GB Pi after PVE reboot failover.
-              memory: 2Gi
+              # This exceeds the 2GB Pi's allocatable memory (~1.3Gi), while
+              # leaving headroom above the observed ~800Mi backend usage.
+              memory: 1536Mi
             limits:
               cpu: "2"
               memory: 2Gi

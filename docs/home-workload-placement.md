@@ -31,9 +31,10 @@ Kubernetesの配置判定は`requests`を使い、`limits`の値でノードを�
 RPi 4GBにも配置され得る。同じコア数でもRPiとPVEの処理性能の差は判定されないため、
 この2種類だけはPVE workerを明示する。軽量なreader・review・配備runnerは自由配置を維持する。
 
-TNLAStation backendは本番・stagingともメモリのrequests/limitsを2Giにする。
+TNLAStation backendは本番・stagingともメモリのrequestsを1536Mi、limitsを2Giにする。
 256Miの予約では、PVE再起動後に2GB RPiへ配置され、実使用量が約800Miへ増えた際に
-ノード全体のOOMと監視Podの停止を引き起こした。メモリ予算を予約し、2GB RPiを配置候補から外す。
+ノード全体のOOMと監視Podの停止を引き起こした。1536Miは2GB RPiのallocatable（約1.3Gi）を超えるため、
+そのノードを配置候補から外し、実測使用量にも余裕を持たせる。2Giの予約では現在のstaging用余力が足りない。
 特定のplatformやホストには固定せず、予約分の空きがあるPVE・4GB RPiからschedulerが選ぶ。
 
 共有NFSへのアクセスは特定nodeのローカルディスクではないため、それだけでPVEに固定しない。
