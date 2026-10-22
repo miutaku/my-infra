@@ -28,7 +28,6 @@ spec:
           spec:
             automountServiceAccountToken: false
             nodeSelector:
-              kubernetes.io/arch: amd64
               kubernetes.io/os: linux
             containers:
               - name: runner

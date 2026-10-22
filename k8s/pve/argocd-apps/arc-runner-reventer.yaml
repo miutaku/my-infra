@@ -34,9 +34,8 @@ spec:
               fsGroup: 1001
               fsGroupChangePolicy: OnRootMismatch
             nodeSelector:
-              kubernetes.io/arch: amd64
               kubernetes.io/os: linux
-            # Persist cache-only paths; keep _work and DinD state ephemeral for parallel runner safety.
+            # Share package/provider caches; native home/tool caches stay Pod-local across CPU architectures.
             initContainers:
               - name: prepare-runner-cache
                 image: ghcr.io/actions/actions-runner:latest
@@ -45,23 +44,17 @@ spec:
                   - |
                     set -eu
                     mkdir -p \
-                      /cache/home-cache \
                       /cache/npm \
                       /cache/pnpm \
-                      /cache/terraform-plugin-cache \
-                      /cache/toolcache
+                      /cache/terraform-plugin-cache
                     chown 1001:1001 \
-                      /cache/home-cache \
                       /cache/npm \
                       /cache/pnpm \
-                      /cache/terraform-plugin-cache \
-                      /cache/toolcache
+                      /cache/terraform-plugin-cache
                     chmod 0775 \
-                      /cache/home-cache \
                       /cache/npm \
                       /cache/pnpm \
-                      /cache/terraform-plugin-cache \
-                      /cache/toolcache
+                      /cache/terraform-plugin-cache
                 securityContext:
                   runAsUser: 0
                 volumeMounts:
@@ -90,9 +83,8 @@ spec:
                     cpu: "2"
                     memory: "4Gi"
                 volumeMounts:
-                  - name: runner-cache
+                  - name: native-home-cache
                     mountPath: /home/runner/.cache
-                    subPath: home-cache
                   - name: runner-cache
                     mountPath: /home/runner/.npm
                     subPath: npm
@@ -102,10 +94,13 @@ spec:
                   - name: runner-cache
                     mountPath: /home/runner/.terraform.d/plugin-cache
                     subPath: terraform-plugin-cache
-                  - name: runner-cache
+                  - name: native-toolcache
                     mountPath: /opt/hostedtoolcache
-                    subPath: toolcache
             volumes:
+              - name: native-home-cache
+                emptyDir: {}
+              - name: native-toolcache
+                emptyDir: {}
               - name: runner-cache
                 persistentVolumeClaim:
                   claimName: arc-runner-reventer-cache

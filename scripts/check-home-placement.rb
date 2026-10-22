@@ -3,11 +3,6 @@
 require 'yaml'
 
 ROOT = File.expand_path('..', __dir__)
-AMD64_RUNNERS = {
-  'k8s/pve/argocd-apps/arc-runner-my-infra.yaml' => 'deployment jobs install x86_64 BWS',
-  'k8s/pve/argocd-apps/arc-runner-reventer.yaml' => 'existing native tool/cache contents on shared NFS',
-  'k8s/pve/argocd-apps/arc-runner-reventer-review.yaml' => 'existing native tool/cache contents on shared NFS'
-}.freeze
 HOST_KEYS = ['kubernetes.io/hostname', 'topology.miutaku/proxmox-node', 'node.miutaku/platform'].freeze
 
 def check_placement(value, file, errors, trail = [])
@@ -18,7 +13,7 @@ def check_placement(value, file, errors, trail = [])
       if key == 'nodeSelector' && child.is_a?(Hash)
         child.each do |label, selected|
           bad = HOST_KEYS.include?(label) ||
-                (label == 'kubernetes.io/arch' && !(selected == 'amd64' && AMD64_RUNNERS.key?(file))) ||
+                label == 'kubernetes.io/arch' ||
                 (label == 'node-role.kubernetes.io/control-plane' && file != 'k8s/pve/home-service-monitor/vip.yaml')
           errors << "#{file}: #{at}: unnecessary #{label}=#{selected}" if bad
         end
@@ -52,5 +47,5 @@ if $PROGRAM_NAME == __FILE__
     YAML.load_stream(File.read(file)).each { |document| check_placement(document, relative, errors) }
   end
   abort errors.join("\n") unless errors.empty?
-  puts "Home placement policy passed: #{files.length} YAML files, embedded Helm values, #{AMD64_RUNNERS.length} documented runner CPU exceptions"
+  puts "Home placement policy passed: #{files.length} YAML files, embedded Helm values"
 end

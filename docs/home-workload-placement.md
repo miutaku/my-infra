@@ -11,7 +11,8 @@ RPiの一律なNoSchedule taintを撤去し、リソース要求に合うworker�
 - home-service-monitor、MagicMirror、Terraform agentsの不要なCPU・control-plane限定を撤去。
 - descheduler・バックアップ検証CronJobのPVE限定を撤去。
 - TNLaStationのencode/streamingのCPU限定・ホスト優先、staging encodeの4GB RPi固定を撤去。
-- ARCの特定PVEを優先する設定を撤去。認証用・ソース読取用automation runnerはCPU固定も撤去。
+- ARCの特定PVE優先とCPU固定を全て撤去。BWSはCPUに応じて同じ版を取得する。
+- runnerのnativeなhome/toolキャッシュはPod内へ分離する。共有NFSの既存キャッシュは削除しない。
 - その他のCoreDNS、Metrics Server、Secret管理、vmagent等もRPiを標準の配置候補に含む。
 
 ## 維持する制約
@@ -22,8 +23,6 @@ RPiの一律なNoSchedule taintを撤去し、リソース要求に合うworker�
 | WoL | hostNetworkの既存LAN区間（VLAN20）を維持。特定PVEは指定しない。 |
 | home-vip-monitor | control-plane上のVIPを観測するDaemonSetなのでcontrol-planeを指定。 |
 | Mirakurun / LoockitのLXCと旧Mirakurun定義 | PT3・DVB・USB Bluetooth・BlueZへの物理依存。 |
-| talos-infra-admin runner | 配備jobがx86_64版BWSを取得するためamd64を維持。 |
-| Reventer / review runner | 既存のNFS上のnativeツール・キャッシュとの互換性を維持するためamd64。特定PVEの優先は撤去。 |
 
 共有NFSへのアクセスは特定nodeのローカルディスクではないため、それだけでPVEに固定しない。
 アプリのCPU・メモリ要求、対応image、PDBやHA制約は引き続き守る。

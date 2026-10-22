@@ -29,7 +29,6 @@ spec:
               fsGroup: 1001
               fsGroupChangePolicy: OnRootMismatch
             nodeSelector:
-              kubernetes.io/arch: amd64
               kubernetes.io/os: linux
             initContainers:
             - name: prepare-review-storage

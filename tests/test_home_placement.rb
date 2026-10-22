@@ -31,9 +31,8 @@ class HomePlacementTest < Minitest::Test
     refute_empty violations({'helm' => {'values' => "template:\n  spec:\n    nodeSelector:\n      kubernetes.io/arch: amd64\n"}})
   end
 
-  def test_cpu_exception_does_not_allow_a_pve_host_preference
-    file = AMD64_RUNNERS.keys.first
-    assert_empty violations({'nodeSelector' => {'kubernetes.io/arch' => 'amd64'}}, file)
-    refute_empty violations({'nodeSelector' => {'topology.miutaku/proxmox-node' => 'pve-x570'}}, file)
+  def test_runner_cpu_binding_is_rejected_too
+    file = 'k8s/pve/argocd-apps/arc-runner-my-infra.yaml'
+    refute_empty violations({'nodeSelector' => {'kubernetes.io/arch' => 'amd64'}}, file)
   end
 end
