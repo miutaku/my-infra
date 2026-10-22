@@ -91,45 +91,32 @@ guestの停止・起動はPVEの通常のホスト再起動処理に任せる。
 自動更新もPVE groupで排他し、別のPVE更新・承認済みOS再起動と重ならないようにする。
 カーネルはインストール済みの`/boot/vmlinuz-*-pve`と実行中versionを比較して再起動を判定する。
 
-現在の2ノードPVEでは片ノード停止時にPVEのquorumが失われ、Talos control planeも
-pve-b550mへ2台集中している。VMを退避できない場合には停止時間を伴うため、
-承認前にVMの配置と停止の影響を手動確認する。これらの制約を無視して自動退避したり、
-`pvecm expected`の変更でquorumを強制的に成立させたりしない。
+現在の2ノードPVEでは片ノード停止時にPVEのquorumやKubernetes・NASのサービスが
+一時停止し得る。ユーザーの運用方針として、Loockit以外のサービス停止は許容し、
+Kubernetes・NAS VMの退避、配置確認、NFS到達性を再起動の条件にしない。
+VMはPVE標準の停止・起動に任せる。`pvecm expected`の強制変更や自動退避は行わない。
 
 PVEの処理が中断・失敗した場合、時間経過だけで排他を解除せず、他方のPVEも停止する。
-再起動後は両ノード・quorum・管理サービス・dpkgの健全性を確認してから解除する。
+再起動後は両ノード・quorum・管理サービス・dpkgとLoockitの健全性を確認してから解除する。
 OSのメジャーバージョン更新やVMの退避自動化は対象外。
 
-### Kubernetes・Loockitの可用性保護
+### Loockitの可用性保護
 
-PVE再起動は、以下の読み取り確認をすべて満たす場合だけ許可する。
-実行権取得後の事前確認で失敗すれば保留へ戻し、可用性確認が理由の場合はDiscordの予定にも明記する。
-通常報告時のサービス健全性が不足する場合も実行権を渡さない。
+可用性の保護対象はLoockitに限定し、以下を確認する。
 
-- `home-k8s`タグのVM、および明示したKubernetes VM `13001`–`13005`、
-  共有NFSのNAS VM `69001/69002`がすべて存在・稼働し、配置を特定できること。
-- これらの保護VMが再起動対象ホストに1台も残っていないこと。
-  control planeの過半数を失う再起動や、worker上のPodの突然停止、NFSの停止を避ける。
-  タグ付きの新しいKubernetes VMも自動的に保護する。
-- 残存ホストのLoockit `/readyz`がHTTP 200、共有NFS `.191/.192`のTCP 2049へ到達できること。
-  再起動後の完了判定では両Loockitの`/healthz`が200で、`/readyz`が200のleaderが1台、
-  もう1台は503の`standby replica`であることと、保護VMの稼働・NFS到達を再確認する。
-  通常の待機系503を障害と誤認しない。対象ホストが現在のleaderの場合は、
-  peerがreadyになるまで再起動を許可せず、自動的にleaderを停止・切替することはない。
-  これはKubernetes Node ReadyやNFS上の全アプリケーションの動作、BLE機器操作成功の検証とは異なる。
+- 再起動前は、残存ホストのLoockit `/readyz`がHTTP 200であること。
+  相手が503の待機系、異常、到達不能なら再起動を保留する。
+- 再起動後は、両Loockitの`/healthz`が200、`/readyz`が200のleaderが1台、
+  もう1台は503の`standby replica`であること。通常の待機系503は障害とみなさない。
+- 稼働中のLoockitを自動停止・切替する操作は行わない。
+  稼働側のPVEを再起動するには、先に相手側Loockitがreadyになっている必要がある。
 
-方針はAnsibleの`files/availability-policy.json`で管理し、未配備・読取失敗・対象VM欠落・
-状態不明・接続失敗では再起動を許可しない。通常のパッケージ更新には退避を要求しない。
+方針はAnsibleの`files/availability-policy.json`で`availability_scope: loockit-only`として管理する。
+未配備・読取失敗・不正な方針・Loockitの接続失敗では再起動を許可しない。
+Kubernetes VM、NAS VM、NFSは可用性確認と再起動後の完了判定の対象外とする。
 `host-maintenance-agent --probe`は読み取りだけで`rebootSafe`と保留理由を返す。
+実行権取得後の事前確認に失敗した予定は保留へ戻し、DiscordにもLoockitの確認が必要な旨を表示する。
 
-**現在の配置では両PVEの再起動は保留になる。** b550mにはcontrol planeが2台あり、
-x570のNAS VMはUSBディスクmappingを使うため、VMを一律にライブ移行する方式は採用していない。
-安全な再起動には、保護VMの移行先容量・CPU互換性・ローカルディスクとISOを確認し、
-NASの停止を伴わない切替方法を別途用意する必要がある。自動退避・drain・ストレージ変更や
-quorumの強制変更は行わない。退避した場合はKubernetesのNode Ready、etcd、Loockit経路、
-NFSと必要なアプリの動作を確認してから、`--probe`とDiscordでの日時指定・再承認を行う。
-退避中はTerraformの固定配置やKubernetesの物理ホストlabelにも差分が生じるため、
-未確認のTerraform Applyやlabelの流用は避ける。
 
 ## セットアップ
 

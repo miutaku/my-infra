@@ -246,7 +246,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     else {
       state.plan.phase = outcome === 'blocked' ? 'held' : 'failed';
       state.plan.reason = outcome === 'blocked' ?
-        (reason === 'availability' ? 'Kubernetes・共有ストレージの退避、またはLoockit待機系の正常性を確認できないため、再起動を保留しました。ホストのjournalを確認してください。' :
+        (reason === 'availability' ? '相手側のLoockitが稼働可能（ready）であることを確認できないため、再起動を保留しました。Loockitの切替・稼働状態とホストのjournalを確認してください。VM・NASの退避は不要です。' :
           '事前確認で停止しました。ホストのjournalを確認してください。') :
         '処理に失敗しました。他のPVEも停止しています。手動確認が必要です。';
       state.plan.revision = crypto.randomUUID();

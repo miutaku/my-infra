@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import socket
 import subprocess
 import urllib.error
 import urllib.request
@@ -23,27 +22,15 @@ class AvailabilityBlocked(RuntimeError):
 
 
 def availability_check(host, reboot=False):
-    """Read-only guard: keep Kubernetes and its storage outside the reboot host."""
+    """Read-only guard: Loockit must serve from the host that stays online."""
     try:
         policy = json.loads(AVAILABILITY_POLICY.read_text())
-        required = set(policy['required_vm_ids'])
-        if (not required or not policy['protected_tags'] or not policy['storage_endpoints'] or
-                set(policy['loockit_endpoints']) != {'pve-x570', 'pve-b550m'}):
+        if (policy['availability_scope'] != 'loockit-only' or
+                set(policy['loockit_endpoints']) != {'pve-x570', 'pve-b550m'} or
+                host not in policy['loockit_endpoints'] or
+                any(not isinstance(url, str) or not url.endswith('/readyz')
+                    for url in policy['loockit_endpoints'].values())):
             raise ValueError('Incomplete availability policy')
-        guests = json.loads(run('pvesh', 'get', '/cluster/resources', '--type', 'vm',
-                                '--output-format', 'json'))
-        protected = [vm for vm in guests if vm.get('vmid') in required or
-                     set(vm.get('tags', '').split(';')) & set(policy['protected_tags'])]
-        if not required.issubset({vm['vmid'] for vm in protected}):
-            raise AvailabilityBlocked('Required Kubernetes/storage VM missing from inventory')
-        if any(vm.get('status') != 'running' for vm in protected):
-            raise AvailabilityBlocked('Kubernetes/storage VM is not running')
-        if any(vm.get('node') not in policy['loockit_endpoints'] for vm in protected):
-            raise AvailabilityBlocked('Kubernetes/storage VM placement is unknown')
-        if reboot:
-            local = [f"{vm['vmid']} ({vm.get('name', 'unknown')})" for vm in protected if vm.get('node') == host]
-            if local:
-                raise AvailabilityBlocked('Kubernetes/storage VMs still on reboot host: ' + ', '.join(local))
         # A standby normally returns 503 from /readyz. Before reboot the peer
         # must already serve; after reboot require two live processes and one
         # serving leader, rather than falsely waiting for two active leaders.
@@ -54,24 +41,21 @@ def availability_check(host, reboot=False):
             if not reboot:
                 with urllib.request.urlopen(url.removesuffix('/readyz') + '/healthz', timeout=5) as response:
                     if response.status != 200:
-                        raise AvailabilityBlocked('Loockit process health failed')
+                        raise AvailabilityBlocked(f'Loockit process health failed on {node}')
             try:
                 with urllib.request.urlopen(url, timeout=5) as response:
                     if response.status != 200:
-                        raise AvailabilityBlocked('Loockit readiness failed')
+                        raise AvailabilityBlocked(f'Loockit readiness failed on {node}')
                     ready += 1
             except urllib.error.HTTPError as error:
                 if reboot or error.code != 503 or json.loads(error.read(1024)).get('detail') != 'standby replica':
-                    raise AvailabilityBlocked('Loockit readiness failed') from None
+                    raise AvailabilityBlocked(f'Loockit readiness failed on {node} (HTTP {error.code}); peer must be ready before reboot') from None
         if ready != 1:
             raise AvailabilityBlocked('Exactly one serving Loockit leader required')
-        for address in policy['storage_endpoints']:
-            with socket.create_connection((address, 2049), timeout=5):
-                pass
     except AvailabilityBlocked:
         raise
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
-        raise AvailabilityBlocked('Availability policy or service check failed; reboot denied') from None
+        raise AvailabilityBlocked('Loockit policy or service check failed; reboot denied') from None
 
 
 def pve_recovered(host):
@@ -132,8 +116,8 @@ def pve_healthy():
 def pve_preflight(host):
     if not pve_healthy():
         raise RuntimeError('PVE cluster or package state is unhealthy')
-    # Ordinary running guests are allowed; critical Kubernetes/storage guests
-    # must be moved away first. This guard never stops or migrates a guest.
+    # Running Kubernetes/storage guests are allowed to stop with the host.
+    # Only Loockit must already serve from the peer; no guests are migrated.
     pve_tasks_idle()
     availability_check(host, reboot=True)
 
@@ -253,7 +237,7 @@ def process(config):
                 print('Execution is awaiting reboot or manual investigation')
             return
         if pve and not pve_recovered(host):
-            print('Rebooted; waiting for PVE, Kubernetes/storage VMs and Loockit before releasing maintenance lock')
+            print('Rebooted; waiting for PVE and Loockit before releasing maintenance lock')
             return
     count, fingerprint = updates()
     healthy = pve_recovered(host) if pve else package_idle()

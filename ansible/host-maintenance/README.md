@@ -21,9 +21,12 @@ PVEのguest停止やVM移行をこのplaybookから実行することはない�
 PVEは毎日18時台にパッケージを自動更新し、OS再起動が必要なら19時に通知する。
 OS再起動だけがDiscordでの日時指定・承認と事前確認を必要とする。
 一般の稼働中VM/CTがあっても承認済みOS再起動を許可し、guestの停止・起動はPVE標準処理に任せる。
-ただしKubernetes VM・共有NFSのNAS VMは再起動対象ホストに残っていれば保留する。
+可用性の保護対象はLoockitに限定する。Kubernetes・NASを含むVMの退避やNFSの到達性は要求しない。
+再起動前に相手ホストのLoockitがreadyであることを確認し、相手が待機系のまま・異常・到達不能なら保留する。
+稼働中のLoockitを自動停止して切り替える処理は行わない。
 `files/availability-policy.json`を`/etc/host-maintenance/availability-policy.json`へ配備する。
-`--probe`で`rebootSafe`と具体的なVM番号・名前を含む`rebootBlockReason`を確認できる。
-退避・NAS切替は自動実行しない。実行条件はcontroller READMEの可用性保護を参照。
+`--probe`で`rebootSafe`とLoockitを含む具体的な`rebootBlockReason`を確認できる。
+再起動後は両Loockitプロセスの健全性とreadyなleaderが1台であることを確認する。
+実行条件はcontroller READMEの可用性保護を参照。
 クラスタの健全性・両ノードのactive task・パッケージ状態の確認と、PVE同士の排他は維持する。
 再起動を保留していてもパッケージの自動更新は継続する。

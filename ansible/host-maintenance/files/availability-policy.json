@@ -1,7 +1,5 @@
 {
-  "protected_tags": ["home-k8s"],
-  "required_vm_ids": [13001, 13002, 13003, 13004, 13005, 69001, 69002],
-  "storage_endpoints": ["192.168.20.191", "192.168.20.192"],
+  "availability_scope": "loockit-only",
   "loockit_endpoints": {
     "pve-x570": "http://192.168.20.133:8080/readyz",
     "pve-b550m": "http://192.168.20.134:8080/readyz"

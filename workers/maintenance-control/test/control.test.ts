@@ -369,7 +369,7 @@ describe('maintenance scheduling', () => {
     await target.result('pve-x570', claim!.executionId, 'blocked', 'availability');
     const state = await read(target, 'pve-x570');
     expect(state.plan!.phase).toBe('held');
-    expect(state.plan!.reason).toContain('Kubernetes・共有ストレージ');
+    expect(state.plan!.reason).toContain('VM・NASの退避は不要');
     expect(state.plan!.reason).toContain('Loockit');
     expect(await target.claim('pve-x570')).toBeNull();
   });

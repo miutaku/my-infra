@@ -155,77 +155,67 @@ class AvailabilityTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.policy = Path(self.directory.name) / 'policy.json'
         self.policy.write_text(json.dumps({
-            'required_vm_ids': [13001, 69001], 'protected_tags': ['home-k8s'],
-            'storage_endpoints': ['192.0.2.20'],
+            'availability_scope': 'loockit-only',
             'loockit_endpoints': {'pve-x570': 'http://192.0.2.1/readyz',
                                  'pve-b550m': 'http://192.0.2.2/readyz'},
         }))
         policy = patch.object(agent, 'AVAILABILITY_POLICY', self.policy)
         policy.start()
         self.addCleanup(policy.stop)
-        self.guests = [
-            {'vmid': 13001, 'node': 'pve-b550m', 'status': 'running', 'tags': 'home-k8s'},
-            {'vmid': 69001, 'node': 'pve-b550m', 'status': 'running'},
-            {'vmid': 40000, 'node': 'pve-x570', 'status': 'running'},
-        ]
 
-    def test_ordinary_running_vm_allowed_with_protected_vms_on_peer_and_services_ready(self):
-        with patch.object(agent, 'run', return_value=json.dumps(self.guests)), \
-             patch.object(agent.urllib.request, 'urlopen') as http, \
-             patch.object(agent.socket, 'create_connection') as tcp:
+    def test_no_guest_inventory_or_nfs_dependency_when_peer_loockit_is_ready(self):
+        with patch.object(agent, 'run', side_effect=AssertionError('VM inventory must not be read')) as inventory, \
+             patch('socket.create_connection', side_effect=AssertionError('NFS must not be probed')) as tcp, \
+             patch.object(agent.urllib.request, 'urlopen') as http:
             http.return_value.__enter__.return_value.status = 200
             agent.availability_check('pve-x570', reboot=True)
             http.assert_called_once_with('http://192.0.2.2/readyz', timeout=5)
-            tcp.assert_called_once_with(('192.0.2.20', 2049), timeout=5)
+            inventory.assert_not_called()
+            tcp.assert_not_called()
 
-    def test_local_kubernetes_or_storage_vm_blocks_before_any_network_probe(self):
-        for vmid in [13001, 69001]:
-            guests = [dict(vm, node='pve-x570') if vm['vmid'] == vmid else vm for vm in self.guests]
-            with self.subTest(vmid=vmid), patch.object(agent, 'run', return_value=json.dumps(guests)), \
-                 patch.object(agent.urllib.request, 'urlopen') as http:
-                with self.assertRaisesRegex(agent.AvailabilityBlocked, str(vmid)):
-                    agent.availability_check('pve-x570', reboot=True)
-                http.assert_not_called()
+    def test_checks_the_other_node_for_either_reboot_target(self):
+        with patch.object(agent.urllib.request, 'urlopen') as http:
+            http.return_value.__enter__.return_value.status = 200
+            agent.availability_check('pve-b550m', reboot=True)
+            http.assert_called_once_with('http://192.0.2.1/readyz', timeout=5)
 
-    def test_new_tagged_kubernetes_vm_is_protected_without_id_list_update(self):
-        self.guests.append({'vmid': 13006, 'node': 'pve-x570', 'status': 'running', 'tags': 'home-k8s;talos'})
-        with patch.object(agent, 'run', return_value=json.dumps(self.guests)):
-            with self.assertRaisesRegex(agent.AvailabilityBlocked, '13006'):
+    def test_standby_peer_cannot_protect_a_reboot_of_the_active_host(self):
+        error = urllib.error.HTTPError('http://peer/readyz', 503, 'standby', {},
+                                      io.BytesIO(b'{"detail":"standby replica"}'))
+        self.addCleanup(error.close)
+        with patch.object(agent.urllib.request, 'urlopen', side_effect=error):
+            with self.assertRaisesRegex(agent.AvailabilityBlocked, 'pve-b550m'):
                 agent.availability_check('pve-x570', reboot=True)
 
-    def test_missing_stopped_or_unknown_placement_is_denied(self):
-        for guests in [self.guests[1:], [dict(self.guests[0], status='stopped'), self.guests[1]],
-                       [dict(self.guests[0], node=None), self.guests[1]]]:
-            with self.subTest(guests=guests), patch.object(agent, 'run', return_value=json.dumps(guests)):
-                with self.assertRaises(agent.AvailabilityBlocked):
-                    agent.availability_check('pve-x570', reboot=True)
-
-    def test_peer_loockit_not_ready_or_nfs_unreachable_denies_reboot(self):
-        with patch.object(agent, 'run', return_value=json.dumps(self.guests)), \
-             patch.object(agent.urllib.request, 'urlopen') as http, \
-             patch.object(agent.socket, 'create_connection', side_effect=TimeoutError):
+    def test_unreachable_or_unhealthy_peer_denies_reboot(self):
+        with patch.object(agent.urllib.request, 'urlopen', side_effect=TimeoutError):
+            with self.assertRaises(agent.AvailabilityBlocked):
+                agent.availability_check('pve-x570', reboot=True)
+        with patch.object(agent.urllib.request, 'urlopen') as http:
             http.return_value.__enter__.return_value.status = 503
             with self.assertRaises(agent.AvailabilityBlocked):
                 agent.availability_check('pve-x570', reboot=True)
-            http.return_value.__enter__.return_value.status = 200
-            with self.assertRaises(agent.AvailabilityBlocked):
-                agent.availability_check('pve-x570', reboot=True)
 
-    def test_missing_policy_denies_reboot(self):
+    def test_missing_or_incomplete_policy_denies_reboot(self):
+        original = self.policy.read_text()
         self.policy.unlink()
         with self.assertRaises(agent.AvailabilityBlocked):
             agent.availability_check('pve-x570', reboot=True)
+        for change in [{'availability_scope': 'unknown'}, {'loockit_endpoints': {}},
+                       {'loockit_endpoints': {'pve-x570': None, 'pve-b550m': 'bad'}}]:
+            self.policy.write_text(json.dumps({**json.loads(original), **change}))
+            with self.assertRaises(agent.AvailabilityBlocked):
+                agent.availability_check('pve-x570', reboot=True)
 
-    def test_recovery_checks_both_loockit_instances_even_with_local_critical_vms(self):
-        self.guests[0]['node'] = 'pve-x570'
+    def test_recovery_checks_both_loockit_processes_and_one_serving_leader(self):
         with patch.object(agent, 'pve_healthy', return_value=True), \
-             patch.object(agent, 'run', return_value=json.dumps(self.guests)), \
-             patch.object(agent.urllib.request, 'urlopen') as http, \
-             patch.object(agent.socket, 'create_connection'):
+             patch.object(agent, 'run', side_effect=AssertionError('VM inventory must not be read')), \
+             patch.object(agent.urllib.request, 'urlopen') as http:
             response = MagicMock()
             response.__enter__.return_value.status = 200
             standby = urllib.error.HTTPError('http://standby/readyz', 503, 'standby', {},
                                              io.BytesIO(b'{"detail":"standby replica"}'))
+            self.addCleanup(standby.close)
             http.side_effect = [response, standby, response, response]
             self.assertTrue(agent.pve_recovered('pve-x570'))
             self.assertEqual(http.call_count, 4)
@@ -235,7 +225,6 @@ class AvailabilityTests(unittest.TestCase):
 
     def test_recovery_does_not_accept_two_active_leaders(self):
         with patch.object(agent, 'pve_healthy', return_value=True), \
-             patch.object(agent, 'run', return_value=json.dumps(self.guests)), \
              patch.object(agent.urllib.request, 'urlopen') as http:
             http.return_value.__enter__.return_value.status = 200
             self.assertFalse(agent.pve_recovered('pve-x570'))
