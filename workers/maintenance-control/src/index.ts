@@ -273,6 +273,11 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.audit(host, 'manual-recovery');
     await this.publish(host);
   }
+  async canPickDate(customId: string): Promise<boolean> {
+    const [host, revision] = customId.split(':');
+    const plan = isHost(host) ? this.read(host).plan : undefined;
+    return !!plan && plan.revision === revision && !['running', 'failed'].includes(plan.phase);
+  }
   async interaction(input: Interaction) {
     try {
       const content = await this.applyInteraction(input);
@@ -282,7 +287,21 @@ export class MaintenanceFleet extends DurableObject<Env> {
         plan.notifiedRevision === plan.revision && !['running', 'failed'].includes(plan.phase)
         ? this.message(host, plan).components : [] };
     }
-    catch (error) { return { ok: false, content: error instanceof ScheduleInputError ? error.message : '通知の更新に失敗しました。この予定は実行されません。最新の通知から操作をやり直してください。', components: [] }; }
+    catch (error) {
+      const [host] = (input.data?.custom_id ?? '').split(':');
+      const plan = isHost(host) ? this.read(host).plan : undefined;
+      const content = error instanceof ScheduleInputError ? error.message :
+        '通知の更新に失敗しました。この予定は実行されません。';
+      // Old reminders and ephemeral replies retain their original revision.
+      // Show the current target before asking for another explicit action;
+      // never apply an old approval to a changed schedule automatically.
+      if (isHost(host) && plan && !['running', 'failed'].includes(plan.phase)) {
+        const current = this.message(host, plan);
+        return { ok: false, content: `${content}\n\n最新の予定を表示します。下のボタンから操作してください。\n${current.content}`,
+          components: current.components };
+      }
+      return { ok: false, content, components: [] };
+    }
   }
   private async applyInteraction(input: Interaction): Promise<string> {
     const now = Date.now();
@@ -290,7 +309,8 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (!isHost(name)) throw new ScheduleInputError('不明なホストです。');
     const state = this.read(name);
     const plan = state.plan;
-    if (!plan || plan.revision !== revision) throw new ScheduleInputError('この通知は古くなっています。最新の通知を使ってください。');
+    if (!plan) throw new ScheduleInputError('現在、操作できる再起動予定はありません。');
+    if (plan.revision !== revision) throw new ScheduleInputError('この通知は古くなっています。操作は適用していません。');
     if (['running', 'failed'].includes(plan.phase)) throw new ScheduleInputError('実行中または要確認のため変更できません。');
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', input.id).toArray().length) return '処理済みです。';
     if (action === 'hold') plan.phase = 'held';
@@ -420,7 +440,8 @@ export default {
     if (!env.DISCORD_OPERATOR_IDS.split(',').map(id => id.trim()).includes(input.member?.user?.id ?? '') ||
       input.guild_id !== env.DISCORD_GUILD_ID || input.channel_id !== env.DISCORD_CHANNEL_ID) return Response.json(reply('この操作を実行する権限がありません。'));
     if (input.type === 3 && input.data?.custom_id === 'maintenance-test') return Response.json(reply('操作を受信しました。認証・署名検証は正常です。再起動予定は変更していません。'));
-    if (input.type === 3 && /^(date|pick-)/.test(input.data?.custom_id?.split(':')[2] ?? '')) {
+    if (input.type === 3 && /^(date|pick-)/.test(input.data?.custom_id?.split(':')[2] ?? '') &&
+        await fleet.canPickDate(input.data!.custom_id!)) {
       try {
         const selection = datePickerInteraction(input.data!.custom_id!, input.data?.values);
         if ('type' in selection) return Response.json(selection);
