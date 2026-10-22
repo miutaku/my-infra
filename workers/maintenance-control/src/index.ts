@@ -246,7 +246,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     else {
       state.plan.phase = outcome === 'blocked' ? 'held' : 'failed';
       state.plan.reason = outcome === 'blocked' ?
-        (reason === 'availability' ? '相手側のLoockitが稼働可能（ready）であることを確認できないため、再起動を保留しました。Loockitの切替・稼働状態とホストのjournalを確認してください。VM・NASの退避は不要です。' :
+        (reason === 'availability' ? '相手側のLoockit、または再起動対象外のホスト上のCloudflare Tunnelの稼働を確認できないため、再起動を保留しました。Loockitの切替・Tunnelの接続状態とホストのjournalを確認してください。監視基盤・VM・NASの退避は不要です。' :
           '事前確認で停止しました。ホストのjournalを確認してください。') :
         '処理に失敗しました。他のPVEも停止しています。手動確認が必要です。';
       state.plan.revision = crypto.randomUUID();

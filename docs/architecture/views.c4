@@ -129,10 +129,9 @@ views {
   }
   view loockit of premises.home.loockit {
     title 'Loockit / HAProxy → LXC → Bluetooth'
-    description '外部APIはmTLS。Pod内HAProxyはreadyzでactiveだけを選択し、LXC 12902/12903のREST/gRPCへ転送。LXCがPVE上のBlueZを使い、Leaseでleaderを選ぶ。'
+    description '外部APIはmTLSと専用Tunnel。LXC内HAProxyがreadyなleaderへ転送する。LXCがPVE上のBlueZを使い、Durable ObjectのLeaseでleaderを選ぶ。Kubernetesプロキシは撤去済み。'
     include premises.pve
-    include client, external.edge.mtls, external.edge.tunnel, premises.home.loockit.proxy, premises.pve.loockit_a, premises.pve.loockit_b, premises.pve.bluez, premises.home.platform.api
-    include premises.home.platform.api with { navigateTo platform }
+    include client, external.edge.mtls, external.edge.loockit_tunnel, external.edge.loockit_lease, premises.pve.loockit_a, premises.pve.loockit_b, premises.pve.bluez
     include premises.pve.loockit_a with { navigateTo placement }
     include premises.pve.loockit_b with { navigateTo placement }
     exclude external.edge.routes.** -> *

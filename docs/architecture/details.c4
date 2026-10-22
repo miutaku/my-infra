@@ -45,7 +45,7 @@ model {
     component cert_approver 'kubelet-serving-cert-approver' { description 'kubelet serving証明書のCSRを承認する。' }
   } }
   extend premises.home {
-    system loockit 'Loockit / BLEスマートロック' { description '公開RESTは専用TunnelとLXC内HAProxyがactiveへ転送。BLE選出はDurable Object。APIはmTLS、Kubernetes ServiceはLAN互換用。' component proxy '互換HAProxy / :8080・:50051' }
+    system loockit 'Loockit / BLEスマートロック' { description '公開RESTは専用TunnelとLXC内HAProxyがactiveへ転送。BLE選出はDurable Object。APIはmTLS。Kubernetesプロキシは撤去済み。' }
     system coupon_manager 'Coupon Manager' { description 'Web → API → PostgreSQL。画像とData Protection keyはnas-02。外部AI APIを利用。' component web 'Web / :80' component api 'API / :8080' }
     component wol 'Wake-on-LAN' { description 'app-gptwol。LANにMagic Packetを送信して対象PCを起動する。' }
     component magic_mirror 'MagicMirror / ダッシュボード' { description 'app-magic-mirror / HTTP:8080。VLAN40のDisplayLink kiosk VM5000で表示。' }
@@ -144,8 +144,6 @@ model {
   external.edge.mtls .authenticate external.edge.loockit_tunnel 'mTLS検証済みのAPIリクエスト'
   external.edge.loockit_tunnel .runtime premises.pve.loockit_a 'LXC内HAProxy / loopback :18080'
   external.edge.loockit_tunnel .runtime premises.pve.loockit_b 'LXC内HAProxy / loopback :18080'
-  premises.home.loockit.proxy .runtime premises.pve.loockit_a 'readyz / leaderのみ'
-  premises.home.loockit.proxy .runtime premises.pve.loockit_b 'readyz / leaderのみ'
   premises.pve.loockit_a .runtime premises.pve.bluez 'pve-x570 / read-only D-Bus'
   premises.pve.loockit_b .runtime premises.pve.bluez 'pve-b550m / read-only D-Bus'
   premises.pve.loockit_a .runtime external.edge.loockit_lease 'HTTPS / BLE Lease'

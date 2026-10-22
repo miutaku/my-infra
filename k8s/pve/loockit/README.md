@@ -1,33 +1,12 @@
-# loockit
+# Loockit
 
-Production BLE controllers run in LXC 12902/12903. Their election and public REST
-API use an independent Cloudflare Durable Object and dedicated Tunnel; they do
-not depend on this Kubernetes Service. This directory retains the LAN-compatible
-REST/gRPC proxy and the previous service account for rollback. See
-[Loockit LXC](../../../ansible/loockit-lxc/README.md) for deployment and migration.
-The legacy deployment/configuration files below are not included in kustomization.
+本番のBLEコントローラはLXC 12902/12903で稼働する。
+leader選出はCloudflare Durable Object、公開REST APIは専用Tunnelを使う。
+[Loockit LXC](../../../ansible/loockit-lxc/README.md)を参照。
 
-The REST and gRPC APIs have no built-in authentication. The Service is therefore
-`ClusterIP` only, and the pod does not use `hostNetwork` (Bluetooth works through
-the mounted host D-Bus socket). Do not expose it with a LoadBalancer or Ingress
-without adding an authenticated proxy.
+Kubernetes側のREST/gRPCプロキシ、旧BLE Deployment、ServiceAccountとRBACは撤去した。
+監視はLXC 2台の `/readyz` に直接接続し、待機系503だけでは障害判定しない。
+旧共用Tunnelのloockit-apiルートは404にし、DNSは引き続き専用Tunnelを指す。
+公開APIに必要なLXC内のHAProxyは維持する。
 
-The deployment reads these entries from Bitwarden Secrets Manager through an
-ExternalSecret:
-
-- `LOOCKIT_INTERCOM_BOT_SECRET_KEY`
-- `LOOCKIT_INTERCOM_BOT_PUBLIC_KEY`
-- `LOOCKIT_FRONT_DOOR_SECRET_KEY`
-- `LOOCKIT_FRONT_DOOR_PUBLIC_KEY`
-
-They are materialized as the `loockit-keys` Kubernetes Secret and injected as
-environment variables. Never store their values in Git.
-
-## D-Bus failure containment
-
-Bleak uses the host system D-Bus through `/run/dbus`. A broken BlueZ session can
-otherwise leave D-Bus sockets behind during reconnect/leader-election loops.
-The liveness probe recycles only the affected Loockit Pod before PID 1 reaches
-96 open FDs. The `bluetooth_node` Ansible role independently raises the system
-bus per-UID connection ceiling to 1024 and configures BlueZ to retry after a
-transient failure.
+Argo CDによるNamespaceの巻き添え削除を防ぐため、Namespace定義とApplicationは維持する。

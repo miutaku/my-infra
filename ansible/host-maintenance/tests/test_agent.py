@@ -155,7 +155,11 @@ class AvailabilityTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.policy = Path(self.directory.name) / 'policy.json'
         self.policy.write_text(json.dumps({
-            'availability_scope': 'loockit-only',
+            'availability_scope': 'loockit-and-tunnel',
+            'tunnel_endpoints': {'pve-x570': 'http://192.0.2.11/ready',
+                                 'pve-b550m': 'http://192.0.2.12/ready',
+                                 'rpi-107': 'http://192.0.2.13/ready',
+                                 'rpi-109': 'http://192.0.2.14/ready'},
             'loockit_endpoints': {'pve-x570': 'http://192.0.2.1/readyz',
                                  'pve-b550m': 'http://192.0.2.2/readyz'},
         }))
@@ -169,7 +173,9 @@ class AvailabilityTests(unittest.TestCase):
              patch.object(agent.urllib.request, 'urlopen') as http:
             http.return_value.__enter__.return_value.status = 200
             agent.availability_check('pve-x570', reboot=True)
-            http.assert_called_once_with('http://192.0.2.2/readyz', timeout=5)
+            self.assertEqual(http.call_args_list[0].args, ('http://192.0.2.2/readyz',))
+            self.assertEqual(http.call_count, 4)
+            self.assertNotIn('http://192.0.2.11/ready', [call.args[0] for call in http.call_args_list])
             inventory.assert_not_called()
             tcp.assert_not_called()
 
@@ -177,7 +183,8 @@ class AvailabilityTests(unittest.TestCase):
         with patch.object(agent.urllib.request, 'urlopen') as http:
             http.return_value.__enter__.return_value.status = 200
             agent.availability_check('pve-b550m', reboot=True)
-            http.assert_called_once_with('http://192.0.2.1/readyz', timeout=5)
+            self.assertEqual(http.call_args_list[0].args, ('http://192.0.2.1/readyz',))
+            self.assertNotIn('http://192.0.2.12/ready', [call.args[0] for call in http.call_args_list])
 
     def test_standby_peer_cannot_protect_a_reboot_of_the_active_host(self):
         error = urllib.error.HTTPError('http://peer/readyz', 503, 'standby', {},
@@ -201,7 +208,7 @@ class AvailabilityTests(unittest.TestCase):
         self.policy.unlink()
         with self.assertRaises(agent.AvailabilityBlocked):
             agent.availability_check('pve-x570', reboot=True)
-        for change in [{'availability_scope': 'unknown'}, {'loockit_endpoints': {}},
+        for change in [{'availability_scope': 'unknown'}, {'tunnel_endpoints': {}}, {'loockit_endpoints': {}},
                        {'loockit_endpoints': {'pve-x570': None, 'pve-b550m': 'bad'}}]:
             self.policy.write_text(json.dumps({**json.loads(original), **change}))
             with self.assertRaises(agent.AvailabilityBlocked):
@@ -216,12 +223,31 @@ class AvailabilityTests(unittest.TestCase):
             standby = urllib.error.HTTPError('http://standby/readyz', 503, 'standby', {},
                                              io.BytesIO(b'{"detail":"standby replica"}'))
             self.addCleanup(standby.close)
-            http.side_effect = [response, standby, response, response]
+            http.side_effect = [response, standby, response, response] + [response] * 4
             self.assertTrue(agent.pve_recovered('pve-x570'))
-            self.assertEqual(http.call_count, 4)
+            self.assertEqual(http.call_count, 8)
             http.side_effect = None
             http.return_value.__enter__.return_value.status = 503
             self.assertFalse(agent.pve_recovered('pve-x570'))
+
+    def test_tunnel_failover_accepts_any_surviving_physical_host(self):
+        for survivor in range(3):
+            with self.subTest(survivor=survivor), patch.object(agent.urllib.request, 'urlopen') as http:
+                response = MagicMock()
+                response.__enter__.return_value.status = 200
+                connectors = [TimeoutError(), TimeoutError(), TimeoutError()]
+                connectors[survivor] = response
+                http.side_effect = [response] + connectors
+                agent.availability_check('pve-x570', reboot=True)
+
+    def test_tunnel_on_rebooting_host_alone_cannot_protect_reboot(self):
+        with patch.object(agent.urllib.request, 'urlopen') as http:
+            response = MagicMock()
+            response.__enter__.return_value.status = 200
+            http.side_effect = [response, TimeoutError(), TimeoutError(), TimeoutError()]
+            with self.assertRaisesRegex(agent.AvailabilityBlocked, 'surviving physical host'):
+                agent.availability_check('pve-x570', reboot=True)
+            self.assertNotIn('http://192.0.2.11/ready', [call.args[0] for call in http.call_args_list])
 
     def test_recovery_does_not_accept_two_active_leaders(self):
         with patch.object(agent, 'pve_healthy', return_value=True), \

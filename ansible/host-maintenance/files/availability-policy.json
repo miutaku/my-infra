@@ -1,5 +1,11 @@
 {
-  "availability_scope": "loockit-only",
+  "availability_scope": "loockit-and-tunnel",
+  "tunnel_endpoints": {
+    "pve-x570": "http://192.168.20.140:32000/ready",
+    "pve-b550m": "http://192.168.20.141:32000/ready",
+    "rpi-107": "http://192.168.10.107:32000/ready",
+    "rpi-109": "http://192.168.10.109:32000/ready"
+  },
   "loockit_endpoints": {
     "pve-x570": "http://192.168.20.133:8080/readyz",
     "pve-b550m": "http://192.168.20.134:8080/readyz"

@@ -89,10 +89,10 @@ export function generateCatalog(root){
   if(!source.includes('resource "cloudflare_zero_trust_access_application"'))continue;
   for(const domain of source.matchAll(/domain\s*=\s*"([^"$]+)\.\$\{var\.domain\}"/g))protectedNames.add(domain[1]);
  }
- const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.home.management.argo',wol:'premises.home.wol','loockit-api':'premises.home.loockit.proxy',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation_staging.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.coupon_manager.web',unifi:'premises.pve.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.pve.nas01','nas-02':'premises.pve.nas02','pve-x570':'premises.pve.x570','pve-b550m':'premises.pve.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
+ const targets={'architecture-review':'consumers.reventer','argocd-home-k8s':'premises.home.management.argo',wol:'premises.home.wol',epgstation:'premises.home.recording.epgstation',tnlastation:'premises.home.recording.tnlastation.gateway','tnlastation-staging':'premises.home.recording.tnlastation_staging.gateway',nextcloud:'premises.home.nextcloud.web','coupon-manager':'premises.home.coupon_manager.web',unifi:'premises.pve.unifi','wifi-ap':'premises.hardware.network.ap',ix2215:'premises.hardware.network.router','nas-01':'premises.pve.nas01','nas-02':'premises.pve.nas02','pve-x570':'premises.pve.x570','pve-b550m':'premises.pve.b550m','nanokvm-1':'premises.hardware.kvm','nanokvm-2':'premises.hardware.kvm'};
  for(const match of homeRoutes.matchAll(/"([^"\n]+)"\s*=\s*\{([^{}]*)\}/g)){
   const backend=match[2].match(/backend\s*=\s*"([^"\n]+)"/)?.[1];if(!backend)continue;
-  const url=new URL(backend);if(url.username||url.password)throw new Error('Credentials are forbidden in published route metadata');
+  const url=/^http_status:[1-5][0-9]{2}$/.test(backend)?null:new URL(backend);if(url&&(url.username||url.password))throw new Error('Credentials are forbidden in published route metadata');
   const name=match[1],key=id('hostname:'+name);
   const independentLoockit=name==='loockit-api';
   const tunnel=independentLoockit?'external.edge.loockit_tunnel':'external.edge.tunnel';
@@ -104,7 +104,7 @@ export function generateCatalog(root){
   routeLinks.push(`${tunnel} .${kind} ${modelRef} "hostname転送"`);
   if(independentLoockit){
    for(const target of ['premises.pve.loockit_a','premises.pve.loockit_b'])routeLinks.push(`${modelRef} .runtime ${target} "独立LXC proxy / ready leader"`);
-  }else if(targets[name]&&!dedicated){
+  }else if(url&&targets[name]&&!dedicated){
    routeLinks.push(`${modelRef} .${kind} ${targets[name]} "${kind==='admin'?'認証後の内部接続':'内部接続'}"`);
    routeLinks.push(`external.edge.tunnel .${kind} ${targets[name]} ${q(name+' / '+(url.port||(url.protocol==='https:'?'443':'80'))+' / '+(accessMode==='access'?'Access':'mTLS'))}`);
   }

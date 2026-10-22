@@ -22,10 +22,13 @@ class AvailabilityBlocked(RuntimeError):
 
 
 def availability_check(host, reboot=False):
-    """Read-only guard: Loockit must serve from the host that stays online."""
+    """Loockit must serve from the peer and a Tunnel on another physical host must be ready."""
     try:
         policy = json.loads(AVAILABILITY_POLICY.read_text())
-        if (policy['availability_scope'] != 'loockit-only' or
+        if (policy['availability_scope'] != 'loockit-and-tunnel' or
+                set(policy['tunnel_endpoints']) != {'pve-x570', 'pve-b550m', 'rpi-107', 'rpi-109'} or
+                any(not isinstance(url, str) or not url.endswith('/ready')
+                    for url in policy['tunnel_endpoints'].values()) or
                 set(policy['loockit_endpoints']) != {'pve-x570', 'pve-b550m'} or
                 host not in policy['loockit_endpoints'] or
                 any(not isinstance(url, str) or not url.endswith('/readyz')
@@ -52,10 +55,23 @@ def availability_check(host, reboot=False):
                     raise AvailabilityBlocked(f'Loockit readiness failed on {node} (HTTP {error.code}); peer must be ready before reboot') from None
         if ready != 1:
             raise AvailabilityBlocked('Exactly one serving Loockit leader required')
+        tunnel_ready = 0
+        for domain, url in policy['tunnel_endpoints'].items():
+            if reboot and domain == host:
+                continue
+            try:
+                with urllib.request.urlopen(url, timeout=5) as response:
+                    if response.status == 200:
+                        tunnel_ready += 1
+            except (OSError, ValueError):
+                # Unused or failed nodes are allowed; one surviving connector is required.
+                pass
+        if not tunnel_ready:
+            raise AvailabilityBlocked('No connected Cloudflare Tunnel on a surviving physical host')
     except AvailabilityBlocked:
         raise
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
-        raise AvailabilityBlocked('Loockit policy or service check failed; reboot denied') from None
+        raise AvailabilityBlocked('Loockit/Tunnel policy or service check failed; reboot denied') from None
 
 
 def pve_recovered(host):
@@ -117,7 +133,7 @@ def pve_preflight(host):
     if not pve_healthy():
         raise RuntimeError('PVE cluster or package state is unhealthy')
     # Running Kubernetes/storage guests are allowed to stop with the host.
-    # Only Loockit must already serve from the peer; no guests are migrated.
+    # Loockit and a Tunnel connector must survive; no guests are migrated.
     pve_tasks_idle()
     availability_check(host, reboot=True)
 
@@ -237,7 +253,7 @@ def process(config):
                 print('Execution is awaiting reboot or manual investigation')
             return
         if pve and not pve_recovered(host):
-            print('Rebooted; waiting for PVE and Loockit before releasing maintenance lock')
+            print('Rebooted; waiting for PVE, Loockit and Tunnel before releasing maintenance lock')
             return
     count, fingerprint = updates()
     healthy = pve_recovered(host) if pve else package_idle()

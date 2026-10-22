@@ -100,9 +100,9 @@ PVEの処理が中断・失敗した場合、時間経過だけで排他を解�
 再起動後は両ノード・quorum・管理サービス・dpkgとLoockitの健全性を確認してから解除する。
 OSのメジャーバージョン更新やVMの退避自動化は対象外。
 
-### Loockitの可用性保護
+### LoockitとTunnelの可用性保護
 
-可用性の保護対象はLoockitに限定し、以下を確認する。
+可用性の保護対象はLoockitとCloudflare Tunnelとし、監視基盤は対象外とする。以下を確認する。
 
 - 再起動前は、残存ホストのLoockit `/readyz`がHTTP 200であること。
   相手が503の待機系、異常、到達不能なら再起動を保留する。
@@ -111,8 +111,10 @@ OSのメジャーバージョン更新やVMの退避自動化は対象外。
 - 稼働中のLoockitを自動停止・切替する操作は行わない。
   稼働側のPVEを再起動するには、先に相手側Loockitがreadyになっている必要がある。
 
-方針はAnsibleの`files/availability-policy.json`で`availability_scope: loockit-only`として管理する。
+方針はAnsibleの`files/availability-policy.json`で`availability_scope: loockit-and-tunnel`として管理する。
 未配備・読取失敗・不正な方針・Loockitの接続失敗では再起動を許可しない。
+再起動前には、対象PVE以外の物理ホストのTunnel `/ready` が200であることも要求する。
+Tunnelは2レプリカを物理ホスト単位に分散し、PVE・RPiの配置先は固定しない。再起動後も最低1接続を要求する。
 Kubernetes VM、NAS VM、NFSは可用性確認と再起動後の完了判定の対象外とする。
 `host-maintenance-agent --probe`は読み取りだけで`rebootSafe`と保留理由を返す。
 実行権取得後の事前確認に失敗した予定は保留へ戻し、DiscordにもLoockitの確認が必要な旨を表示する。

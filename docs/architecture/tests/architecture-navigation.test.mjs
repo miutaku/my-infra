@@ -37,8 +37,9 @@ test('drill-down reaches services and a single complete PVE inventory, with Dock
  for(const view of ['pve_x570','pve_b550m','coupon'])assert.ok(!model.views[view],view);
  assert.ok(!Object.values(model.deployments.elements).some(n=>/^LXC CT\d+$/.test(n.title??'')));
 });
-test('Loockit proxy checks readiness while its LXC backends use an independent Lease and Bluetooth access',()=>{
- const proxy='premises.home.loockit.proxy',api='premises.home.platform.api';
+test('Loockit dedicated Tunnel reaches LXC backends without the Kubernetes proxy',()=>{
+ const proxy='external.edge.loockit_tunnel',api='premises.home.platform.api';
+ assert.ok(!model.elements['premises.home.loockit.proxy']);
  for(const [node,ble]of [['loockit_a','bluez'],['loockit_b','bluez']]){
   assert.ok(relation(proxy,`premises.pve.${node}`,'runtime'));
   assert.ok(relation(`premises.pve.${node}`,'external.edge.loockit_lease','runtime'));
