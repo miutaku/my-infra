@@ -237,9 +237,16 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.audit(host, 'manual-recovery');
     await this.publish(host);
   }
-  async interaction(input: Interaction): Promise<{ ok: boolean; content: string }> {
-    try { return { ok: true, content: await this.applyInteraction(input) }; }
-    catch { return { ok: false, content: '操作を完了できませんでした。古い通知・実行中・日時の入力を確認してください。通知更新に失敗した予定は実行されません。' }; }
+  async interaction(input: Interaction) {
+    try {
+      const content = await this.applyInteraction(input);
+      const [host] = (input.data?.custom_id ?? '').split(':');
+      const plan = isHost(host) ? this.read(host).plan : undefined;
+      return { ok: true, content, components: isHost(host) && plan &&
+        plan.notifiedRevision === plan.revision && !['running', 'failed'].includes(plan.phase)
+        ? this.message(host, plan).components : [] };
+    }
+    catch { return { ok: false, content: '操作を完了できませんでした。古い通知・実行中・日時の入力を確認してください。通知更新に失敗した予定は実行されません。', components: [] }; }
   }
   private async applyInteraction(input: Interaction): Promise<string> {
     const now = Date.now();
@@ -270,7 +277,9 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.write(name, state);
     this.audit(name, action, input.member?.user?.id);
     await this.publish(name);
-    return `${name}: ${plan.phase === 'held' ? '保留しました' : `${formatJst(plan.target)}（日本時間）へ変更しました`}${plan.phase === 'approval' ? '。実行には承認が必要です' : ''}。`;
+    if (action === 'approve') return `${name}: ${formatJst(plan.target)}（日本時間）のOS再起動を承認しました。事前確認を通った場合に実行します。`;
+    return `${name}: ${plan.phase === 'held' ? '保留しました' : `${formatJst(plan.target)}（日本時間）へ変更しました`}。` +
+      (plan.phase === 'approval' ? '\nまだ承認されていません。下の「この日時で承認」を押してください。' : '');
   }
 }
 
@@ -378,11 +387,11 @@ export default {
     }
     if (![3, 5].includes(input.type)) return Response.json(reply('未対応の操作です。'));
     ctx.waitUntil((async () => {
-      let content: string;
-      try { content = (await fleet.interaction(input)).content; }
-      catch { content = '操作を完了できませんでした。古い通知・実行中・日時の入力を確認してください。通知更新に失敗した予定は実行されません。'; }
+      let result: { content: string; components: unknown[] };
+      try { result = await fleet.interaction(input); }
+      catch { result = { content: '操作を完了できませんでした。古い通知・実行中・日時の入力を確認してください。通知更新に失敗した予定は実行されません。', components: [] }; }
       const response = await fetch(`https://discord.com/api/v10/webhooks/${input.application_id}/${input.token}/messages/@original`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json', 'User-Agent': 'DiscordBot (https://github.com/miutaku/my-infra, 1.0)' }, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', 'User-Agent': 'DiscordBot (https://github.com/miutaku/my-infra, 1.0)' }, body: JSON.stringify({ content: result.content, components: result.components, allowed_mentions: { parse: [] } }),
         signal: AbortSignal.timeout(10_000),
       });
       if (!response.ok) console.error(JSON.stringify({ event: 'interaction-response-failed', status: response.status }));

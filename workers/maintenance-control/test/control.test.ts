@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
-import { runInDurableObject } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { createExecutionContext, runInDurableObject, waitOnExecutionContext } from 'cloudflare:test';
+import { describe, expect, it, vi } from 'vitest';
 import worker from '../src/index';
 import { due, parseJst, nextMorning, formatJst, type Host, type RecordState } from '../src/policy';
 
@@ -57,6 +57,35 @@ describe('maintenance scheduling', () => {
     await seed(target, 'pve-x570', fixture('approval'));
     expect(await target.claim('pve-x570')).toBeNull();
   });
+  it.each(['date-submit', 'defer'])('returns usable approval buttons after %s and rejects stale buttons', async action => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('approval'));
+    const input = { ...interaction('pve-x570', action), data: {
+      custom_id: `pve-x570:rev:${action}`,
+      components: [{ components: [{ custom_id: 'target', value: formatJst(nextMorning(Date.now())) }] }],
+    } };
+    const changed = await target.interaction(input);
+    expect(changed.ok).toBe(true);
+    expect(changed.content).toContain('下の「この日時で承認」');
+    const plan = (await read(target, 'pve-x570')).plan!;
+    expect(plan.phase).toBe('approval');
+    const approve = changed.components[0].components.find(button => button.label === 'この日時で承認')!;
+    expect(approve.custom_id).toBe(`pve-x570:${plan.revision}:approve`);
+    expect(approve.disabled).toBe(false);
+    const approved = await target.interaction({ ...interaction('pve-x570', 'approve'), data: { custom_id: approve.custom_id } });
+    expect(approved.ok).toBe(true);
+    expect(approved.content).toContain('OS再起動を承認しました');
+    expect((await read(target, 'pve-x570')).plan!.phase).toBe('scheduled');
+    const stale = await target.interaction({ ...interaction('pve-x570', 'approve'), data: { custom_id: approve.custom_id } });
+    expect(stale.ok).toBe(false);
+    expect(stale.components).toEqual([]);
+  });
+  it('returns VM controls without a PVE approval button', async () => {
+    const target = stub();
+    await seed(target, 'dev-app-server', fixture());
+    const result = await target.interaction(interaction('dev-app-server', 'defer'));
+    expect(result.components[0].components.map(button => button.label)).toEqual(['翌日に延期', '日時を指定', '保留']);
+  });
   it('serializes PVE claims and does not release an interrupted execution with time', async () => {
     const target = stub();
     await seed(target, 'pve-x570', fixture());
@@ -80,7 +109,7 @@ describe('maintenance scheduling', () => {
     const target = stub();
     await seed(target, 'dev-app-server', fixture());
     expect(await target.claim('dev-app-server')).not.toBeNull();
-    expect((await target.interaction(interaction('dev-app-server', 'defer'))).ok).toBe(false);
+    expect(await target.interaction(interaction('dev-app-server', 'defer'))).toMatchObject({ ok: false, components: [] });
   });
   it('holding a plan prevents execution', async () => {
     const target = stub();
@@ -95,7 +124,7 @@ describe('maintenance scheduling', () => {
     await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
       configurable: true, value: async () => { throw new Error('delivery failed'); },
     }));
-    expect((await target.interaction(interaction('dev-app-server', 'defer'))).ok).toBe(false);
+    expect(await target.interaction(interaction('dev-app-server', 'defer'))).toMatchObject({ ok: false, components: [] });
     expect((await read(target, 'dev-app-server')).plan!.notifiedRevision).toBeUndefined();
     expect(await target.claim('dev-app-server')).toBeNull();
   });
@@ -274,6 +303,32 @@ async function signedRequest(payload: object, timestamp = String(Math.floor(Date
     config: { ...env, DISCORD_PUBLIC_KEY: hex(publicKey), DISCORD_OPERATOR_IDS: 'operator', DISCORD_GUILD_ID: 'guild', DISCORD_CHANNEL_ID: 'channel' } };
 }
 describe('Discord signature and operator authorization', () => {
+  it('includes the latest buttons in the deferred modal reply sent to Discord', async () => {
+    const target = env.FLEET.getByName('home-pve');
+    await seed(target, 'pve-x570', fixture('approval'));
+    const { request, config } = await signedRequest({
+      ...interaction('pve-x570', 'date-submit'), type: 5, guild_id: 'guild', channel_id: 'channel',
+      data: { custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{
+        custom_id: 'target', value: formatJst(nextMorning(Date.now())),
+      }] }] },
+    });
+    const outgoing = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
+    try {
+      const ctx = createExecutionContext();
+      const response = await worker.fetch(request, config, ctx);
+      expect(await response.json()).toEqual({ type: 5, data: { flags: 64 } });
+      await waitOnExecutionContext(ctx);
+      expect(outgoing).toHaveBeenCalledTimes(1);
+      const [url, init] = outgoing.mock.calls[0];
+      expect(url).toBe('https://discord.com/api/v10/webhooks/app/test/messages/@original');
+      const payload = JSON.parse(String(init!.body));
+      expect(payload.content).toContain('下の「この日時で承認」');
+      expect(payload.components[0].components).toContainEqual(expect.objectContaining({
+        label: 'この日時で承認', custom_id: `pve-x570:${(await read(target, 'pve-x570')).plan!.revision}:approve`,
+      }));
+      expect(payload.allowed_mentions).toEqual({ parse: [] });
+    } finally { outgoing.mockRestore(); }
+  });
   it('accepts a correctly signed endpoint verification ping', async () => {
     const { request, config } = await signedRequest({ type: 1 });
     const response = await worker.fetch(request, config, {} as ExecutionContext);
