@@ -35,7 +35,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: frontend
-          image: ghcr.io/miutaku/tnlastation-frontend:1.2.0
+          image: ghcr.io/miutaku/tnlastation-frontend:1.2.2
           env:
             - name: NODE_ENV
               value: production
