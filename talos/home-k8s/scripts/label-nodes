@@ -16,6 +16,7 @@ label_by_ip() {
     jq -er --arg ip "${ip}" '.items[] | select(any(.status.addresses[]; .type=="InternalIP" and .address==$ip)) | .metadata.name')"
   KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
     "topology.miutaku/proxmox-node=${pve_node}" \
+    "topology.miutaku/failure-domain=${pve_node}" \
     "node.miutaku/role=${role}" \
     "node.miutaku/platform=pve" \
     "network.miutaku/l2=vlan20" \
@@ -29,6 +30,7 @@ label_rpi_by_ip() {
   KUBECONFIG="${kubeconfig}" kubectl --context "${context}" label node "${node}" --overwrite \
     "node.miutaku/role=agent" \
     "node.miutaku/platform=rpi" \
+    "topology.miutaku/failure-domain=rpi-${ip##*.}" \
     "network.miutaku/l2=vlan10" \
     "hardware.miutaku/model=raspberry-pi-4b" \
     "hardware.miutaku/memory=${memory}"

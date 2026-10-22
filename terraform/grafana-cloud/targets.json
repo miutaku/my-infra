@@ -378,13 +378,6 @@
     "service": "workloads"
   },
   {
-    "id": "deploy-app-loockit-loockit-proxy",
-    "selector": "kube_deployment_spec_replicas{namespace=\"app-loockit\",deployment=\"loockit-proxy\"}",
-    "feature": "kubernetes",
-    "severity": "critical",
-    "service": "workloads"
-  },
-  {
     "id": "deploy-app-coupon-manager-coupon-manager-api",
     "selector": "kube_deployment_spec_replicas{namespace=\"app-coupon-manager\",deployment=\"coupon-manager-api\"}",
     "feature": "kubernetes",

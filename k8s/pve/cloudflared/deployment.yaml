@@ -4,7 +4,7 @@ metadata:
   name: cloudflared
   namespace: cloudflared
 spec:
-  # 2 レプリカで HA。Cloudflare 側でロードバランスされる
+  # 配置先を固定せず、異なる物理ホストに分散して接続を維持する。
   replicas: 2
   selector:
     matchLabels:
@@ -19,18 +19,23 @@ spec:
         app: cloudflared
         descheduler.miutaku/metrics-rebalance: "true"
     spec:
+      automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       tolerations:
         - key: workload.miutaku/arm64
           operator: Equal
           value: reviewed
           effect: NoSchedule
+      nodeSelector:
+        node.miutaku/role: agent
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
                   app: cloudflared
-              topologyKey: kubernetes.io/hostname
+              topologyKey: topology.miutaku/failure-domain
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:latest
@@ -42,6 +47,9 @@ spec:
             - run
             - --token
             - $(TUNNEL_TOKEN)
+          ports:
+            - name: metrics
+              containerPort: 2000
           env:
             - name: TUNNEL_TOKEN
               valueFrom:

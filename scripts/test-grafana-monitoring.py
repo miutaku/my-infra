@@ -45,6 +45,15 @@ def main():
             ],
         })
 
+    for first, second, expected in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]:
+        case(f"Loockit HA readiness {first}/{second}", {
+            'probe_success{job="blackbox_http",instance="loockit",replica="x570"}': f"{first}+0x40",
+            'probe_success{job="blackbox_http",instance="loockit",replica="b550m"}': f"{second}+0x40",
+        }, {"http-service": expected})
+    case("HTTP single-instance failure remains critical", {
+        'probe_success{job="blackbox_http",instance="nextcloud"}': "0+0x40",
+    }, {"http-service": 1})
+
     for charge, ob, warn, critical in [(100, 0, 0, 0), (90, 1, 1, 0), (85, 1, 0, 1), (20, 0, 0, 0)]:
         case(f"UPS charge={charge} OB={ob}", {
             'network_ups_tools_battery_charge{job="nut",instance="ups-a",ups="ups-a"}': f"{charge}+0x40",

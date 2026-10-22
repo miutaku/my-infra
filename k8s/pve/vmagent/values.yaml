@@ -316,11 +316,19 @@ config:
           labels:
             instance: coupon-manager
             module: http_2xx
-        - targets: ["http://loockit.app-loockit.svc.cluster.local:8080/readyz"]
+        - targets: ["http://192.168.20.133:8080/readyz"]
           labels:
             instance: loockit
+            replica: x570
             module: http_2xx
             # Per-target timing; preserve the blackbox_http job/instance labels.
+            __scrape_interval__: 15s
+            __scrape_timeout__: 10s
+        - targets: ["http://192.168.20.134:8080/readyz"]
+          labels:
+            instance: loockit
+            replica: b550m
+            module: http_2xx
             __scrape_interval__: 15s
             __scrape_timeout__: 10s
         - targets: ["https://192.168.0.132:11443"]

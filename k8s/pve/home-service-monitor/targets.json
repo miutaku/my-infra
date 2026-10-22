@@ -175,7 +175,6 @@
       "app-annict-scraper",
       "app-coupon-manager",
       "app-epgstation",
-      "app-loockit",
       "app-magic-mirror",
       "app-mirakurun",
       "app-nextcloud",
@@ -198,7 +197,6 @@
         "epgstation-secrets",
         "ghcr-pull-secret"
       ],
-      "app-loockit": [],
       "app-magic-mirror": [
         "magic-mirror-config"
       ],

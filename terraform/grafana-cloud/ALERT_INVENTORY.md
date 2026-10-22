@@ -2,9 +2,9 @@
 
 2026-10-18調査。Terraform rootは`terraform/grafana-cloud`、backendはHCPの専用workspace `miutaku/grafana-cloud`（2026-10-19にローカルstateから移行、CIで自動Apply）。Terragrunt定義なし。
 
-実機は405ルール。`my-infra-home`の281件（共通165 + 必須系列116）をこのrootで管理する。別folder `alerting-3sdsb6hvpfhxg`の124件はこのstateに含まれず、移管・編集・削除しない。
+実機は404ルール。`my-infra-home`の280件（共通165 + 必須系列115）をこのrootで管理する。別folder `alerting-3sdsb6hvpfhxg`の124件はこのstateに含まれず、移管・編集・削除しない。
 
-既存Contact PointはDiscord warning/critical、OnCall、grafana-default-email。管理下281件はseverityごとのDiscordへdirect routing。管理外124件にdirect routing設定はなく、既存root policyはgrafana-default-email、group_by= grafana_folder/alertname。root policyとOnCall/emailは維持する。
+既存Contact PointはDiscord warning/critical、OnCall、grafana-default-email。管理下280件はseverityごとのDiscordへdirect routing。管理外124件にdirect routing設定はなく、既存root policyはgrafana-default-email、group_by= grafana_folder/alertname。root policyとOnCall/emailは維持する。
 
 調査時のNotification Templateは0件、Discordはdiscord.default.title/message、復旧有効。今回共通templateを1件追加する。
 
@@ -184,7 +184,7 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | internal-api-cert-unifi-warn | unifi internal API certificate expiry warn | warn → warning | connectivity / network | Pinned internal API certificate approaches expiration. Renew it and update the reviewed public leaf certificate in the collector configuration. |
 | internal-api-cert-unifi-critical | unifi internal API certificate expiry critical | critical → critical | connectivity / network | Pinned internal API certificate approaches expiration. Renew it and update the reviewed public leaf certificate in the collector configuration. |
 
-## 必須系列（116件）
+## 必須系列（115件）
 
 rule_id=`missing-<id>`、summary=`Required telemetry missing: <id>`。対象はdisplay_targetに台帳IDを設定する。
 descriptionは「必須の監視データが途絶しています。対象のcollector稼働、scrapeと接続を確認してください。データ欠落中はサービスの正常性を保証できません。」。
@@ -246,7 +246,6 @@ selectorは調査用にここへ記載し、通常通知には列挙しない。
 | deploy-app-epgstation-epgstation | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="app-epgstation",deployment="epgstation"}` |
 | deploy-app-tnlastation-backend | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="app-tnlastation",deployment="backend"}` |
 | deploy-app-tnlastation-gateway | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="app-tnlastation",deployment="gateway"}` |
-| deploy-app-loockit-loockit-proxy | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="app-loockit",deployment="loockit-proxy"}` |
 | deploy-app-coupon-manager-coupon-manager-api | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="app-coupon-manager",deployment="coupon-manager-api"}` |
 | deploy-cloudflared-cloudflared | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="cloudflared",deployment="cloudflared"}` |
 | deploy-monitoring-pdc-agent | critical → critical | workloads / kubernetes | `kube_deployment_spec_replicas{namespace="monitoring",deployment="pdc-agent"}` |
@@ -310,3 +309,5 @@ selectorは調査用にここへ記載し、通常通知には列挙しない。
 | kubernetes-job-created | warn → warning | observability / kubernetes | `kube_job_created` |
 
 台帳更新時はrules.json/targets.jsonとこの一覧を合わせて更新する。secret/API response全体を貼り付けない。
+
+LoockitはKubernetesプロキシを撤去し、LXC 2台のreadyzを直接監視する。replica間の最大値で判定し、待機系の503だけでは通知しない。

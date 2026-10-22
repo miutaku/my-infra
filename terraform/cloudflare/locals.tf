@@ -18,7 +18,9 @@ locals {
       no_tls_verify = false
     }
     "loockit-api" = {
-      backend       = "http://loockit.app-loockit.svc.cluster.local:8080"
+      # Keep the existing DNS resource, routed to the dedicated LXC Tunnel.
+      # The former Kubernetes Tunnel route is deliberately disabled.
+      backend       = "http_status:404"
       no_tls_verify = false
     }
     "epgstation" = {
