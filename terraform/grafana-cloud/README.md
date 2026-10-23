@@ -23,7 +23,8 @@
 | ホストload average | 5分loadのCPUコア数あたり値が1.5超で15分 | — |
 | 回線速度 | 15分内の3回以上の測定がすべてdownload 25 Mbps未満/upload 20 Mbps未満 | — |
 | lb-01/02 | 片系停止/HAProxy・Keepalived停止5分 | 両系停止/どちらかの必須サービスが全系停止2分 |
-| Nextcloud/Mirakurun/EPGStation/TNLAStation/Loockit/coupon-manager | replica不足10分 | HTTP probe失敗3分、重要Deployment/StatefulSetのReady=0が2分 |
+| Nextcloud/Mirakurun/EPGStation/TNLAStation/coupon-manager | replica不足10分 | HTTP probe失敗3分、重要Deployment/StatefulSetのReady=0が2分 |
+| Loockit | 全監視replicaのHTTP probe失敗5分 | 全監視replicaのHTTP probe失敗10分 |
 | DNS/API/DB・NFS transport | — | DNS応答/答えの検証、API readyz、TCP接続失敗2分 |
 | UniFi/MagicMirror/開発VM | UI停止5分、開発VM疎通断10分、指定systemd service失敗15分 | 原則warn。データ危険は容量等の共通ルール |
 | Kubernetes | Node NotReady/Pressure5分、Pod Pending10分、再起動増加、PVC Pending | home control plane Ready<2が1分、home worker全停止2分、PVC Lost |
@@ -31,6 +32,8 @@
 | 毎時VMetrics/録画backup | 最終成功から2時間超5分 | 6時間超5分、必須CronJob削除/停止5分 |
 | vmagent | write queue増加継続 | sample drop、queue blocked、self-scrapeの鮮度喪失 |
 | TinyTuya/speedtest収集 | scrape失敗30分 | 設定しない |
+
+Loockitは15秒間隔で`/readyz`を確認し、60秒間隔でアラート評価する。5分でwarn、10分でcriticalへ段階的に発報する。critical発生後もwarnは復旧まで継続する。通知のgroup_wait（warn 2分、critical 30秒）は別途加算される。
 
 同じ数値のwarn/critical条件は排他的にする。desired replicasが0のcontrollerは異常としない。
 NIC品質は5分間のrateをIF別に比較し、loopback・一時的なコンテナIFを除く。IX2215はGigaEthernet0/2とそのサブIF、BVI、Tunnelインターフェースを対象とする。SNMPにpacket counterがないため、routerの判定は毎秒件数を使う。

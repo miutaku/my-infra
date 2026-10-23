@@ -49,7 +49,7 @@ def main():
         case(f"Loockit HA readiness {first}/{second}", {
             'probe_success{job="blackbox_http",instance="loockit",replica="x570"}': f"{first}+0x40",
             'probe_success{job="blackbox_http",instance="loockit",replica="b550m"}': f"{second}+0x40",
-        }, {"http-service": expected})
+        }, {"http-service": 0, "loockit-unavailable-warn": expected, "loockit-unavailable-critical": expected})
     case("HTTP single-instance failure remains critical", {
         'probe_success{job="blackbox_http",instance="nextcloud"}': "0+0x40",
     }, {"http-service": 1})
@@ -282,6 +282,32 @@ def main():
             ]},
         ]}))
         subprocess.run([args.promtool, "test", "rules", str(durationfile)], check=True)
+        loockitfile = folder / "loockit.json"
+        loockitfile.write_text(json.dumps({"groups": [{"name": "availability", "interval": "60s", "rules": [
+            rule for rule in exported if rule["alert"] in ("loockit-unavailable-warn", "loockit-unavailable-critical", "http-service")
+        ]}]}))
+        expected_labels = {"job": "blackbox_http", "instance": "loockit"}
+        loockittests = folder / "loockit-duration-tests.json"
+        loockittests.write_text(json.dumps({"rule_files": [str(loockitfile)], "evaluation_interval": "60s", "tests": [
+            {"name": "Loockit escalates at 5m/10m and resolves after recovery", "interval": "1m", "input_series": [
+                {"series": 'probe_success{job="blackbox_http",instance="loockit",replica="x570"}', "values": "0+0x10 1+0x3"},
+                {"series": 'probe_success{job="blackbox_http",instance="loockit",replica="b550m"}', "values": "0+0x14"},
+            ], "alert_rule_test": [
+                {"eval_time": at, "alertname": rid,
+                 "exp_alerts": [{"exp_labels": expected_labels}] if firing else []}
+                for at, warning, critical in [("4m", False, False), ("5m", True, False),
+                                               ("9m", True, False), ("10m", True, True), ("11m", False, False)]
+                for rid, firing in [("loockit-unavailable-warn", warning),
+                                    ("loockit-unavailable-critical", critical), ("http-service", False)]
+            ]},
+            {"name": "Loockit transient outage shorter than 5m does not fire", "interval": "1m", "input_series": [
+                {"series": 'probe_success{job="blackbox_http",instance="loockit"}', "values": "0+0x3 1+0x10"},
+            ], "alert_rule_test": [
+                {"eval_time": "10m", "alertname": rid, "exp_alerts": []}
+                for rid in ("loockit-unavailable-warn", "loockit-unavailable-critical", "http-service")
+            ]},
+        ]}))
+        subprocess.run([args.promtool, "test", "rules", str(loockittests)], check=True)
         backupfile = folder / "pbs.json"
         backupfile.write_text(json.dumps({"groups": [{"name": "pbs", "interval": "1m", "rules": [
             r for r in exported if r["alert"] in ("pbs-backup-age-warn", "pbs-backup-age-critical")

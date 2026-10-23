@@ -14,7 +14,9 @@ summaryは各title、runbook_urlは[README](README.md)のGitHub main URL。以�
 
 group_by= grafana_folder/alertname/environment/service。group_interval=5m、warn group_wait=2m/repeat=12h、critical=30s/1h、power criticalだけ0s。重要度は異なるreceiverへ分離する。
 
-## 共通ルール（165件）
+2026-10-24更新: Loockitの5分warn・10分criticalを追加し、現在の共通ルールは167件（必須系列と合わせて282件）。上記の実機件数は初回調査時点の記録。
+
+## 共通ルール（167件）
 
 | rule_id | アラート名 / summary | severity → Discord | service / feature | description |
 | --- | --- | --- | --- | --- |
@@ -40,6 +42,8 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | lb-degraded | Load balancer redundancy lost | warn → warning | load-balancer / base | lb-01/02の2台中1台だけがICMPに応答しています。冗長性が低下しています。両ホストの死活とHAProxy/Keepalivedの状態を確認してください。 |
 | lb-down | Both load balancers unreachable | critical → critical | load-balancer / base | lb-01/02のICMP応答の合計が0です。ロードバランサ経路への影響を確認し、両ホストの電源・ネットワークを調べてください。 |
 | http-service | Home application unavailable | critical → critical | applications / base | HTTP probeの失敗が3分継続しています。対象instanceの応答・アプリケーションと転送先を確認してください。HTTP 503では稼働中でもリクエストを処理できない場合があります。 |
+| loockit-unavailable-warn | Loockit unavailable | warn → warning | applications / base | Loockitの全監視replicaで/readyzのHTTP probe失敗が5分継続しています。操作APIを利用できない可能性があります。HTTP応答・proxyの転送先・BLE接続状態を確認してください。 |
+| loockit-unavailable-critical | Loockit unavailable | critical → critical | applications / base | Loockitの全監視replicaで/readyzのHTTP probe失敗が10分継続しています。操作APIを利用できない可能性があります。HTTP応答・proxyの転送先・BLE接続状態を確認してください。 |
 | http-management | Management UI unavailable | warn → warning | management / base | 管理UIのHTTP probeが失敗しています。対象instanceのHTTP応答、プロセス、接続経路を確認してください。 |
 | probe-critical | DNS, API or database transport unavailable | critical → critical | connectivity / probes | DNS/API/transport probe failed. TCP success alone does not prove authenticated DB queries or NFS writes work. |
 | exporter-down | Exporter scrape failed | warn → warning | observability / base | exporterのscrapeが失敗しています。対象instanceのメトリクスが更新されません。exporterの稼働状態と収集側からの到達性を確認してください。 |

@@ -233,7 +233,7 @@
   {
     "id": "http-service",
     "title": "Home application unavailable",
-    "expression": "(max without(replica) (probe_success{job=\"blackbox_http\",instance=~\"nextcloud|mirakurun|epgstation|tnlastation|coupon-manager|loockit\"}) == bool 0) or vector(0)",
+    "expression": "(max without(replica) (probe_success{job=\"blackbox_http\",instance=~\"nextcloud|mirakurun|epgstation|tnlastation|coupon-manager\"}) == bool 0) or vector(0)",
     "duration": "3m",
     "severity": "critical",
     "service": "applications",
@@ -241,7 +241,37 @@
     "feature": "",
     "description": "HTTP probeの失敗が3分継続しています。対象instanceの応答・アプリケーションと転送先を確認してください。HTTP 503では稼働中でもリクエストを処理できない場合があります。",
     "context_queries": {
-      "C": "max without(replica) (probe_http_status_code{job=\"blackbox_http\",instance=~\"nextcloud|mirakurun|epgstation|tnlastation|coupon-manager|loockit\"})"
+      "C": "max without(replica) (probe_http_status_code{job=\"blackbox_http\",instance=~\"nextcloud|mirakurun|epgstation|tnlastation|coupon-manager\"})"
+    },
+    "details": "{{ with $values.C }}{{ if gt .Value 0.0 }}HTTP応答: {{ printf \"%.0f\" .Value }}{{ else }}HTTP応答なし（接続・timeout等を確認）{{ end }}{{ else }}HTTP応答コード情報なし{{ end }}"
+  },
+  {
+    "id": "loockit-unavailable-warn",
+    "title": "Loockit unavailable",
+    "expression": "(max without(replica) (probe_success{job=\"blackbox_http\",instance=\"loockit\"}) == bool 0) or vector(0)",
+    "duration": "5m",
+    "severity": "warn",
+    "service": "applications",
+    "group": "availability",
+    "feature": "",
+    "description": "Loockitの全監視replicaで/readyzのHTTP probe失敗が5分継続しています。操作APIを利用できない可能性があります。HTTP応答・proxyの転送先・BLE接続状態を確認してください。",
+    "context_queries": {
+      "C": "max without(replica) (probe_http_status_code{job=\"blackbox_http\",instance=\"loockit\"})"
+    },
+    "details": "{{ with $values.C }}{{ if gt .Value 0.0 }}HTTP応答: {{ printf \"%.0f\" .Value }}{{ else }}HTTP応答なし（接続・timeout等を確認）{{ end }}{{ else }}HTTP応答コード情報なし{{ end }}"
+  },
+  {
+    "id": "loockit-unavailable-critical",
+    "title": "Loockit unavailable",
+    "expression": "(max without(replica) (probe_success{job=\"blackbox_http\",instance=\"loockit\"}) == bool 0) or vector(0)",
+    "duration": "10m",
+    "severity": "critical",
+    "service": "applications",
+    "group": "availability",
+    "feature": "",
+    "description": "Loockitの全監視replicaで/readyzのHTTP probe失敗が10分継続しています。操作APIを利用できない可能性があります。HTTP応答・proxyの転送先・BLE接続状態を確認してください。",
+    "context_queries": {
+      "C": "max without(replica) (probe_http_status_code{job=\"blackbox_http\",instance=\"loockit\"})"
     },
     "details": "{{ with $values.C }}{{ if gt .Value 0.0 }}HTTP応答: {{ printf \"%.0f\" .Value }}{{ else }}HTTP応答なし（接続・timeout等を確認）{{ end }}{{ else }}HTTP応答コード情報なし{{ end }}"
   },

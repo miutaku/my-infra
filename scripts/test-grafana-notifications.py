@@ -160,7 +160,7 @@ def live_tests():
         for vm in ("13201", "40000", "60000")
     ], ["vm/13201/", "vm/40000/", "vm/60000/", "3/3件"], []))
     for status, expected in [(503, "HTTP応答: 503"), (0, "HTTP応答なし")]:
-        http = next(r for r in catalog if r["id"] == "http-service")
+        http = next(r for r in catalog if r["id"] == "loockit-unavailable-critical")
         rendered = rule_preview(http, {"A": 'label_replace(vector(1), "instance", "loockit", "", "")',
                                        "C": f'label_replace(vector({status}), "instance", "loockit", "", "")'})
         assert any(expected in r["annotations"]["details"] for r in rendered), (status, rendered)

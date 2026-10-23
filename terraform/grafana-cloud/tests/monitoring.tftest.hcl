@@ -33,6 +33,8 @@ run "home_monitoring" {
     condition = (
       output.rule_settings["home"]["ups-shutdown-near"].receiver == "test-critical" &&
       output.rule_settings["home"]["ups-on-battery"].receiver == "test-warn" &&
+      output.rule_settings["home"]["loockit-unavailable-warn"].receiver == "test-warn" &&
+      output.rule_settings["home"]["loockit-unavailable-critical"].receiver == "test-critical" &&
       output.rule_settings["home"]["ups-shutdown-near"].interval == 10 &&
       alltrue(flatten([for env in values(output.rule_settings) : [for rule in values(env) : rule.paused]]))
     )
