@@ -4,20 +4,69 @@ metadata:
   name: argocd-notifications-cm
   namespace: argocd
 data:
-  context: 'argocdUrl: https://argocd-home-k8s.miutaku.work
-
-    '
-  service.webhook.discord: "url: $discord-webhook-url\nheaders:\n  - name: Content-Type\n\
-    \    value: application/json\n"
-  template.image-deployed: "webhook:\n  discord:\n    method: POST\n    body: |\n\
-    \      {\n        \"embeds\": [{\n          \"title\": \"\U0001F680 {{.app.metadata.name}}\
-    \ deployed\",\n          \"url\": \"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}\"\
-    ,\n          \"color\": 3066993,\n          \"fields\": [\n            {\"name\"\
-    : \"Revision\", \"value\": \"{{.app.status.sync.revision}}\", \"inline\": true}\n\
-    \          ]\n        }]\n      }\n"
-  trigger.on-deployed: "- description: Application is synced and healthy. Triggered\
-    \ once per commit.\n  oncePer: app.status.operationState?.syncResult?.revision\n\
-    \  send: [image-deployed]\n  when: app.status.operationState != nil and app.status.operationState.phase\
-    \ in ['Succeeded']\n    and app.status.health.status == 'Healthy' and (!time.Parse(app.status.health.lastTransitionTime).Add(1\n\
-    \    * time.Minute).Before(time.Parse(app.status.operationState.finishedAt)) or\
-    \ time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))\n"
+  context: |
+    argocdUrl: https://argocd-home-k8s.miutaku.work
+  service.webhook.discord: |
+    url: $discord-webhook-url
+    headers:
+      - name: Content-Type
+        value: application/json
+  template.image-deployed: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "🚀 {{.app.metadata.name}} deployed",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+              "color": 3066993,
+              "fields": [
+                {"name": "Revision", "value": "{{.app.status.sync.revision}}", "inline": true}
+              ]
+            }]
+          }
+  trigger.on-deployed: |
+    - description: Application is synced and healthy. Triggered once per commit.
+      oncePer: app.status.operationState?.syncResult?.revision
+      send: [image-deployed]
+      when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+        and app.status.health.status == 'Healthy' and (!time.Parse(app.status.health.lastTransitionTime).Add(1
+        * time.Minute).Before(time.Parse(app.status.operationState.finishedAt)) or time.Parse(app.status.health.lastTransitionTime).Before(time.Parse(app.status.operationState.startedAt)))
+  template.stg-image-deployed: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {{- $images := list -}}
+          {{- range .app.status.summary.images -}}
+          {{- if hasPrefix "ghcr.io/miutaku/reventer/" . -}}
+          {{- $images = append $images . -}}
+          {{- end -}}
+          {{- end -}}
+          {
+            "allowed_mentions": {"parse": []},
+            "embeds": [{
+              "title": "✅ STG イメージ切替完了",
+              "description": "backend・frontend・admin が同期対象イメージで稼働し、Argo CD が Synced / Healthy になりました。",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+              "color": 3066993,
+              "fields": [
+                {"name": "GitOps revision", "value": {{ .app.status.sync.revision | toJson }}},
+                {"name": "稼働イメージ", "value": {{ join "\n" ($images | sortAlpha) | toJson }}}
+              ]
+            }]
+          }
+  trigger.on-stg-image-deployed: |
+    - description: Notify once per STG image set after the current rollout is synced and healthy.
+      oncePer: join(sort(filter(app.status?.summary?.images ?? [], {# startsWith 'ghcr.io/miutaku/reventer/'})), '|')
+      send: [stg-image-deployed]
+      when: >-
+        app.operation == nil and
+        app.status?.operationState?.phase == 'Succeeded' and
+        app.status.sync.status == 'Synced' and
+        app.status.health.status == 'Healthy' and
+        app.status.operationState.syncResult.revision == app.status.sync.revision and
+        len(filter(app.status?.summary?.images ?? [], {# startsWith 'ghcr.io/miutaku/reventer/backend:'})) == 1 and
+        len(filter(app.status?.summary?.images ?? [], {# startsWith 'ghcr.io/miutaku/reventer/frontend:'})) == 1 and
+        len(filter(app.status?.summary?.images ?? [], {# startsWith 'ghcr.io/miutaku/reventer/admin:'})) == 1
