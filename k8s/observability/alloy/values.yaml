@@ -9,10 +9,29 @@ alloy:
     name: grafana-alloy
     key: config.alloy
   envFrom:
-    - secretRef:
-        name: grafana-cloud-credentials
     - configMapRef:
         name: grafana-alloy-routing
+  # Required key refs keep the Pod waiting for ESO rather than starting with
+  # empty Logs credentials during an existing Secret's first reconciliation.
+  extraEnv:
+    - name: GRAFANA_CLOUD_METRICS_URL
+      valueFrom:
+        secretKeyRef: {name: grafana-cloud-credentials, key: GRAFANA_CLOUD_METRICS_URL}
+    - name: GRAFANA_CLOUD_METRICS_USERNAME
+      valueFrom:
+        secretKeyRef: {name: grafana-cloud-credentials, key: GRAFANA_CLOUD_METRICS_USERNAME}
+    - name: GRAFANA_CLOUD_METRICS_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: grafana-cloud-credentials, key: GRAFANA_CLOUD_METRICS_PASSWORD}
+    - name: GRAFANA_CLOUD_LOGS_URL
+      valueFrom:
+        secretKeyRef: {name: grafana-cloud-credentials, key: GRAFANA_CLOUD_LOGS_URL}
+    - name: GRAFANA_CLOUD_LOGS_USERNAME
+      valueFrom:
+        secretKeyRef: {name: grafana-cloud-credentials, key: GRAFANA_CLOUD_LOGS_USERNAME}
+    - name: GRAFANA_CLOUD_LOGS_PASSWORD
+      valueFrom:
+        secretKeyRef: {name: grafana-cloud-credentials, key: GRAFANA_CLOUD_LOGS_PASSWORD}
   securityContext:
     privileged: false
     allowPrivilegeEscalation: false
