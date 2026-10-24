@@ -218,24 +218,30 @@ loki.process "critical" {
   stage.json {
     expressions = {level = "level", severity = "severity", severity_text = "severity_text", message = "msg"}
   }
+  stage.logfmt {
+    mapping = {logfmt_level = "level", logfmt_severity = "severity"}
+  }
   // Also recognize native Go panics / explicit CRITICAL prefixes. Ordinary
   // error messages containing these words elsewhere are not promoted.
   stage.regex {
-    expression = "^(?P<text_severity>(?i:critical|fatal|panic|emerg|emergency|alert)):(?: |$).*"
+    expression = "^(?P<text_severity>(?i:critical|crit|fatal|panic|emerg|emergency|alert)):(?: |$).*"
   }
   stage.regex {
     source = "message"
-    expression = "^(?P<message_severity>(?i:critical|fatal|panic|emerg|emergency|alert)):(?: |$).*"
+    expression = "^(?P<message_severity>(?i:critical|crit|fatal|panic|emerg|emergency|alert)):(?: |$).*"
+  }
+  stage.regex {
+    expression = "^(?:[0-9]{4}/[0-9]{2}/[0-9]{2} [0-9:]+ )?\\[(?P<nginx_severity>emerg|alert|crit)\\].*"
   }
   stage.template {
     source = "cloud_severity"
-    template = "{{ if eq .message \"panic recovered\" }}panic{{ else if .message_severity }}{{ ToLower .message_severity }}{{ else if .severity }}{{ ToLower .severity }}{{ else if .severity_text }}{{ ToLower .severity_text }}{{ else if .level }}{{ ToLower .level }}{{ else if .text_severity }}{{ ToLower .text_severity }}{{ else }}unknown{{ end }}"
+    template = "{{ if eq .message \"panic recovered\" }}panic{{ else if .message_severity }}{{ ToLower .message_severity }}{{ else if .severity }}{{ ToLower .severity }}{{ else if .severity_text }}{{ ToLower .severity_text }}{{ else if .level }}{{ ToLower .level }}{{ else if .logfmt_severity }}{{ ToLower .logfmt_severity }}{{ else if .logfmt_level }}{{ ToLower .logfmt_level }}{{ else if .nginx_severity }}{{ .nginx_severity }}{{ else if .text_severity }}{{ ToLower .text_severity }}{{ else }}unknown{{ end }}"
   }
   stage.labels {
     values = {severity = "cloud_severity"}
   }
   stage.match {
-    selector = "{severity!~\"critical|fatal|panic|emerg|emergency|alert\"}"
+    selector = "{severity!~\"critical|crit|fatal|panic|emerg|emergency|alert\"}"
     action = "drop"
     drop_counter_reason = "not_critical"
   }

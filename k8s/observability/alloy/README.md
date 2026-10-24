@@ -46,8 +46,10 @@ to permit a harmless Logs write; both password environment variables reference
 `GRAFANA_CLOUD_METRICS_PASSWORD`. Token rotation must retain metrics:write and
 logs:write scopes. Credentials never belong in Git or diagnostic output.
 
-Log classification uses structured `severity`, `severity_text`, or `level`,
-case-insensitively. Re:Venter's exact `msg="panic recovered"` event is critical;
+Log classification uses JSON `severity`, `severity_text`, or `level`, plus
+logfmt `severity`/`level`, case-insensitively (`crit` is accepted too).
+NGINX's timestamped `[emerg]`/`[alert]`/`[crit]` prefixes are recognized.
+Re:Venter's exact `msg="panic recovered"` event is critical;
 `Fatal`/`Fatalf` preserve `level=error` and add `severity=fatal`. Native `panic:`
 and explicit `CRITICAL:`/`FATAL:`-style prefixes are also recognized. Ordinary
 errors, warnings, access logs, unclassified lines, and words merely appearing in

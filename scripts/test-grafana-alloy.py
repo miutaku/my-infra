@@ -178,6 +178,11 @@ kube_pod_labels{namespace="app-reventer-stg",pod="backend",uid="never-copy-this-
                 json.dumps({'level': 'error', 'severity': 'fatal', 'msg': 'keep-backend-fatal'}),
                 json.dumps({'level': 'error', 'msg': 'panic recovered', 'stack': 'fixture-stack'}),
                 json.dumps({'level': 'error', 'msg': 'CRITICAL: keep-explicit-prefix'}),
+                json.dumps({'level': 'crit', 'msg': 'keep-crit-alias'}),
+                'level=critical msg="keep-logfmt"',
+                '2026/10/24 12:30:00 [emerg] 123#123: keep-nginx-emerg',
+                '[crit] 123#123: keep-nginx-crit',
+                json.dumps({'level': 'info', 'msg': 'ordinary message mentions [crit] later'}),
                 'panic: keep-native-panic', 'unclassified log']
         (temporary / 'logs.jsonl').write_text('\n'.join(logs) + '\n')
         (temporary / 'system.jsonl').write_text('\n'.join(logs) + '\n')
@@ -195,7 +200,7 @@ kube_pod_labels{namespace="app-reventer-stg",pod="backend",uid="never-copy-this-
             subprocess.run(args, check=True, capture_output=True, text=True)
             deadline = time.monotonic() + 45
             while time.monotonic() < deadline:
-                if all(received.values()) and len(received['/loki']) >= 14:
+                if all(received.values()) and len(received['/loki']) >= 22:
                     break
                 time.sleep(1)
             assert not failures, failures
@@ -215,8 +220,8 @@ kube_pod_labels{namespace="app-reventer-stg",pod="backend",uid="never-copy-this-
                 assert any(m.get('__name__') == 'controller_runtime_reconcile_time_seconds_bucket' for m in local)
                 assert not any(m.get('namespace') == 'app-reventer-stg' for m in local)
             lines = received['/loki']
-            assert len(lines) == 14, lines
-            assert len(received['/logs01']) == len(received['/logs02']) == 7
+            assert len(lines) == 22, lines
+            assert len(received['/logs01']) == len(received['/logs02']) == 11
             assert not any('ordinary' in line or 'unclassified' in line for line in lines), lines
             print('PASS: real Alloy graph; Cloud allowlist; SLO buckets; filesystem/network exclusions; full controller metrics to both local replicas; critical-only logs')
         except Exception:
