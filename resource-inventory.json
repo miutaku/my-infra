@@ -2640,6 +2640,12 @@
     "file": "terraform/grafana-cloud/notifications.tf"
   },
   {
+    "id": "terraform/grafana-cloud/reventer.tf:resource:terraform_data:reventer_observability",
+    "type": "terraform_data",
+    "name": "reventer_observability",
+    "file": "terraform/grafana-cloud/reventer.tf"
+  },
+  {
     "id": "terraform/home-k8s/main.tf:resource:proxmox_download_file:talos_iso",
     "type": "proxmox_download_file",
     "name": "talos_iso",
