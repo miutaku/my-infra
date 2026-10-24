@@ -89,6 +89,24 @@ prometheus.scrape "node" {
   forward_to = [prometheus.relabel.cloud.receiver]
 }
 
+// Only essential Kubernetes availability/restart signals are duplicated. The
+// existing vmagent remains responsible for the full kube-state-metrics archive.
+discovery.relabel "kube_state_metrics" {
+  targets = discovery.kubernetes.pods.targets
+  rule {
+    source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_label_app", "__meta_kubernetes_pod_container_port_name"]
+    regex = "reventer-monitoring;kube-state-metrics;http-metrics"
+    action = "keep"
+  }
+}
+
+prometheus.scrape "kube_state_metrics" {
+  targets = discovery.relabel.kube_state_metrics.output
+  job_name = "kube-state-metrics"
+  scrape_interval = "60s"
+  forward_to = [prometheus.relabel.cloud.receiver]
+}
+
 prometheus.scrape "self" {
   targets = [{"__address__" = "127.0.0.1:12345", "instance" = sys.env("HOSTNAME")}]
   job_name = "alloy"
@@ -115,7 +133,7 @@ prometheus.relabel "cloud" {
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
   rule {
     source_labels = ["__name__"]
-    regex = "up|scrape_duration_seconds|scrape_samples_scraped|process_(resident_memory_bytes|cpu_seconds_total|start_time_seconds)|go_goroutines|controller_runtime_(reconcile_(errors_total|panics_total|timeouts_total)|terminal_reconcile_errors_total)|workqueue_(depth|retries_total)|cluster_autoscaler_(errors_total|failed_scale_ups_total|nodes_count|unschedulable_pods_count|cluster_safe_to_autoscale)|certmanager_(certificate_ready_status|certificate_expiration_timestamp_seconds|certificate_renewal_timestamp_seconds|clusterissuer_ready_status)|http_requests_total|http_request_duration_seconds_(bucket|sum|count)|rate_limit_redis_errors_total|nginx_(up|connections_accepted|connections_active|connections_handled|connections_reading|connections_writing|connections_waiting|http_requests_total|http_request_count_requests|http_connection_count_connections|http_connections_total)|node_(cpu_seconds_total|memory_MemAvailable_bytes|memory_MemTotal_bytes|memory_SwapFree_bytes|memory_SwapTotal_bytes|load1|load5|load15|vmstat_oom_kill|filesystem_avail_bytes|filesystem_size_bytes|filesystem_readonly|filesystem_device_error|filesystem_files_free|filesystem_files|network_receive_bytes_total|network_transmit_bytes_total|network_receive_errs_total|network_transmit_errs_total|network_receive_drop_total|network_transmit_drop_total|timex_sync_status)|alloy_build_info|prometheus_remote_storage_samples_(failed_total|pending|retried_total)|prometheus_remote_storage_queue_highest_sent_timestamp_seconds|loki_write_(sent_entries_total|dropped_entries_total|batch_retries_total)"
+    regex = "up|scrape_duration_seconds|scrape_samples_scraped|kube_node_status_condition|kube_pod_container_status_(restarts_total|waiting_reason)|kube_deployment_(spec_replicas|status_replicas_available)|kube_daemonset_status_(desired_number_scheduled|number_ready)|kube_statefulset_(replicas|status_replicas_ready)|process_(resident_memory_bytes|cpu_seconds_total|start_time_seconds)|go_goroutines|controller_runtime_(reconcile_(errors_total|panics_total|timeouts_total)|terminal_reconcile_errors_total)|workqueue_(depth|retries_total)|cluster_autoscaler_(errors_total|failed_scale_ups_total|nodes_count|unschedulable_pods_count|cluster_safe_to_autoscale)|certmanager_(certificate_ready_status|certificate_expiration_timestamp_seconds|certificate_renewal_timestamp_seconds|clusterissuer_ready_status)|http_requests_total|http_request_duration_seconds_(bucket|sum|count)|rate_limit_redis_errors_total|nginx_(up|connections_accepted|connections_active|connections_handled|connections_reading|connections_writing|connections_waiting|http_requests_total|http_request_count_requests|http_connection_count_connections|http_connections_total)|node_(cpu_seconds_total|memory_MemAvailable_bytes|memory_MemTotal_bytes|memory_SwapFree_bytes|memory_SwapTotal_bytes|load1|load5|load15|vmstat_oom_kill|filesystem_avail_bytes|filesystem_size_bytes|filesystem_readonly|filesystem_device_error|filesystem_files_free|filesystem_files|network_receive_bytes_total|network_transmit_bytes_total|network_receive_errs_total|network_transmit_errs_total|network_receive_drop_total|network_transmit_drop_total|timex_sync_status)|alloy_build_info|prometheus_remote_storage_samples_(failed_total|pending|retried_total)|prometheus_remote_storage_queue_highest_sent_timestamp_seconds|loki_write_(sent_entries_total|dropped_entries_total|batch_retries_total)"
     action = "keep"
   }
   // Keep a small, consistent HTTP SLO histogram including +Inf. Full buckets

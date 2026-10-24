@@ -5,7 +5,7 @@ environments and sends only the following secondary copy to Grafana Cloud:
 
 | Class | Cloud copy | Primary archive |
 | --- | --- | --- |
-| Critical metrics | target availability, CPU/memory/disk/network health, reconcile errors/queue depth, certificate status, autoscaler failures, HTTP traffic/SLO | Existing vmagent plus the controller collection below |
+| Critical metrics | target availability, node Ready/pressure, container restarts/waiting reasons, workload available replicas, CPU/memory/disk/network health, reconcile errors/queue depth, certificate status, autoscaler failures, HTTP traffic/SLO | Existing vmagent plus the controller collection below |
 | Short-retention diagnostics | process memory/CPU/start time, goroutine count, scrape and forwarding health | Existing application vmagent; controller metrics retained by Alloy |
 | Controller histograms/runtime detail | Not sent | Alloy to both environment-local VictoriaMetrics replicas |
 | HTTP histogram | Only `le=0.1,0.5,1,5,+Inf`, plus sum/count | Full histogram via existing vmagent |

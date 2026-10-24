@@ -94,6 +94,10 @@ node_network_receive_bytes_total{device="enp0s6"} 100
 node_network_receive_bytes_total{device="veth123"} 100
 node_network_info{device="veth123"} 1
 ''',
+        '/ksm': '''kube_node_status_condition{node="test-node",condition="Ready",status="true"} 1
+kube_pod_container_status_restarts_total{namespace="app-reventer-stg",pod="backend",container="backend"} 2
+kube_pod_labels{namespace="app-reventer-stg",pod="backend",uid="never-copy-this-family"} 1
+''',
     }
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -144,13 +148,13 @@ node_network_info{device="veth123"} 1
         end = source.index('discovery.relabel "metrics"')
         source = source[:start] + source[end:]
         targets = []
-        for namespace, path, app in [('app-reventer-stg', '/app', 'backend'), ('nginx-gateway', '/controller', 'nginx-gateway-fabric'), ('reventer-monitoring', '/node', 'node-exporter')]:
+        for namespace, path, app in [('app-reventer-stg', '/app', 'backend'), ('nginx-gateway', '/controller', 'nginx-gateway-fabric'), ('reventer-monitoring', '/node', 'node-exporter'), ('reventer-monitoring', '/ksm', 'kube-state-metrics')]:
             targets.append({'__address__': f'127.0.0.1:{port}', '__metrics_path__': path,
                             '__meta_kubernetes_pod_ip': '127.0.0.1', '__meta_kubernetes_namespace': namespace,
                             '__meta_kubernetes_pod_name': app, '__meta_kubernetes_pod_node_name': 'test-node',
-                            '__meta_kubernetes_pod_container_name': app, '__meta_kubernetes_pod_container_port_name': 'metrics',
+                            '__meta_kubernetes_pod_container_name': app, '__meta_kubernetes_pod_container_port_name': 'http-metrics' if app == 'kube-state-metrics' else 'metrics',
                             '__meta_kubernetes_pod_label_app': app,
-                            '__meta_kubernetes_pod_annotation_prometheus_io_scrape': 'false' if app == 'node-exporter' else 'true',
+                            '__meta_kubernetes_pod_annotation_prometheus_io_scrape': 'false' if app in ('node-exporter', 'kube-state-metrics') else 'true',
                             '__meta_kubernetes_pod_annotation_prometheus_io_port': str(port),
                             '__meta_kubernetes_pod_annotation_prometheus_io_path': path})
         literal = '[' + ','.join('{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in t.items()) + '}' for t in targets) + ']'
@@ -202,6 +206,8 @@ node_network_info{device="veth123"} 1
             assert 'controller_runtime_reconcile_time_seconds_bucket' not in names
             assert 'unapproved_application_metric' not in names
             assert 'node_network_info' not in names
+            assert 'kube_node_status_condition' in names and 'kube_pod_labels' not in names
+            assert any(m.get('__name__') == 'kube_pod_container_status_restarts_total' and m.get('namespace') == 'app-reventer-stg' for m in cloud)
             assert {m['le'] for m in cloud if m.get('__name__') == 'http_request_duration_seconds_bucket'} == {'0.1', '0.5', '1', '5', '+Inf'}
             assert not any(m.get('device', '').startswith('veth') or m.get('fstype') == 'tmpfs' or '/kubelet/pods/' in m.get('mountpoint', '') for m in cloud)
             for path in ['/local01', '/local02']:
