@@ -271,12 +271,12 @@ loki.relabel "local_system_logs" {
 
 loki.write "local_01" {
   endpoint {
-    url = sys.env("LOCAL_LOGS_01")
+    url = sys.env("LOCAL_LOGS_01") + "?_msg_field=_msg,log,message,msg,body"
   }
 }
 
 loki.write "local_02" {
   endpoint {
-    url = sys.env("LOCAL_LOGS_02")
+    url = sys.env("LOCAL_LOGS_02") + "?_msg_field=_msg,log,message,msg,body"
   }
 }

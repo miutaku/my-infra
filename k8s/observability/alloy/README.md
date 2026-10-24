@@ -59,6 +59,8 @@ unstructured stack lines remain only in the full VictoriaLogs archive.
 No request/user IDs or arbitrary message fields become Loki index labels. The
 Cloud log labels are job, cluster, env, namespace, Pod, container, and severity.
 The file-reader test fixture may add a filename label; production uses the Pod API.
+Local Loki writes specify `_msg_field=_msg,log,message,msg,body`, matching Fluent
+Bit, so JSON `msg` events are searchable/displayable as VictoriaLogs `_msg`.
 
 ## Validation and rollout
 

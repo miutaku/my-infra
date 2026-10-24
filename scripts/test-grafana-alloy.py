@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.parse
 import urllib.request
 import uuid
 
@@ -112,14 +113,17 @@ kube_pod_labels{namespace="app-reventer-stg",pod="backend",uid="never-copy-this-
 
         def do_POST(self):
             try:
+                path = self.path.split('?', 1)[0]
+                if path in ('/logs01', '/logs02'):
+                    assert urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get('_msg_field') == ['_msg,log,message,msg,body']
                 body = self.rfile.read(int(self.headers['Content-Length']))
                 raw = decompress(body)
-                if self.path in ('/loki', '/logs01', '/logs02'):
+                if path in ('/loki', '/logs01', '/logs02'):
                     for field, stream in fields(raw):
                         if field == 1:
                             for key, entry in fields(stream):
                                 if key == 2:
-                                    received[self.path] += [line.decode() for number, line in fields(entry) if number == 2]
+                                    received[path] += [line.decode() for number, line in fields(entry) if number == 2]
                 else:
                     for field, series in fields(raw):
                         if field == 1:
@@ -128,7 +132,7 @@ kube_pod_labels{namespace="app-reventer-stg",pod="backend",uid="never-copy-this-
                                 if key == 1:
                                     pair = dict(fields(label))
                                     labels[pair[1].decode()] = pair[2].decode()
-                            received[self.path].append(labels)
+                            received[path].append(labels)
                 self.send_response(204)
             except Exception as error:
                 failures.append(repr(error))
