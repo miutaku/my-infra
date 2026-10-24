@@ -19,3 +19,6 @@ Cloudflare credentials, and neither OKE holds another environment's SQL DSN.
 Preserve storage history when changing the monitoring topology.
 
 OS maintenance: [os-update/README.md](os-update/README.md).
+
+PDC の network ID 照合、Grafana 502 の修復根拠、環境別アラートの移行・復元は
+[grafana/README.md](grafana/README.md) を参照する。

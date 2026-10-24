@@ -1,0 +1,1842 @@
+{
+  "schema_version": 1,
+  "legacy_folder_uid": "alerting-3sdsb6hvpfhxg",
+  "environments": {
+    "stg": {
+      "cluster": "oke-stg",
+      "metrics_uid": "cg0m1h98bpedcb",
+      "logs_uid": "dg0m1l2fyeuioa",
+      "pdc_network": "e6b28cc2-b9f8-489f-ac33-29d3e5b335d1"
+    },
+    "prd": {
+      "cluster": "oke-prd",
+      "metrics_uid": "cfp1pqo5zixa8e",
+      "logs_uid": "bfp1q8yd3n85cf",
+      "pdc_network": "b24ae1c9-8cd8-4312-addd-96086f1038b9"
+    }
+  },
+  "cloud_metrics_uid": "grafanacloud-prom",
+  "receivers": {
+    "warn": "Discord - grafana-warning",
+    "critical": "Discord - grafana-critical"
+  },
+  "legacy": [
+    {
+      "uid": "a7adf115-1cee-5c85-b1a6-2aa0551e20dd",
+      "title": "cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits",
+      "group": "k8s.rules.container_cpu_limits",
+      "kind": "recording",
+      "fingerprint": "5744addbf2c7799580784910407c1f41a13ea481593cba38badff5d50e4084d5",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "179fbb26-a9d5-51df-884b-fbf3919afe3d",
+      "title": "namespace_cpu:kube_pod_container_resource_limits:sum",
+      "group": "k8s.rules.container_cpu_limits",
+      "kind": "recording",
+      "fingerprint": "1b362a96bfdfc1863f7f7114a6297eb769878339b9dea4fc662a224e9052821f",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "ba121dbd-eada-5a2a-bff8-fb2ddd885f26",
+      "title": "cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests",
+      "group": "k8s.rules.container_cpu_requests",
+      "kind": "recording",
+      "fingerprint": "fdfd1e87a8bea9f14accef26c9a27d4f9f866a52bb2573163eb49cc6139185e8",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "402dc1de-7ae2-53fe-abc9-659699fd77bf",
+      "title": "namespace_cpu:kube_pod_container_resource_requests:sum",
+      "group": "k8s.rules.container_cpu_requests",
+      "kind": "recording",
+      "fingerprint": "75d3698f9dfece7d2592f757218d8bfeab5fd5ef882fa008dd7183f462d9044c",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "e5c76a6f-c31e-5883-a699-3cb533fec159",
+      "title": "node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m",
+      "group": "k8s.rules.container_cpu_usage_seconds_total",
+      "kind": "recording",
+      "fingerprint": "b374813bf77ecb66481905a487c2e4036c83341f57a18dd8aa06b3a49a391daf",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "ce51ec53-345a-53ef-aa1b-27a6665b1e79",
+      "title": "node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate",
+      "group": "k8s.rules.container_cpu_usage_seconds_total",
+      "kind": "recording",
+      "fingerprint": "70f01a48681161db5661ee3d03f6d079b1855f05aeec546cb7c2095976878d78",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "67b54971-f83c-5716-8df8-0ecf3cce2e83",
+      "title": "node_namespace_pod_container:container_memory_cache",
+      "group": "k8s.rules.container_memory_cache",
+      "kind": "recording",
+      "fingerprint": "2467262dac166969217a6e8372c69d8a10b0a6799e7e5c08f2e503c72e8f7592",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "c50a9f6b-49a1-5a19-bfcc-db1d6ff042e6",
+      "title": "cluster:namespace:pod_memory:active:kube_pod_container_resource_limits",
+      "group": "k8s.rules.container_memory_limits",
+      "kind": "recording",
+      "fingerprint": "e15f1340ee4a8154e80d7869fed9099ab513e5c57e2af2e1d21b2688d2aa2adb",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "7ec0fbc4-b1db-5284-ab9e-6423bc0fcfa0",
+      "title": "namespace_memory:kube_pod_container_resource_limits:sum",
+      "group": "k8s.rules.container_memory_limits",
+      "kind": "recording",
+      "fingerprint": "3c176a0c5d611f6f3d1150bbb4493b6994cdd890a4a67c86381b75d843340588",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "899ff064-7cc9-5cdb-b479-ca6e0299e346",
+      "title": "cluster:namespace:pod_memory:active:kube_pod_container_resource_requests",
+      "group": "k8s.rules.container_memory_requests",
+      "kind": "recording",
+      "fingerprint": "3c9aefb8533d4e06d123742d919e6a637f00c23ad13f6413a992ea8479c4a064",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "8abb7bcf-2703-506e-a54b-fc76a1f2761b",
+      "title": "namespace_memory:kube_pod_container_resource_requests:sum",
+      "group": "k8s.rules.container_memory_requests",
+      "kind": "recording",
+      "fingerprint": "4140143b1ed7ef75f4f299e5a2ef3ab3e50084537920f70346da4e935c727575",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "d133471e-bdc5-5156-a43a-9064b0933b66",
+      "title": "node_namespace_pod_container:container_memory_rss",
+      "group": "k8s.rules.container_memory_rss",
+      "kind": "recording",
+      "fingerprint": "b2c42263937fd8639f8772e2ac36d8d9368c70b71c1d3636b1cda787b52bb052",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "adaf4173-4406-5cd3-ac72-b9f305ab92d8",
+      "title": "node_namespace_pod_container:container_memory_swap",
+      "group": "k8s.rules.container_memory_swap",
+      "kind": "recording",
+      "fingerprint": "deb6326278094f60ac42c2a950be984de1bdf70f1c001f17d60fc0fc77c79d37",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "d9188333-fdbb-5da3-9e8f-b99b8347b179",
+      "title": "node_namespace_pod_container:container_memory_working_set_bytes",
+      "group": "k8s.rules.container_memory_working_set_bytes",
+      "kind": "recording",
+      "fingerprint": "016f06ded4df3ff2e0b98cf7e81cfab491c3d0a57daeda2de47507dfefe54ac0",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "49403d15-caec-50ca-b97f-6257b0386f7c",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "51f134b6cd6b932cc24f6a89f7cc5efb7a4d26c4c1ab19967028c57016a27567",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "75eba04e-70f6-56f4-b41e-33cd717574de",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "a37a3383faa3ba61e89f5b91fe2b5b5c2c39fa2f03b266644dbbea81591b9767",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "f0ef9bad-bcb5-5bf6-bd92-28a1414a2092",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "c49e934bc0b1555335b44e87e59825db8871fa84512bd5a5e3b0f08086eeb0b4",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "0b39fee0-49cc-55fd-976b-0fa710d00e3e",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "9787d37d66908f92126e4daaf66c827d2db4ca79e07285ee4c25e4224122ab73",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "274e6c3b-4628-5cc2-afa6-ba935a37e392",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "0eb6b2b1a6008bb108fa8d679dc2eda70e295e14503c1a24c5669ca33f864d80",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "f2df3c41-2acc-57bf-9f11-4752ddc799f1",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "b8552e9f8a161605ec274b5662d96879400e5510f8877a128d3d8654e5cf5733",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "beb1dd67-2777-5ae5-9497-b9a51b51ca91",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "9b5c9cb6cf25992de33619288421ad53a5196d7cee50eea77dd6c98620920310",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "6b1a340c-60ce-58be-a523-1e4c226beb0b",
+      "title": "namespace_workload_pod:kube_pod_owner:relabel",
+      "group": "k8s.rules.pod_owner",
+      "kind": "recording",
+      "fingerprint": "9ec0b3b3357a54a67eb92cc2a98ba4d855a1f31ff4d1d990403d1e0076eaacb3",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "cfd45dde-fa68-59bb-a80c-77f02941107c",
+      "title": "container_cpu_usage_seconds_total",
+      "group": "k8s.windows-rules.container_cpu_usage_seconds_total",
+      "kind": "recording",
+      "fingerprint": "ee239674bf08a81933ff13fff46284e1d93b1efb6c3dbbc8592ec702c4932eb8",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "6c3a567d-90a3-5125-a938-7a91ea7c46e1",
+      "title": "container_memory_rss",
+      "group": "k8s.windows-rules.container_memory_rss",
+      "kind": "recording",
+      "fingerprint": "c3a2ecbe8a1fdf3cc0e1684b36f5a7245314988d09af9c264ed4b8d62d778da1",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "eb96ead7-affc-5030-bc8d-4893e4e96bdf",
+      "title": "container_memory_working_set_bytes",
+      "group": "k8s.windows-rules.container_memory_working_set_bytes",
+      "kind": "recording",
+      "fingerprint": "e9ef83e8edca0b8abc412f256a0f37089bd2e3f825ce95b94d52104ea192bebf",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "f5cd811e-0674-5576-950f-ac87b94a5255",
+      "title": "code_verb:apiserver_request_total:increase30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "345b949e319e9fb1d7cac614e89f49f4868d0d2a12c076fac81e9177cfd61c67",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "b7199539-7a7d-56c8-9bdb-4a0ed8501abd",
+      "title": "code:apiserver_request_total:increase30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "caa3f695cf07fd43d45f6e971c5ff04266d2b53b6f487bb061162ef9f8ecad1a",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "fa68c478-93a9-5682-b67c-731cc35118ed",
+      "title": "code:apiserver_request_total:increase30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "60d8173c76d143ea190129dd764439a9f562fd931537c512c35e0eeba1b08440",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "1c935aeb-ebb5-59b1-bbf2-0e17e23b268e",
+      "title": "cluster_verb_scope_le:apiserver_request_sli_duration_seconds_bucket:increase1h",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "9019b9cc3978c600c57c6ee5c828e0212d2804d7d2bec2becee829bf34df2b08",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "8efaab0c-8f8b-55ae-b9c7-c1ce75ffc6a4",
+      "title": "cluster_verb_scope_le:apiserver_request_sli_duration_seconds_bucket:increase30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "f89cd4e3f913fe64ac54347823a1e062d77f54f864b67a7fe3c656764bfe0953",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "479e265d-5bc0-586d-89af-1713e092b85a",
+      "title": "cluster_verb_scope:apiserver_request_sli_duration_seconds_count:increase1h",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "3211694140b1baf014e835975714af53ed1b830b4e7c733d3d10deedfc248028",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "f2f5999b-3f8f-549f-8e3b-d18e9e23bb92",
+      "title": "cluster_verb_scope:apiserver_request_sli_duration_seconds_count:increase30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "5c56f53740a8ff25f973826cb6a0ac4ad5e91f01e864ff1a776b6235b2719442",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "d83b6d01-cf22-5dda-9708-59d1b5e4741b",
+      "title": "apiserver_request:availability30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "bf6ec3f935cae1edf810d557ee855af5b5d36a748b5d60258858b24968802ed7",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "b7f27b76-b447-5729-ab7c-415d6e25b8d6",
+      "title": "apiserver_request:availability30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "bac82edec80381d25b809f9d745fb2dca77c2c44193fd1868cf7dad51357cd98",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "65f6d688-7f5c-5fad-a231-0f97ed2f7989",
+      "title": "apiserver_request:availability30d",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "647fd0f81d9c9b32abe307da18e3857ddf428ca30a989179a400410cf37e4689",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "2d5e4a07-9565-5b4f-a16f-59c56ee9ac6b",
+      "title": "code_resource:apiserver_request_total:rate5m",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "6a6cf7c0988a1979faafa37f76bc54b11bee038290c0b65b68a01db078127fb6",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "d7f74584-bef0-5133-b9fa-21c377d901fa",
+      "title": "code_resource:apiserver_request_total:rate5m",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "48bc2374f6e2e7fb437b0abcba7454fb732ac898b6433d9a3e446370bbdf08e4",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "92f8b2bd-1e5e-5c2f-8a2b-80943812cdb9",
+      "title": "code_verb:apiserver_request_total:increase1h",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "c7bf754f86555a60e4afc7efd34daf3151a2255d790356bf4897c328a1e4d3e3",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "9fbaa6c6-5822-5432-b253-dfae2ea76c2b",
+      "title": "code_verb:apiserver_request_total:increase1h",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "aff1584eaaa14a1e3d713c0483b90ea802b2ccfa7f10c5ccf05d6a39773ee898",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "222e92df-1b61-5bf7-8e6e-d71e865650ff",
+      "title": "code_verb:apiserver_request_total:increase1h",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "be15d438d5379fac48330849e029fe58fd71326de57de331a97c81630f54fc3a",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "34aa59b2-5236-5e35-9977-9ffbd3465b4c",
+      "title": "code_verb:apiserver_request_total:increase1h",
+      "group": "kube-apiserver-availability.rules",
+      "kind": "recording",
+      "fingerprint": "bb1b24f4f481ba54e1a96e814fe6b1c5fece0ab25cfe8e334443c20b126f1196",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "9b703fe0-dcf6-5f24-898a-ce759d59eae7",
+      "title": "apiserver_request:burnrate1d",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "890857beae9d7d249d567c49cb1209f7bd3aaf7ce38dba0d5f7db159a93f51a6",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "bcefac3b-ed1d-5682-9ed3-3c468d1536ed",
+      "title": "apiserver_request:burnrate1h",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "f67f4de0c07dff89fcb8316d2d39a0cf543822ce94d777d26ee600cb370366ac",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "a69608f0-94f7-59f8-999e-306ab66d6865",
+      "title": "apiserver_request:burnrate2h",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "d13c7cb7d870297be9cfd7999a06144262f4ae767b1a0c4c27637dda1f646dd8",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "d7ece26c-ee13-5a0f-9ece-1b26ea0e36e7",
+      "title": "apiserver_request:burnrate30m",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "348dd66fb1bba9383272c35e96af5091cfd9412f9b7d31f899edaa2d2e31c023",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "1752ffb3-f724-5510-9af0-8a56408e43b5",
+      "title": "apiserver_request:burnrate3d",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "cc16a9e0f0c2e701f8ed84ebab74584fef32fdccc61eaa241a06a0548522bb23",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "b048fba0-e921-581a-a853-1bf388cf39ce",
+      "title": "apiserver_request:burnrate5m",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "4f7684b74825530417434b139714b645f615bf842442831bbc51bcdd965c8c2b",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "c4e1fcc5-b771-5cec-9653-c17fa1d22936",
+      "title": "apiserver_request:burnrate6h",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "fafc695790ac43be4792b3b986ccbc9557f50ab6808b64de1f7f11a14dc3ed72",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "0dd72e5c-dcc1-5801-8068-5f3a0f14ceff",
+      "title": "apiserver_request:burnrate1d",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "f0322accb325a41b4a60024b2e69d4cdaac81b10ca3d1a64204d298cce8a156d",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "62c3437b-1675-5e6d-886a-c32b38683cbc",
+      "title": "apiserver_request:burnrate1h",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "61caa1c48fba45c358ab6d28b60bdc5f0dbd99e84ab49017a8ba3f9620d92f01",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "eb684d18-c180-5438-b3a7-740bbc32a98b",
+      "title": "apiserver_request:burnrate2h",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "fb42c1cbda13104b834230261fa77db650806aa2a725b3194580fbed599312f9",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "fe811412-5dbe-5af0-b49a-a929ccb0bb01",
+      "title": "apiserver_request:burnrate30m",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "ba1546e83b89db04ad9113840c983e69a5a7b2f5dec3f90c0a5162570d126fa1",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "77de6c16-e909-59a8-b211-d0229a089d07",
+      "title": "apiserver_request:burnrate3d",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "4c845cfb1ca7c2d0fe878fb8ffdb33380052db6a570c6cc4a049dab524a7097b",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "34fe16d8-2fde-5d76-9dad-aa128cb3c2fc",
+      "title": "apiserver_request:burnrate5m",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "3ac11eccef52d35dbd07ca5e728d72f0a4c7ad4bc783cd86b0426efd3735aed7",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "caa20ff9-5a15-5a64-8fd4-53f913853dc4",
+      "title": "apiserver_request:burnrate6h",
+      "group": "kube-apiserver-burnrate.rules",
+      "kind": "recording",
+      "fingerprint": "66d4ac3cea92b72f6a964f648b8573dca5576be6fe70a23457fa78c1e132feb3",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "110ee221-d410-585f-8cac-924d25cff461",
+      "title": "cluster_quantile:apiserver_request_sli_duration_seconds:histogram_quantile",
+      "group": "kube-apiserver-histogram.rules",
+      "kind": "recording",
+      "fingerprint": "b3ac5d42f51f609c233e8602cc7a0a619c344adf5489f5f74938949bd68b21d2",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "be51471a-6a7b-5874-bbe2-8affacf6753d",
+      "title": "cluster_quantile:apiserver_request_sli_duration_seconds:histogram_quantile",
+      "group": "kube-apiserver-histogram.rules",
+      "kind": "recording",
+      "fingerprint": "ffd4344057c7100a2f09acf8da220d3d8e6d182ff897f0b21017f5408f9e6b47",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "4840e403-bd6a-540b-a22f-900c2b9f7dd0",
+      "title": "KubeAPIErrorBudgetBurn",
+      "group": "kube-apiserver-slos",
+      "kind": "alert",
+      "fingerprint": "d2e11fbffd98e8e90a3ffda1a009ea456f91439368296dfe8f60094669856b82",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "dbd99a89-d043-556f-9715-e8839e7b99df",
+      "title": "KubeAPIErrorBudgetBurn",
+      "group": "kube-apiserver-slos",
+      "kind": "alert",
+      "fingerprint": "881fd1b704de41db967aadc11bb9f06fa7f8692d79afa5e9173bdd0cb0e1107d",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "b2741774-6603-5ce5-9fb9-a9816d1eed55",
+      "title": "KubeAPIErrorBudgetBurn",
+      "group": "kube-apiserver-slos",
+      "kind": "alert",
+      "fingerprint": "14ffea0a799eb59d3a308653343751d3fab9846aa18220a3248916216344c617",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "21d051a6-be87-527c-a223-3ef243ba1839",
+      "title": "KubeAPIErrorBudgetBurn",
+      "group": "kube-apiserver-slos",
+      "kind": "alert",
+      "fingerprint": "f2c89c7ec840f5f554c49fa92f6691645de9c948e2a93aff35af929329ff9c88",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "3c08160b-22ce-57ef-bb10-55b486b6b11a",
+      "title": "cluster_quantile:scheduler_scheduling_attempt_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "99b8b5e4960b8434304578e5137567b6e2621432691e875428a72c7c3a24f389",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "c8b3acf8-c59b-5647-afc8-ca8e4917ee05",
+      "title": "cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "de5a901ba2b9b4cb9c8a23ad798b58308ab56beb5b6825cb42c91cce736a228a",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "3b1f097c-c9a2-5558-8e67-3de501925576",
+      "title": "cluster_quantile:scheduler_pod_scheduling_sli_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "424eb0ac8eebe2f776760d76fedff1aae3bbee6749e317a7676b27ffdcbbe05c",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "0a3b9678-38de-5aa5-88ed-19ddc1070c53",
+      "title": "cluster_quantile:scheduler_scheduling_attempt_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "9ea9ec87f1d676f351bc2ba697744de4d594e55e9d2068436e5e0a6b36709b15",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "eb4e264c-d0c8-5921-8a01-d7b5be8a6d64",
+      "title": "cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "07f323edabc07660fa77d905eeafa4bff4079233b74a451a95274c9e83a2ff9d",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "a49acfd3-24f0-5e73-9acb-e6853c5cc512",
+      "title": "cluster_quantile:scheduler_pod_scheduling_sli_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "4904fa8de573f1804be120aedc5859718958ec71cb54a55244c64a088a44686c",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "c12e3d5c-5646-5a7c-a08e-73349a74f72b",
+      "title": "cluster_quantile:scheduler_scheduling_attempt_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "3b0771af44d0beb10d5d00d3a613c0e8d6f144f0e5a0a20cd1b07254602bef8c",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "9d64d74c-2477-51d0-8848-ad45aa41abec",
+      "title": "cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "4ab4271e2fdc1cab423155dfca7a39e7c4cbbf5f7345baa9bef591f47b48849a",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "01decbf2-53f8-52e9-8128-baafeaaba8b2",
+      "title": "cluster_quantile:scheduler_pod_scheduling_sli_duration_seconds:histogram_quantile",
+      "group": "kube-scheduler.rules",
+      "kind": "recording",
+      "fingerprint": "ed39a748b8420f7fe9292820fdbdb98788b712859fadc57c58c206b32b9a1ac5",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "33e4c505-a212-560b-875c-76a9c8beba73",
+      "title": "node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile",
+      "group": "kubelet.rules",
+      "kind": "recording",
+      "fingerprint": "d5e3537b23271dc6a5204fa45355e01ab4ee9f02c6118a47c3e5bb8fb73ee65b",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "9977475c-e07b-5947-b823-c81c615f25de",
+      "title": "node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile",
+      "group": "kubelet.rules",
+      "kind": "recording",
+      "fingerprint": "4306c14614ac1adde47218dababdf3cbc5d891203195923b8eecd04ac43ee6cc",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "76af5bd2-8b0d-5ba5-8282-27da5190e884",
+      "title": "node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile",
+      "group": "kubelet.rules",
+      "kind": "recording",
+      "fingerprint": "dc90c2e6d65060489217e231cb567a12ac3b58e969888fa2968dbd6d5690e288",
+      "was_paused": false,
+      "decision": "archive-recording",
+      "reason": "No dashboard dependency. Necessary recording expressions are inlined into primary alerts; no Cloud output is needed."
+    },
+    {
+      "uid": "f50cd32b-6f01-5722-a4e0-990297a21b54",
+      "title": "KubePodCrashLooping",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "2d1b694541f5d6f218e3fa753c799fbd8d816abb6c886e18429970d574670000",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Retain minimal Cloud-independent guard."
+    },
+    {
+      "uid": "6f6dc1f2-b864-5b7a-a4a2-f8dc1e4518fa",
+      "title": "KubePodNotReady",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "e8cfd7e29751f7014faebbc5f3014faa62553ecebb571ae86af0b6a682f24207",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "e860c396-66a2-5021-aef3-2d22ddba52a1",
+      "title": "KubeDeploymentGenerationMismatch",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "ef944342533e08bcfd528b8f65367cca91d352a589c3596be4407341c5d030a7",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "cf936d06-ac10-5bb5-a1c8-63c53dde7242",
+      "title": "KubeDeploymentReplicasMismatch",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "6e85b826b19ae512d83237da2ccfa0454bcea5febeabd17baa5db35e61895a0c",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "00301212-eca7-5a4b-8803-27466097ef86",
+      "title": "KubeDeploymentRolloutStuck",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "a8e3f47994c22ae0ccb62e94e2de59606ed81d550bd06fdb111ad755625b704e",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "7f0b8911-a639-5703-b459-fd5f007bdd9f",
+      "title": "KubeStatefulSetReplicasMismatch",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "588890d4db67202925bac0e33dd5b12aea4b37b2632fb652db40612315b48876",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "5a2154ff-778c-5be8-848d-f748de223bc4",
+      "title": "KubeStatefulSetGenerationMismatch",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "d99a92b99e1f5f667c3541fb1eb4f7630bde334a7c222b8f4b7b91f25c06bc7a",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "6dfc158a-2d2b-57b4-b985-60679f829684",
+      "title": "KubeStatefulSetUpdateNotRolledOut",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "a04c73f207d9863a9e2a23734d5139723f5720047d40e8469118ff233dfa2daa",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "d8e4d826-e529-50eb-af06-baac5dbec304",
+      "title": "KubeDaemonSetRolloutStuck",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "f582e08d85c91a8bbedcf372d48c35838631669c414ad6ddbc4064a727308909",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "7fb193c9-4b3a-504f-ab27-eb049e3a4055",
+      "title": "KubeContainerWaiting",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "b4c7d78b0d1cf3597887ef5ba927cf12a8bc2ded3f3b8cb07c365a87fc4a0729",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "2e99c4d9-d52e-5595-9515-af736af66d40",
+      "title": "KubeDaemonSetNotScheduled",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "9f93b998d3ac33c92af8d1107bb1c0404efc60657289ce6cf0f7eb7936f8101f",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "7d41baf6-30e9-52ba-8732-573203b6c697",
+      "title": "KubeDaemonSetMisScheduled",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "c91b59ea878620dc3a6d9f0e60f19bb32a577411486524b0ef6867e8e854dd6c",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "966dcda5-6ff7-57de-ab6d-32431d115d3e",
+      "title": "KubeJobNotCompleted",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "93ac259be4a3e8436f3d6e2787f7004a99410ed713df601813c96aff00e98d08",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Jobs are not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "6daa02d0-474d-5fac-8f4d-d6276b7cfdac",
+      "title": "KubeJobFailed",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "0aa24e160c9e47e2b2c005fcd9e67a5fe6084f23836bda1d72506566a0d826d7",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Jobs are not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "dc2b1002-8bf8-5852-b0d2-880f3bfb2813",
+      "title": "KubeHpaReplicasMismatch",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "61c058d1df7ea593a88e4f980c45b88283eda71ae4787cfb37d1538c20240f7d",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "HPA is not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "fdb6534a-66e7-5991-8299-fe544a65d4c5",
+      "title": "KubeHpaMaxedOut",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "1b83941858daaf72ab16be598468b99258cbc32a0811e9c0bca3ec2d82fa1e82",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "HPA is not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "c3e244dd-6792-5190-9838-1af43b31e3ed",
+      "title": "KubePdbNotEnoughHealthyPods",
+      "group": "kubernetes-apps",
+      "kind": "alert",
+      "fingerprint": "9f1e2c19195b9178e22890594cea1e747052084a5614137002cb01e7873b6cba",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "PDB is not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "a7659d9a-4ad9-5e7b-8212-e870ce51156b",
+      "title": "KubeCPUOvercommit",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "6ccc38afa34484b8f7ddc5cda9465304a86d9da57a6bba846fae8fc9d90d3011",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "adcd5661-e752-58a0-9e43-c523a662c57d",
+      "title": "KubeMemoryOvercommit",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "ce2c09890a89b3d4366d540915c8d78702e77bd7cb8a53d63408936d58f60370",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "4f29c78e-fd9d-53b8-aed7-23386baf0122",
+      "title": "KubeCPUQuotaOvercommit",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "2763704e7fc33d40fbfc105d00de2854032464e79b5cfa7d0b9242ae0c6b5242",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "3c96e6de-77c6-5241-b4f0-6e036228ea46",
+      "title": "KubeMemoryQuotaOvercommit",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "765f9cd8d9fc1e819c819ff9803e10c834a1ba68fe2ef05438537b939dde9fd3",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "9655040e-b5f4-5841-9726-b309417829f0",
+      "title": "KubeQuotaAlmostFull",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "11e8bffc02ca06497aec7b9ed2be1af127a2d674246f28e01d41b0645e0cbd62",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "ResourceQuota is not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "b31e2333-78e6-5a9e-bf5e-a5784968c682",
+      "title": "KubeQuotaFullyUsed",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "b5df8898314141e717db70e601691c8368c7a66420c557ede914409338734bf1",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "ResourceQuota is not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "c8e4597d-2529-5112-9119-164eecc9aa8e",
+      "title": "KubeQuotaExceeded",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "67667c5069e127bb64b812a66203c94012a7238d16c344b6bcdc5f635e8a072d",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "ResourceQuota is not enabled in kube-state-metrics --resources."
+    },
+    {
+      "uid": "bedf0d0e-149a-5a49-9bea-f3a4c96d4480",
+      "title": "CPUThrottlingHigh",
+      "group": "kubernetes-resources",
+      "kind": "alert",
+      "fingerprint": "0589ab1bdfe5c0fbb485fedf42336734475f723f8a593b620c677b680f5ea733",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "6aaa965a-93e8-55d0-98b7-ae7a62f58880",
+      "title": "KubePersistentVolumeFillingUp",
+      "group": "kubernetes-storage",
+      "kind": "alert",
+      "fingerprint": "91505df303bafa643d6185d3d82c8d53c779d9eef2c4fdaf5ab0fe18f1ee3439",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "48fb53a5-e030-5b10-8df1-3e26336417e4",
+      "title": "KubePersistentVolumeFillingUp",
+      "group": "kubernetes-storage",
+      "kind": "alert",
+      "fingerprint": "3246d1746c6465801aa6f313768fbc1a83e21f9db76c2775910d0d2fe0273550",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "b7e3e892-8d8f-55be-bfd8-3e1a3aea8670",
+      "title": "KubePersistentVolumeInodesFillingUp",
+      "group": "kubernetes-storage",
+      "kind": "alert",
+      "fingerprint": "4d159886d0fc7cb701a887fd64379d8105205c8e694090a5ef12fce91dabda23",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "093bd5a9-e8b0-5e84-a658-4d13916bc695",
+      "title": "KubePersistentVolumeInodesFillingUp",
+      "group": "kubernetes-storage",
+      "kind": "alert",
+      "fingerprint": "e5cdfbc1fea7c768074620644fd2d28534fff8556b57803e214725d45a9fc948",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "cce2477d-dab5-5232-97f6-e6275e1c56c4",
+      "title": "KubePersistentVolumeErrors",
+      "group": "kubernetes-storage",
+      "kind": "alert",
+      "fingerprint": "232c0bbd626414aa34abfa3a254d29f35bcb971ed6c6944b920434d6ced2e061",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "9e784065-df2d-587e-9288-37afb56019f3",
+      "title": "KubeVersionMismatch",
+      "group": "kubernetes-system",
+      "kind": "alert",
+      "fingerprint": "46561852d99447724035f859073e7b4562889c0901b37d66d4d8a92b47560b1e",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "f3f1bf70-b21f-5e36-b7f2-3a746d50d2e9",
+      "title": "KubeClientErrors",
+      "group": "kubernetes-system",
+      "kind": "alert",
+      "fingerprint": "bd89d2713e9756549051c3d03860d51fb0e5f501df2d1bceeb86f902ddbbe5fe",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "4c6ab341-9669-5c7d-8da0-5bc96f5c8113",
+      "title": "KubeClientCertificateExpiration",
+      "group": "kubernetes-system-apiserver",
+      "kind": "alert",
+      "fingerprint": "1c3f1f14f3bac024f646766329be05d1bf83fe5f9f7b549b181826d73c6032b9",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "caa9f2c0-0aed-5d5b-b72d-f25d2c2a7868",
+      "title": "KubeClientCertificateExpiration",
+      "group": "kubernetes-system-apiserver",
+      "kind": "alert",
+      "fingerprint": "cd84f9b6611f856ff2dba978ce7e5b81f52c889a5f08d5cd1a7e8448dee4c76a",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "6682e385-8373-582a-b1e0-ed8ce2c9afd2",
+      "title": "KubeAggregatedAPIErrors",
+      "group": "kubernetes-system-apiserver",
+      "kind": "alert",
+      "fingerprint": "b51c8106916568362b47e13044904d66abb1695947007d65b6399a60957b6a29",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "b0c17f07-aadd-59ed-adba-866a9ad906e5",
+      "title": "KubeAggregatedAPIDown",
+      "group": "kubernetes-system-apiserver",
+      "kind": "alert",
+      "fingerprint": "f3e786141c403f8c87e2dd6fa70a2ba3b4c38ad328f481c7082a233f79f2029b",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "7d782511-fd6d-5c93-b914-e7cded006fc4",
+      "title": "KubeAPITerminatedRequests",
+      "group": "kubernetes-system-apiserver",
+      "kind": "alert",
+      "fingerprint": "91691f37f0c6682c5ce44492cb496fcc2214ee2a97792be03bf65081754f440f",
+      "was_paused": false,
+      "decision": "unsupported",
+      "reason": "Managed OKE control-plane API-server metrics are not collected."
+    },
+    {
+      "uid": "da2c81d6-d6ee-59a7-a810-cee0b829d6ea",
+      "title": "KubeNodeNotReady",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "574e85ca54b2808ccf6921bc2b31a46a49dd679c53d79d6a3dfc0174678751ef",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Retain minimal Cloud-independent guard."
+    },
+    {
+      "uid": "e82744ba-1466-51c4-9390-73633ffd7ada",
+      "title": "KubeNodePressure",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "5a4c7fb2d40b258179e5ea42b040fa55eacfcfe4b62d5eb7fe90a6f40665af76",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Retain minimal Cloud-independent guard."
+    },
+    {
+      "uid": "c5e87ee6-0012-5a05-a44c-0dc4210ae574",
+      "title": "KubeNodeUnreachable",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "adac65822d494c6e7588a21fd3513002ad109218089effbb5e76ac155f291a4f",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Retain minimal Cloud-independent guard."
+    },
+    {
+      "uid": "9562de30-1ca4-5d8a-9103-44f05b6184de",
+      "title": "KubeletTooManyPods",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "081497a5270ad21e9cf3255c229c16414260c93a0ac457ec7b4ce543f594af2a",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "503cfef1-73d2-5cac-bccf-f94d6bce6e05",
+      "title": "KubeNodeReadinessFlapping",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "fbc9d9df1b61179859bae3f23fa32b80e64382e457253e0ca35f216960f78be0",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Retain minimal Cloud-independent guard."
+    },
+    {
+      "uid": "02f96793-3216-52ac-87ab-de7d2be4703c",
+      "title": "KubeNodeEviction",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "13948b3d92b91ddc7a5f6ebe929f01809ddd2f2ebdf9f3a18fd9368c14d3b123",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "c2877b30-6b04-5a16-80f9-eb3af62a2cd3",
+      "title": "KubeletPlegDurationHigh",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "a6cd68f9d223d3056190088746498b1946a0798f207f69b8beac95f83737fd8a",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "13562e9e-a49e-5c1a-86b1-f741cd23f575",
+      "title": "KubeletPodStartUpLatencyHigh",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "cb1f13c6272c5a25a8b0118a6f0b07328090e46b5553aca7d6bf5ce56f0a6a7f",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "419e1772-a7dd-5dc9-8802-e7eaf806fb96",
+      "title": "KubeletClientCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "16d42b75692b7b9de56751d9ad4d581edcac2f15df02c45dcb36464cc6070dc3",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "d228cbb8-36aa-57bf-9243-47c336898c7a",
+      "title": "KubeletClientCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "c01d5e98d8decd255d79e5a0605b38cc99658f6a3555f800e1ebd5531696c752",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "db670731-f6fe-5e9f-a79d-bba637001e11",
+      "title": "KubeletServerCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "4b1551627ff4e7239c4fa59808d459fc5ca5fdc4033fdb70dea05a7bc421eceb",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "5c22d64f-5ad3-5690-82a6-9dfae36d7fa4",
+      "title": "KubeletServerCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "e0a728c54edc3a94fc0981cc5a70ef9a4a529c3d7ca5a77446c88746ff04df7c",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "b5358d4e-ae9a-5aa4-8983-e25fb7657fcd",
+      "title": "KubeletClientCertificateRenewalErrors",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "d088e5697b0aea5130428f801e619c70fba950a4678122f8713fbe780e265ac4",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    },
+    {
+      "uid": "2350eb8b-69f2-5e11-b52a-7c9fc291cc5d",
+      "title": "KubeletServerCertificateRenewalErrors",
+      "group": "kubernetes-system-kubelet",
+      "kind": "alert",
+      "fingerprint": "89453f0561b0a5044bd5a7d1fdafb3f69b0d6a5bb19bbb4076cfea2cd85a1a1e",
+      "was_paused": false,
+      "decision": "migrate",
+      "reason": "Query full metrics through the environment-specific PDC data source."
+    }
+  ],
+  "rules": [
+    {
+      "id": "f50cd32b-6f01-5722-a4e0-990297a21b54",
+      "title": "KubePodCrashLooping",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "expression": "max_over_time(kube_pod_container_status_waiting_reason{reason=\"CrashLoopBackOff\", job!=\"\"}[5m]) >= 1",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is in waiting state (reason: \"CrashLoopBackOff\") on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping",
+        "summary": "Pod is crash looping."
+      }
+    },
+    {
+      "id": "6f6dc1f2-b864-5b7a-a4a2-f8dc1e4518fa",
+      "title": "KubePodNotReady",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "sum by (namespace, pod, job, cluster) (\n  max by(namespace, pod, job, cluster) (\n    kube_pod_status_phase{job!=\"\", phase=~\"Pending|Unknown\"}\n    or\n    (\n      kube_pod_status_phase{job!=\"\", phase=\"Running\"} == 1\n      and on(namespace, pod, cluster)\n      kube_pod_status_ready{job!=\"\", condition=\"true\"} == 0\n    )\n  ) * on(namespace, pod, cluster) group_left() topk by(namespace, pod, cluster) (\n    1, max by(namespace, pod, owner_kind, cluster) (kube_pod_owner{owner_kind!=\"Job\"})\n  )\n) > 0\nunless on(namespace, pod, cluster)\nkube_pod_status_reason{job!=\"\", reason=\"SchedulingGated\"} == 1",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than 15 minutes on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready",
+        "summary": "Pod has been in a non-ready state for more than 15 minutes."
+      }
+    },
+    {
+      "id": "e860c396-66a2-5021-aef3-2d22ddba52a1",
+      "title": "KubeDeploymentGenerationMismatch",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "kube_deployment_status_observed_generation{job!=\"\"}\n  !=\nkube_deployment_metadata_generation{job!=\"\"}",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment }} does not match, this indicates that the Deployment has failed but has not been rolled back on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentgenerationmismatch",
+        "summary": "Deployment generation mismatch due to possible roll-back"
+      }
+    },
+    {
+      "id": "cf936d06-ac10-5bb5-a1c8-63c53dde7242",
+      "title": "KubeDeploymentReplicasMismatch",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "(\n  kube_deployment_spec_replicas{job!=\"\"}\n    >\n  kube_deployment_status_replicas_available{job!=\"\"}\n) and (\n  changes(kube_deployment_status_replicas_updated{job!=\"\"}[10m])\n    ==\n  0\n)",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for longer than 15 minutes on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentreplicasmismatch",
+        "summary": "Deployment has not matched the expected number of replicas."
+      }
+    },
+    {
+      "id": "00301212-eca7-5a4b-8803-27466097ef86",
+      "title": "KubeDeploymentRolloutStuck",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "kube_deployment_status_condition{condition=\"Progressing\", status=\"false\",job!=\"\"}\n!= 0",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Rollout of deployment {{ $labels.namespace }}/{{ $labels.deployment }} is not progressing for longer than 15 minutes on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentrolloutstuck",
+        "summary": "Deployment rollout is not progressing."
+      }
+    },
+    {
+      "id": "7f0b8911-a639-5703-b459-fd5f007bdd9f",
+      "title": "KubeStatefulSetReplicasMismatch",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "(\n  kube_statefulset_status_replicas_ready{job!=\"\"}\n    !=\n  kube_statefulset_replicas{job!=\"\"}\n) and (\n  changes(kube_statefulset_status_replicas_updated{job!=\"\"}[10m])\n    ==\n  0\n)",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has not matched the expected number of replicas for longer than 15 minutes on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch",
+        "summary": "StatefulSet has not matched the expected number of replicas."
+      }
+    },
+    {
+      "id": "5a2154ff-778c-5be8-848d-f748de223bc4",
+      "title": "KubeStatefulSetGenerationMismatch",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "kube_statefulset_status_observed_generation{job!=\"\"}\n  !=\nkube_statefulset_metadata_generation{job!=\"\"}",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset }} does not match, this indicates that the StatefulSet has failed but has not been rolled back on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetgenerationmismatch",
+        "summary": "StatefulSet generation mismatch due to possible roll-back"
+      }
+    },
+    {
+      "id": "6dfc158a-2d2b-57b4-b985-60679f829684",
+      "title": "KubeStatefulSetUpdateNotRolledOut",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "(\n  max by(namespace, statefulset, job, cluster) (\n    kube_statefulset_status_current_revision{job!=\"\"}\n      unless\n    kube_statefulset_status_update_revision{job!=\"\"}\n  )\n    * on(namespace, statefulset, job, cluster)\n  (\n    kube_statefulset_replicas{job!=\"\"}\n      !=\n    kube_statefulset_status_replicas_updated{job!=\"\"}\n  )\n)  and on(namespace, statefulset, job, cluster) (\n  changes(kube_statefulset_status_replicas_updated{job!=\"\"}[5m])\n    ==\n  0\n)",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update has not been rolled out on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetupdatenotrolledout",
+        "summary": "StatefulSet update has not been rolled out."
+      }
+    },
+    {
+      "id": "d8e4d826-e529-50eb-af06-baac5dbec304",
+      "title": "KubeDaemonSetRolloutStuck",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "(\n  (\n    kube_daemonset_status_current_number_scheduled{job!=\"\"}\n      !=\n    kube_daemonset_status_desired_number_scheduled{job!=\"\"}\n  ) or (\n    kube_daemonset_status_number_misscheduled{job!=\"\"}\n      !=\n    0\n  ) or (\n    kube_daemonset_status_updated_number_scheduled{job!=\"\"}\n      !=\n    kube_daemonset_status_desired_number_scheduled{job!=\"\"}\n  ) or (\n    kube_daemonset_status_number_available{job!=\"\"}\n      !=\n    kube_daemonset_status_desired_number_scheduled{job!=\"\"}\n  )\n) and (\n  changes(kube_daemonset_status_updated_number_scheduled{job!=\"\"}[5m])\n    ==\n  0\n)",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has not finished or progressed for at least 15m on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetrolloutstuck",
+        "summary": "DaemonSet rollout is stuck."
+      }
+    },
+    {
+      "id": "7fb193c9-4b3a-504f-ab27-eb049e3a4055",
+      "title": "KubeContainerWaiting",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "kube_pod_container_status_waiting_reason{reason!=\"CrashLoopBackOff\", job!=\"\"} > 0",
+      "for": "1h",
+      "severity": "warn",
+      "annotations": {
+        "description": "pod/{{ $labels.pod }} in namespace {{ $labels.namespace }} on container {{ $labels.container}} has been in waiting state for longer than 1 hour. (reason: \"{{ $labels.reason }}\") on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting",
+        "summary": "Pod container waiting longer than 1 hour"
+      }
+    },
+    {
+      "id": "2e99c4d9-d52e-5595-9515-af736af66d40",
+      "title": "KubeDaemonSetNotScheduled",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "kube_daemonset_status_desired_number_scheduled{job!=\"\"}\n  -\nkube_daemonset_status_current_number_scheduled{job!=\"\"} > 0",
+      "for": "10m",
+      "severity": "warn",
+      "annotations": {
+        "description": "{{ $values.query.Value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are not scheduled on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetnotscheduled",
+        "summary": "DaemonSet pods are not scheduled."
+      }
+    },
+    {
+      "id": "7d41baf6-30e9-52ba-8732-573203b6c697",
+      "title": "KubeDaemonSetMisScheduled",
+      "group": "kubernetes-apps",
+      "scope": "primary",
+      "expression": "kube_daemonset_status_number_misscheduled{job!=\"\"} > 0",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "{{ $values.query.Value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are running where they are not supposed to run on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetmisscheduled",
+        "summary": "DaemonSet pods are misscheduled."
+      }
+    },
+    {
+      "id": "a7659d9a-4ad9-5e7b-8212-e870ce51156b",
+      "title": "KubeCPUOvercommit",
+      "group": "kubernetes-resources",
+      "scope": "primary",
+      "expression": "(sum by (cluster) (sum by (namespace, cluster) (\n    sum by (namespace, pod, cluster) (\n        max by (namespace, pod, container, cluster) (\n          kube_pod_container_resource_requests{resource=\"cpu\",job!=\"\"}\n        ) * on(namespace, pod, cluster) group_left() max by (namespace, pod, cluster) (\n          kube_pod_status_phase{phase=~\"Pending|Running\"} == 1\n        )\n    )\n)) - sum by (cluster) (kube_node_status_allocatable{job!=\"\",resource=\"cpu\"})) > 0",
+      "for": "10m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Active Pod requests on cluster {{ $labels.cluster }} exceed total worker allocatable capacity by {{ printf \"%.2f\" $values.query.Value }} CPU cores.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit",
+        "summary": "Cluster has overcommitted CPU resource requests."
+      },
+      "migration_note": "Compare active Pod requests with worker allocatable capacity. OKE does not expose control-plane roles; the old non-HA branch silently returned no series."
+    },
+    {
+      "id": "adcd5661-e752-58a0-9e43-c523a662c57d",
+      "title": "KubeMemoryOvercommit",
+      "group": "kubernetes-resources",
+      "scope": "primary",
+      "expression": "(sum by (cluster) (sum by (namespace, cluster) (\n    sum by (namespace, pod, cluster) (\n        max by (namespace, pod, container, cluster) (\n          kube_pod_container_resource_requests{resource=\"memory\",job!=\"\"}\n        ) * on(namespace, pod, cluster) group_left() max by (namespace, pod, cluster) (\n          kube_pod_status_phase{phase=~\"Pending|Running\"} == 1\n        )\n    )\n)) - sum by (cluster) (kube_node_status_allocatable{job!=\"\",resource=\"memory\"})) > 0",
+      "for": "10m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Active Pod requests on cluster {{ $labels.cluster }} exceed total worker allocatable capacity by {{ $values.query.Value | humanize }} bytes.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememoryovercommit",
+        "summary": "Cluster has overcommitted memory resource requests."
+      },
+      "migration_note": "Compare active Pod requests with worker allocatable capacity. OKE does not expose control-plane roles; the old non-HA branch silently returned no series."
+    },
+    {
+      "id": "4f29c78e-fd9d-53b8-aed7-23386baf0122",
+      "title": "KubeCPUQuotaOvercommit",
+      "group": "kubernetes-resources",
+      "scope": "primary",
+      "expression": "sum by(cluster) (\n  min without(resource) (kube_resourcequota{job!=\"\", type=\"hard\", resource=~\"(cpu|requests.cpu)\"})\n)\n/\nsum by(cluster) (\n  kube_node_status_allocatable{resource=\"cpu\", job!=\"\"}\n) > 1.5",
+      "for": "5m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Cluster {{ $labels.cluster }} has overcommitted CPU resource requests for Namespaces.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuquotaovercommit",
+        "summary": "Cluster has overcommitted CPU resource requests."
+      }
+    },
+    {
+      "id": "3c96e6de-77c6-5241-b4f0-6e036228ea46",
+      "title": "KubeMemoryQuotaOvercommit",
+      "group": "kubernetes-resources",
+      "scope": "primary",
+      "expression": "sum by(cluster) (\n  min without(resource) (kube_resourcequota{job!=\"\", type=\"hard\", resource=~\"(memory|requests.memory)\"})\n)\n/\nsum by(cluster) (\n  kube_node_status_allocatable{resource=\"memory\", job!=\"\"}\n) > 1.5",
+      "for": "5m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Cluster {{ $labels.cluster }} has overcommitted memory resource requests for Namespaces.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememoryquotaovercommit",
+        "summary": "Cluster has overcommitted memory resource requests."
+      }
+    },
+    {
+      "id": "bedf0d0e-149a-5a49-9bea-f3a4c96d4480",
+      "title": "CPUThrottlingHigh",
+      "group": "kubernetes-resources",
+      "scope": "primary",
+      "expression": "sum without (id, metrics_path, name, image, endpoint, job, node) (\n  topk by (cluster, namespace, pod, container, instance) (1,\n    increase(\n      container_cpu_cfs_throttled_periods_total{container!=\"\", job!=\"\", }\n    [5m])\n  )\n)\n/ on (cluster, namespace, pod, container, instance) group_left\nsum without (id, metrics_path, name, image, endpoint, job, node) (\n  topk by (cluster, namespace, pod, container, instance) (1,\n    increase(\n      container_cpu_cfs_periods_total{job!=\"\", }\n    [5m])\n  )\n)\n> ( 25 / 100 )",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "{{ $values.query.Value | humanizePercentage }} throttling of CPU in namespace {{ $labels.namespace }} for container {{ $labels.container }} in pod {{ $labels.pod }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh",
+        "summary": "Processes experience elevated CPU throttling."
+      }
+    },
+    {
+      "id": "6aaa965a-93e8-55d0-98b7-ae7a62f58880",
+      "title": "KubePersistentVolumeFillingUp",
+      "group": "kubernetes-storage",
+      "scope": "primary",
+      "expression": "(\n  kubelet_volume_stats_available_bytes{job!=\"\"}\n    /\n  kubelet_volume_stats_capacity_bytes{job!=\"\"}\n) < 0.03\nand\nkubelet_volume_stats_used_bytes{job!=\"\"} > 0\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_access_mode{ access_mode=\"ReadOnlyMany\"} == 1\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_labels{label_excluded_from_alerts=\"true\"} == 1",
+      "for": "1m",
+      "severity": "critical",
+      "annotations": {
+        "description": "The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} {{ with $labels.cluster -}} on Cluster {{ . }} {{- end }} is only {{ $values.query.Value | humanizePercentage }} free.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefillingup",
+        "summary": "PersistentVolume is filling up."
+      }
+    },
+    {
+      "id": "48fb53a5-e030-5b10-8df1-3e26336417e4",
+      "title": "KubePersistentVolumeFillingUp",
+      "group": "kubernetes-storage",
+      "scope": "primary",
+      "expression": "(\n  kubelet_volume_stats_available_bytes{job!=\"\"}\n    /\n  kubelet_volume_stats_capacity_bytes{job!=\"\"}\n) < 0.15\nand\nkubelet_volume_stats_used_bytes{job!=\"\"} > 0\nand\npredict_linear(kubelet_volume_stats_available_bytes{job!=\"\"}[6h], 4 * 24 * 3600) < 0\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_access_mode{ access_mode=\"ReadOnlyMany\"} == 1\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_labels{label_excluded_from_alerts=\"true\"} == 1",
+      "for": "1h",
+      "severity": "warn",
+      "annotations": {
+        "description": "Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} {{ with $labels.cluster -}} on Cluster {{ . }} {{- end }} is expected to fill up within four days. Currently {{ $values.query.Value | humanizePercentage }} is available.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefillingup",
+        "summary": "PersistentVolume is filling up."
+      }
+    },
+    {
+      "id": "b7e3e892-8d8f-55be-bfd8-3e1a3aea8670",
+      "title": "KubePersistentVolumeInodesFillingUp",
+      "group": "kubernetes-storage",
+      "scope": "primary",
+      "expression": "(\n  kubelet_volume_stats_inodes_free{job!=\"\"}\n    /\n  kubelet_volume_stats_inodes{job!=\"\"}\n) < 0.03\nand\nkubelet_volume_stats_inodes_used{job!=\"\"} > 0\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_access_mode{ access_mode=\"ReadOnlyMany\"} == 1\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_labels{label_excluded_from_alerts=\"true\"} == 1",
+      "for": "1m",
+      "severity": "critical",
+      "annotations": {
+        "description": "The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} {{ with $labels.cluster -}} on Cluster {{ . }} {{- end }} only has {{ $values.query.Value | humanizePercentage }} free inodes.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeinodesfillingup",
+        "summary": "PersistentVolumeInodes are filling up."
+      }
+    },
+    {
+      "id": "093bd5a9-e8b0-5e84-a658-4d13916bc695",
+      "title": "KubePersistentVolumeInodesFillingUp",
+      "group": "kubernetes-storage",
+      "scope": "primary",
+      "expression": "(\n  kubelet_volume_stats_inodes_free{job!=\"\"}\n    /\n  kubelet_volume_stats_inodes{job!=\"\"}\n) < 0.15\nand\nkubelet_volume_stats_inodes_used{job!=\"\"} > 0\nand\npredict_linear(kubelet_volume_stats_inodes_free{job!=\"\"}[6h], 4 * 24 * 3600) < 0\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_access_mode{ access_mode=\"ReadOnlyMany\"} == 1\nunless on(cluster, namespace, persistentvolumeclaim)\nkube_persistentvolumeclaim_labels{label_excluded_from_alerts=\"true\"} == 1",
+      "for": "1h",
+      "severity": "warn",
+      "annotations": {
+        "description": "Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} {{ with $labels.cluster -}} on Cluster {{ . }} {{- end }} is expected to run out of inodes within four days. Currently {{ $values.query.Value | humanizePercentage }} of its inodes are free.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeinodesfillingup",
+        "summary": "PersistentVolumeInodes are filling up."
+      }
+    },
+    {
+      "id": "cce2477d-dab5-5232-97f6-e6275e1c56c4",
+      "title": "KubePersistentVolumeErrors",
+      "group": "kubernetes-storage",
+      "scope": "primary",
+      "expression": "kube_persistentvolume_status_phase{phase=~\"Failed|Pending\",job!=\"\"} > 0",
+      "for": "5m",
+      "severity": "critical",
+      "annotations": {
+        "description": "The persistent volume {{ $labels.persistentvolume }} {{ with $labels.cluster -}} on Cluster {{ . }} {{- end }} has status {{ $labels.phase }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeerrors",
+        "summary": "PersistentVolume is having issues with provisioning."
+      }
+    },
+    {
+      "id": "9e784065-df2d-587e-9288-37afb56019f3",
+      "title": "KubeVersionMismatch",
+      "group": "kubernetes-system",
+      "scope": "primary",
+      "expression": "count by (cluster) (count by (git_version, cluster) (label_replace(kubernetes_build_info{job!~\"kube-dns|coredns\"},\"git_version\",\"$1\",\"git_version\",\"(v[0-9]*.[0-9]*).*\"))) > 1",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "There are {{ $values.query.Value }} different semantic versions of Kubernetes components running on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeversionmismatch",
+        "summary": "Different semantic versions of Kubernetes components running."
+      }
+    },
+    {
+      "id": "f3f1bf70-b21f-5e36-b7f2-3a746d50d2e9",
+      "title": "KubeClientErrors",
+      "group": "kubernetes-system",
+      "scope": "primary",
+      "expression": "(sum(rate(rest_client_requests_total{job!=\"\",code=~\"5..\"}[5m])) by (cluster, instance, job, namespace)\n  /\nsum(rate(rest_client_requests_total{job!=\"\"}[5m])) by (cluster, instance, job, namespace))\n> 0.01",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ $values.query.Value | humanizePercentage }} errors on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclienterrors",
+        "summary": "Kubernetes API server client is experiencing errors."
+      }
+    },
+    {
+      "id": "da2c81d6-d6ee-59a7-a810-cee0b829d6ea",
+      "title": "KubeNodeNotReady",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "expression": "kube_node_status_condition{job!=\"\",condition=\"Ready\",status=\"true\"} == 0\nand on (cluster, node)\nkube_node_spec_unschedulable{job!=\"\"} == 0",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "{{ $labels.node }} has been unready for more than 15 minutes on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodenotready",
+        "summary": "Node is not ready."
+      }
+    },
+    {
+      "id": "e82744ba-1466-51c4-9390-73633ffd7ada",
+      "title": "KubeNodePressure",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "expression": "kube_node_status_condition{job!=\"\",condition=~\"(MemoryPressure|DiskPressure|PIDPressure)\",status=\"true\"} == 1\nand on (cluster, node)\nkube_node_spec_unschedulable{job!=\"\"} == 0",
+      "for": "10m",
+      "severity": "warn",
+      "annotations": {
+        "description": "{{ $labels.node }} on cluster {{ $labels.cluster }} has active Condition {{ $labels.condition }}. This is caused by resource usage exceeding eviction thresholds.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodepressure",
+        "summary": "Node has as active Condition."
+      }
+    },
+    {
+      "id": "c5e87ee6-0012-5a05-a44c-0dc4210ae574",
+      "title": "KubeNodeUnreachable",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "expression": "(kube_node_spec_taint{job!=\"\",key=\"node.kubernetes.io/unreachable\",effect=\"NoSchedule\"} unless ignoring(key,value) kube_node_spec_taint{job!=\"\",key=~\"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn\"}) == 1",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "{{ $labels.node }} is unreachable and some workloads may be rescheduled on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodeunreachable",
+        "summary": "Node is unreachable."
+      }
+    },
+    {
+      "id": "9562de30-1ca4-5d8a-9103-44f05b6184de",
+      "title": "KubeletTooManyPods",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "(\n  max by (cluster, instance) (\n    kubelet_running_pods{job!=\"\"} > 1\n  )\n  * on (cluster, instance) group_left(node)\n  max by (cluster, instance, node) (\n    kubelet_node_name{job!=\"\"}\n  )\n)\n/ on (cluster, node) group_left()\nmax by (cluster, node) (\n  kube_node_status_capacity{job!=\"\", resource=\"pods\"} != 1\n) > 0.95",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Kubelet '{{ $labels.node }}' is running at {{ $values.query.Value | humanizePercentage }} of its Pod capacity on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubelettoomanypods",
+        "summary": "Kubelet is running at capacity."
+      }
+    },
+    {
+      "id": "503cfef1-73d2-5cac-bccf-f94d6bce6e05",
+      "title": "KubeNodeReadinessFlapping",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "expression": "sum(changes(kube_node_status_condition{job!=\"\",status=\"true\",condition=\"Ready\"}[15m])) by (cluster, node) > 2\nand on (cluster, node)\nkube_node_spec_unschedulable{job!=\"\"} == 0",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "The readiness status of node {{ $labels.node }} has changed {{ $values.query.Value }} times in the last 15 minutes on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodereadinessflapping",
+        "summary": "Node readiness status is flapping."
+      }
+    },
+    {
+      "id": "02f96793-3216-52ac-87ab-de7d2be4703c",
+      "title": "KubeNodeEviction",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "sum(rate(kubelet_evictions{job!=\"\"}[15m])) by(cluster, eviction_signal, instance)\n* on (cluster, instance) group_left(node)\nmax by (cluster, instance, node) (\n  kubelet_node_name{job!=\"\"}\n)\n> 0",
+      "for": "0s",
+      "severity": "warn",
+      "annotations": {
+        "description": "Node {{ $labels.node }} on {{ $labels.cluster }} is evicting Pods due to {{ $labels.eviction_signal }}.  Eviction occurs when eviction thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage limits.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodeeviction",
+        "summary": "Node is evicting pods."
+      }
+    },
+    {
+      "id": "c2877b30-6b04-5a16-80f9-eb3af62a2cd3",
+      "title": "KubeletPlegDurationHigh",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "(histogram_quantile(\n  0.99,\n  sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job!=\"\"}[5m])) by (cluster, instance, le)\n  * on(cluster, instance) group_left (node)\n  max by (cluster, instance, node) (kubelet_node_name{job!=\"\"})\n)) >= 10",
+      "for": "5m",
+      "severity": "warn",
+      "annotations": {
+        "description": "The Kubelet Pod Lifecycle Event Generator has a 99th percentile duration of {{ $values.query.Value }} seconds on node {{ $labels.node }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletplegdurationhigh",
+        "summary": "Kubelet Pod Lifecycle Event Generator is taking too long to relist."
+      },
+      "migration_note": "Inline the original p99 recording expression; retain full kubelet buckets in the primary store."
+    },
+    {
+      "id": "13562e9e-a49e-5c1a-86b1-f741cd23f575",
+      "title": "KubeletPodStartUpLatencyHigh",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "histogram_quantile(0.99,\n  sum by (cluster, instance, le) (\n    topk by (cluster, instance, le, operation_type) (1,\n      rate(kubelet_pod_worker_duration_seconds_bucket{job!=\"\"}[5m])\n    )\n  )\n)\n* on(cluster, instance) group_left(node)\ntopk by (cluster, instance, node) (1,\n  kubelet_node_name{job!=\"\"}\n)\n> 60",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Kubelet Pod startup 99th percentile latency is {{ $values.query.Value }} seconds on node {{ $labels.node }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletpodstartuplatencyhigh",
+        "summary": "Kubelet Pod startup latency is too high."
+      }
+    },
+    {
+      "id": "419e1772-a7dd-5dc9-8802-e7eaf806fb96",
+      "title": "KubeletClientCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "kubelet_certificate_manager_client_ttl_seconds < 604800",
+      "for": "0s",
+      "severity": "warn",
+      "annotations": {
+        "description": "Client certificate for Kubelet on node {{ $labels.node }} expires in {{ $values.query.Value | humanizeDuration }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletclientcertificateexpiration",
+        "summary": "Kubelet client certificate is about to expire."
+      }
+    },
+    {
+      "id": "d228cbb8-36aa-57bf-9243-47c336898c7a",
+      "title": "KubeletClientCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "kubelet_certificate_manager_client_ttl_seconds < 86400",
+      "for": "0s",
+      "severity": "critical",
+      "annotations": {
+        "description": "Client certificate for Kubelet on node {{ $labels.node }} expires in {{ $values.query.Value | humanizeDuration }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletclientcertificateexpiration",
+        "summary": "Kubelet client certificate is about to expire."
+      }
+    },
+    {
+      "id": "db670731-f6fe-5e9f-a79d-bba637001e11",
+      "title": "KubeletServerCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "kubelet_certificate_manager_server_ttl_seconds < 604800",
+      "for": "0s",
+      "severity": "warn",
+      "annotations": {
+        "description": "Server certificate for Kubelet on node {{ $labels.node }} expires in {{ $values.query.Value | humanizeDuration }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletservercertificateexpiration",
+        "summary": "Kubelet server certificate is about to expire."
+      }
+    },
+    {
+      "id": "5c22d64f-5ad3-5690-82a6-9dfae36d7fa4",
+      "title": "KubeletServerCertificateExpiration",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "kubelet_certificate_manager_server_ttl_seconds < 86400",
+      "for": "0s",
+      "severity": "critical",
+      "annotations": {
+        "description": "Server certificate for Kubelet on node {{ $labels.node }} expires in {{ $values.query.Value | humanizeDuration }} on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletservercertificateexpiration",
+        "summary": "Kubelet server certificate is about to expire."
+      }
+    },
+    {
+      "id": "b5358d4e-ae9a-5aa4-8983-e25fb7657fcd",
+      "title": "KubeletClientCertificateRenewalErrors",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "increase(kubelet_certificate_manager_client_expiration_renew_errors[5m]) > 0",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Kubelet on node {{ $labels.node }} has failed to renew its client certificate ({{ $values.query.Value | humanize }} errors in the last 5 minutes) on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletclientcertificaterenewalerrors",
+        "summary": "Kubelet has failed to renew its client certificate."
+      }
+    },
+    {
+      "id": "2350eb8b-69f2-5e11-b52a-7c9fc291cc5d",
+      "title": "KubeletServerCertificateRenewalErrors",
+      "group": "kubernetes-system-kubelet",
+      "scope": "primary",
+      "expression": "increase(kubelet_server_expiration_renew_errors[5m]) > 0",
+      "for": "15m",
+      "severity": "warn",
+      "annotations": {
+        "description": "Kubelet on node {{ $labels.node }} has failed to renew its server certificate ({{ $values.query.Value | humanize }} errors in the last 5 minutes) on cluster {{ $labels.cluster }}.",
+        "runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletservercertificaterenewalerrors",
+        "summary": "Kubelet has failed to renew its server certificate."
+      }
+    },
+    {
+      "id": "alloy-telemetry-missing",
+      "title": "Alloy Cloud telemetry missing",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "for": "1m",
+      "severity": "critical",
+      "expression": "absent_over_time(up{job=\"alloy\",cluster=\"__CLUSTER__\"}[3m])",
+      "annotations": {
+        "summary": "Alloy Cloud telemetry missing",
+        "description": "The independent Cloud copy has received no Alloy heartbeat for 3 minutes. Check Alloy and Cloud ingestion."
+      }
+    },
+    {
+      "id": "critical-exporter-unavailable",
+      "title": "Critical Cloud exporter unavailable",
+      "group": "cloud-guards",
+      "scope": "cloud",
+      "for": "2m",
+      "severity": "critical",
+      "expression": "(up{cluster=\"__CLUSTER__\",job=~\"integrations/unix|kube-state-metrics\"} == 0) or absent_over_time(up{job=\"integrations/unix\",cluster=\"__CLUSTER__\"}[3m]) or absent_over_time(up{job=\"kube-state-metrics\",cluster=\"__CLUSTER__\"}[3m])",
+      "annotations": {
+        "summary": "Critical Cloud exporter unavailable",
+        "description": "Node exporter or kube-state-metrics is down or missing from the Cloud secondary copy."
+      }
+    },
+    {
+      "id": "primary-collector-unavailable",
+      "title": "Primary metrics collector unavailable",
+      "group": "observability",
+      "scope": "primary",
+      "for": "2m",
+      "severity": "critical",
+      "expression": "(up{cluster=\"__CLUSTER__\",job=~\"kube-state-metrics|kubelet|kubelet-cadvisor|node-exporter|alloy|oci-monitoring-storage\"} == 0) or absent_over_time(up{job=\"kube-state-metrics\",cluster=\"__CLUSTER__\"}[3m]) or absent_over_time(up{job=\"kubelet\",cluster=\"__CLUSTER__\"}[3m]) or absent_over_time(up{job=\"kubelet-cadvisor\",cluster=\"__CLUSTER__\"}[3m]) or absent_over_time(up{job=\"node-exporter\",cluster=\"__CLUSTER__\"}[3m])",
+      "annotations": {
+        "summary": "Primary metrics collector unavailable",
+        "description": "A required collector or storage replica endpoint is down or no longer being collected."
+      }
+    }
+  ],
+  "api_namespace": "stacks-1121307"
+}

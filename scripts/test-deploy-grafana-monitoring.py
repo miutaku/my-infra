@@ -89,5 +89,15 @@ class DeploymentChecks(unittest.TestCase):
             deploy.verify_deployment(client, applied_values())
 
 
+def load_tests(loader, tests, pattern):
+    # Existing CI invokes this entry point. Include the Re:Venter safety suite
+    # without changing workflow permissions or requiring live credentials.
+    spec = importlib.util.spec_from_file_location("test_reventer", Path(__file__).with_name("test-reventer-grafana.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    tests.addTests(loader.loadTestsFromModule(module))
+    return tests
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
