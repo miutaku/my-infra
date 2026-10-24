@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - ../../base
+configMapGenerator:
+  - name: grafana-alloy-routing
+    literals:
+      - ENVIRONMENT=prd
+      - METRICS_CLUSTER=oke-prd
+      - LOCAL_METRICS_01=http://reventermon1.reventermon.okeprdvcn.oraclevcn.com:18428/api/v1/write
+      - LOCAL_METRICS_02=http://reventermon2.reventermon.okeprdvcn.oraclevcn.com:18428/api/v1/write
+      - LOCAL_LOGS_01=http://reventermon1.reventermon.okeprdvcn.oraclevcn.com:19428/insert/loki/api/v1/push
+      - LOCAL_LOGS_02=http://reventermon2.reventermon.okeprdvcn.oraclevcn.com:19428/insert/loki/api/v1/push
+generatorOptions:
+  disableNameSuffixHash: true

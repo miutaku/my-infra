@@ -1,0 +1,258 @@
+// Each DaemonSet member owns only the Pods on its node. No host mounts or
+// embedded unix exporter: host signals come from the existing node-exporter.
+logging {
+  level = "warn"
+  format = "json"
+}
+
+discovery.kubernetes "pods" {
+  role = "pod"
+  selectors {
+    role = "pod"
+    field = "spec.nodeName=" + sys.env("HOSTNAME")
+  }
+}
+
+discovery.relabel "metrics" {
+  targets = discovery.kubernetes.pods.targets
+  rule {
+    source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+    regex = "true"
+    action = "keep"
+  }
+  // One target per declared metrics port. Autoscaler declares no ports.
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_port_name"]
+    regex = "metrics|http-metrics|"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+    regex = "(.+)"
+    target_label = "__metrics_path__"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_ip", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+    regex = "(.+);([0-9]+)"
+    replacement = "$1:$2"
+    target_label = "__address__"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label = "namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label = "pod"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_node_name"]
+    target_label = "node"
+  }
+}
+
+prometheus.scrape "pods" {
+  targets = discovery.relabel.metrics.output
+  job_name = "prometheus.scrape.pods"
+  scrape_interval = "60s"
+  forward_to = [prometheus.relabel.cloud.receiver, prometheus.relabel.local_controllers.receiver]
+}
+
+// The application namespace is already collected by vmagent. Preserve only
+// the previously Cloud-only system targets here, avoiding a second app copy.
+prometheus.relabel "local_controllers" {
+  forward_to = [prometheus.remote_write.local_01.receiver, prometheus.remote_write.local_02.receiver]
+  rule {
+    source_labels = ["namespace"]
+    regex = "nginx-gateway|cert-manager|kube-system"
+    action = "keep"
+  }
+}
+
+discovery.relabel "node_exporter" {
+  targets = discovery.kubernetes.pods.targets
+  rule {
+    source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_label_app", "__meta_kubernetes_pod_container_port_name"]
+    regex = "reventer-monitoring;node-exporter;metrics"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_node_name"]
+    target_label = "instance"
+  }
+}
+
+prometheus.scrape "node" {
+  targets = discovery.relabel.node_exporter.output
+  job_name = "integrations/unix"
+  scrape_interval = "60s"
+  forward_to = [prometheus.relabel.cloud.receiver]
+}
+
+prometheus.scrape "self" {
+  targets = [{"__address__" = "127.0.0.1:12345", "instance" = sys.env("HOSTNAME")}]
+  job_name = "alloy"
+  scrape_interval = "60s"
+  forward_to = [prometheus.relabel.self_health.receiver]
+}
+
+prometheus.relabel "self_health" {
+  forward_to = [prometheus.relabel.cloud.receiver, prometheus.remote_write.local_01.receiver, prometheus.remote_write.local_02.receiver]
+  rule {
+    source_labels = ["__name__"]
+    regex = "up|alloy_build_info|prometheus_remote_storage_samples_(failed_total|pending|retried_total)|prometheus_remote_storage_queue_highest_sent_timestamp_seconds|loki_write_(sent_entries_total|dropped_entries_total|batch_retries_total)"
+    action = "keep"
+  }
+  rule {
+    regex = "url"
+    action = "labeldrop"
+  }
+}
+
+// Cloud is a bounded secondary copy, not the full-fidelity metric archive.
+// Runtime/process gauges are short-retention troubleshooting signals.
+prometheus.relabel "cloud" {
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+  rule {
+    source_labels = ["__name__"]
+    regex = "up|scrape_duration_seconds|scrape_samples_scraped|process_(resident_memory_bytes|cpu_seconds_total|start_time_seconds)|go_goroutines|controller_runtime_(reconcile_(errors_total|panics_total|timeouts_total)|terminal_reconcile_errors_total)|workqueue_(depth|retries_total)|cluster_autoscaler_(errors_total|failed_scale_ups_total|nodes_count|unschedulable_pods_count|cluster_safe_to_autoscale)|certmanager_(certificate_ready_status|certificate_expiration_timestamp_seconds|certificate_renewal_timestamp_seconds|clusterissuer_ready_status)|http_requests_total|http_request_duration_seconds_(bucket|sum|count)|rate_limit_redis_errors_total|nginx_(up|connections_accepted|connections_active|connections_handled|connections_reading|connections_writing|connections_waiting|http_requests_total|http_request_count_requests|http_connection_count_connections|http_connections_total)|node_(cpu_seconds_total|memory_MemAvailable_bytes|memory_MemTotal_bytes|memory_SwapFree_bytes|memory_SwapTotal_bytes|load1|load5|load15|vmstat_oom_kill|filesystem_avail_bytes|filesystem_size_bytes|filesystem_readonly|filesystem_device_error|filesystem_files_free|filesystem_files|network_receive_bytes_total|network_transmit_bytes_total|network_receive_errs_total|network_transmit_errs_total|network_receive_drop_total|network_transmit_drop_total|timex_sync_status)|alloy_build_info|prometheus_remote_storage_samples_(failed_total|pending|retried_total)|prometheus_remote_storage_queue_highest_sent_timestamp_seconds|loki_write_(sent_entries_total|dropped_entries_total|batch_retries_total)"
+    action = "keep"
+  }
+  // Keep a small, consistent HTTP SLO histogram including +Inf. Full buckets
+  // remain in VictoriaMetrics via vmagent; never remove the le label.
+  rule {
+    source_labels = ["__name__", "le"]
+    regex = "http_request_duration_seconds_bucket;(0\\.1|0\\.5|1|5|\\+Inf)|[^;]+;"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__name__", "mountpoint"]
+    regex = "node_filesystem_.*;/(var/lib/kubelet/pods|run/containers/storage|var/lib/containers/storage)/.*"
+    action = "drop"
+  }
+  rule {
+    source_labels = ["__name__", "fstype"]
+    regex = "node_filesystem_.*;(tmpfs|overlay|squashfs)"
+    action = "drop"
+  }
+  rule {
+    source_labels = ["__name__", "device"]
+    regex = "node_network_.*;(veth.*|lo)"
+    action = "drop"
+  }
+}
+
+prometheus.remote_write "grafana_cloud" {
+  external_labels = {cluster = sys.env("METRICS_CLUSTER"), env = sys.env("ENVIRONMENT")}
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_METRICS_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_METRICS_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_METRICS_PASSWORD")
+    }
+  }
+}
+
+prometheus.remote_write "local_01" {
+  external_labels = {cluster = sys.env("METRICS_CLUSTER"), env = sys.env("ENVIRONMENT")}
+  endpoint {
+    url = sys.env("LOCAL_METRICS_01")
+  }
+}
+
+prometheus.remote_write "local_02" {
+  external_labels = {cluster = sys.env("METRICS_CLUSTER"), env = sys.env("ENVIRONMENT")}
+  endpoint {
+    url = sys.env("LOCAL_METRICS_02")
+  }
+}
+
+discovery.relabel "logs" {
+  targets = discovery.kubernetes.pods.targets
+  rule {
+    source_labels = ["__meta_kubernetes_pod_phase"]
+    regex = "Pending|Unknown"
+    action = "drop"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label = "namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label = "pod"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    target_label = "container"
+  }
+}
+
+// Fluent Bit archives application logs to both local replicas. System critical
+// events need a local copy here as well; application events must not be doubled.
+loki.source.kubernetes "critical" {
+  targets = discovery.relabel.logs.output
+  forward_to = [loki.process.critical.receiver]
+}
+
+loki.process "critical" {
+  forward_to = [loki.write.grafana_cloud.receiver, loki.relabel.local_system_logs.receiver]
+  stage.json {
+    expressions = {level = "level", severity = "severity", severity_text = "severity_text", message = "msg"}
+  }
+  // Also recognize native Go panics / explicit CRITICAL prefixes. Ordinary
+  // error messages containing these words elsewhere are not promoted.
+  stage.regex {
+    expression = "^(?P<text_severity>(?i:critical|fatal|panic|emerg|emergency|alert)):(?: |$).*"
+  }
+  stage.regex {
+    source = "message"
+    expression = "^(?P<message_severity>(?i:critical|fatal|panic|emerg|emergency|alert)):(?: |$).*"
+  }
+  stage.template {
+    source = "cloud_severity"
+    template = "{{ if eq .message \"panic recovered\" }}panic{{ else if .message_severity }}{{ ToLower .message_severity }}{{ else if .severity }}{{ ToLower .severity }}{{ else if .severity_text }}{{ ToLower .severity_text }}{{ else if .level }}{{ ToLower .level }}{{ else if .text_severity }}{{ ToLower .text_severity }}{{ else }}unknown{{ end }}"
+  }
+  stage.labels {
+    values = {severity = "cloud_severity"}
+  }
+  stage.match {
+    selector = "{severity!~\"critical|fatal|panic|emerg|emergency|alert\"}"
+    action = "drop"
+    drop_counter_reason = "not_critical"
+  }
+  stage.static_labels {
+    values = {job = "critical-logs", cluster = sys.env("METRICS_CLUSTER"), env = sys.env("ENVIRONMENT")}
+  }
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_LOGS_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_LOGS_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_LOGS_PASSWORD")
+    }
+  }
+}
+
+loki.relabel "local_system_logs" {
+  forward_to = [loki.write.local_01.receiver, loki.write.local_02.receiver]
+  rule {
+    source_labels = ["namespace"]
+    regex = "app-reventer-(stg|prd)"
+    action = "drop"
+  }
+}
+
+loki.write "local_01" {
+  endpoint {
+    url = sys.env("LOCAL_LOGS_01")
+  }
+}
+
+loki.write "local_02" {
+  endpoint {
+    url = sys.env("LOCAL_LOGS_02")
+  }
+}

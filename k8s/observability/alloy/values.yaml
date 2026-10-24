@@ -1,0 +1,32 @@
+image:
+  tag: v1.7.0
+  digest: sha256:afcc9d32975dd567b2e7c87f0c2f0e4ebf9385ecc36e1c0d44ba42de6dcf291c
+rbac:
+  create: false
+alloy:
+  configMap:
+    create: false
+    name: grafana-alloy
+    key: config.alloy
+  envFrom:
+    - secretRef:
+        name: grafana-cloud-credentials
+    - configMapRef:
+        name: grafana-alloy-routing
+  securityContext:
+    privileged: false
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL]
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 384Mi
+controller:
+  type: daemonset
+  nodeSelector:
+    kubernetes.io/arch: arm64
+  podAnnotations:
+    prometheus.io/scrape: "false"
