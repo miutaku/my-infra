@@ -66,6 +66,34 @@
     "file": "ansible/truenas/host_vars/nas-02.yml"
   },
   {
+    "id": "k8s/observability/alloy/base/credentials.yaml:ExternalSecret:monitoring:grafana-cloud-credentials",
+    "type": "ExternalSecret",
+    "name": "grafana-cloud-credentials",
+    "namespace": "monitoring",
+    "file": "k8s/observability/alloy/base/credentials.yaml"
+  },
+  {
+    "id": "k8s/observability/alloy/base/namespace.yaml:Namespace::monitoring",
+    "type": "Namespace",
+    "name": "monitoring",
+    "namespace": "",
+    "file": "k8s/observability/alloy/base/namespace.yaml"
+  },
+  {
+    "id": "k8s/observability/alloy/base/rbac.yaml:ClusterRole::grafana-alloy",
+    "type": "ClusterRole",
+    "name": "grafana-alloy",
+    "namespace": "",
+    "file": "k8s/observability/alloy/base/rbac.yaml"
+  },
+  {
+    "id": "k8s/observability/alloy/base/rbac.yaml:ClusterRoleBinding::grafana-alloy",
+    "type": "ClusterRoleBinding",
+    "name": "grafana-alloy",
+    "namespace": "",
+    "file": "k8s/observability/alloy/base/rbac.yaml"
+  },
+  {
     "id": "k8s/oci-prd/argocd-apps/cert-manager-config.yaml:Application:argocd:oci-prd-cert-manager-config",
     "type": "Application",
     "name": "oci-prd-cert-manager-config",
@@ -260,6 +288,13 @@
     "name": "oci-gateway-api-crds",
     "namespace": "argocd",
     "file": "k8s/oci/argocd-apps/gateway-api-crds.yaml"
+  },
+  {
+    "id": "k8s/oci/argocd-apps/grafana-alloy.yaml:Application:argocd:oci-grafana-alloy",
+    "type": "Application",
+    "name": "oci-grafana-alloy",
+    "namespace": "argocd",
+    "file": "k8s/oci/argocd-apps/grafana-alloy.yaml"
   },
   {
     "id": "k8s/oci/argocd-apps/nginx-gateway-fabric.yaml:Application:argocd:oci-nginx-gateway-fabric",
