@@ -129,6 +129,13 @@
     "file": "k8s/oci-prd/argocd-apps/gateway-api-crds.yaml"
   },
   {
+    "id": "k8s/oci-prd/argocd-apps/grafana-alloy.yaml:Application:argocd:oci-prd-grafana-alloy",
+    "type": "Application",
+    "name": "oci-prd-grafana-alloy",
+    "namespace": "argocd",
+    "file": "k8s/oci-prd/argocd-apps/grafana-alloy.yaml"
+  },
+  {
     "id": "k8s/oci-prd/argocd-apps/nginx-gateway-fabric.yaml:Application:argocd:oci-prd-nginx-gateway-fabric",
     "type": "Application",
     "name": "oci-prd-nginx-gateway-fabric",
