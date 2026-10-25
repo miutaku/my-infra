@@ -19,6 +19,7 @@ spec:
         app: pdc-agent
         descheduler.miutaku/metrics-rebalance: "true"
     spec:
+      priorityClassName: home-observability
       tolerations:
         - key: workload.miutaku/arm64
           operator: Equal

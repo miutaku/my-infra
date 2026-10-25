@@ -40,6 +40,7 @@ spec:
     metadata:
       labels: {app: home-service-monitor}
     spec:
+      priorityClassName: home-observability
       serviceAccountName: home-service-monitor
       containers:
         - name: monitor

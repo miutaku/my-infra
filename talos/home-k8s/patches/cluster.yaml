@@ -2,6 +2,18 @@ machine:
   kubelet:
     extraArgs:
       rotate-server-certificates: "true"
+    extraConfig:
+      # Keep disk-pressure defaults when overriding the memory threshold.
+      mergeDefaultEvictionSettings: true
+      evictionHard:
+        memory.available: 256Mi
+      evictionSoft:
+        memory.available: 384Mi
+      evictionSoftGracePeriod:
+        memory.available: 30s
+      evictionMaxPodGracePeriod: 30
+      evictionMinimumReclaim:
+        memory.available: 128Mi
 cluster:
   network:
     cni:

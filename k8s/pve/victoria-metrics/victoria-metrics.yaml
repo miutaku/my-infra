@@ -19,6 +19,7 @@ spec:
     metadata:
       labels: {app: victoria-metrics}
     spec:
+      priorityClassName: home-observability
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       containers:

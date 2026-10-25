@@ -1,4 +1,6 @@
 # ServiceMonitor はこのリポジトリでは管理しない
+priorityClassName: home-observability
+
 serviceMonitor:
   enabled: false
 

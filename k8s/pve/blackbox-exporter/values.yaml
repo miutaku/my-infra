@@ -1,4 +1,5 @@
 automountServiceAccountToken: true
+priorityClassName: home-observability
 
 config:
   modules:

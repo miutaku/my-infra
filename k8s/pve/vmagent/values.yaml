@@ -1,4 +1,5 @@
 replicaCount: 1
+priorityClassName: home-observability
 
 remoteWrite:
   - url: http://victoria-metrics-victoria-metrics-single-server.monitoring.svc.cluster.local:8428/api/v1/write
@@ -107,7 +108,7 @@ config:
           regex: 'container_memory_(working_set_bytes|rss|usage_bytes|max_usage_bytes)'
           action: keep
         - source_labels: [namespace, container]
-          regex: 'app-tnlastation(-staging)?;backend'
+          regex: '(app-tnlastation(-staging)?;backend|app-epgstation;epgstation)'
           action: keep
 
     - job_name: victoria-metrics

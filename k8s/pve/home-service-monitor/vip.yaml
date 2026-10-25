@@ -9,6 +9,7 @@ spec:
     metadata:
       labels: {app: home-vip-monitor}
     spec:
+      priorityClassName: home-observability
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       automountServiceAccountToken: false
