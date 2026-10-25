@@ -64,12 +64,6 @@ def verify_deployment(client, values):
             count += 1
     if not count:
         raise RuntimeError("No managed alert rules were verified.")
-    if any(r["type"] == "terraform_data" and r.get("name") == "reventer_observability" for r in resources):
-        reventer_spec = importlib.util.spec_from_file_location("reventer", ROOT / "scripts/reconcile-reventer-grafana.py")
-        reventer = importlib.util.module_from_spec(reventer_spec)
-        reventer_spec.loader.exec_module(reventer)
-        result = reventer.reconcile(client, json.loads(reventer.CATALOG.read_text()), "check", TF_ROOT / ".state/reventer-backup")
-        print(json.dumps(result), flush=True)
     return count
 
 
@@ -107,7 +101,6 @@ def main():
     state = json.loads(tf("state", "pull").stdout)
     require_existing_state(state)
     print("Verified existing shared state and dedicated backend", flush=True)
-    subprocess.run(["python3", str(ROOT / "scripts/test-reventer-grafana.py")], env=env, check=True)
     subprocess.run(["python3", str(ROOT / "scripts/test-grafana-notifications.py"), "--live"], env=env, check=True)
     result = tf("plan", "-input=false", "-lock-timeout=5m", "-no-color", "-var-file=environments.tfvars", "-out=.state/deployment.tfplan")
     for line in result.stdout.splitlines():

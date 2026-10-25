@@ -1,18 +1,9 @@
-# Existing Re:Venter data source UIDs and converted Integration rules are managed
-# by a narrow reconciler. It preserves stored credentials, stages replacements,
-# validates both PDC paths, and pauses the old generation without deleting it.
-# No destroy provisioner: removal must never delete data sources or alert rules.
-resource "terraform_data" "reventer_observability" {
-  input = {
-    catalog = filesha256("${path.module}/reventer-catalog.json")
-    updater = filesha256("${path.module}/../../scripts/reconcile-reventer-grafana.py")
+# Re:Venter alerting is owned by miutaku/reventer, not by this state.
+# Forget only this bookkeeping resource. Its removal must not invoke any API
+# operation, unpause old Integration rules, or delete real Grafana resources.
+removed {
+  from = terraform_data.reventer_observability
+  lifecycle {
+    destroy = false
   }
-  triggers_replace = [
-    filesha256("${path.module}/reventer-catalog.json"),
-    filesha256("${path.module}/../../scripts/reconcile-reventer-grafana.py"),
-  ]
-  provisioner "local-exec" {
-    command = "python3 ${path.module}/../../scripts/reconcile-reventer-grafana.py apply && python3 ${path.module}/../../scripts/reconcile-reventer-grafana.py check"
-  }
-  depends_on = [terraform_data.discord_format]
 }
