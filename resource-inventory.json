@@ -794,6 +794,13 @@
     "file": "k8s/pve/argocd-apps/mirakurun.yaml"
   },
   {
+    "id": "k8s/pve/argocd-apps/monitoring-priority.yaml:PriorityClass::home-observability",
+    "type": "PriorityClass",
+    "name": "home-observability",
+    "namespace": "",
+    "file": "k8s/pve/argocd-apps/monitoring-priority.yaml"
+  },
+  {
     "id": "k8s/pve/argocd-apps/nas-backup.yaml:Application:argocd:nas-backup",
     "type": "Application",
     "name": "nas-backup",
