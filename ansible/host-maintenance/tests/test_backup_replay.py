@@ -216,7 +216,8 @@ class BackupReplayTests(unittest.TestCase):
         self.assertEqual(len(self.created), 2)
         self.assertEqual({i['state'] for i in json.loads(agent.BACKUP_LAST.read_text())['items'].values()}, {'failed'})
 
-    def test_claim_and_service_safety_precede_cancellation_and_reboot(self):
+    @patch.object(agent, 'handoff_loockit')
+    def test_claim_and_service_safety_precede_cancellation_and_reboot(self, handoff):
         def control(config, endpoint, body):
             self.events.append(endpoint)
             return {'executionId': 'approved-reboot'} if endpoint == 'claim' else None
@@ -251,7 +252,8 @@ class BackupReplayTests(unittest.TestCase):
         self.assertFalse(agent.STATE.exists())
         self.assertFalse(agent.BACKUP_STATE.exists())
 
-    def test_no_claim_or_failed_availability_cannot_cancel_backups(self):
+    @patch.object(agent, 'handoff_loockit')
+    def test_no_claim_or_failed_availability_cannot_cancel_backups(self, handoff):
         with patch.object(agent, 'api', return_value=None), patch.object(agent.subprocess, 'run') as execute:
             agent.process({'host': 'pve-x570'})
             execute.assert_not_called()
@@ -263,7 +265,8 @@ class BackupReplayTests(unittest.TestCase):
             execute.assert_not_called()
         self.assertEqual(self.stopped, [])
 
-    def test_failed_post_cancel_check_holds_reboot_and_releases_backup_queue(self):
+    @patch.object(agent, 'handoff_loockit')
+    def test_failed_post_cancel_check_holds_reboot_and_releases_backup_queue(self, handoff):
         with patch.object(agent, 'availability_check', side_effect=[None, None, agent.AvailabilityBlocked('peer lost')]), \
              patch.object(agent, 'api', side_effect=[None, {'executionId': 'approved-reboot'}, None]), \
              patch.object(agent.subprocess, 'run') as execute:

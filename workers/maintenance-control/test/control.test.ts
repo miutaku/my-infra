@@ -421,7 +421,7 @@ describe('maintenance scheduling', () => {
     await target.result('pve-x570', claim!.executionId, 'blocked', 'availability');
     const state = await read(target, 'pve-x570');
     expect(state.plan!.phase).toBe('held');
-    expect(state.plan!.reason).toContain('VM・NASの退避は不要');
+    expect(state.plan!.reason).toContain('OS再起動は行っていません');
     expect(state.plan!.reason).toContain('Loockit');
     expect(await target.claim('pve-x570')).toBeNull();
   });
@@ -591,5 +591,77 @@ describe('Discord signature and operator authorization', () => {
     const { request, config } = await signedRequest({ type: 3, guild_id: 'guild', channel_id: 'channel', member: { user: { id: 'other' } }, data: { custom_id: 'dev-app-server:rev:hold' } });
     const response = await worker.fetch(request, config, {} as ExecutionContext);
     expect(await response.json()).toMatchObject({ type: 4, data: { flags: 64, content: 'この操作を実行する権限がありません。' } });
+  });
+});
+
+describe('actionable held maintenance notifications', () => {
+  async function capture(target: ReturnType<typeof stub>, failPost = false) {
+    const deliveries: { method: string; payload: DiscordPayload }[] = [];
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async (_path: string, method: string, payload: DiscordPayload) => {
+        deliveries.push({ method, payload });
+        if (failPost && method === 'POST') throw new Error('Discord unavailable');
+        return { id: 'held-notice' };
+      },
+    }));
+    return deliveries;
+  }
+  it('includes the concrete failure, schedule and next action in the immediate notice', async () => {
+    const target = stub();
+    const data = fixture();
+    data.plan!.messageId = 'original';
+    await seed(target, 'pve-b550m', data);
+    const deliveries = await capture(target);
+    const claim = await target.claim('pve-b550m');
+    await target.result('pve-b550m', claim!.executionId, 'blocked', 'availability',
+      'pve-x570: Loockitの切替が480秒以内に完了しませんでした。');
+    const post = deliveries.find(item => item.method === 'POST')!.payload;
+    expect(post.content).toContain('【再起動保留】pve-b550m');
+    expect(post.content).toContain('予定:');
+    expect(post.content).toContain('pve-x570: Loockitの切替が480秒');
+    expect(post.content).toContain('OS再起動は行っていません');
+    expect(post.content).toContain('日時指定と承認');
+    await target.result('pve-b550m', claim!.executionId, 'blocked', 'availability', 'duplicate');
+    expect(deliveries.filter(item => item.method === 'POST')).toHaveLength(1);
+    expect(await target.claim('pve-b550m')).toBeNull();
+  });
+  it('includes the stored reason in daily reminders', async () => {
+    const target = stub();
+    const data = fixture('held');
+    data.plan!.messageId = 'original';
+    data.plan!.lastReminder = '2000-01-01';
+    data.plan!.reason = 'pve-x570: Loockitに応答がありません。';
+    await seed(target, 'pve-b550m', data);
+    const deliveries = await capture(target);
+    await target.tick();
+    const post = deliveries.find(item => item.method === 'POST')!.payload.content;
+    expect(post).toContain('理由: pve-x570: Loockitに応答がありません');
+    expect(post).toContain('再実行するには');
+    expect(post).toContain('/original');
+  });
+  it('retains and retries a failed immediate notice without enabling another reboot', async () => {
+    const target = stub();
+    const data = fixture();
+    data.plan!.messageId = 'original';
+    await seed(target, 'pve-b550m', data);
+    await capture(target, true);
+    const claim = await target.claim('pve-b550m');
+    await target.result('pve-b550m', claim!.executionId, 'blocked', 'availability', 'peer offline');
+    const deliveries = await capture(target);
+    await target.report('pve-b550m', data.snapshot!);
+    expect(deliveries.filter(item => item.method === 'POST')).toHaveLength(1);
+    expect(deliveries[0].payload.content).toContain('peer offline');
+    expect(await target.claim('pve-b550m')).toBeNull();
+  });
+  it('bounds host-provided detail and removes control characters', async () => {
+    const target = stub();
+    const data = fixture();
+    data.plan!.messageId = 'original';
+    await seed(target, 'pve-b550m', data);
+    const claim = await target.claim('pve-b550m');
+    await target.result('pve-b550m', claim!.executionId, 'blocked', 'availability', '\u0000\r\n' + 'x'.repeat(2000));
+    const reason = (await read(target, 'pve-b550m')).plan!.reason!;
+    expect(reason).not.toContain('\u0000');
+    expect(reason.length).toBeLessThan(750);
   });
 });

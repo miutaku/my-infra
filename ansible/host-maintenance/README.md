@@ -22,13 +22,18 @@ PVEは毎日18時台にパッケージを自動更新し、OS再起動が必要�
 OS再起動だけがDiscordでの日時指定・承認と事前確認を必要とする。
 一般の稼働中VM/CTがあっても承認済みOS再起動を許可し、guestの停止・起動はPVE標準処理に任せる。
 可用性の保護対象はLoockitとCloudflare Tunnelとする。監視基盤は対象外。Kubernetes・NASを含むVMの退避やNFSの到達性は要求しない。
-再起動前に相手ホストのLoockitがreadyであることを確認し、相手が待機系のまま・異常・到達不能なら保留する。
-稼働中のLoockitを自動停止して切り替える処理は行わない。
+承認済みの実行時だけLoockitを相手へ切り替える。相手が既にreadyなら停止操作は不要。
+相手が正常な待機系で、再起動対象以外のTunnelが利用可能なら、ローカルLXC内の`loockit`コンテナだけを停止する。
+相手の`/readyz`が200になるまで最大480秒待ち、ローカルを起動して待機系へ戻してから相手のreadyを再確認する。
+切替中はBLEの再接続・認証により操作できない時間が発生する。失敗時はローカルを起動し、ホスト再起動を保留する。
+停止前にexecution journalへ復旧用フラグを保存し、agent中断後も次回実行でローカルを起動する。
+`--probe`は読み取り専用で、Loockitの停止・切替は行わない。
 `files/availability-policy.json`を`/etc/host-maintenance/availability-policy.json`へ配備する。
 `--probe`で`rebootSafe`とLoockitを含む具体的な`rebootBlockReason`を確認できる。
 再起動後は両Loockitプロセスの健全性とreadyなleaderが1台であることを確認する。
 実行条件はcontroller READMEの可用性保護を参照。
 クラスタ・パッケージの健全性とPVE同士の排他を維持する。バックアップ以外のactive taskは保留条件とする。
+保留通知は予定日時、対象ホストを含む具体的な理由、未再起動であること、再実行に必要な操作を表示する。毎日のリマインダーにも理由を記載する。
 再起動を保留していてもパッケージの自動更新は継続する。
 
 Tunnelは配置固定せず物理ホスト単位に分散する。再起動前は対象PVE以外のworkerで `/ready` が200の接続を最低1つ要求する。

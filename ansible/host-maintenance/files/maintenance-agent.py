@@ -19,14 +19,15 @@ BACKUP_LAST = Path('/var/lib/host-maintenance/backup-replay-last.json')
 BOOT = Path('/proc/sys/kernel/random/boot_id')
 REQUIRED = Path('/run/reboot-required')
 AVAILABILITY_POLICY = Path('/etc/host-maintenance/availability-policy.json')
+LOOCKIT_CTIDS = {'pve-x570': '12902', 'pve-b550m': '12903'}
+HANDOFF_TIMEOUT = 480
 
 
 class AvailabilityBlocked(RuntimeError):
     pass
 
 
-def availability_check(host, reboot=False):
-    """Loockit must serve from the peer and a Tunnel on another physical host must be ready."""
+def availability_policy(host):
     try:
         policy = json.loads(AVAILABILITY_POLICY.read_text())
         if (policy['availability_scope'] != 'loockit-and-tunnel' or
@@ -38,6 +39,15 @@ def availability_check(host, reboot=False):
                 any(not isinstance(url, str) or not url.endswith('/readyz')
                     for url in policy['loockit_endpoints'].values())):
             raise ValueError('Incomplete availability policy')
+        return policy
+    except (OSError, ValueError, KeyError, TypeError):
+        raise AvailabilityBlocked('Loockit/Tunnelの保護設定を読み取れないか、設定が不完全です。') from None
+
+
+def availability_check(host, reboot=False):
+    """Loockit must serve from the peer and a Tunnel on another physical host must be ready."""
+    try:
+        policy = availability_policy(host)
         # A standby normally returns 503 from /readyz. Before reboot the peer
         # must already serve; after reboot require two live processes and one
         # serving leader, rather than falsely waiting for two active leaders.
@@ -76,6 +86,90 @@ def availability_check(host, reboot=False):
         raise
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
         raise AvailabilityBlocked('Loockit/Tunnel policy or service check failed; reboot denied') from None
+
+
+
+def loockit_state(host, url):
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            if response.status == 200:
+                return 'ready'
+            raise AvailabilityBlocked(f'{host}: LoockitがHTTP {response.status}を返しました。')
+    except urllib.error.HTTPError as error:
+        if error.code == 503:
+            try:
+                if json.loads(error.read(1024)).get('detail') == 'standby replica':
+                    return 'standby'
+            except (ValueError, AttributeError):
+                pass
+        raise AvailabilityBlocked(f'{host}: LoockitがHTTP {error.code}を返し、操作を受け付けられません。') from None
+    except OSError:
+        raise AvailabilityBlocked(f'{host}: Loockitに応答がありません（接続失敗またはタイムアウト）。') from None
+
+
+def restore_loockit(host, pending):
+    if not pending.get('loockitStopped'):
+        return
+    try:
+        run('pct', 'exec', LOOCKIT_CTIDS[host], '--', 'docker', 'start', 'loockit')
+    except subprocess.SubprocessError:
+        raise AvailabilityBlocked(f'{host}: 切替後のローカルLoockit再起動に失敗しました。LXCのdocker状態を確認してください。') from None
+    pending.pop('loockitStopped')
+    save(pending)
+
+
+def handoff_loockit(host, pending):
+    """Only an approved execution may stop the local BLE leader; always restore it."""
+    policy = availability_policy(host)
+    peer = next(node for node in LOOCKIT_CTIDS if node != host)
+    peer_url = policy['loockit_endpoints'][peer]
+    if loockit_state(peer, peer_url) == 'ready':
+        availability_check(host, reboot=True)
+        return
+    # Validate peer process health and an independent Tunnel before disrupting BLE.
+    loockit_state(peer, peer_url.removesuffix('/readyz') + '/healthz')
+    if loockit_state(host, policy['loockit_endpoints'][host]) != 'ready':
+        raise AvailabilityBlocked(f'{host}: ローカルLoockitも待機系のため、安全な切替元を確認できません。')
+    surviving = False
+    for node, url in policy['tunnel_endpoints'].items():
+        if node == host:
+            continue
+        try:
+            with urllib.request.urlopen(url, timeout=5) as response:
+                surviving = surviving or response.status == 200
+        except OSError:
+            pass
+    if not surviving:
+        raise AvailabilityBlocked('再起動対象以外のホストでCloudflare Tunnelの正常接続を確認できません。')
+    pending['loockitStopped'] = True
+    save(pending)  # docker uses unless-stopped; interruption recovery must restart it explicitly.
+    try:
+        run('pct', 'exec', LOOCKIT_CTIDS[host], '--', 'docker', 'stop', '--time', '30', 'loockit')
+        deadline = time.monotonic() + HANDOFF_TIMEOUT
+        last_reason = f'{peer}: Loockitは待機系です。'
+        while time.monotonic() < deadline:
+            try:
+                if loockit_state(peer, peer_url) == 'ready':
+                    print(f'Loockit handoff ready: {host} -> {peer}')
+                    break
+                last_reason = f'{peer}: Loockitはまだ待機系です。'
+            except AvailabilityBlocked as error:
+                last_reason = str(error)
+            time.sleep(5)
+        else:
+            raise AvailabilityBlocked(f'Loockitの{peer}への切替が{HANDOFF_TIMEOUT}秒以内に完了しませんでした。{last_reason} ローカルを再起動し、ホスト再起動は保留します。')
+    except subprocess.SubprocessError:
+        raise AvailabilityBlocked(f'{host}: ローカルLoockitを停止できず、切替を中止しました。') from None
+    finally:
+        restore_loockit(host, pending)
+    # Restarted local replica must remain standby while the peer continues serving.
+    availability_check(host, reboot=True)
+
+
+def failure_detail(error):
+    if isinstance(error, subprocess.SubprocessError):
+        return '事前確認コマンドが失敗またはタイムアウトしました。ホストのjournalを確認してください。'
+    return str(error)[:600]
 
 
 def pve_recovered(host):
@@ -133,12 +227,14 @@ def pve_healthy():
             and package_idle())
 
 
-def pve_preflight(host):
+def pve_preflight(host, pending=None):
     if not pve_healthy():
         raise RuntimeError('PVE cluster or package state is unhealthy')
     # Running Kubernetes/storage guests are allowed to stop with the host.
     # Loockit and a Tunnel connector must survive; no guests are migrated.
     pve_tasks_idle(allow_backups=True)
+    if pending is not None and reboot_required(True):
+        handoff_loockit(host, pending)
     availability_check(host, reboot=True)
 
 
@@ -426,11 +522,17 @@ def process(config):
             return
     if STATE.exists():
         pending = json.loads(STATE.read_text())
+        if pve and pending.get('loockitStopped'):
+            restore_loockit(host, pending)
+            if pending['bootId'] == boot_id and not pending.get('outcome'):
+                pending.update(outcome='blocked', reason='availability',
+                    detail='Loockitの切替処理が中断したためローカルを起動しました。ホスト再起動は行わず保留します。')
+                save(pending)
         if pending['bootId'] == boot_id:
             # A process interruption is never treated as permission to retry an upgrade.
             if pending.get('outcome'):
                 api(config, 'result', {'executionId': pending['executionId'], 'outcome': pending['outcome'],
-                                      'reason': pending.get('reason', 'preflight')})
+                                      'reason': pending.get('reason', 'preflight'), 'detail': pending.get('detail', '')})
                 STATE.unlink()
             else:
                 print('Execution is awaiting reboot or manual investigation')
@@ -453,7 +555,7 @@ def process(config):
         if not package_idle():
             raise RuntimeError('Another package manager is active')
         if pve:
-            pve_preflight(host)
+            pve_preflight(host, pending=pending)
         elif not REQUIRED.exists():
             raise RuntimeError('Reboot no longer required')
         will_reboot = reboot_required(pve)
@@ -467,9 +569,11 @@ def process(config):
             backup_release(pending['executionId'])
         pending['outcome'] = 'blocked'
         pending['reason'] = 'availability' if isinstance(error, AvailabilityBlocked) else 'preflight'
+        pending['detail'] = failure_detail(error)
         save(pending)
-        api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'blocked', 'reason': pending['reason']})
-        STATE.unlink()
+        api(config, 'result', {'executionId': pending['executionId'], 'outcome': 'blocked', 'reason': pending['reason'], 'detail': pending['detail']})
+        if not pending.get('loockitStopped'):
+            STATE.unlink()
         print(str(error))
         print('Maintenance blocked by preflight; see cluster/package state and active tasks')
         return

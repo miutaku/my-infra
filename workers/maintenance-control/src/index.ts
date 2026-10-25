@@ -192,7 +192,10 @@ export class MaintenanceFleet extends DurableObject<Env> {
         // Edit the prior message, and send a fresh reminder once daily for visibility.
         if (state.plan.messageId && state.plan.lastReminder !== jstDate(now)) {
           await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages`, 'POST', {
-            content: `${host} のメンテナンスは${state.plan.phase === 'held' ? '保留中' : '未完了'}です。\nhttps://discord.com/channels/${this.env.DISCORD_GUILD_ID}/${this.env.DISCORD_CHANNEL_ID}/${state.plan.messageId}`,
+            content: `${host} のメンテナンスは${state.plan.phase === 'held' ? '保留中' : '未完了'}です。\n予定: ${formatJst(state.plan.target)}（日本時間）\n` +
+              `理由: ${state.plan.reason ?? (state.plan.phase === 'held' ? '操作により保留されています。' : state.plan.phase === 'approval' ? 'この日時での承認を待っています。' : '予約した処理の完了を待っています。')}\n` +
+              (state.plan.phase === 'held' ? '再実行するには原因を確認した上で日時を指定し、改めて承認してください。\n' : '') +
+              `https://discord.com/channels/${this.env.DISCORD_GUILD_ID}/${this.env.DISCORD_CHANNEL_ID}/${state.plan.messageId}`,
             allowed_mentions: { parse: [] },
           });
         }
@@ -237,7 +240,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
         (outcome === 'failed' ? '\n他のPVE処理も手動確認まで停止します。' : ''), allowed_mentions: { parse: [] },
     });
   }
-  async result(host: Host, executionId: string, outcome: string, reason?: string): Promise<void> {
+  async result(host: Host, executionId: string, outcome: string, reason?: string, detail?: string): Promise<void> {
     const eventId = `result:${host}:${executionId}`;
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', eventId).toArray().length) return;
     const state = this.read(host);
@@ -245,16 +248,25 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (outcome === 'complete') state.plan = undefined;
     else {
       state.plan.phase = outcome === 'blocked' ? 'held' : 'failed';
+      const safeDetail = typeof detail === 'string' ? detail.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 600).trim() : '';
       state.plan.reason = outcome === 'blocked' ?
-        (reason === 'availability' ? '相手側のLoockit、または再起動対象外のホスト上のCloudflare Tunnelの稼働を確認できないため、再起動を保留しました。Loockitの切替・Tunnelの接続状態とホストのjournalを確認してください。監視基盤・VM・NASの退避は不要です。' :
-          '事前確認で停止しました。ホストのjournalを確認してください。') :
+        (safeDetail || (reason === 'availability' ? 'Loockitの相手側への切替、または再起動対象外のCloudflare Tunnelの正常性を確認できませんでした。ホストのjournalを確認してください。' :
+          '事前確認で停止しました。ホストのjournalを確認してください。')) :
         '処理に失敗しました。他のPVEも停止しています。手動確認が必要です。';
+      if (outcome === 'blocked') state.plan.reason += '\nOS再起動は行っていません。原因を確認後、日時指定と承認をやり直してください。';
       state.plan.revision = crypto.randomUUID();
       state.plan.notifiedRevision = undefined;
     }
     this.write(host, state);
+    if (outcome === 'blocked') {
+      this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)',
+        crypto.randomUUID().replaceAll('-', '').slice(0, 25), host, null,
+        `【再起動保留】${host}\n予定: ${formatJst(state.plan!.target)}（日本時間）\n理由: ${state.plan!.reason}` +
+        (state.plan!.messageId ? `\nhttps://discord.com/channels/${this.env.DISCORD_GUILD_ID}/${this.env.DISCORD_CHANNEL_ID}/${state.plan!.messageId}` : ''));
+    }
     this.ctx.storage.sql.exec('INSERT INTO events VALUES (?,?)', eventId, Date.now());
     this.audit(host, outcome);
+    await this.deliverCompletions(host);
     if (state.plan) await this.publish(host);
     else await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages`, 'POST', {
       content: `【完了】${host} のメンテナンスが完了しました。`, allowed_mentions: { parse: [] },
@@ -424,7 +436,8 @@ export default {
           return Response.json({ ok: true });
         }
         if (path === '/agent/result' && ['blocked', 'failed', 'complete'].includes(data.outcome)) {
-          await fleet.result(host, data.executionId, data.outcome, data.reason === 'availability' ? 'availability' : undefined);
+          await fleet.result(host, data.executionId, data.outcome, data.reason === 'availability' ? 'availability' : undefined,
+            typeof data.detail === 'string' ? data.detail : undefined);
           return Response.json({ ok: true });
         }
       } catch { return new Response('Request failed', { status: 400 }); }
