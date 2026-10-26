@@ -24,3 +24,15 @@ jobs:
             fi
           done
           exit "$failed"
+      - name: Check configured Ansible SSH access
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in miutaku@192.168.0.115 root@192.168.0.119; do
+            echo "Checking existing SSH access: $target"
+            ssh -o BatchMode=yes -o ConnectTimeout=5 -o ConnectionAttempts=1 \
+              -o StrictHostKeyChecking=accept-new \
+              -o UserKnownHostsFile="${RUNNER_TEMP}/mirakurun-known-hosts" \
+              "$target" 'id -un' || true
+          done
