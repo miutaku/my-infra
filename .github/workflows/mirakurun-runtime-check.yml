@@ -1,0 +1,26 @@
+name: Mirakurun runtime check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: talos-infra-admin
+    timeout-minutes: 5
+    steps:
+      - name: Check production and staging runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          for host in 192.168.20.132 192.168.20.142; do
+            echo "Mirakurun host: $host"
+            if ! curl -fsS --connect-timeout 5 --max-time 15 "http://$host:40772/api/status" |
+              jq '{version,process:{arch:.process.arch,platform:.process.platform,versions:.process.versions},errorCount,timerAccuracy}'; then
+              failed=1
+            fi
+          done
+          exit "$failed"
