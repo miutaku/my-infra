@@ -1,4 +1,10 @@
+FROM node:24.22.1-bookworm-slim AS node-runtime
+
 FROM chinachu/mirakurun:amd64-4.1.3
+
+COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
+ENV NODE_VERSION=24.22.1
+RUN node --version | grep -Fx v24.22.1
 
 # ビルド時に recpt1 / decrypt ライブラリをインストールしておくことで
 # コンテナ起動時の長時間ビルドを回避する。
