@@ -21,7 +21,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: web
-          image: ghcr.io/miutaku/coupon-manager-web:v0.1.1
+          image: ghcr.io/miutaku/coupon-manager-web:v0.1.2
           env:
             - name: ApiBaseUrl
               value: http://coupon-manager-api:8080
