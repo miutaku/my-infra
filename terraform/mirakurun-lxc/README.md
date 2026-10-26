@@ -14,7 +14,11 @@ terraform plan
 `TF_VAR_proxmox_api_token`はBWSから実行時に設定し、ファイルへ保存しない。
 
 OS/CTはTerraform、DHCP予約は`ansible/ix2215/dhcp-only.yml`、Mirakurun imageは
-`.github/workflows/mirakurun.yml`で管理する。Kubernetes内の
+`.github/workflows/mirakurun.yml`でビルド・公開する。このワークフローはLXC内の
+Dockerコンテナを再作成しないため、イメージ公開だけでは稼働中のLXCへ反映されない。
+LXCのイメージを切り替える際は録画中のtuner userがいないことを確認し、既存の
+環境変数・マウント・ポート・DVB device設定を保持する。
+Kubernetes内の
 `mirakurun.app-mirakurun.svc.cluster.local`はEndpointSlice経由でこのCTへ接続する。
 
 ホスト再起動後はCT起動前に `/dev/dvb/adapter{0..3}` が揃っている必要がある。
@@ -29,7 +33,9 @@ GR/BS双方のstream endpointからTS packetを受信できることとする。
 
 初回だけProxmoxホストから次を実行し、強制コマンド付きの専用アカウントをCTへ
 投入する。公開鍵はBWSの`MIRAKURUN_LXC_ADMIN_SSH_PUBLIC_KEY`から渡し、以後の
-状態確認とDVB修復は`Mirakurun LXC manage` workflowを使う。
+状態確認とDVB修復は専用SSHアカウントの`status`／`repair-dvb`強制コマンドを使う。
+これらのコマンドはイメージを更新しない。APIの実行バージョン確認には
+`Mirakurun runtime check` workflowを手動実行する。
 
 ```bash
 MIRAKURUN_ADMIN_PUBLIC_KEY="$(bws secret list | jq -er '.[] | select(.key == "MIRAKURUN_LXC_ADMIN_SSH_PUBLIC_KEY") | .value')" \
