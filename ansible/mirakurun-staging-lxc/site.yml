@@ -5,7 +5,7 @@
   gather_facts: false
   vars:
     ct_id: 12904
-    image: ghcr.io/miutaku/mirakurun:e47c455
+    image: ghcr.io/miutaku/mirakurun:487bcee
     channel_config: "{{ (lookup('file', '../../k8s/pve/mirakurun/mirakurun-configmap.yaml') | from_yaml).data['channels.yml'] }}"
   tasks:
     - name: Verify PX-S1UD firmware supplied by pve-firmware

@@ -10,4 +10,4 @@ resources:
 
 images:
   - name: ghcr.io/miutaku/mirakurun
-    newTag: e47c455
+    newTag: 487bcee
