@@ -1,4 +1,4 @@
-FROM node:24.22.1-bookworm-slim AS node-runtime
+FROM node:26.12.1-bookworm-slim AS node-runtime
 
 FROM chinachu/mirakurun:amd64-4.1.3
 
