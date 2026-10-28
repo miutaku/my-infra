@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-runner-tnlastation-compose
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set
+    targetRevision: 0.9.3
+    helm:
+      releaseName: tnlastation-compose
+      values: |
+        githubConfigUrl: https://github.com/miutaku/tnlastation-compose
+        githubConfigSecret: github-app-secret
+        runnerScaleSetName: tnlastation-compose
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-systems-gha-rs-controller
+        minRunners: 0
+        maxRunners: 1
+        containerMode:
+          type: dind
+        template:
+          spec:
+            automountServiceAccountToken: false
+            nodeSelector:
+              kubernetes.io/os: linux
+              kubernetes.io/arch: amd64
+              node.miutaku/platform: pve
+              node.miutaku/role: agent
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807
+                command: ["/home/runner/run.sh"]
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 512Mi
+                  limits:
+                    cpu: "2"
+                    memory: 2Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
