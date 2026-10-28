@@ -17,7 +17,7 @@ spec:
       releaseName: tnlastation-compose
       values: |
         githubConfigUrl: https://github.com/miutaku/tnlastation-compose
-        githubConfigSecret: github-app-secret
+        githubConfigSecret: github-token-secret
         runnerScaleSetName: tnlastation-compose
         controllerServiceAccount:
           namespace: arc-systems
