@@ -654,6 +654,13 @@
     "file": "k8s/pve/argocd-apps/arc-runner-reventer.yaml"
   },
   {
+    "id": "k8s/pve/argocd-apps/arc-runner-tnlastation-compose.yaml:Application:argocd:arc-runner-tnlastation-compose",
+    "type": "Application",
+    "name": "arc-runner-tnlastation-compose",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/arc-runner-tnlastation-compose.yaml"
+  },
+  {
     "id": "k8s/pve/argocd-apps/arc-runners-config.yaml:Application:argocd:arc-runners-config",
     "type": "Application",
     "name": "arc-runners-config",
