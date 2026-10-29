@@ -144,7 +144,7 @@ async function readJson(url: URL, token: string, label: string): Promise<unknown
   let response: Response;
   try {
     response = await fetch(url, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/json',
-      'User-Agent': 'my-infra-maintenance-observer/1.0' }, redirect: 'error',
+      'User-Agent': 'my-infra-maintenance-observer/1.0' }, redirect: 'manual',
     signal: AbortSignal.timeout(30_000) });
   } catch (error) {
     const reason = (error instanceof Error ? error.message : '外部への接続失敗')

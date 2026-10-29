@@ -132,7 +132,7 @@ describe('Grafana inspection adapter', () => {
     });
     const result = await inspectEnvironment({ GRAFANA_URL: 'https://grafana.invalid', GRAFANA_READ_TOKEN: 'secret-value', HOME_METRICS_UID: 'home' });
     expect(requests).toHaveLength(4);
-    expect(requests.every(init => init.redirect === 'error' && init.method === undefined && init.body === undefined)).toBe(true);
+    expect(requests.every(init => init.redirect === 'manual' && init.method === undefined && init.body === undefined)).toBe(true);
     expect(result.error).toBeDefined();
     expect(result.error).toContain('HTTP 403');
     expect(JSON.stringify(result)).not.toContain('secret-value');
@@ -143,5 +143,14 @@ describe('Grafana inspection adapter', () => {
     expect(result.error).toContain('network');
     expect(result.error).not.toContain('secret-value');
     expect(result.error).not.toContain('grafana.invalid');
+  });
+  it('rejects redirects without issuing an authenticated request to the destination', async () => {
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', {
+      status: 302, headers: { Location: 'https://untrusted.invalid' },
+    }));
+    const result = await inspectEnvironment({ GRAFANA_URL: 'https://grafana.invalid', GRAFANA_READ_TOKEN: 'secret-value', HOME_METRICS_UID: 'home' });
+    expect(result.error).toContain('HTTP 302');
+    expect(request.mock.calls.every(([url]) => new URL(String(url)).hostname === 'grafana.invalid')).toBe(true);
+    expect(request).toHaveBeenCalledTimes(4);
   });
 });
