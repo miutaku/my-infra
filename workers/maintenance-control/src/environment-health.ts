@@ -48,7 +48,7 @@ export function parseInspection(ruleResponse: unknown, samples: unknown, ages: u
     for (const entry of array(object(group).rules)) {
       const rule = object(entry);
       if (rule.type !== 'alerting') continue;
-      const common = labels(rule.labels);
+      const common = labels(rule.labels ?? {});
       if (common.environment !== 'home' || common.managed_by !== 'terraform') continue;
       if (typeof rule.uid !== 'string' || typeof rule.name !== 'string' || rule.health !== 'ok' ||
           !Number.isFinite(Date.parse(String(rule.lastEvaluation))) ||
@@ -139,10 +139,15 @@ export function observeGate(gate: HealthGate, inspection: Inspection, now: numbe
   }
   return 'waiting';
 }
-async function readJson(url: URL, token: string): Promise<unknown> {
-  const response = await fetch(url, { headers: { Authorization: 'Bearer ' + token }, redirect: 'error',
+class ObservationError extends Error {}
+async function readJson(url: URL, token: string, label: string): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetch(url, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/json',
+      'User-Agent': 'my-infra-maintenance-observer/1.0' }, redirect: 'error',
     signal: AbortSignal.timeout(10_000) });
-  if (!response.ok) throw new Error('Grafana HTTP ' + response.status);
+  } catch { throw new ObservationError(label + ': ネットワーク、リダイレクト、またはタイムアウト'); }
+  if (!response.ok) throw new ObservationError(label + ': HTTP ' + response.status);
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Empty Grafana response');
   let size = 0;
@@ -151,13 +156,14 @@ async function readJson(url: URL, token: string): Promise<unknown> {
     const { value, done } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > 4 * 1024 * 1024) { await reader.cancel(); throw new Error('Grafana response exceeds limit'); }
+    if (size > 4 * 1024 * 1024) { await reader.cancel(); throw new ObservationError(label + ': 応答サイズの上限超過'); }
     chunks.push(value);
   }
   const body = new Uint8Array(size);
   let offset = 0;
   for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.length; }
-  return JSON.parse(new TextDecoder().decode(body));
+  try { return JSON.parse(new TextDecoder().decode(body)); }
+  catch { throw new ObservationError(label + ': JSON以外、または不完全な応答'); }
 }
 export async function inspectEnvironment(config: { GRAFANA_URL: string; GRAFANA_READ_TOKEN: string; HOME_METRICS_UID: string }): Promise<Inspection> {
   try {
@@ -169,10 +175,10 @@ export async function inspectEnvironment(config: { GRAFANA_URL: string; GRAFANA_
       url.searchParams.set('query', expression); return url;
     };
     const [rules, signals, ages, alerts] = await Promise.all([
-      readJson(new URL('/api/prometheus/grafana/api/v1/rules', base), config.GRAFANA_READ_TOKEN),
-      readJson(query(SIGNAL_QUERY), config.GRAFANA_READ_TOKEN),
-      readJson(query(SIGNAL_AGE_QUERY), config.GRAFANA_READ_TOKEN),
-      readJson(new URL('/api/alertmanager/grafana/api/v2/alerts', base), config.GRAFANA_READ_TOKEN),
+      readJson(new URL('/api/prometheus/grafana/api/v1/rules', base), config.GRAFANA_READ_TOKEN, 'Alert Rule'),
+      readJson(query(SIGNAL_QUERY), config.GRAFANA_READ_TOKEN, '監視値'),
+      readJson(query(SIGNAL_AGE_QUERY), config.GRAFANA_READ_TOKEN, '監視値の鮮度'),
+      readJson(new URL('/api/alertmanager/grafana/api/v2/alerts', base), config.GRAFANA_READ_TOKEN, 'Alertmanager'),
     ]);
     return parseInspection(rules, signals, ages, Date.now(), alerts);
   } catch (error) {
@@ -184,7 +190,7 @@ export async function inspectEnvironment(config: { GRAFANA_URL: string; GRAFANA_
       'Metrics query failed': 'メトリクスのクエリ失敗',
       'Missing monitor configuration': '監視接続設定が不完全です',
     };
-    const detail = /^Grafana HTTP \d{3}$/.test(reason) ? reason : known[reason] || '接続または応答形式の異常';
+    const detail = error instanceof ObservationError ? reason : known[reason] || '接続または応答形式の異常';
     return { at: Date.now(), error: 'Grafanaの環境確認ができません: ' + detail + '。監視設定、権限、接続、データの鮮度を確認してください。',
       alarms: [], signals: [], rules: [] };
   }

@@ -134,6 +134,7 @@ describe('Grafana inspection adapter', () => {
     expect(requests).toHaveLength(4);
     expect(requests.every(init => init.redirect === 'error' && init.method === undefined && init.body === undefined)).toBe(true);
     expect(result.error).toBeDefined();
+    expect(result.error).toContain('HTTP 403');
     expect(JSON.stringify(result)).not.toContain('secret-value');
   });
 });
