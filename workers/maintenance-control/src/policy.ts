@@ -2,6 +2,10 @@ export const HOSTS = ['dev-app-server', 'pve-x570', 'pve-b550m'] as const;
 export type Host = typeof HOSTS[number];
 export const isHost = (value: string): value is Host => HOSTS.some(host => host === value);
 export const isPve = (host: Host) => host.startsWith('pve-');
+export const REBOOT_GAP = 3600_000;
+const REBOOT_HOURS: Record<Host, string> = {
+  'dev-app-server': '05', 'pve-x570': '06', 'pve-b550m': '07',
+};
 export interface Snapshot {
   bootId: string;
   required: boolean;
@@ -22,16 +26,18 @@ export interface Plan {
   advanceNotice?: { target: number; nonce: string; sent: boolean };
   reason?: string;
   executionId?: string;
+  defaultSlot?: boolean;
 }
 export interface RecordState {
   snapshot?: Snapshot;
   plan?: Plan;
+  lastRebootStartedAt?: number;
 }
 export function jstDate(now: number): string {
   return new Date(now + 9 * 3600_000).toISOString().slice(0, 10);
 }
-export function nextMorning(now: number): number {
-  return Date.parse(`${jstDate(now)}T05:00:00+09:00`) + 86400_000;
+export function nextMorning(now: number, host: Host = 'dev-app-server'): number {
+  return Date.parse(`${jstDate(now)}T${REBOOT_HOURS[host]}:00:00+09:00`) + 86400_000;
 }
 export function formatJst(target: number): string {
   return new Date(target + 9 * 3600_000).toISOString().slice(0, 16).replace('T', ' ');

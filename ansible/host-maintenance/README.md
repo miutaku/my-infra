@@ -18,7 +18,11 @@ controllerは`https://maintenance.miutaku.work`を使い、追加のAccess資格
 Accessと既存Bearerの両方を送信する。認証付きリクエストはリダイレクトしない。
 
 PVEのguest停止やVM移行をこのplaybookから実行することはない。
-PVEは毎日18時台にパッケージを自動更新し、OS再起動が必要なら19時に通知する。
+PVEの更新時刻はinventoryの`host_maintenance_update_hour`でホストごとに管理する。
+pve-x570は毎日17時台、pve-b550mは18時台にパッケージを自動更新し、OS再起動が必要なら19時に通知する。
+各タイマーには最大15分のランダム遅延を付け、PVE間の排他は維持する。
+再起動候補はVMが翌朝05:00、pve-x570が06:00、pve-b550mが07:00とし、
+手動指定を含む時刻の分離はcontrollerで検証する。いずれも日本時間。
 OS再起動だけがDiscordでの日時指定・承認と事前確認を必要とする。
 一般の稼働中VM/CTがあっても承認済みOS再起動を許可し、guestの停止・起動はPVE標準処理に任せる。
 可用性の保護対象はLoockitとCloudflare Tunnelとする。監視基盤は対象外。Kubernetes・NASを含むVMの退避やNFSの到達性は要求しない。

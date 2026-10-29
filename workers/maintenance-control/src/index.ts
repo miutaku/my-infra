@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { LEASE_PATH, LEASE_NAME } from './loockit-lease';
 import { datePickerInteraction } from './date-picker';
 export { LoockitLease } from './loockit-lease';
-import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due, ScheduleInputError, validateLeadTime,
+import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due, ScheduleInputError, validateLeadTime, REBOOT_GAP,
   type Host, type Plan, type Snapshot, type RecordState } from './policy';
 
 type Interaction = {
@@ -13,7 +13,7 @@ type Interaction = {
 };
 const reply = (content: string) => ({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] } } });
 
-// These three hosts share a maintenance group: its object serializes PVE execution.
+// These three hosts share one object to serialize reboot and package-update execution.
 export class MaintenanceFleet extends DurableObject<Env> {
   private delivering = new Set<Host>();
   private reminding = new Set<Host>();
@@ -33,6 +33,42 @@ export class MaintenanceFleet extends DurableObject<Env> {
   }
   private audit(host: Host, action: string, actor?: string): void {
     console.log(JSON.stringify({ event: 'maintenance', host, action, actor }));
+  }
+  private conflictingReboot(host: Host, target: number): { host: Host; target: number; label: string } | undefined {
+    for (const other of HOSTS) {
+      if (other === host) continue;
+      const state = this.read(other);
+      const plan = state.plan;
+      if (plan && !['held', 'failed'].includes(plan.phase) && Math.abs(plan.target - target) < REBOOT_GAP) {
+        return { host: other, target: plan.target, label: '予定' };
+      }
+      if (state.lastRebootStartedAt !== undefined && Math.abs(state.lastRebootStartedAt - target) < REBOOT_GAP) {
+        return { host: other, target: state.lastRebootStartedAt, label: '実行開始' };
+      }
+    }
+  }
+  private availableTarget(host: Host, target: number): number {
+    while (this.conflictingReboot(host, target)) target += REBOOT_GAP;
+    return target;
+  }
+  private validateSeparation(host: Host, target: number): void {
+    const conflict = this.conflictingReboot(host, target);
+    if (conflict) throw new ScheduleInputError(`${conflict.host} の${conflict.label} ${formatJst(conflict.target)}（日本時間）から1時間以上空けてください。`);
+  }
+  private alignLegacySlot(host: Host, state: RecordState, now: number): boolean {
+    const plan = state.plan;
+    if (!plan || plan.defaultSlot !== undefined || ['running', 'failed'].includes(plan.phase)) return false;
+    plan.defaultSlot = formatJst(plan.target).endsWith(' 05:00');
+    if (!isPve(host) || !plan.defaultSlot) return false;
+    const sameDay = nextMorning(plan.target - 86400_000, host);
+    plan.target = this.availableTarget(host, sameDay >= now + 10 * 60_000 ? sameDay : nextMorning(now, host));
+    if (plan.phase !== 'held') plan.phase = 'approval';
+    plan.revision = crypto.randomUUID();
+    plan.notifiedRevision = undefined;
+    plan.advanceNotice = undefined;
+    plan.reason = (plan.reason ? `${plan.reason}\n` : '') +
+      'VM/PVEの再起動間隔を空けるため予定時刻を変更しました。変更後の日時で承認してください。';
+    return true;
   }
   private async discord(path: string, method: string, payload: object): Promise<{ id: string }> {
     const response = await fetch(`https://discord.com/api/v10${path}`, {
@@ -152,8 +188,10 @@ export class MaintenanceFleet extends DurableObject<Env> {
         this.audit(host, 'obsolete-plan-cleared');
       }
     }
+    const realigned = this.alignLegacySlot(host, state, snapshot.observedAt);
     this.write(host, state);
     await this.deliverCompletions(host);
+    if (realigned) await this.publish(host);
     if (plan && !state.plan && !recovered && plan.messageId) {
       try {
         await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages/${plan.messageId}`, 'PATCH', {
@@ -170,10 +208,11 @@ export class MaintenanceFleet extends DurableObject<Env> {
       await this.deliverCompletions(host);
       const state = this.read(host);
       const snapshot = state.snapshot;
+      if (this.alignLegacySlot(host, state, now)) this.write(host, state);
       if (!state.plan && snapshot && now - snapshot.observedAt <= 10 * 60_000 &&
           snapshot.required) {
         state.plan = {
-          revision: crypto.randomUUID(), target: nextMorning(now),
+          revision: crypto.randomUUID(), target: this.availableTarget(host, nextMorning(now, host)), defaultSlot: true,
           phase: isPve(host) ? 'approval' : 'scheduled', bootId: snapshot.bootId,
           fingerprint: snapshot.fingerprint,
         };
@@ -182,7 +221,8 @@ export class MaintenanceFleet extends DurableObject<Env> {
       if (!state.plan || ['running', 'failed'].includes(state.plan.phase)) continue;
       if (state.plan.phase === 'scheduled' && now >= state.plan.target + 5 * 60_000) {
         state.plan.phase = isPve(host) ? 'approval' : 'scheduled';
-        state.plan.target = nextMorning(now);
+        state.plan.target = this.availableTarget(host, nextMorning(now, host));
+        state.plan.defaultSlot = true;
         state.plan.revision = crypto.randomUUID();
         state.plan.notifiedRevision = undefined;
         state.plan.reason = '実行枠を過ぎたため、次の候補日時へ持ち越しました。';
@@ -205,13 +245,16 @@ export class MaintenanceFleet extends DurableObject<Env> {
   }
   async claim(host: Host): Promise<{ executionId: string; target: number; fingerprint: string } | null> {
     const state = this.read(host);
-    if (!due(host, state, Date.now())) return null;
-    if (isPve(host) && this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length) return null;
-    if (isPve(host) && HOSTS.some(other => isPve(other) && other !== host &&
-      ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
+    const now = Date.now();
+    if (!due(host, state, now)) return null;
+    if (this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length) return null;
+    if (HOSTS.some(other => other !== host && (
+      ['running', 'failed'].includes(this.read(other).plan?.phase ?? '') ||
+      now - (this.read(other).lastRebootStartedAt ?? -Infinity) < REBOOT_GAP))) return null;
     const plan = state.plan!;
     plan.phase = 'running';
     plan.executionId = crypto.randomUUID();
+    state.lastRebootStartedAt = now;
     this.write(host, state);
     this.audit(host, 'execution-claimed');
     return { executionId: plan.executionId, target: plan.target, fingerprint: plan.fingerprint };
@@ -220,7 +263,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     const snapshot = this.read(host).snapshot;
     if (!isPve(host) || !snapshot?.healthy || Date.now() - snapshot.observedAt > 120_000 ||
         this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length ||
-        HOSTS.some(other => isPve(other) && ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
+        HOSTS.some(other => ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
     const executionId = crypto.randomUUID();
     this.ctx.storage.sql.exec('INSERT INTO package_update (id,host,execution) VALUES (1,?,?)', host, executionId);
     this.audit(host, 'automatic-update-claimed');
@@ -327,16 +370,18 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', input.id).toArray().length) return '処理済みです。';
     if (action === 'hold') plan.phase = 'held';
     else if (action === 'defer') {
-      plan.target = Math.max(plan.target, nextMorning(now) - 86400_000) + 86400_000;
+      plan.target = Math.max(plan.target, nextMorning(now, name) - 86400_000) + 86400_000;
       plan.phase = isPve(name) ? 'approval' : 'scheduled';
     } else if (action === 'date-submit') {
       const text = input.data?.components?.flatMap(row => row.components).find(item => item.custom_id === 'target')?.value ?? '';
       plan.target = parseJst(text, now);
+      plan.defaultSlot = false;
       plan.phase = isPve(name) ? 'approval' : 'scheduled';
     } else if (action === 'approve' && isPve(name)) {
       validateLeadTime(plan.target, now);
       plan.phase = 'scheduled';
     } else throw new ScheduleInputError('不明な操作です。');
+    if (action !== 'hold') this.validateSeparation(name, plan.target);
     plan.revision = crypto.randomUUID();
     plan.notifiedRevision = undefined;
     plan.reason = undefined;

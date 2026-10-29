@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { createExecutionContext, runInDurableObject, waitOnExecutionContext } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
 import worker from '../src/index';
-import { due, parseJst, nextMorning, formatJst, type Host, type RecordState } from '../src/policy';
+import { due, parseJst, nextMorning, formatJst, HOSTS, REBOOT_GAP, type Host, type RecordState } from '../src/policy';
 
 type DiscordPayload = { content: string; nonce?: string; enforce_nonce?: boolean; components?: unknown[] };
 
@@ -466,6 +466,160 @@ describe('maintenance scheduling', () => {
   });
 });
 
+describe('staggered maintenance', () => {
+  it.each(['2026-10-29', '2026-12-31'])('uses distinct next-day slots after %s', day => {
+    const now = Date.parse(`${day}T19:00:00+09:00`);
+    const targets = HOSTS.map(host => nextMorning(now, host));
+    expect(targets.map(value => formatJst(value).slice(11))).toEqual(['05:00', '06:00', '07:00']);
+    expect(targets[1] - targets[0]).toBe(REBOOT_GAP);
+    expect(targets[2] - targets[1]).toBe(REBOOT_GAP);
+    expect(formatJst(targets[0]).slice(0, 10)).not.toBe(day);
+  });
+  it('creates separated default plans and keeps both PVE hosts unapproved', async () => {
+    const target = stub();
+    for (const host of HOSTS) await seed(target, host, { snapshot: fixture().snapshot });
+    await target.tick();
+    const plans = await Promise.all(HOSTS.map(async host => (await read(target, host)).plan!));
+    expect(plans.map(p => formatJst(p.target).slice(11))).toEqual(['05:00', '06:00', '07:00']);
+    expect(plans.map(p => p.phase)).toEqual(['scheduled', 'approval', 'approval']);
+  });
+  it('finds a free automatic slot around an existing custom date', async () => {
+    const target = stub();
+    const vm = fixture();
+    vm.plan!.target = nextMorning(Date.now(), 'pve-x570') + REBOOT_GAP / 2;
+    vm.plan!.defaultSlot = false;
+    await seed(target, 'dev-app-server', vm);
+    for (const host of ['pve-x570', 'pve-b550m'] as const) await seed(target, host, { snapshot: fixture().snapshot });
+    await target.tick();
+    const plans = await Promise.all(HOSTS.map(async host => (await read(target, host)).plan!));
+    for (let i = 0; i < plans.length; i++) for (let j = i + 1; j < plans.length; j++) {
+      expect(Math.abs(plans[i].target - plans[j].target)).toBeGreaterThanOrEqual(REBOOT_GAP);
+    }
+    expect(plans[0].target).toBe(vm.plan!.target);
+  });
+  it.each([0, 59, -59])('rejects custom dates %i minutes from another host without changing state', async minutes => {
+    const target = stub();
+    const vm = fixture();
+    vm.plan!.target = nextMorning(Date.now());
+    await seed(target, 'dev-app-server', vm);
+    const pve = fixture('approval');
+    await seed(target, 'pve-x570', pve);
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target',
+        value: formatJst(vm.plan!.target + minutes * 60_000) }] }],
+    } });
+    expect(result).toMatchObject({ ok: false, content: expect.stringContaining('1時間以上') });
+    expect(await read(target, 'pve-x570')).toEqual(pve);
+  });
+  it('accepts a custom date exactly one hour away and preserves it on reports', async () => {
+    const target = stub();
+    const vm = fixture();
+    vm.plan!.target = nextMorning(Date.now());
+    await seed(target, 'dev-app-server', vm);
+    await seed(target, 'pve-x570', fixture('approval'));
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target',
+        value: formatJst(vm.plan!.target + REBOOT_GAP) }] }],
+    } });
+    expect(result.ok).toBe(true);
+    const state = await read(target, 'pve-x570');
+    await target.report('pve-x570', state.snapshot!);
+    expect((await read(target, 'pve-x570')).plan).toEqual(state.plan);
+  });
+  it('checks separation again at approval and postponement', async () => {
+    for (const action of ['approve', 'defer'] as const) {
+      const target = stub();
+      const pve = fixture('approval');
+      pve.plan!.target = nextMorning(Date.now(), 'pve-x570');
+      const vm = fixture();
+      vm.plan!.target = pve.plan!.target + (action === 'defer' ? 86400_000 : 0);
+      await seed(target, 'dev-app-server', vm);
+      await seed(target, 'pve-x570', pve);
+      expect(await target.interaction(interaction('pve-x570', action))).toMatchObject({ ok: false,
+        content: expect.stringContaining('1時間以上') });
+      expect(await read(target, 'pve-x570')).toEqual(pve);
+    }
+  });
+  it.each(['scheduled', 'approval', 'held'] as const)('realigns legacy 05:00 PVE plans while preserving a %s hold or requiring new approval', async phase => {
+    const target = stub();
+    const state = fixture(phase);
+    state.plan!.target = nextMorning(Date.now());
+    await seed(target, 'pve-x570', state);
+    await target.report('pve-x570', state.snapshot!);
+    const plan = (await read(target, 'pve-x570')).plan!;
+    expect(formatJst(plan.target).slice(11)).toBe('06:00');
+    expect(plan.phase).toBe(phase === 'held' ? 'held' : 'approval');
+    expect(plan.revision).not.toBe('rev');
+    expect(plan.notifiedRevision).toBe(plan.revision);
+    expect((await target.interaction(interaction('pve-x570', 'approve'))).ok).toBe(false);
+  });
+  it('also realigns legacy dates through the daily tick and rolls expired dates forward', async () => {
+    const target = stub();
+    const state = fixture('approval');
+    state.plan!.target = nextMorning(Date.now()) - 2 * 86400_000;
+    await seed(target, 'pve-b550m', state);
+    await target.tick();
+    const plan = (await read(target, 'pve-b550m')).plan!;
+    expect(plan.target).toBe(nextMorning(Date.now(), 'pve-b550m'));
+    expect(plan.phase).toBe('approval');
+  });
+  it('preserves an explicit 05:00 custom date and existing nondefault dates', async () => {
+    for (const explicit of [true, false]) {
+      const target = stub();
+      const state = fixture('approval');
+      state.plan!.target = nextMorning(Date.now()) + (explicit ? 0 : 2 * REBOOT_GAP);
+      if (explicit) state.plan!.defaultSlot = false;
+      await seed(target, 'pve-b550m', state);
+      await target.report('pve-b550m', state.snapshot!);
+      expect((await read(target, 'pve-b550m')).plan!.target).toBe(state.plan!.target);
+    }
+  });
+  it('serializes VM and PVE starts and keeps a one-hour gap after recovery', async () => {
+    const target = stub();
+    await seed(target, 'dev-app-server', fixture());
+    await seed(target, 'pve-x570', fixture());
+    const claims = await Promise.all([target.claim('dev-app-server'), target.claim('pve-x570')]);
+    expect(claims.filter(Boolean)).toHaveLength(1);
+    const first = claims[0] ? 'dev-app-server' : 'pve-x570';
+    const other = first === 'dev-app-server' ? 'pve-x570' : 'dev-app-server';
+    const state = await read(target, first);
+    await target.report(first, { ...state.snapshot!, bootId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' });
+    expect((await read(target, first)).plan).toBeUndefined();
+    expect(await target.claim(other)).toBeNull();
+    const recovered = await read(target, first);
+    recovered.lastRebootStartedAt = Date.now() - REBOOT_GAP - 1000;
+    await seed(target, first, recovered);
+    expect(await target.claim(other)).not.toBeNull();
+  });
+  it('rejects manual dates near a completed reboot even after its plan was removed', async () => {
+    const target = stub();
+    await seed(target, 'dev-app-server', { snapshot: fixture().snapshot, lastRebootStartedAt: Date.now() });
+    const pve = fixture('approval');
+    await seed(target, 'pve-x570', pve);
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target',
+        value: formatJst(Date.now() + 30 * 60_000) }] }],
+    } });
+    expect(result).toMatchObject({ ok: false, content: expect.stringContaining('実行開始') });
+    expect(await read(target, 'pve-x570')).toEqual(pve);
+  });
+  it('never releases a running VM or PVE merely because one hour passed', async () => {
+    for (const first of ['dev-app-server', 'pve-x570'] as const) {
+      const target = stub();
+      const active = fixture();
+      active.plan!.phase = 'running';
+      active.plan!.target = Date.now() - 2 * REBOOT_GAP;
+      active.lastRebootStartedAt = active.plan!.target;
+      await seed(target, first, active);
+      const other = first === 'dev-app-server' ? 'pve-x570' : 'dev-app-server';
+      await seed(target, other, fixture());
+      await seed(target, 'pve-b550m', { snapshot: fixture().snapshot });
+      expect(await target.claim(other)).toBeNull();
+      expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    }
+  });
+});
+
 describe('public ingress', () => {
   it.each([
     ['maintenance-discord.miutaku.work', '/agent/auth-check'],
@@ -553,7 +707,7 @@ describe('Discord signature and operator authorization', () => {
   it.each(['modal', 'picker'])('includes approval buttons after a deferred %s confirmation', async mode => {
     const target = env.FLEET.getByName('home-pve');
     await seed(target, 'pve-x570', fixture('approval'));
-    const selectedTarget = nextMorning(Date.now());
+    const selectedTarget = nextMorning(Date.now(), 'pve-x570');
     const { request, config } = await signedRequest({
       ...interaction('pve-x570', 'date-submit'), type: mode === 'modal' ? 5 : 3, guild_id: 'guild', channel_id: 'channel',
       data: mode === 'picker' ? { custom_id: `pve-x570:rev:pick-submit:${selectedTarget}:0` } : { custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{

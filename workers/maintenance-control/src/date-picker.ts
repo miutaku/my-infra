@@ -50,7 +50,7 @@ export function datePickerInteraction(id: string, values: string[] = [], now = D
   return { type: action === 'date' ? 4 : 7, data: {
     ...(action === 'date' ? { flags: 64 } : {}),
     content: `${host}: 再起動日時を選択（日本時間）\n選択中: ${text}\n日付・時・分を選び「この日時に設定」を押してください。分は5分刻みです。\n` +
-      (error || '10分以上先・90日以内に設定できます。PVEは設定後に承認が必要です。'),
+      (error || '10分以上先・90日以内、他ホストの予定から1時間以上空けてください。PVEは設定後に承認が必要です。'),
     allowed_mentions: { parse: [] },
     components: [
       select('day', `日付を選択（${page + 1}/4ページ）`, days),
