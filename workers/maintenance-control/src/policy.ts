@@ -4,7 +4,7 @@ export const isHost = (value: string): value is Host => HOSTS.some(host => host 
 export const isPve = (host: Host) => host.startsWith('pve-');
 export const REBOOT_GAP = 3600_000;
 const REBOOT_HOURS: Record<Host, string> = {
-  'dev-app-server': '05', 'pve-x570': '06', 'pve-b550m': '07',
+  'dev-app-server': '05', 'pve-x570': '20', 'pve-b550m': '21',
 };
 export interface Snapshot {
   bootId: string;
@@ -27,6 +27,7 @@ export interface Plan {
   reason?: string;
   executionId?: string;
   defaultSlot?: boolean;
+  eveningWindow?: boolean;
 }
 export interface RecordState {
   snapshot?: Snapshot;
@@ -37,7 +38,16 @@ export function jstDate(now: number): string {
   return new Date(now + 9 * 3600_000).toISOString().slice(0, 10);
 }
 export function nextMorning(now: number, host: Host = 'dev-app-server'): number {
-  return Date.parse(`${jstDate(now)}T${REBOOT_HOURS[host]}:00:00+09:00`) + 86400_000;
+  const today = Date.parse(`${jstDate(now)}T${REBOOT_HOURS[host]}:00:00+09:00`);
+  return isPve(host) && today >= now + 10 * 60_000 ? today : today + 86400_000;
+}
+export function rebootWindowEnd(host: Host, target: number): number {
+  return isPve(host) ? Date.parse(`${jstDate(target)}T00:00:00+09:00`) + 86400_000 : target + 5 * 60_000;
+}
+export function validateRebootWindow(host: Host, target: number): void {
+  if (isPve(host) && Number(formatJst(target).slice(11, 13)) < 20) {
+    throw new ScheduleInputError('PVEの再起動は日本時間20:00〜23:59に指定してください。');
+  }
 }
 export function formatJst(target: number): string {
   return new Date(target + 9 * 3600_000).toISOString().slice(0, 16).replace('T', ' ');
@@ -63,6 +73,7 @@ export function due(host: Host, state: RecordState, now: number): boolean {
   const { plan, snapshot } = state;
   return !!plan && !!snapshot && plan.phase === 'scheduled' &&
     plan.notifiedRevision === plan.revision && snapshot.healthy &&
-    now - snapshot.observedAt < 120_000 && now >= plan.target && now < plan.target + 5 * 60_000 &&
+    now - snapshot.observedAt < 120_000 && now >= plan.target && now < rebootWindowEnd(host, plan.target) &&
+    (!isPve(host) || (plan.eveningWindow === true && Number(formatJst(now).slice(11, 13)) >= 20 && Number(formatJst(plan.target).slice(11, 13)) >= 20)) &&
     snapshot.bootId === plan.bootId && snapshot.required;
 }

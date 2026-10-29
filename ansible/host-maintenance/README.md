@@ -21,11 +21,17 @@ PVEのguest停止やVM移行をこのplaybookから実行することはない�
 PVEの更新時刻はinventoryの`host_maintenance_update_hour`でホストごとに管理する。
 pve-x570は毎日17時台、pve-b550mは18時台にパッケージを自動更新し、OS再起動が必要なら19時に通知する。
 各タイマーには最大15分のランダム遅延を付け、PVE間の排他は維持する。
-再起動候補はVMが翌朝05:00、pve-x570が06:00、pve-b550mが07:00とし、
+再起動候補はVMが翌朝05:00、pve-x570が20:00、pve-b550mが21:00とし、
 手動指定を含む時刻の分離はcontrollerで検証する。いずれも日本時間。
+PVEは候補時刻以降、同日24時まで環境確認の完了を待つ。agentも最終事前確認後に夜間枠を再確認する。
+更新の実行権を取得できなかった場合は`/var/lib/host-maintenance/update-request.json`へ要求を保存し、
+毎分のagentが再試行する。APT実行中・失敗時のjournalを無視して自動再実行しない。
+承認済みの再起動は未実行の更新要求より優先し、実行中の更新・環境確認とは排他する。
 OS再起動だけがDiscordでの日時指定・承認と事前確認を必要とする。
 一般の稼働中VM/CTがあっても承認済みOS再起動を許可し、guestの停止・起動はPVE標準処理に任せる。
-可用性の保護対象はLoockitとCloudflare Tunnelとする。監視基盤は対象外。Kubernetes・NASを含むVMの退避やNFSの到達性は要求しない。
+切替前の可用性条件はLoockitとCloudflare Tunnelとする。Kubernetes・NASを含むVMの自動退避は行わない。
+処理後はGrafanaのhome環境の評価・欠測・機能監視を確認し、10分間安定するまで次のPVE処理を開始しない。
+最大60分で環境確認を保留し、原因と復旧を確認してから`--recover`する。詳細な判定基準はcontroller READMEを参照。
 承認済みの実行時だけLoockitを相手へ切り替える。相手が既にreadyなら停止操作は不要。
 相手が正常な待機系で、再起動対象以外のTunnelが利用可能なら、ローカルLXC内の`loockit`コンテナだけを停止する。
 相手の`/readyz`が200になるまで最大480秒待ち、ローカルを起動して待機系へ戻してから相手のreadyを再確認する。

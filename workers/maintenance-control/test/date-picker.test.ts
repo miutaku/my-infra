@@ -15,7 +15,7 @@ describe('date selection without text input', () => {
     const result = view();
     expect(result.type).toBe(4);
     expect(result.data.flags).toBe(64);
-    expect(result.data.content).toContain('2026-10-22 17:25');
+    expect(result.data.content).toContain('2026-10-22 20:00');
     expect(result.data.components).toHaveLength(4);
     for (const row of result.data.components) for (const component of row.components) {
       expect(component.custom_id.length).toBeLessThanOrEqual(100);
@@ -25,12 +25,12 @@ describe('date selection without text input', () => {
   it('retains day, hour and minute selections until confirmation', () => {
     let result = view();
     result = view(result.data.components[0].components[0].custom_id, ['2026-10-23']);
-    result = view(result.data.components[1].components[0].custom_id, ['05']);
+    result = view(result.data.components[1].components[0].custom_id, ['21']);
     result = view(result.data.components[2].components[0].custom_id, ['35']);
     expect(result.type).toBe(7);
-    expect(result.data.content).toContain('2026-10-23 05:35');
+    expect(result.data.content).toContain('2026-10-23 21:35');
     expect(datePickerInteraction(result.data.components[3].components[2].custom_id, [], now)).toEqual({
-      customId: 'pve-x570:revision:date-submit', target: '2026-10-23 05:35',
+      customId: 'pve-x570:revision:date-submit', target: '2026-10-23 21:35',
     });
   });
   it('pages through the entire 90-day date range without losing the draft', () => {
@@ -40,7 +40,7 @@ describe('date selection without text input', () => {
       const menu = result.data.components[0].components[0];
       if (!('options' in menu)) throw new Error('Expected date menu');
       days.push(...menu.options.map(option => option.value));
-      expect(result.data.content).toContain('2026-10-22 17:25');
+      expect(result.data.content).toContain('2026-10-22 20:00');
       result = view(result.data.components[3].components[1].custom_id);
     }
     expect(days).toHaveLength(91);
@@ -51,16 +51,17 @@ describe('date selection without text input', () => {
     expect(result.data.components[0].components[0]).toMatchObject({ placeholder: '日付を選択（3/4ページ）' });
   });
   it('explains too-soon times, disables confirmation, and rechecks after time passes', () => {
-    let result = view();
-    result = view(result.data.components[2].components[0].custom_id, ['10']);
-    expect(result.data.content).toContain('2026-10-22 17:19 以降');
+    const evening = Date.parse('2026-10-22T20:08:12+09:00');
+    let result = view(root, [], evening);
+    result = view(result.data.components[2].components[0].custom_id, ['10'], evening);
+    expect(result.data.content).toContain('2026-10-22 20:19 以降');
     expect(result.data.components[3].components[2]).toMatchObject({ disabled: true });
-    expect(() => datePickerInteraction(result.data.components[3].components[2].custom_id, [], now)).toThrow(ScheduleInputError);
-    result = view();
-    expect(() => datePickerInteraction(result.data.components[3].components[2].custom_id, [], now + 10 * 60_000)).toThrow('10分以上先');
+    expect(() => datePickerInteraction(result.data.components[3].components[2].custom_id, [], evening)).toThrow(ScheduleInputError);
+    result = view(root, [], evening);
+    expect(() => datePickerInteraction(result.data.components[3].components[2].custom_id, [], evening + 10 * 60_000)).toThrow('10分以上先');
   });
   it('handles midnight and year changes and rejects manipulated selections', () => {
-    expect(view(root, [], Date.parse('2026-12-31T23:55:00+09:00')).data.content).toContain('2027-01-01 00:10');
+    expect(view(root, [], Date.parse('2026-12-31T23:55:00+09:00')).data.content).toContain('2027-01-01 20:00');
     for (const suffix of ['pick-day:NaN:0', 'pick-next:0:99', 'pick-hour:0:-1']) {
       expect(() => view(`pve-x570:revision:${suffix}`)).toThrow(ScheduleInputError);
     }

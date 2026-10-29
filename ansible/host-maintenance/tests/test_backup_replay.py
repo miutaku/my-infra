@@ -36,7 +36,7 @@ class BackupReplayTests(unittest.TestCase):
         for name, value in [('run', self.pve_run), ('pve_healthy', lambda: True),
                             ('availability_check', lambda *a, **kw: self.events.append('availability')),
                             ('updates', lambda: (0, 'fingerprint')), ('package_idle', lambda: True),
-                            ('reboot_required', lambda pve: True)]:
+                            ('reboot_required', lambda pve: True), ('pve_reboot_window_open', lambda: True)]:
             stub = patch.object(agent, name, value)
             stub.start()
             self.addCleanup(stub.stop)

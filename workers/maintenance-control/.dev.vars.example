@@ -1,2 +1,4 @@
 DISCORD_BOT_TOKEN=local-test-token
+GRAFANA_URL=https://grafana.invalid
+GRAFANA_READ_TOKEN=local-monitor-test-token
 AGENT_TOKENS_JSON={"dev-app-server":"local-dev-token","pve-x570":"local-x570-token","pve-b550m":"local-b550m-token"}

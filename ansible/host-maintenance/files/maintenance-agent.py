@@ -454,27 +454,47 @@ def save(data, path=None):
     temporary.replace(path)
 
 
-def update_packages(config):
+def update_request():
+    return UPDATE_STATE.with_name('update-request.json')
+
+
+def pve_reboot_window_open():
+    return time.gmtime(time.time() + 9 * 3600).tm_hour >= 20
+
+
+def update_packages(config, refresh=True):
     """Automatic package installation; deliberately has no reboot call."""
     host = config['host']
     if not host.startswith('pve-'):
         raise RuntimeError('Automatic updater is for PVE hosts only')
+    if refresh:
+        save({'queuedAt': time.time()}, update_request())
     if STATE.exists() or UPDATE_STATE.exists():
         print('Pending execution journal; investigate before another update')
         return
     if not pve_healthy():
         print('Cluster or package manager not ready; update skipped')
         return
-    run('apt-get', 'update')
+    request = json.loads(update_request().read_text()) if update_request().exists() else {}
+    if not request.get('refreshed'):
+        run('apt-get', 'update')
+        request['refreshed'] = True
+        save(request, update_request())
+    try:
+        pve_tasks_idle()
+    except (RuntimeError, subprocess.SubprocessError):
+        print('Active PVE tasks; package update remains queued')
+        return
     count, fingerprint = updates()
     api(config, 'report', {'bootId': BOOT.read_text().strip(), 'required': reboot_required(True),
                           'updates': count, 'fingerprint': fingerprint, 'healthy': pve_healthy()})
     if not count:
+        update_request().unlink(missing_ok=True)
         print('No package upgrades available')
         return
     claim = api(config, 'update-claim', {})
     if not claim:
-        print('Another PVE maintenance is active; update skipped')
+        print('PVE execution or environment verification pending; package update remains queued')
         return
     pending = {'bootId': BOOT.read_text().strip(), 'executionId': claim['executionId']}
     save(pending, UPDATE_STATE)
@@ -502,6 +522,7 @@ def update_packages(config):
     save(pending, UPDATE_STATE)
     api(config, 'update-result', {'executionId': pending['executionId'], 'outcome': 'complete'})
     UPDATE_STATE.unlink()
+    update_request().unlink(missing_ok=True)
     print('Packages updated; OS reboot requires separate explicit approval')
 
 
@@ -548,6 +569,8 @@ def process(config):
         STATE.unlink()
     claim = api(config, 'claim', {})
     if not claim:
+        if pve and update_request().exists():
+            update_packages(config, refresh=False)
         return
     pending = {'bootId': boot_id, 'executionId': claim['executionId']}
     save(pending)
@@ -560,10 +583,14 @@ def process(config):
             raise RuntimeError('Reboot no longer required')
         will_reboot = reboot_required(pve)
         if pve and will_reboot:
+            if not pve_reboot_window_open():
+                raise AvailabilityBlocked('PVEの再起動は日本時間20:00〜23:59だけ実行できます。日時を指定し直してください。')
             prepare_backups(host, pending)
             # Cleanup can take time; recheck safety and reject any new task.
             pve_preflight(host)
             pve_tasks_idle()
+            if not pve_reboot_window_open():
+                raise AvailabilityBlocked('事前確認中にPVEの夜間実行枠を過ぎました。ホストは再起動せず保留します。')
     except (RuntimeError, subprocess.SubprocessError) as error:
         if pve:
             backup_release(pending['executionId'])
