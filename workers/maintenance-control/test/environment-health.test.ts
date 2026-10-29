@@ -137,4 +137,11 @@ describe('Grafana inspection adapter', () => {
     expect(result.error).toContain('HTTP 403');
     expect(JSON.stringify(result)).not.toContain('secret-value');
   });
+  it('redacts network exception tokens and URLs before reporting a connection error', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network secret-value https://grafana.invalid/private?token=secret-value'));
+    const result = await inspectEnvironment({ GRAFANA_URL: 'https://grafana.invalid', GRAFANA_READ_TOKEN: 'secret-value', HOME_METRICS_UID: 'home' });
+    expect(result.error).toContain('network');
+    expect(result.error).not.toContain('secret-value');
+    expect(result.error).not.toContain('grafana.invalid');
+  });
 });

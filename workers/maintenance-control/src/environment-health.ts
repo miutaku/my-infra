@@ -145,8 +145,12 @@ async function readJson(url: URL, token: string, label: string): Promise<unknown
   try {
     response = await fetch(url, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/json',
       'User-Agent': 'my-infra-maintenance-observer/1.0' }, redirect: 'error',
-    signal: AbortSignal.timeout(10_000) });
-  } catch { throw new ObservationError(label + ': ネットワーク、リダイレクト、またはタイムアウト'); }
+    signal: AbortSignal.timeout(30_000) });
+  } catch (error) {
+    const reason = (error instanceof Error ? error.message : '外部への接続失敗')
+      .replaceAll(token, '[redacted]').replace(/https?:\/\/\S+/g, '[URL]').replace(/[\r\n]/g, ' ').slice(0, 160);
+    throw new ObservationError(label + ': ' + reason);
+  }
   if (!response.ok) throw new ObservationError(label + ': HTTP ' + response.status);
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Empty Grafana response');
