@@ -64,7 +64,8 @@ resource "grafana_rule_group" "monitoring" {
         summary        = rule.value.title
         description    = rule.value.description
         runbook_url    = local.runbook
-      }, try(rule.value.details, null) == null ? {} : { details = rule.value.details })
+        }, try(rule.value.details, null) == null ? {} : { details = rule.value.details },
+      try(rule.value.maintenance_gate, null) == null ? {} : { maintenance_gate = rule.value.maintenance_gate })
 
       data {
         ref_id         = "A"

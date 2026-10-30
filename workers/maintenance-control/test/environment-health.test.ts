@@ -28,6 +28,15 @@ describe('post-maintenance observation', () => {
     expect(healthProblems(baseline, now)).not.toEqual([]);
     expect(healthProblems(baseline, now, baseline)).not.toEqual([]);
   });
+  it('reports advisory freshness alarms without blocking update completion while retaining monitoring failures', () => {
+    const current = healthy();
+    current.alarms.push({ key: 'old-snapshot', name: 'backup freshness', severity: 'critical', state: 'firing', blocking: false });
+    expect(healthProblems(current, now, healthy())).toEqual([]);
+    current.signals[0].value = 0;
+    expect(healthProblems(current, now, healthy())).not.toEqual([]);
+    current.error = 'DatasourceError';
+    expect(healthProblems(current, now, healthy())).toEqual(['DatasourceError']);
+  });
   it('detects disappearance even when Grafana clears an alert through MissingSeries', () => {
     const current = healthy();
     current.signals.pop();
@@ -83,17 +92,31 @@ describe('post-maintenance observation', () => {
       expect(observeGate(state, current, current.at)).toBe(minute === 10 ? 'passed' : 'waiting');
     }
   });
-  it('holds after the timeout and cannot silently release that hold later', () => {
+  it('does not release a stabilization timeout on the first healthy observation', () => {
     const state = gate(), current = healthy(now + HEALTH_TIMEOUT_MS);
     current.error = 'DatasourceError';
     expect(observeGate(state, current, current.at)).toBe('held');
-    expect(observeGate(state, healthy(current.at + 60_000), current.at + 60_000)).toBe('held');
     expect(state.reason).toContain('DatasourceError');
+    expect(observeGate(state, healthy(current.at + 60_000), current.at + 60_000)).toBe('held');
+    expect(state.stableSince).toBe(current.at + 60_000);
   });
   it('does not treat successful monitoring as proof that an unfinished host operation completed', () => {
     const state = gate(); state.completedAt = undefined;
     expect(observeGate(state, healthy(now + HEALTH_STABLE_MS), now + HEALTH_STABLE_MS)).toBe('waiting');
     expect(observeGate(state, healthy(now + HEALTH_TIMEOUT_MS), now + HEALTH_TIMEOUT_MS)).toBe('held');
+    expect(state.holdCause).toBe('operation');
+    expect(observeGate(state, healthy(now + HEALTH_TIMEOUT_MS + 60_000), now + HEALTH_TIMEOUT_MS + 60_000)).toBe('held');
+  });
+  it('continues observing after a stabilization timeout and resumes only after ten fresh stable minutes', () => {
+    const state = gate();
+    const failed = healthy(now + HEALTH_TIMEOUT_MS);
+    failed.error = 'DatasourceError';
+    expect(observeGate(state, failed, failed.at)).toBe('held');
+    expect(state.holdCause).toBe('timeout');
+    for (let minute = 1; minute <= 11; minute++) {
+      const current = healthy(failed.at + minute * 60_000);
+      expect(observeGate(state, current, current.at)).toBe(minute === 11 ? 'passed' : 'held');
+    }
   });
 });
 
@@ -146,6 +169,14 @@ describe('Grafana inspection adapter', () => {
     }]);
     expect(result.alarms[0]).toMatchObject({ severity: 'critical', state: 'firing' });
     expect(healthProblems(result, now)).not.toEqual([]);
+  });
+  it('defaults to blocking and never treats a datasource failure as advisory', () => {
+    const data = response();
+    data.rule.alerts.push({ state: 'Alerting', labels: { vm: '100' }, annotations: { maintenance_gate: 'advisory' } },
+      { state: 'Alerting', labels: { vm: '200' }, annotations: { maintenance_gate: 'typo' } },
+      { state: 'Alerting', labels: { alertname: 'DatasourceError' }, annotations: { maintenance_gate: 'advisory' } });
+    const result = parseInspection(data.rules, data.samples, data.ages, now);
+    expect(result.alarms.map(alarm => alarm.blocking)).toEqual([false, true, true]);
   });
   it('uses only bounded GETs, refuses redirects and never returns credential-bearing errors', async () => {
     const requests: RequestInit[] = [];

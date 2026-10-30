@@ -53,10 +53,12 @@ export class MaintenanceFleet extends DurableObject<Env> {
     const plan = this.read(host).plan;
     return { host, plan: plan ? { phase: plan.phase, target: plan.target, reason: plan.reason } : undefined,
       observer: { at: inspection?.at, rules: inspection?.rules.length ?? 0, signals: inspection?.signals.length ?? 0,
-        problems: healthProblems(inspection, Date.now()) },
+        problems: healthProblems(inspection, Date.now()),
+        advisories: inspection?.alarms.filter(alarm => alarm.blocking === false).map(alarm => alarm.name) ?? [] },
       gate: state.gate ? { host: state.gate.host, kind: state.gate.kind, held: state.gate.held ?? false,
         startedAt: state.gate.startedAt, completedAt: state.gate.completedAt, stableSince: state.gate.stableSince,
-        reason: state.gate.reason, problems: healthProblems(inspection, Date.now(), state.gate.baseline) } : undefined };
+        reason: state.gate.reason, automaticResume: state.gate.holdCause === 'timeout',
+        problems: healthProblems(inspection, Date.now(), state.gate.baseline) } : undefined };
   }
   private startEnvironmentCheck(host: Host, executionId: string, kind: 'update' | 'reboot'): void {
     const state = this.environment();
@@ -72,7 +74,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     gate.completedAt = Date.now();
     gate.stableSince = undefined;
     this.saveEnvironment(state);
-    this.healthNotice(host, `【環境確認中】${host}\nホストの処理完了を確認しました。新規・悪化したアラートと欠測の解消後、10分間安定するまで次のPVE処理を待機します。最大60分で保留します。`);
+    this.healthNotice(host, `【環境確認中】${host}\nホストの処理完了を確認しました。作業停止対象のアラートと欠測の解消後、10分間安定するまで次のPVE処理を待機します。60分を過ぎても再確認を継続します。`);
   }
   async observeEnvironment(inspection: Inspection): Promise<void> {
     const now = Date.now(), state = this.environment();
@@ -81,6 +83,9 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (!gate || !isHost(gate.host)) { this.saveEnvironment(state); return; }
     const host = gate.host, wasHeld = gate.held;
     const local = this.read(host);
+    // Older gates did not distinguish observation timeouts from failed operations.
+    const updateFailed = this.ctx.storage.sql.exec<{ failed: number }>('SELECT failed FROM package_update WHERE host=? AND execution=?', host, gate.executionId).toArray()[0]?.failed;
+    if (gate.held && !gate.holdCause && gate.completedAt !== undefined && local.plan?.phase !== 'failed' && !updateFailed) gate.holdCause = 'timeout';
     const checked = local.snapshot?.healthy && now - local.snapshot.observedAt <= HEALTH_FRESH_MS ? inspection :
       { ...inspection, error: '対象ホストの新しい健全性報告を確認できません。' };
     const outcome = observeGate(gate, checked, now);
@@ -92,9 +97,11 @@ export class MaintenanceFleet extends DurableObject<Env> {
         this.write(host, local);
       }
       state.gate = undefined;
-      this.healthNotice(host, `【環境確認完了】${host}\n監視の鮮度、新規・悪化したアラートがない状態の10分継続を確認しました。次のPVE処理を許可します。`);
+      this.healthNotice(host, `【環境確認完了】${host}\n監視の鮮度、作業停止対象のアラートがない状態の10分継続を確認しました。バックアップ鮮度の警告は別途対応を続け、次のPVE処理を許可します。`);
     } else if (outcome === 'held' && !wasHeld) {
-      this.healthNotice(host, `【環境確認で保留】${host}\n60分以内に10分間の連続した安定を確認できませんでした。\n${gate.reason}\n次のPVE更新・再起動は行いません。原因確認と復旧後に対象ホストで --recover を実行してください。`);
+      this.healthNotice(host, `【環境確認${gate.holdCause === 'timeout' ? 'の待機を継続' : 'で保留'}】${host}\n${gate.reason}\n` +
+        (gate.holdCause === 'timeout' ? '環境確認を毎分継続します。障害解消後10分間安定したら次へ進みます。承認済みの必要な再起動は20時以降に実行します。' :
+          '次のPVE更新・再起動は行いません。原因確認と復旧後に対象ホストで --recover を実行してください。'));
     }
     this.saveEnvironment(state);
     await this.deliverCompletions(host);
@@ -142,6 +149,18 @@ export class MaintenanceFleet extends DurableObject<Env> {
       'PVEの再起動は20時以降、指定時刻から同日24時までの環境確認後に実行する方式へ変更しました。変更後の実行枠で承認してください。';
     return true;
   }
+  private carryApprovedReboot(host: Host, state: RecordState, now: number): boolean {
+    const plan = state.plan;
+    if (!isPve(host) || !plan || plan.phase !== 'scheduled' || !plan.eveningWindow || now < rebootWindowEnd(host, plan.target)) return false;
+    const earliest = Math.ceil((now + 10 * 60_000) / 60_000) * 60_000;
+    const evening = Date.parse(`${jstDate(earliest)}T20:00:00+09:00`);
+    plan.target = this.availableTarget(host, Math.max(earliest, evening));
+    plan.revision = crypto.randomUUID();
+    plan.notifiedRevision = undefined;
+    plan.advanceNotice = undefined;
+    plan.reason = '更新反映に必要な再起動が未完了のため、承認を維持して次の夜間実行枠へ持ち越しました。';
+    return true;
+  }
   private async discord(path: string, method: string, payload: object): Promise<{ id: string }> {
     const response = await fetch(`https://discord.com/api/v10${path}`, {
       method, headers: { Authorization: `Bot ${this.env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json',
@@ -159,7 +178,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     });
     return {
       content: `【${labels[plan.phase]}】${host}\n${formatJst(plan.target)}（日本時間）\n` +
-        (isPve(host) ? 'パッケージは自動更新します。OS再起動は承認が必要です。指定時刻以降、同日24時まで、前の処理の環境確認完了後に実行します。' : 'パッケージ更新に伴う再起動です。作業を保存してください。') +
+        (isPve(host) ? 'パッケージは自動更新します。更新反映に再起動が必要な場合だけ、承認後に20時〜24時の枠で実行します。環境確認で待った場合は承認を維持して次の夜間枠へ持ち越します。保留・日時変更で承認を解除できます。' : 'パッケージ更新に伴う再起動です。作業を保存してください。') +
         (plan.reason ? `\n${plan.reason}` : ''),
       allowed_mentions: { parse: [] },
       components: [{ type: 1, components: [
@@ -186,7 +205,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     const content = `【再起動完了】${host}\n正常復帰確認: ${formatJst(recoveredAt)}（日本時間）\n` +
       (isPve(host) ? '起動IDの変更、両PVEノードのonline・quorum・管理サービス・dpkgの健全性を確認しました。' :
         '起動IDの変更とパッケージ管理の健全性を確認しました。') +
-      (environmentVerified ? '\nGrafanaの新規・悪化したアラートと監視欠測がなく、10分間安定したことも確認しました。' : '\nVM・アプリケーション個別の正常性は、この確認には含みません。');
+      (environmentVerified ? '\nGrafanaの作業停止対象のアラートと監視欠測がなく、10分間安定したことも確認しました。バックアップ鮮度の警告は別途対応を継続します。' : '\nVM・アプリケーション個別の正常性は、この確認には含みません。');
     // Persist delivery separately from the plan so a Discord failure cannot lose it.
     const id = crypto.randomUUID().replaceAll('-', '').slice(0, 25);
     this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)', id, host, null, content);
@@ -263,9 +282,10 @@ export class MaintenanceFleet extends DurableObject<Env> {
       }
     }
     const realigned = this.alignLegacySlot(host, state, snapshot.observedAt);
+    const carried = this.carryApprovedReboot(host, state, snapshot.observedAt);
     this.write(host, state);
     await this.deliverCompletions(host);
-    if (realigned) await this.publish(host);
+    if (realigned || carried || (state.plan && !['running', 'failed'].includes(state.plan.phase) && state.plan.notifiedRevision !== state.plan.revision)) await this.publish(host);
     if (plan && !state.plan && !recovered && plan.messageId) {
       try {
         await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages/${plan.messageId}`, 'PATCH', {
@@ -294,13 +314,17 @@ export class MaintenanceFleet extends DurableObject<Env> {
       }
       if (!state.plan || ['running', 'failed'].includes(state.plan.phase)) continue;
       if (state.plan.phase === 'scheduled' && now >= rebootWindowEnd(host, state.plan.target)) {
-        state.plan.phase = isPve(host) ? 'approval' : 'scheduled';
-        state.plan.target = this.availableTarget(host, nextMorning(now, host));
-        state.plan.defaultSlot = true;
-        state.plan.revision = crypto.randomUUID();
-        state.plan.notifiedRevision = undefined;
-        state.plan.reason = '実行枠を過ぎたため、次の候補日時へ持ち越しました。';
-        this.write(host, state);
+        if (isPve(host) && this.carryApprovedReboot(host, state, now)) {
+          this.write(host, state);
+        } else {
+          state.plan.phase = isPve(host) ? 'approval' : 'scheduled';
+          state.plan.target = this.availableTarget(host, nextMorning(now, host));
+          state.plan.defaultSlot = true;
+          state.plan.revision = crypto.randomUUID();
+          state.plan.notifiedRevision = undefined;
+          state.plan.reason = '実行枠を過ぎたため、次の候補日時へ持ち越しました。';
+          this.write(host, state);
+        }
       }
       try {
         // Edit the prior message, and send a fresh reminder once daily for visibility.
@@ -357,7 +381,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (outcome !== 'complete') {
       const environment = this.environment();
       if (environment.gate?.executionId === executionId) {
-        if (outcome === 'failed') { environment.gate.held = true; environment.gate.reason = 'PVEのパッケージ更新に失敗しました。'; }
+        if (outcome === 'failed') { environment.gate.held = true; environment.gate.holdCause = 'operation'; environment.gate.reason = 'PVEのパッケージ更新に失敗しました。'; }
         else environment.gate = undefined;
         this.saveEnvironment(environment);
       }
@@ -377,7 +401,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (state.plan?.phase !== 'running' || state.plan.executionId !== executionId) throw new Error('Execution mismatch');
     const environment = this.environment();
     if (environment.gate?.executionId === executionId) {
-      if (outcome === 'failed') { environment.gate.held = true; environment.gate.reason = 'PVEの再起動処理に失敗しました。'; }
+      if (outcome === 'failed') { environment.gate.held = true; environment.gate.holdCause = 'operation'; environment.gate.reason = 'PVEの再起動処理に失敗しました。'; }
       else environment.gate = undefined;
       this.saveEnvironment(environment);
     }
@@ -492,7 +516,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.write(name, state);
     this.audit(name, action, input.member?.user?.id);
     await this.publish(name);
-    if (action === 'approve') return `${name}: ${formatJst(plan.target)}（日本時間）以降、同日24時までのOS再起動を承認しました。前のPVE処理の環境確認と事前確認を通った場合に実行します。`;
+    if (action === 'approve') return `${name}: ${formatJst(plan.target)}（日本時間）以降のOS再起動を承認しました。更新反映に必要な場合だけ20時〜24時に実行し、待機時は承認を次の夜間枠へ持ち越します。前のPVE処理の環境確認と事前確認を通った場合に実行します。`;
     return `${name}: ${plan.phase === 'held' ? '保留しました' : `${formatJst(plan.target)}（日本時間）へ変更しました`}。` +
       (plan.phase === 'approval' ? '\nまだ承認されていません。下の「この日時で承認」を押してください。' : '');
   }

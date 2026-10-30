@@ -679,7 +679,7 @@ describe('PVE environment gates', () => {
     await settleEnvironment(target);
     expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
   });
-  it('keeps timeout holds persistent and requires a healthy manual recovery', async () => {
+  it('allows manual recovery only with fresh health while a timeout waits for stabilization', async () => {
     const target = stub();
     await seed(target, 'pve-x570', fixture('held'));
     await seed(target, 'pve-b550m', fixture('approval'));
@@ -698,6 +698,84 @@ describe('PVE environment gates', () => {
     expect(await target.claimUpdate('pve-b550m')).toBeNull();
     await target.recover('pve-x570');
     expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+  });
+  it('automatically resumes a completed host after a timeout and never needs another recovery command', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('held'));
+    await seed(target, 'pve-b550m', fixture('approval'));
+    const claim = await target.claimUpdate('pve-x570');
+    await target.updateResult('pve-x570', claim!.executionId, 'complete');
+    vi.mocked(Date.now).mockReturnValue(Date.now() + 60 * 60_000);
+    for (const host of ['pve-x570', 'pve-b550m'] as const) await target.report(host, (await read(target, host)).snapshot!);
+    await target.observeEnvironment({ ...healthyEnvironment(), error: 'DatasourceError' });
+    expect((await target.status('pve-x570')).gate?.automaticResume).toBe(true);
+    await target.observeEnvironment(healthyEnvironment());
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await settleEnvironment(target);
+    expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+  });
+  it('migrates old completed observation holds but leaves failed operations latched', async () => {
+    for (const failed of [false, true]) {
+      const target = stub();
+      await seed(target, 'pve-x570', fixture('held'));
+      const claim = await target.claimUpdate('pve-x570');
+      await target.updateResult('pve-x570', claim!.executionId, failed ? 'failed' : 'complete');
+      await runInDurableObject(target, (_instance, ctx) => {
+        const state = JSON.parse(ctx.storage.sql.exec<{ data: string }>('SELECT data FROM environment WHERE id=1').one().data);
+        state.gate.held = true;
+        delete state.gate.holdCause;
+        ctx.storage.sql.exec('UPDATE environment SET data=? WHERE id=1', JSON.stringify(state));
+      });
+      await target.observeEnvironment(healthyEnvironment());
+      expect((await target.status('pve-x570')).gate?.automaticResume).toBe(!failed);
+      if (!failed) { await settleEnvironment(target); expect((await target.status('pve-x570')).gate).toBeUndefined(); }
+    }
+  });
+  it('carries an approved required reboot to 20:00 without another approval and cancels it if no longer required', async () => {
+    const target = stub(), state = fixture();
+    state.plan!.target = Date.parse('2026-10-29T21:00:00+09:00');
+    await seed(target, 'pve-b550m', state);
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T00:01:00+09:00'));
+    await target.report('pve-b550m', state.snapshot!);
+    const carried = (await read(target, 'pve-b550m')).plan!;
+    expect(carried.phase).toBe('scheduled');
+    expect(formatJst(carried.target)).toBe('2026-10-30 20:00');
+    expect(carried.notifiedRevision).toBe(carried.revision);
+    expect(await target.claim('pve-b550m')).toBeNull();
+    await target.report('pve-b550m', { ...state.snapshot!, required: false });
+    expect((await read(target, 'pve-b550m')).plan).toBeUndefined();
+  });
+  it('executes a carried approval in the next evening and retries publishing without allowing an unpublished claim', async () => {
+    const target = stub(), state = fixture();
+    state.plan!.target = Date.parse('2026-10-29T21:00:00+09:00');
+    await seed(target, 'pve-b550m', state);
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async () => { throw new Error('notification unavailable'); },
+    }));
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T00:01:00+09:00'));
+    expect(await runInDurableObject(target, async instance => {
+      try { await instance.report('pve-b550m', state.snapshot!); return false; } catch { return true; }
+    })).toBe(true);
+    expect((await read(target, 'pve-b550m')).plan?.notifiedRevision).toBeUndefined();
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async () => ({ id: 'message' }),
+    }));
+    await target.report('pve-b550m', state.snapshot!);
+    const carried = (await read(target, 'pve-b550m')).plan!;
+    expect(carried.notifiedRevision).toBe(carried.revision);
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T20:00:00+09:00'));
+    await target.report('pve-b550m', state.snapshot!);
+    await target.observeEnvironment(healthyEnvironment());
+    expect(await target.claim('pve-b550m')).not.toBeNull();
+  });
+  it.each(['held', 'approval'] as const)('never carries a %s PVE plan into automatic execution', async phase => {
+    const target = stub(), state = fixture(phase);
+    state.plan!.target = Date.parse('2026-10-29T20:00:00+09:00');
+    await seed(target, 'pve-x570', state);
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T00:01:00+09:00'));
+    await target.report('pve-x570', state.snapshot!);
+    expect((await read(target, 'pve-x570')).plan?.phase).toBe(phase);
+    expect(await target.claim('pve-x570')).toBeNull();
   });
   it('waits past the second target while recovering, then executes within the same evening', async () => {
     vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-29T20:00:00+09:00'));

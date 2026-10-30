@@ -1,13 +1,13 @@
 export const HEALTH_STABLE_MS = 10 * 60_000;
 export const HEALTH_TIMEOUT_MS = 60 * 60_000;
 export const HEALTH_FRESH_MS = 120_000;
-export interface Alarm { key: string; name: string; severity: string; state: string }
+export interface Alarm { key: string; name: string; severity: string; state: string; blocking?: boolean }
 export interface Signal { key: string; name: string; kind: string; value: number; age: number }
 export interface Inspection { at: number; error?: string; alarms: Alarm[]; signals: Signal[]; rules: string[] }
 export interface HealthGate {
   host: string; executionId: string; kind: 'update' | 'reboot'; startedAt: number;
   baseline: Inspection; completedAt?: number; stableSince?: number; lastObservationAt?: number;
-  held?: boolean; reason?: string;
+  held?: boolean; holdCause?: 'timeout' | 'operation'; reason?: string;
 }
 const SCRAPES = 'up{job=~"home-service-monitor|home-vip-monitor|kube-state-metrics|vmagent|victoria-metrics|node_kubernetes|node_vm|etcd|pve|blackbox_.*"}';
 const PROBES = 'probe_success{job=~"blackbox_.*"}';
@@ -66,6 +66,7 @@ export function parseInspection(ruleResponse: unknown, samples: unknown, ages: u
           .filter(key => tags[key]).map(key => key + '=' + tags[key]).join(' / ') || tags.instance || tags.job;
         const target = annotations.display_target || [tags.service, resource].filter(Boolean).join(' / ');
         alarms.push({ key: rule.uid + ':' + identity(tags), severity: abnormal ? 'critical' : severity,
+          blocking: abnormal || annotations.maintenance_gate !== 'advisory',
           state: state === 'pending' ? 'pending' : 'firing',
           name: rule.name + (target ? ' / ' + target.replace(/[\r\n]/g, ' ').slice(0, 240) : '') });
       }
@@ -96,6 +97,7 @@ export function healthProblems(inspection: Inspection | undefined, now: number, 
   const problems: string[] = [];
   const prior = new Map(baseline?.alarms.map(alarm => [alarm.key, alarm]) ?? []);
   for (const alarm of inspection.alarms) {
+    if (alarm.blocking === false) continue;
     const previous = prior.get(alarm.key);
     if (alarm.severity === 'critical' || (baseline && alarm.severity === 'warn' && alarm.state === 'firing' &&
         (!previous || (previous.state === 'pending' && alarm.state === 'firing')))) {
@@ -119,7 +121,7 @@ export function healthProblems(inspection: Inspection | undefined, now: number, 
   return problems;
 }
 export function observeGate(gate: HealthGate, inspection: Inspection, now: number): 'waiting' | 'passed' | 'held' {
-  if (gate.held) return 'held';
+  if (gate.held && gate.holdCause !== 'timeout') return 'held';
   const problems = healthProblems(inspection, now, gate.baseline);
   if (problems.length || (gate.lastObservationAt !== undefined && now - gate.lastObservationAt > HEALTH_FRESH_MS)) gate.stableSince = undefined;
   gate.lastObservationAt = now;
@@ -127,6 +129,7 @@ export function observeGate(gate: HealthGate, inspection: Inspection, now: numbe
   if (gate.completedAt === undefined) {
     if (now - gate.startedAt >= HEALTH_TIMEOUT_MS) {
       gate.held = true;
+      gate.holdCause = 'operation';
       gate.reason = '処理完了またはホストの正常復帰を60分以内に確認できませんでした。';
       return 'held';
     }
@@ -138,6 +141,7 @@ export function observeGate(gate: HealthGate, inspection: Inspection, now: numbe
   }
   if (now - gate.completedAt >= HEALTH_TIMEOUT_MS) {
     gate.held = true;
+    gate.holdCause = 'timeout';
     gate.reason ??= '環境の安定継続を制限時間内に確認できませんでした。';
     return 'held';
   }

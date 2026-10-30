@@ -1344,6 +1344,7 @@
   },
   {
     "id": "pbs-backup-age-warn",
+    "maintenance_gate": "advisory",
     "title": "PBS VM backup age warn",
     "expression": "((time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 18000) and (time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} <= 28800)) or vector(0)",
     "duration": "15m",
@@ -1362,6 +1363,7 @@
   },
   {
     "id": "pbs-backup-age-critical",
+    "maintenance_gate": "advisory",
     "title": "PBS VM backup age critical",
     "expression": "(time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 28800) or vector(0)",
     "duration": "15m",
