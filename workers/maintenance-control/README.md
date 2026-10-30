@@ -15,8 +15,10 @@ Discordのボタンで、dev-app-serverの再起動予定とPVEの再起動枠�
 
 - Alert Ruleの評価が正常で、最終評価・観測結果が2分以内であること。
 - CRITICALがPending・Firing・Recoveringのいずれでも存在しないこと。
-- 作業前になかったWARNING、または作業前のPendingからFiringへ悪化したWARNINGがないこと。
+- 作業前になかったFiring・RecoveringのWARNING、または作業前のPendingからFiringへ悪化したWARNINGがないこと。
   作業前からFiringだったWARNINGは比較基準に残す。INFOは進行を止めない。
+  WARNINGのPendingは各ルールの継続条件による判定を待ち、安定時間をリセットしない。
+  CRITICALのPendingと生の収集・疎通・機能監視の異常は引き続き進行を止める。
 - DatasourceNoData・DatasourceErrorがなく、必要な収集先が存在して稼働していること。
   指標の最終サンプルは3分以内とし、作業前に正常だった疎通・機能監視の異常や消失も検出する。
   MissingSeriesでアラートだけが解除されても、監視対象の消失を正常復帰とは扱わない。
@@ -27,6 +29,7 @@ Discordのボタンで、dev-app-serverの再起動予定とPVEの再起動枠�
 完了・復帰待ちと、その後の安定確認にはそれぞれ最大60分の制限を設ける。
 時間切れ・処理失敗は保留として保存し、後からアラートが消えただけでは自動解除しない。
 `【環境確認中】`、`【環境確認完了】`、`【環境確認で保留】`で段階と保留理由を通知する。
+保留理由の対象表示は`display_target` annotationを優先し、なければVM・Pod等の識別label、収集先の順に選ぶ。
 PVEの`【再起動完了】`も環境確認が終わってから通知する。
 
 Workerの`HOME_METRICS_UID`でhomeのdatasourceを指定する。

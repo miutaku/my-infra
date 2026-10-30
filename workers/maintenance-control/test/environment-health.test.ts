@@ -11,12 +11,14 @@ const gate = (): HealthGate => ({ host: 'pve-x570', executionId: 'execution', ki
 afterEach(() => vi.restoreAllMocks());
 
 describe('post-maintenance observation', () => {
-  it('allows existing warnings but rejects new warnings and escalation from pending', () => {
+  it('waits for warning duration but rejects new firing warnings and escalation from pending', () => {
     const baseline = healthy();
     baseline.alarms.push({ key: 'old', name: 'existing', severity: 'warn', state: 'firing' });
     expect(healthProblems({ ...baseline }, now, baseline)).toEqual([]);
     const changed = { ...baseline, alarms: [...baseline.alarms, { key: 'new', name: 'new failure', severity: 'warn', state: 'pending' }] };
-    expect(healthProblems(changed, now, baseline)).toContain('WARN new failure (pending)');
+    expect(healthProblems(changed, now, baseline)).toEqual([]);
+    changed.alarms[1].state = 'firing';
+    expect(healthProblems(changed, now, baseline)).toContain('WARN new failure (firing)');
     baseline.alarms[0].state = 'pending';
     expect(healthProblems({ ...baseline, alarms: [{ ...baseline.alarms[0], state: 'firing' }] }, now, baseline)).not.toEqual([]);
   });
@@ -54,7 +56,7 @@ describe('post-maintenance observation', () => {
     const state = gate();
     observeGate(state, healthy(), now);
     const broken = healthy(now + 60_000);
-    broken.alarms.push({ key: 'new', name: 'transient', severity: 'warn', state: 'pending' });
+    broken.alarms.push({ key: 'new', name: 'transient', severity: 'warn', state: 'firing' });
     expect(observeGate(state, broken, now + 60_000)).toBe('waiting');
     expect(state.stableSince).toBeUndefined();
     observeGate(state, healthy(now + 120_000), now + 120_000);
@@ -71,6 +73,14 @@ describe('post-maintenance observation', () => {
     for (let minute = 25; minute <= 35; minute++) {
       const at = now + minute * 60_000;
       expect(observeGate(state, healthy(at), at)).toBe(minute === 35 ? 'passed' : 'waiting');
+    }
+  });
+  it('can stabilize while short-lived warning Pending instances recur on a schedule', () => {
+    const state = gate();
+    for (let minute = 0; minute <= 10; minute++) {
+      const current = healthy(now + minute * 60_000);
+      if (minute % 5 === 0) current.alarms.push({ key: 'job-' + minute, name: 'new job starting', severity: 'warn', state: 'pending' });
+      expect(observeGate(state, current, current.at)).toBe(minute === 10 ? 'passed' : 'waiting');
     }
   });
   it('holds after the timeout and cannot silently release that hold later', () => {
@@ -116,6 +126,18 @@ describe('Grafana inspection adapter', () => {
     if (kind === 'query-error') data.samples.status = 'error';
     if (kind === 'invalid-value') data.samples.data.result[0].value[1] = 'NaN';
     expect(() => parseInspection(data.rules, data.samples, data.ages, now)).toThrow();
+  });
+  it('identifies individual VMs by display annotations and falls back to resource labels', () => {
+    const data = response();
+    data.rule.alerts.push({ state: 'Alerting', labels: { vm: '100', instance: 'shared-exporter' },
+      annotations: { display_target: 'application (VM 100) / PBS' } },
+    { state: 'Alerting', labels: { namespace: 'apps', pod: 'api-abc', instance: 'shared-exporter' } },
+    { state: 'Alerting', labels: { vm: '200', instance: 'shared-exporter' } });
+    const result = parseInspection(data.rules, data.samples, data.ages, now);
+    expect(result.alarms.map(alarm => alarm.name)).toEqual([
+      'test / application (VM 100) / PBS', 'test / namespace=apps / pod=api-abc', 'test / vm=200',
+    ]);
+    expect(new Set(result.alarms.map(alarm => alarm.key)).size).toBe(3);
   });
   it('recognizes synthetic No Data alerts even when evaluation health is ok', () => {
     const data = response();

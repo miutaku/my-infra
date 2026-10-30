@@ -61,9 +61,13 @@ export function parseInspection(ruleResponse: unknown, samples: unknown, ages: u
         const tags = { ...common, ...labels(alert.labels) };
         const severity = tags.severity === 'warning' ? 'warn' : ['critical', 'warn', 'info'].includes(tags.severity) ? tags.severity : 'critical';
         const abnormal = /Datasource(NoData|Error)/.test(tags.alertname ?? '');
+        const annotations = labels(alert.annotations ?? {});
+        const resource = ['target', 'namespace', 'node', 'pod', 'deployment', 'vm_name', 'vm', 'tuner']
+          .filter(key => tags[key]).map(key => key + '=' + tags[key]).join(' / ') || tags.instance || tags.job;
+        const target = annotations.display_target || [tags.service, resource].filter(Boolean).join(' / ');
         alarms.push({ key: rule.uid + ':' + identity(tags), severity: abnormal ? 'critical' : severity,
           state: state === 'pending' ? 'pending' : 'firing',
-          name: rule.name + (tags.instance || tags.target ? ' / ' + (tags.instance || tags.target) : '') });
+          name: rule.name + (target ? ' / ' + target.replace(/[\r\n]/g, ' ').slice(0, 240) : '') });
       }
     }
   }
@@ -93,7 +97,7 @@ export function healthProblems(inspection: Inspection | undefined, now: number, 
   const prior = new Map(baseline?.alarms.map(alarm => [alarm.key, alarm]) ?? []);
   for (const alarm of inspection.alarms) {
     const previous = prior.get(alarm.key);
-    if (alarm.severity === 'critical' || (baseline && alarm.severity === 'warn' &&
+    if (alarm.severity === 'critical' || (baseline && alarm.severity === 'warn' && alarm.state === 'firing' &&
         (!previous || (previous.state === 'pending' && alarm.state === 'firing')))) {
       problems.push(alarm.severity.toUpperCase() + ' ' + alarm.name + ' (' + alarm.state + ')');
     }

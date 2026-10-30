@@ -45,6 +45,10 @@ class BackupReplayTests(unittest.TestCase):
         self.addCleanup(sleeper.stop)
 
     def pve_run(self, *args):
+        if args[0] == 'systemd-run':
+            self.assertIn('--property=Type=exec', args)
+            self.assertIn('--collect', args)
+            return self.pve_run(*args[args.index('/usr/bin/pvesh'):])
         _, method, path, *options = args
         node = path.split('/')[2]
         if path.endswith('/tasks'):
@@ -78,11 +82,14 @@ class BackupReplayTests(unittest.TestCase):
             args = [part for option in options[:-2] for part in option.split('=', 1)]
             guests = args[args.index('--vmid') + 1].split(',')
             args = [part for i, part in enumerate(args) if i not in [args.index('--vmid'), args.index('--vmid') + 1]]
-            self.logs[upid] = 'INFO: starting new backup job: vzdump ' + shlex.join(guests + args)
+            pairs = list(zip(args[::2], args[1::2]))
+            # Match real PVE task logs: reordered options, implicit node, consumed quiet.
+            normalized = [part for option, value in reversed(pairs) if option != '--quiet' for part in [option, value]]
+            self.logs[upid] = 'INFO: starting new backup job: vzdump ' + shlex.join(guests + ['--node', node] + normalized)
             self.statuses[upid] = {'status': 'running'}
             if self.lose_submission:
                 raise subprocess.TimeoutExpired('pvesh', 120)
-            return json.dumps(upid)
+            return ''
         raise AssertionError(args)
 
     def prepare(self):
@@ -120,7 +127,7 @@ class BackupReplayTests(unittest.TestCase):
         real_run = self.pve_run
         with patch.object(agent, 'run', side_effect=real_run) as calls:
             agent.replay_backups()
-        commands = [call.args for call in calls.call_args_list if call.args[1] == 'create']
+        commands = [call.args for call in calls.call_args_list if call.args[0] == 'systemd-run']
         self.assertTrue(any('--notes-template=--stop=1' in command for command in commands))
         self.assertTrue(all('--stop=1' not in command for command in commands))
 
@@ -187,6 +194,25 @@ class BackupReplayTests(unittest.TestCase):
         self.assertEqual(len(self.created), 2)
         items = json.loads(agent.BACKUP_STATE.read_text())['items']
         self.assertTrue(all(item.get('replayUpid') for item in items.values()))
+
+    def test_reordered_options_implicit_node_and_consumed_quiet_reconcile(self):
+        for upid in self.logs:
+            self.logs[upid] += ' --quiet 1'
+        self.prepare()
+        agent.BOOT.write_text('after')
+        agent.replay_backups()
+        self.assertEqual(len(self.created), 2)
+        self.assertTrue(all(item['state'] == 'submitting' for item in json.loads(agent.BACKUP_STATE.read_text())['items'].values()))
+        agent.replay_backups()
+        self.assertTrue(all(item.get('replayUpid') for item in json.loads(agent.BACKUP_STATE.read_text())['items'].values()))
+        self.assertEqual(len(self.created), 2)
+
+    def test_mismatched_log_node_is_rejected(self):
+        upid = self.active['pve-x570'][0]['upid']
+        self.logs[upid] += ' --node pve-b550m'
+        with self.assertRaisesRegex(RuntimeError, 'node does not match'):
+            self.prepare()
+        self.assertEqual(self.stopped, [])
 
     def test_ambiguous_submission_is_not_blindly_retried(self):
         self.prepare()

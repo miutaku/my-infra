@@ -276,12 +276,22 @@ def backup_arguments(node, upid):
         arguments += ['--vmid', ','.join(guests)]
     while words:
         option = words.pop(0)
+        if option == '--node' and words:
+            if words.pop(0) != node:
+                raise RuntimeError('Backup task node does not match its log')
+            continue
         if not option.startswith('--') or option[2:] not in BACKUP_OPTIONS or not words:
             raise RuntimeError('Unsupported backup arguments; reboot denied')
         arguments += [option, words.pop(0)]
     if not guests and '--all' not in arguments and '--pool' not in arguments:
         raise RuntimeError('Backup has no replayable guest selection')
     return arguments
+
+
+def backup_signature(arguments):
+    # PVE reorders options and consumes quiet as a CLI output option when proxying.
+    return sorted((option, value) for option, value in zip(arguments[::2], arguments[1::2])
+                  if option != '--quiet')
 
 
 def backup_status(item, upid):
@@ -305,6 +315,9 @@ def backup_release(execution_id):
 def prepare_backups(host, pending):
     """Called only after an approved claim and availability checks; never by probe."""
     queue = json.loads(BACKUP_STATE.read_text()) if BACKUP_STATE.exists() else {'items': {}}
+    for item in queue['items'].values():
+        if item['state'] == 'submitting':
+            replay_backup_item(queue, item)
     if queue.get('executionId') != pending['executionId']:
         for item in queue['items'].values():
             item.pop('stopRequested', None)
@@ -384,9 +397,11 @@ def replay_backup_item(queue, item):
         tasks = json.loads(run('pvesh', 'get', f"/nodes/{item['node']}/tasks",
             '--source', 'all', '--since', str(item['submittedAt']), '--limit', '1000',
             '--output-format', 'json'))
+        if len(tasks) >= 1000:
+            raise RuntimeError('Backup task history is incomplete')
         for task in tasks:
             if task.get('type') == 'vzdump' and task['upid'] != item['originalUpid'] and \
-                    backup_arguments(item['node'], task['upid']) == item['arguments']:
+                    backup_signature(backup_arguments(item['node'], task['upid'])) == backup_signature(item['arguments']):
                 item.update(replayUpid=task['upid'], state='running')
                 backup_save(queue)
                 break
@@ -415,13 +430,13 @@ def replay_backup_item(queue, item):
     backup_save(queue)
     # Bind values with '=' so a note such as '--stop=1' stays a note, not a CLI option.
     options = [f'{option}={value}' for option, value in zip(item['arguments'][::2], item['arguments'][1::2])]
-    upid = json.loads(run('pvesh', 'create', f"/nodes/{item['node']}/vzdump",
-                         *options, '--output-format', 'json'))
-    if not isinstance(upid, str) or not upid.startswith(f"UPID:{item['node']}:"):
-        raise RuntimeError('Backup submission response invalid; replay journal retained')
-    item.update(replayUpid=upid, state='running')
-    backup_save(queue)
-    print(f"Backup replay started: {item['node']} {upid}")
+    # pvesh runs vzdump synchronously in CLI mode. A short command timeout kills
+    # that backup; supervise it independently and reconcile its UPID next tick.
+    unit = 'host-maintenance-backup-' + hashlib.sha256(item['originalUpid'].encode()).hexdigest()[:20]
+    run('systemd-run', '--quiet', '--collect', '--unit=' + unit, '--property=Type=exec',
+        '--', '/usr/bin/pvesh', 'create', f"/nodes/{item['node']}/vzdump",
+        *options, '--output-format', 'json')
+    print(f"Backup replay submitted: {item['node']} {unit}")
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):

@@ -56,7 +56,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
         problems: healthProblems(inspection, Date.now()) },
       gate: state.gate ? { host: state.gate.host, kind: state.gate.kind, held: state.gate.held ?? false,
         startedAt: state.gate.startedAt, completedAt: state.gate.completedAt, stableSince: state.gate.stableSince,
-        reason: state.gate.reason } : undefined };
+        reason: state.gate.reason, problems: healthProblems(inspection, Date.now(), state.gate.baseline) } : undefined };
   }
   private startEnvironmentCheck(host: Host, executionId: string, kind: 'update' | 'reboot'): void {
     const state = this.environment();
@@ -94,7 +94,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
       state.gate = undefined;
       this.healthNotice(host, `【環境確認完了】${host}\n監視の鮮度、新規・悪化したアラートがない状態の10分継続を確認しました。次のPVE処理を許可します。`);
     } else if (outcome === 'held' && !wasHeld) {
-      this.healthNotice(host, `【環境確認で保留】${host}\n${gate.reason}\n次のPVE更新・再起動は行いません。原因確認と復旧後に対象ホストで --recover を実行してください。`);
+      this.healthNotice(host, `【環境確認で保留】${host}\n60分以内に10分間の連続した安定を確認できませんでした。\n${gate.reason}\n次のPVE更新・再起動は行いません。原因確認と復旧後に対象ホストで --recover を実行してください。`);
     }
     this.saveEnvironment(state);
     await this.deliverCompletions(host);
