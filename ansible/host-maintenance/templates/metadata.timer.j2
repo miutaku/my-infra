@@ -2,7 +2,7 @@
 Description=Update PVE packages before the evening reboot notification
 
 [Timer]
-OnCalendar=*-*-* 18:00:00 Asia/Tokyo
+OnCalendar=*-*-* {{ '%02d' | format(host_maintenance_update_hour | int) }}:00:00 Asia/Tokyo
 RandomizedDelaySec=15m
 Persistent=false
 Unit=host-maintenance-metadata.service

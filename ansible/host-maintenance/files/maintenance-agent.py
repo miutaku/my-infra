@@ -276,12 +276,22 @@ def backup_arguments(node, upid):
         arguments += ['--vmid', ','.join(guests)]
     while words:
         option = words.pop(0)
+        if option == '--node' and words:
+            if words.pop(0) != node:
+                raise RuntimeError('Backup task node does not match its log')
+            continue
         if not option.startswith('--') or option[2:] not in BACKUP_OPTIONS or not words:
             raise RuntimeError('Unsupported backup arguments; reboot denied')
         arguments += [option, words.pop(0)]
     if not guests and '--all' not in arguments and '--pool' not in arguments:
         raise RuntimeError('Backup has no replayable guest selection')
     return arguments
+
+
+def backup_signature(arguments):
+    # PVE reorders options and consumes quiet as a CLI output option when proxying.
+    return sorted((option, value) for option, value in zip(arguments[::2], arguments[1::2])
+                  if option != '--quiet')
 
 
 def backup_status(item, upid):
@@ -305,6 +315,9 @@ def backup_release(execution_id):
 def prepare_backups(host, pending):
     """Called only after an approved claim and availability checks; never by probe."""
     queue = json.loads(BACKUP_STATE.read_text()) if BACKUP_STATE.exists() else {'items': {}}
+    for item in queue['items'].values():
+        if item['state'] == 'submitting':
+            replay_backup_item(queue, item)
     if queue.get('executionId') != pending['executionId']:
         for item in queue['items'].values():
             item.pop('stopRequested', None)
@@ -384,9 +397,11 @@ def replay_backup_item(queue, item):
         tasks = json.loads(run('pvesh', 'get', f"/nodes/{item['node']}/tasks",
             '--source', 'all', '--since', str(item['submittedAt']), '--limit', '1000',
             '--output-format', 'json'))
+        if len(tasks) >= 1000:
+            raise RuntimeError('Backup task history is incomplete')
         for task in tasks:
             if task.get('type') == 'vzdump' and task['upid'] != item['originalUpid'] and \
-                    backup_arguments(item['node'], task['upid']) == item['arguments']:
+                    backup_signature(backup_arguments(item['node'], task['upid'])) == backup_signature(item['arguments']):
                 item.update(replayUpid=task['upid'], state='running')
                 backup_save(queue)
                 break
@@ -415,13 +430,13 @@ def replay_backup_item(queue, item):
     backup_save(queue)
     # Bind values with '=' so a note such as '--stop=1' stays a note, not a CLI option.
     options = [f'{option}={value}' for option, value in zip(item['arguments'][::2], item['arguments'][1::2])]
-    upid = json.loads(run('pvesh', 'create', f"/nodes/{item['node']}/vzdump",
-                         *options, '--output-format', 'json'))
-    if not isinstance(upid, str) or not upid.startswith(f"UPID:{item['node']}:"):
-        raise RuntimeError('Backup submission response invalid; replay journal retained')
-    item.update(replayUpid=upid, state='running')
-    backup_save(queue)
-    print(f"Backup replay started: {item['node']} {upid}")
+    # pvesh runs vzdump synchronously in CLI mode. A short command timeout kills
+    # that backup; supervise it independently and reconcile its UPID next tick.
+    unit = 'host-maintenance-backup-' + hashlib.sha256(item['originalUpid'].encode()).hexdigest()[:20]
+    run('systemd-run', '--quiet', '--collect', '--unit=' + unit, '--property=Type=exec',
+        '--', '/usr/bin/pvesh', 'create', f"/nodes/{item['node']}/vzdump",
+        *options, '--output-format', 'json')
+    print(f"Backup replay submitted: {item['node']} {unit}")
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -454,27 +469,47 @@ def save(data, path=None):
     temporary.replace(path)
 
 
-def update_packages(config):
+def update_request():
+    return UPDATE_STATE.with_name('update-request.json')
+
+
+def pve_reboot_window_open():
+    return time.gmtime(time.time() + 9 * 3600).tm_hour >= 20
+
+
+def update_packages(config, refresh=True):
     """Automatic package installation; deliberately has no reboot call."""
     host = config['host']
     if not host.startswith('pve-'):
         raise RuntimeError('Automatic updater is for PVE hosts only')
+    if refresh:
+        save({'queuedAt': time.time()}, update_request())
     if STATE.exists() or UPDATE_STATE.exists():
         print('Pending execution journal; investigate before another update')
         return
     if not pve_healthy():
         print('Cluster or package manager not ready; update skipped')
         return
-    run('apt-get', 'update')
+    request = json.loads(update_request().read_text()) if update_request().exists() else {}
+    if not request.get('refreshed'):
+        run('apt-get', 'update')
+        request['refreshed'] = True
+        save(request, update_request())
+    try:
+        pve_tasks_idle()
+    except (RuntimeError, subprocess.SubprocessError):
+        print('Active PVE tasks; package update remains queued')
+        return
     count, fingerprint = updates()
     api(config, 'report', {'bootId': BOOT.read_text().strip(), 'required': reboot_required(True),
                           'updates': count, 'fingerprint': fingerprint, 'healthy': pve_healthy()})
     if not count:
+        update_request().unlink(missing_ok=True)
         print('No package upgrades available')
         return
     claim = api(config, 'update-claim', {})
     if not claim:
-        print('Another PVE maintenance is active; update skipped')
+        print('PVE execution or environment verification pending; package update remains queued')
         return
     pending = {'bootId': BOOT.read_text().strip(), 'executionId': claim['executionId']}
     save(pending, UPDATE_STATE)
@@ -502,6 +537,7 @@ def update_packages(config):
     save(pending, UPDATE_STATE)
     api(config, 'update-result', {'executionId': pending['executionId'], 'outcome': 'complete'})
     UPDATE_STATE.unlink()
+    update_request().unlink(missing_ok=True)
     print('Packages updated; OS reboot requires separate explicit approval')
 
 
@@ -548,6 +584,8 @@ def process(config):
         STATE.unlink()
     claim = api(config, 'claim', {})
     if not claim:
+        if pve and update_request().exists():
+            update_packages(config, refresh=False)
         return
     pending = {'bootId': boot_id, 'executionId': claim['executionId']}
     save(pending)
@@ -560,10 +598,14 @@ def process(config):
             raise RuntimeError('Reboot no longer required')
         will_reboot = reboot_required(pve)
         if pve and will_reboot:
+            if not pve_reboot_window_open():
+                raise AvailabilityBlocked('PVEの再起動は日本時間20:00〜23:59だけ実行できます。日時を指定し直してください。')
             prepare_backups(host, pending)
             # Cleanup can take time; recheck safety and reject any new task.
             pve_preflight(host)
             pve_tasks_idle()
+            if not pve_reboot_window_open():
+                raise AvailabilityBlocked('事前確認中にPVEの夜間実行枠を過ぎました。ホストは再起動せず保留します。')
     except (RuntimeError, subprocess.SubprocessError) as error:
         if pve:
             backup_release(pending['executionId'])

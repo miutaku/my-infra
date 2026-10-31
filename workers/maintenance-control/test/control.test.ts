@@ -1,17 +1,21 @@
 import { env } from 'cloudflare:workers';
 import { createExecutionContext, runInDurableObject, waitOnExecutionContext } from 'cloudflare:test';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { HEALTH_STABLE_MS, type Inspection } from '../src/environment-health';
 import worker from '../src/index';
-import { due, parseJst, nextMorning, formatJst, type Host, type RecordState } from '../src/policy';
+import { due, parseJst, nextMorning, formatJst, HOSTS, REBOOT_GAP, type Host, type RecordState } from '../src/policy';
 
 type DiscordPayload = { content: string; nonce?: string; enforce_nonce?: boolean; components?: unknown[] };
+beforeEach(() => vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-29T21:00:00+09:00')));
+afterEach(() => vi.restoreAllMocks());
+const healthyEnvironment = (): Inspection => ({ at: Date.now(), alarms: [], signals: [], rules: ['rule'] });
 
 function fixture(phase: 'scheduled' | 'approval' | 'held' = 'scheduled'): RecordState {
   const now = Date.now();
   return {
     snapshot: { bootId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', required: true, updates: 2,
       fingerprint: 'a'.repeat(64), healthy: true, observedAt: now },
-    plan: { revision: 'rev', notifiedRevision: 'rev', target: now - 1000, phase,
+    plan: { revision: 'rev', notifiedRevision: 'rev', target: now - 1000, phase, eveningWindow: true,
       bootId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', fingerprint: 'a'.repeat(64) },
   };
 }
@@ -19,8 +23,19 @@ const stub = () => env.FLEET.getByName(crypto.randomUUID());
 async function seed(target: ReturnType<typeof stub>, host: Host, data: RecordState) {
   await runInDurableObject(target, (instance, ctx) => {
     ctx.storage.sql.exec('INSERT INTO hosts VALUES (?,?) ON CONFLICT(host) DO UPDATE SET data=excluded.data', host, JSON.stringify(data));
+    ctx.storage.sql.exec('INSERT OR IGNORE INTO environment VALUES (1,?)', JSON.stringify({ inspection: healthyEnvironment() }));
     Object.defineProperty(instance, 'discord', { configurable: true, value: async () => ({ id: 'test-message' }) });
   });
+}
+async function settleEnvironment(target: ReturnType<typeof stub>) {
+  await runInDurableObject(target, (_instance, ctx) => {
+    const state = JSON.parse(ctx.storage.sql.exec<{ data: string }>('SELECT data FROM environment WHERE id=1').one().data);
+    if (!state.gate?.completedAt) throw new Error('Host operation must complete before environment verification');
+    state.gate.stableSince = Date.now() - HEALTH_STABLE_MS;
+    state.gate.lastObservationAt = Date.now() - 60_000;
+    ctx.storage.sql.exec('UPDATE environment SET data=? WHERE id=1', JSON.stringify(state));
+  });
+  await target.observeEnvironment(healthyEnvironment());
 }
 async function read(target: ReturnType<typeof stub>, host: Host): Promise<RecordState> {
   return runInDurableObject(target, (_instance, ctx) => JSON.parse(ctx.storage.sql.exec<{ data: string }>('SELECT data FROM hosts WHERE host=?', host).one().data));
@@ -199,7 +214,7 @@ describe('maintenance scheduling', () => {
     await seed(target, 'pve-x570', fixture('approval'));
     const input = { ...interaction('pve-x570', action), data: {
       custom_id: `pve-x570:rev:${action}`,
-      components: [{ components: [{ custom_id: 'target', value: formatJst(nextMorning(Date.now())) }] }],
+      components: [{ components: [{ custom_id: 'target', value: formatJst(nextMorning(Date.now(), 'pve-x570')) }] }],
     } };
     const changed = await target.interaction(input);
     expect(changed.ok).toBe(true);
@@ -222,7 +237,7 @@ describe('maintenance scheduling', () => {
   it.each(['approve', 'hold', 'defer', 'date-submit'])('offers current controls for stale %s without applying it', async action => {
     const target = stub();
     const state = fixture('held');
-    state.plan!.target = nextMorning(Date.now());
+    state.plan!.target = nextMorning(Date.now(), 'pve-x570');
     await seed(target, 'pve-x570', state);
     const result = await target.interaction(interaction('pve-x570', action, 'old-five-minute-notice'));
     expect(result.ok).toBe(false);
@@ -301,7 +316,7 @@ describe('maintenance scheduling', () => {
   it('allows explicit approval to be retried after a notification failure', async () => {
     const target = stub();
     const state = fixture('approval');
-    state.plan!.target = nextMorning(Date.now());
+    state.plan!.target = nextMorning(Date.now(), 'pve-x570');
     await seed(target, 'pve-x570', state);
     await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
       configurable: true, value: async () => { throw new Error('delivery failed'); },
@@ -335,6 +350,8 @@ describe('maintenance scheduling', () => {
     await target.report('pve-x570', rebooted);
     expect((await read(target, 'pve-x570')).plan!.phase).toBe('running');
     await target.report('pve-x570', { ...rebooted, healthy: true });
+    expect((await read(target, 'pve-x570')).plan!.phase).toBe('running');
+    await settleEnvironment(target);
     expect((await read(target, 'pve-x570')).plan).toBeUndefined();
   });
   it('posts a distinct reboot success only after changed boot ID and healthy report, once', async () => {
@@ -346,7 +363,7 @@ describe('maintenance scheduling', () => {
     const deliveries: { method: string; payload: DiscordPayload }[] = [];
     await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
       configurable: true, value: async (_path: string, method: string, payload: DiscordPayload) => {
-        deliveries.push({ method, payload }); return { id: 'sent' };
+        if (payload.content.startsWith('【再起動完了】')) deliveries.push({ method, payload }); return { id: 'sent' };
       },
     }));
     await target.report('pve-x570', data.snapshot!);
@@ -354,6 +371,7 @@ describe('maintenance scheduling', () => {
     await target.report('pve-x570', { ...rebooted, healthy: false });
     expect(deliveries).toHaveLength(0);
     await target.report('pve-x570', rebooted);
+    await settleEnvironment(target);
     await target.report('pve-x570', rebooted);
     expect(deliveries.map(item => item.method)).toEqual(['POST', 'PATCH']);
     expect(deliveries[0].payload.content).toContain('【再起動完了】pve-x570');
@@ -369,13 +387,16 @@ describe('maintenance scheduling', () => {
     const payloads: DiscordPayload[] = [];
     await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
       configurable: true, value: async (_path: string, _method: string, payload: DiscordPayload) => {
-        payloads.push(payload);
-        if (payloads.length === 1) throw new Error('timeout after sending');
+        if (payload.content.startsWith('【再起動完了】')) {
+          payloads.push(payload);
+          if (payloads.length === 1) throw new Error('timeout after sending');
+        }
         return { id: 'sent' };
       },
     }));
     const rebooted = { ...data.snapshot!, required: false, bootId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' };
     await target.report('pve-x570', rebooted);
+    await settleEnvironment(target);
     expect((await read(target, 'pve-x570')).plan).toBeUndefined();
     expect(await runInDurableObject(target, (_instance, ctx) =>
       ctx.storage.sql.exec('SELECT id FROM notifications').toArray().length)).toBe(1);
@@ -433,6 +454,8 @@ describe('maintenance scheduling', () => {
     expect(first).not.toBeNull();
     expect(await target.claimUpdate('pve-b550m')).toBeNull();
     await target.updateResult('pve-x570', first!.executionId, 'complete');
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await settleEnvironment(target);
     expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
     expect((await read(target, 'pve-x570')).plan!.phase).toBe('held');
   });
@@ -463,6 +486,330 @@ describe('maintenance scheduling', () => {
     await seed(target, 'pve-x570', state);
     await target.tick();
     expect((await read(target, 'pve-x570')).plan).toBeUndefined();
+  });
+});
+
+describe('staggered maintenance', () => {
+  it.each(['2026-10-29', '2026-12-31'])('uses distinct next-day slots after %s', day => {
+    const now = Date.parse(`${day}T19:00:00+09:00`);
+    const targets = HOSTS.map(host => nextMorning(now, host));
+    expect(targets.map(value => formatJst(value).slice(11))).toEqual(['05:00', '20:00', '21:00']);
+    expect(formatJst(targets[1]).slice(0, 10)).toBe(day);
+    expect(targets[2] - targets[1]).toBe(REBOOT_GAP);
+    expect(formatJst(targets[0]).slice(0, 10)).not.toBe(day);
+  });
+  it('creates separated default plans and keeps both PVE hosts unapproved', async () => {
+    const target = stub();
+    for (const host of HOSTS) await seed(target, host, { snapshot: fixture().snapshot });
+    await target.tick();
+    const plans = await Promise.all(HOSTS.map(async host => (await read(target, host)).plan!));
+    expect(plans.map(p => formatJst(p.target).slice(11))).toEqual(['05:00', '20:00', '21:00']);
+    expect(plans.map(p => p.phase)).toEqual(['scheduled', 'approval', 'approval']);
+  });
+  it('finds a free automatic slot around an existing custom date', async () => {
+    const target = stub();
+    const vm = fixture();
+    vm.plan!.target = nextMorning(Date.now(), 'pve-x570') + REBOOT_GAP / 2;
+    vm.plan!.defaultSlot = false;
+    await seed(target, 'dev-app-server', vm);
+    for (const host of ['pve-x570', 'pve-b550m'] as const) await seed(target, host, { snapshot: fixture().snapshot });
+    await target.tick();
+    const plans = await Promise.all(HOSTS.map(async host => (await read(target, host)).plan!));
+    for (let i = 0; i < plans.length; i++) for (let j = i + 1; j < plans.length; j++) {
+      expect(Math.abs(plans[i].target - plans[j].target)).toBeGreaterThanOrEqual(REBOOT_GAP);
+    }
+    expect(plans[0].target).toBe(vm.plan!.target);
+  });
+  it.each([0, 59, -59])('rejects custom dates %i minutes from another host without changing state', async minutes => {
+    const target = stub();
+    const vm = fixture();
+    vm.plan!.target = nextMorning(Date.now(), 'pve-x570');
+    await seed(target, 'dev-app-server', vm);
+    const pve = fixture('approval');
+    await seed(target, 'pve-x570', pve);
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target',
+        value: formatJst(vm.plan!.target + minutes * 60_000) }] }],
+    } });
+    expect(result).toMatchObject({ ok: false, content: expect.stringContaining('1時間以上') });
+    expect(await read(target, 'pve-x570')).toEqual(pve);
+  });
+  it('accepts a custom date exactly one hour away and preserves it on reports', async () => {
+    const target = stub();
+    const vm = fixture();
+    vm.plan!.target = nextMorning(Date.now(), 'pve-x570');
+    await seed(target, 'dev-app-server', vm);
+    await seed(target, 'pve-x570', fixture('approval'));
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target',
+        value: formatJst(vm.plan!.target + REBOOT_GAP) }] }],
+    } });
+    expect(result.ok).toBe(true);
+    const state = await read(target, 'pve-x570');
+    await target.report('pve-x570', state.snapshot!);
+    expect((await read(target, 'pve-x570')).plan).toEqual(state.plan);
+  });
+  it('checks separation again at approval and postponement', async () => {
+    for (const action of ['approve', 'defer'] as const) {
+      const target = stub();
+      const pve = fixture('approval');
+      pve.plan!.target = nextMorning(Date.now(), 'pve-x570');
+      const vm = fixture();
+      vm.plan!.target = pve.plan!.target + (action === 'defer' ? 86400_000 : 0);
+      await seed(target, 'dev-app-server', vm);
+      await seed(target, 'pve-x570', pve);
+      expect(await target.interaction(interaction('pve-x570', action))).toMatchObject({ ok: false,
+        content: expect.stringContaining('1時間以上') });
+      expect(await read(target, 'pve-x570')).toEqual(pve);
+    }
+  });
+  it.each(['scheduled', 'approval', 'held'] as const)('realigns legacy 05:00 PVE plans while preserving a %s hold or requiring new approval', async phase => {
+    const target = stub();
+    const state = fixture(phase);
+    state.plan!.target = nextMorning(Date.now());
+    await seed(target, 'pve-x570', state);
+    await target.report('pve-x570', state.snapshot!);
+    const plan = (await read(target, 'pve-x570')).plan!;
+    expect(formatJst(plan.target).slice(11)).toBe('20:00');
+    expect(plan.phase).toBe(phase === 'held' ? 'held' : 'approval');
+    expect(plan.revision).not.toBe('rev');
+    expect(plan.notifiedRevision).toBe(plan.revision);
+    expect((await target.interaction(interaction('pve-x570', 'approve'))).ok).toBe(false);
+  });
+  it('also realigns legacy dates through the daily tick and rolls expired dates forward', async () => {
+    const target = stub();
+    const state = fixture('approval');
+    state.plan!.target = nextMorning(Date.now()) - 2 * 86400_000;
+    await seed(target, 'pve-b550m', state);
+    await target.tick();
+    const plan = (await read(target, 'pve-b550m')).plan!;
+    expect(plan.target).toBe(nextMorning(Date.now(), 'pve-b550m'));
+    expect(plan.phase).toBe('approval');
+  });
+  it('preserves explicit and existing custom dates within the evening window', async () => {
+    for (const explicit of [true, false]) {
+      const target = stub();
+      const state = fixture('approval');
+      state.plan!.target = nextMorning(Date.now(), 'pve-b550m') + (explicit ? 0 : REBOOT_GAP);
+      if (explicit) state.plan!.defaultSlot = false;
+      await seed(target, 'pve-b550m', state);
+      await target.report('pve-b550m', state.snapshot!);
+      expect((await read(target, 'pve-b550m')).plan!.target).toBe(state.plan!.target);
+    }
+  });
+  it('serializes VM and PVE starts and keeps a one-hour gap after recovery', async () => {
+    const target = stub();
+    await seed(target, 'dev-app-server', fixture());
+    await seed(target, 'pve-x570', fixture());
+    const claims = await Promise.all([target.claim('dev-app-server'), target.claim('pve-x570')]);
+    expect(claims.filter(Boolean)).toHaveLength(1);
+    const first = claims[0] ? 'dev-app-server' : 'pve-x570';
+    const other = first === 'dev-app-server' ? 'pve-x570' : 'dev-app-server';
+    const state = await read(target, first);
+    await target.report(first, { ...state.snapshot!, bootId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' });
+    if (first.startsWith('pve-')) await settleEnvironment(target);
+    expect((await read(target, first)).plan).toBeUndefined();
+    expect(await target.claim(other)).toBeNull();
+    const recovered = await read(target, first);
+    recovered.lastRebootStartedAt = Date.now() - REBOOT_GAP - 1000;
+    await seed(target, first, recovered);
+    expect(await target.claim(other)).not.toBeNull();
+  });
+  it('rejects manual dates near a completed reboot even after its plan was removed', async () => {
+    const target = stub();
+    await seed(target, 'dev-app-server', { snapshot: fixture().snapshot, lastRebootStartedAt: Date.now() });
+    const pve = fixture('approval');
+    await seed(target, 'pve-x570', pve);
+    const result = await target.interaction({ ...interaction('pve-x570', 'date-submit'), data: {
+      custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{ custom_id: 'target',
+        value: formatJst(Date.now() + 30 * 60_000) }] }],
+    } });
+    expect(result).toMatchObject({ ok: false, content: expect.stringContaining('実行開始') });
+    expect(await read(target, 'pve-x570')).toEqual(pve);
+  });
+  it('never releases a running VM or PVE merely because one hour passed', async () => {
+    for (const first of ['dev-app-server', 'pve-x570'] as const) {
+      const target = stub();
+      const active = fixture();
+      active.plan!.phase = 'running';
+      active.plan!.target = Date.now() - 2 * REBOOT_GAP;
+      active.lastRebootStartedAt = active.plan!.target;
+      await seed(target, first, active);
+      const other = first === 'dev-app-server' ? 'pve-x570' : 'dev-app-server';
+      await seed(target, other, fixture());
+      await seed(target, 'pve-b550m', { snapshot: fixture().snapshot });
+      expect(await target.claim(other)).toBeNull();
+      expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    }
+  });
+});
+
+describe('PVE environment gates', () => {
+  it('requires reapproval before widening an existing evening approval', async () => {
+    const target = stub(), state = fixture();
+    state.plan!.eveningWindow = undefined;
+    await seed(target, 'pve-x570', state);
+    expect(await target.claim('pve-x570')).toBeNull();
+    await target.report('pve-x570', state.snapshot!);
+    const plan = (await read(target, 'pve-x570')).plan!;
+    expect(plan.phase).toBe('approval');
+    expect(plan.target).toBe(state.plan!.target);
+    expect(plan.revision).not.toBe(state.plan!.revision);
+    expect(await target.claim('pve-x570')).toBeNull();
+  });
+  it('fails closed when no fresh observer result is available', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture());
+    await runInDurableObject(target, (_instance, ctx) => ctx.storage.sql.exec('DELETE FROM environment'));
+    expect(await target.claimUpdate('pve-x570')).toBeNull();
+    expect(await target.claim('pve-x570')).toBeNull();
+  });
+  it('does not advance after host completion while new alerts or missing data remain', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('held'));
+    await seed(target, 'pve-b550m', fixture('approval'));
+    const claim = await target.claimUpdate('pve-x570');
+    await target.updateResult('pve-x570', claim!.executionId, 'complete');
+    const broken = healthyEnvironment();
+    broken.alarms.push({ key: 'new', severity: 'warn', name: 'service unavailable', state: 'pending' });
+    await target.observeEnvironment(broken);
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await target.observeEnvironment({ ...healthyEnvironment(), error: 'DatasourceError' });
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await settleEnvironment(target);
+    expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+  });
+  it('allows manual recovery only with fresh health while a timeout waits for stabilization', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('held'));
+    await seed(target, 'pve-b550m', fixture('approval'));
+    const claim = await target.claimUpdate('pve-x570');
+    await target.updateResult('pve-x570', claim!.executionId, 'complete');
+    vi.mocked(Date.now).mockReturnValue(Date.now() + 60 * 60_000);
+    for (const host of ['pve-x570', 'pve-b550m'] as const) {
+      await target.report(host, (await read(target, host)).snapshot!);
+    }
+    await target.observeEnvironment({ ...healthyEnvironment(), error: 'DatasourceError' });
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    expect(await runInDurableObject(target, async instance => {
+      try { await instance.recover('pve-x570'); return false; } catch { return true; }
+    })).toBe(true);
+    await target.observeEnvironment(healthyEnvironment());
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await target.recover('pve-x570');
+    expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+  });
+  it('automatically resumes a completed host after a timeout and never needs another recovery command', async () => {
+    const target = stub();
+    await seed(target, 'pve-x570', fixture('held'));
+    await seed(target, 'pve-b550m', fixture('approval'));
+    const claim = await target.claimUpdate('pve-x570');
+    await target.updateResult('pve-x570', claim!.executionId, 'complete');
+    vi.mocked(Date.now).mockReturnValue(Date.now() + 60 * 60_000);
+    for (const host of ['pve-x570', 'pve-b550m'] as const) await target.report(host, (await read(target, host)).snapshot!);
+    await target.observeEnvironment({ ...healthyEnvironment(), error: 'DatasourceError' });
+    expect((await target.status('pve-x570')).gate?.automaticResume).toBe(true);
+    await target.observeEnvironment(healthyEnvironment());
+    expect(await target.claimUpdate('pve-b550m')).toBeNull();
+    await settleEnvironment(target);
+    expect(await target.claimUpdate('pve-b550m')).not.toBeNull();
+  });
+  it('migrates old completed observation holds but leaves failed operations latched', async () => {
+    for (const failed of [false, true]) {
+      const target = stub();
+      await seed(target, 'pve-x570', fixture('held'));
+      const claim = await target.claimUpdate('pve-x570');
+      await target.updateResult('pve-x570', claim!.executionId, failed ? 'failed' : 'complete');
+      await runInDurableObject(target, (_instance, ctx) => {
+        const state = JSON.parse(ctx.storage.sql.exec<{ data: string }>('SELECT data FROM environment WHERE id=1').one().data);
+        state.gate.held = true;
+        delete state.gate.holdCause;
+        ctx.storage.sql.exec('UPDATE environment SET data=? WHERE id=1', JSON.stringify(state));
+      });
+      await target.observeEnvironment(healthyEnvironment());
+      expect((await target.status('pve-x570')).gate?.automaticResume).toBe(!failed);
+      if (!failed) { await settleEnvironment(target); expect((await target.status('pve-x570')).gate).toBeUndefined(); }
+    }
+  });
+  it('carries an approved required reboot to 20:00 without another approval and cancels it if no longer required', async () => {
+    const target = stub(), state = fixture();
+    state.plan!.target = Date.parse('2026-10-29T21:00:00+09:00');
+    await seed(target, 'pve-b550m', state);
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T00:01:00+09:00'));
+    await target.report('pve-b550m', state.snapshot!);
+    const carried = (await read(target, 'pve-b550m')).plan!;
+    expect(carried.phase).toBe('scheduled');
+    expect(formatJst(carried.target)).toBe('2026-10-30 20:00');
+    expect(carried.notifiedRevision).toBe(carried.revision);
+    expect(await target.claim('pve-b550m')).toBeNull();
+    await target.report('pve-b550m', { ...state.snapshot!, required: false });
+    expect((await read(target, 'pve-b550m')).plan).toBeUndefined();
+  });
+  it('executes a carried approval in the next evening and retries publishing without allowing an unpublished claim', async () => {
+    const target = stub(), state = fixture();
+    state.plan!.target = Date.parse('2026-10-29T21:00:00+09:00');
+    await seed(target, 'pve-b550m', state);
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async () => { throw new Error('notification unavailable'); },
+    }));
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T00:01:00+09:00'));
+    expect(await runInDurableObject(target, async instance => {
+      try { await instance.report('pve-b550m', state.snapshot!); return false; } catch { return true; }
+    })).toBe(true);
+    expect((await read(target, 'pve-b550m')).plan?.notifiedRevision).toBeUndefined();
+    await runInDurableObject(target, instance => Object.defineProperty(instance, 'discord', {
+      configurable: true, value: async () => ({ id: 'message' }),
+    }));
+    await target.report('pve-b550m', state.snapshot!);
+    const carried = (await read(target, 'pve-b550m')).plan!;
+    expect(carried.notifiedRevision).toBe(carried.revision);
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T20:00:00+09:00'));
+    await target.report('pve-b550m', state.snapshot!);
+    await target.observeEnvironment(healthyEnvironment());
+    expect(await target.claim('pve-b550m')).not.toBeNull();
+  });
+  it.each(['held', 'approval'] as const)('never carries a %s PVE plan into automatic execution', async phase => {
+    const target = stub(), state = fixture(phase);
+    state.plan!.target = Date.parse('2026-10-29T20:00:00+09:00');
+    await seed(target, 'pve-x570', state);
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-30T00:01:00+09:00'));
+    await target.report('pve-x570', state.snapshot!);
+    expect((await read(target, 'pve-x570')).plan?.phase).toBe(phase);
+    expect(await target.claim('pve-x570')).toBeNull();
+  });
+  it('waits past the second target while recovering, then executes within the same evening', async () => {
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-29T20:00:00+09:00'));
+    const target = stub();
+    const first = fixture();
+    first.plan!.target = Date.now();
+    await seed(target, 'pve-x570', first);
+    const second = fixture();
+    second.plan!.target = Date.parse('2026-10-29T21:00:00+09:00');
+    await seed(target, 'pve-b550m', second);
+    expect(await target.claim('pve-x570')).not.toBeNull();
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-29T20:30:00+09:00'));
+    await target.report('pve-x570', { ...fixture().snapshot!, bootId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' });
+    vi.mocked(Date.now).mockReturnValue(Date.parse('2026-10-29T21:10:00+09:00'));
+    for (const host of ['pve-x570', 'pve-b550m'] as const) await target.report(host, (await read(target, host)).snapshot!);
+    expect(await target.claim('pve-b550m')).toBeNull();
+    await settleEnvironment(target);
+    expect(await target.claim('pve-b550m')).not.toBeNull();
+  });
+  it.each(['19:59', '00:00'])('cannot reboot a PVE host at %s even with an old approval', async time => {
+    const day = time === '00:00' ? '2026-10-30' : '2026-10-29';
+    vi.mocked(Date.now).mockReturnValue(Date.parse(day + 'T' + time + ':00+09:00'));
+    const target = stub(), state = fixture();
+    state.plan!.target = Date.parse('2026-10-29T20:00:00+09:00');
+    await seed(target, 'pve-x570', state);
+    expect(await target.claim('pve-x570')).toBeNull();
+  });
+  it('rejects approving a morning PVE date', async () => {
+    const target = stub(), state = fixture('approval');
+    state.plan!.target = nextMorning(Date.now());
+    await seed(target, 'pve-x570', state);
+    expect(await target.interaction(interaction('pve-x570', 'approve'))).toMatchObject({
+      ok: false, content: expect.stringContaining('20:00'),
+    });
   });
 });
 
@@ -553,7 +900,7 @@ describe('Discord signature and operator authorization', () => {
   it.each(['modal', 'picker'])('includes approval buttons after a deferred %s confirmation', async mode => {
     const target = env.FLEET.getByName('home-pve');
     await seed(target, 'pve-x570', fixture('approval'));
-    const selectedTarget = nextMorning(Date.now());
+    const selectedTarget = nextMorning(Date.now(), 'pve-x570');
     const { request, config } = await signedRequest({
       ...interaction('pve-x570', 'date-submit'), type: mode === 'modal' ? 5 : 3, guild_id: 'guild', channel_id: 'channel',
       data: mode === 'picker' ? { custom_id: `pve-x570:rev:pick-submit:${selectedTarget}:0` } : { custom_id: 'pve-x570:rev:date-submit', components: [{ components: [{

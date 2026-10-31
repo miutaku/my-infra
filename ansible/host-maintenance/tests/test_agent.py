@@ -16,6 +16,9 @@ spec.loader.exec_module(agent)
 
 class AgentTests(unittest.TestCase):
     def setUp(self):
+        window = patch.object(agent, 'pve_reboot_window_open', return_value=True)
+        window.start()
+        self.addCleanup(window.stop)
         availability = patch.object(agent, 'availability_check')
         self.availability = availability.start()
         self.addCleanup(availability.stop)

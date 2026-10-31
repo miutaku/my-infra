@@ -1,10 +1,13 @@
-import { formatJst, isHost, jstDate, parseJst, ScheduleInputError } from './policy';
+import { formatJst, isHost, isPve, jstDate, parseJst, ScheduleInputError, validateRebootWindow } from './policy';
 
 // Draft selections live in the component IDs; only confirmation changes the plan.
 export function datePickerInteraction(id: string, values: string[] = [], now = Date.now()) {
   const [host, revision, action, encodedTarget, encodedPage] = id.split(':');
   if (!isHost(host) || !revision) throw new ScheduleInputError('不明な予定です。最新の通知を使ってください。');
   let target = action === 'date' ? Math.ceil((now + 15 * 60_000) / 300_000) * 300_000 : Number(encodedTarget);
+  if (action === 'date' && isPve(host) && Number(formatJst(target).slice(11, 13)) < 20) {
+    target = Date.parse(`${jstDate(target)}T20:00:00+09:00`);
+  }
   let page = action === 'date' ? 0 : Number(encodedPage);
   if (!Number.isSafeInteger(target) || Math.abs(target) > 8.64e15 || !Number.isInteger(page) || page < 0 || page > 3) {
     throw new ScheduleInputError('日時の選択を開き直してください。');
@@ -24,6 +27,7 @@ export function datePickerInteraction(id: string, values: string[] = [], now = D
   else if (action === 'pick-next') page = Math.min(3, page + 1);
   else if (action === 'pick-submit') {
     parseJst(text, now);
+    validateRebootWindow(host, target);
     return { customId: `${host}:${revision}:date-submit`, target: text };
   } else if (action !== 'date') throw new ScheduleInputError('不明な操作です。');
   target = Date.parse(text.replace(' ', 'T') + ':00+09:00');
@@ -40,7 +44,7 @@ export function datePickerInteraction(id: string, values: string[] = [], now = D
     return option(`${day}（${weekday}）`, day, text.slice(0, 10));
   });
   let error = '';
-  try { parseJst(text, now); } catch (cause) {
+  try { parseJst(text, now); validateRebootWindow(host, target); } catch (cause) {
     if (!(cause instanceof ScheduleInputError)) throw cause;
     error = cause.message;
   }
@@ -50,7 +54,7 @@ export function datePickerInteraction(id: string, values: string[] = [], now = D
   return { type: action === 'date' ? 4 : 7, data: {
     ...(action === 'date' ? { flags: 64 } : {}),
     content: `${host}: 再起動日時を選択（日本時間）\n選択中: ${text}\n日付・時・分を選び「この日時に設定」を押してください。分は5分刻みです。\n` +
-      (error || '10分以上先・90日以内に設定できます。PVEは設定後に承認が必要です。'),
+      (error || '10分以上先・90日以内、他ホストの予定から1時間以上空けてください。PVEは20:00〜23:59の開始候補を選び、設定後に承認してください。'),
     allowed_mentions: { parse: [] },
     components: [
       select('day', `日付を選択（${page + 1}/4ページ）`, days),

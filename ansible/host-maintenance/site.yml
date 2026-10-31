@@ -11,6 +11,14 @@
           - inventory_hostname in ['dev-app-server', 'pve-x570', 'pve-b550m']
         fail_msg: Set host_maintenance_controller_url after deploying and configuring Discord.
 
+    - name: Validate the host-specific PVE update hour
+      ansible.builtin.assert:
+        that:
+          - host_maintenance_update_hour is defined
+          - host_maintenance_update_hour | int >= 0
+          - host_maintenance_update_hour | int <= 23
+      when: inventory_hostname != 'dev-app-server'
+
     - name: Read agent credentials from BSM
       ansible.builtin.command:
         argv: [bws, secret, list, --output, json]

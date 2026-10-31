@@ -2,8 +2,9 @@ import { DurableObject } from 'cloudflare:workers';
 import { timingSafeEqual } from 'node:crypto';
 import { LEASE_PATH, LEASE_NAME } from './loockit-lease';
 import { datePickerInteraction } from './date-picker';
+import { inspectEnvironment, healthProblems, observeGate, HEALTH_FRESH_MS, type Inspection, type HealthGate } from './environment-health';
 export { LoockitLease } from './loockit-lease';
-import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due, ScheduleInputError, validateLeadTime,
+import { HOSTS, isHost, isPve, nextMorning, jstDate, formatJst, parseJst, due, ScheduleInputError, validateLeadTime, REBOOT_GAP, rebootWindowEnd, validateRebootWindow,
   type Host, type Plan, type Snapshot, type RecordState } from './policy';
 
 type Interaction = {
@@ -12,8 +13,9 @@ type Interaction = {
   data?: { custom_id?: string; values?: string[]; components?: { components: { custom_id: string; value: string }[] }[] };
 };
 const reply = (content: string) => ({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] } } });
+interface EnvironmentState { inspection?: Inspection; gate?: HealthGate }
 
-// These three hosts share a maintenance group: its object serializes PVE execution.
+// These three hosts share one object to serialize reboot and package-update execution.
 export class MaintenanceFleet extends DurableObject<Env> {
   private delivering = new Set<Host>();
   private reminding = new Set<Host>();
@@ -23,6 +25,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, host TEXT NOT NULL, message TEXT, content TEXT NOT NULL)');
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, created INTEGER NOT NULL)');
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS package_update (id INTEGER PRIMARY KEY CHECK(id=1), host TEXT NOT NULL, execution TEXT NOT NULL, failed INTEGER NOT NULL DEFAULT 0)');
+    this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS environment (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL)');
   }
   private read(host: Host): RecordState {
     const row = this.ctx.storage.sql.exec<{ data: string }>('SELECT data FROM hosts WHERE host=?', host).toArray()[0];
@@ -33,6 +36,130 @@ export class MaintenanceFleet extends DurableObject<Env> {
   }
   private audit(host: Host, action: string, actor?: string): void {
     console.log(JSON.stringify({ event: 'maintenance', host, action, actor }));
+  }
+  private environment(): EnvironmentState {
+    const row = this.ctx.storage.sql.exec<{ data: string }>('SELECT data FROM environment WHERE id=1').toArray()[0];
+    return row ? JSON.parse(row.data) : {};
+  }
+  private saveEnvironment(state: EnvironmentState): void {
+    this.ctx.storage.sql.exec('INSERT INTO environment VALUES (1,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data', JSON.stringify(state));
+  }
+  private environmentReady(): boolean {
+    const state = this.environment();
+    return !state.gate && healthProblems(state.inspection, Date.now()).length === 0;
+  }
+  async status(host: Host) {
+    const state = this.environment(), inspection = state.inspection;
+    const plan = this.read(host).plan;
+    return { host, plan: plan ? { phase: plan.phase, target: plan.target, reason: plan.reason } : undefined,
+      observer: { at: inspection?.at, rules: inspection?.rules.length ?? 0, signals: inspection?.signals.length ?? 0,
+        problems: healthProblems(inspection, Date.now()),
+        advisories: inspection?.alarms.filter(alarm => alarm.blocking === false).map(alarm => alarm.name) ?? [] },
+      gate: state.gate ? { host: state.gate.host, kind: state.gate.kind, held: state.gate.held ?? false,
+        startedAt: state.gate.startedAt, completedAt: state.gate.completedAt, stableSince: state.gate.stableSince,
+        reason: state.gate.reason, automaticResume: state.gate.holdCause === 'timeout',
+        problems: healthProblems(inspection, Date.now(), state.gate.baseline) } : undefined };
+  }
+  private startEnvironmentCheck(host: Host, executionId: string, kind: 'update' | 'reboot'): void {
+    const state = this.environment();
+    state.gate = { host, executionId, kind, startedAt: Date.now(), baseline: state.inspection! };
+    this.saveEnvironment(state);
+  }
+  private healthNotice(host: Host, content: string): void {
+    this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)', crypto.randomUUID().replaceAll('-', '').slice(0, 25), host, null, content);
+  }
+  private finishEnvironmentStep(host: Host, executionId: string): void {
+    const state = this.environment(), gate = state.gate;
+    if (!gate || gate.host !== host || gate.executionId !== executionId || gate.completedAt !== undefined) return;
+    gate.completedAt = Date.now();
+    gate.stableSince = undefined;
+    this.saveEnvironment(state);
+    this.healthNotice(host, `【環境確認中】${host}\nホストの処理完了を確認しました。作業停止対象のアラートと欠測の解消後、10分間安定するまで次のPVE処理を待機します。60分を過ぎても再確認を継続します。`);
+  }
+  async observeEnvironment(inspection: Inspection): Promise<void> {
+    const now = Date.now(), state = this.environment();
+    state.inspection = inspection;
+    const gate = state.gate;
+    if (!gate || !isHost(gate.host)) { this.saveEnvironment(state); return; }
+    const host = gate.host, wasHeld = gate.held;
+    const local = this.read(host);
+    // Older gates did not distinguish observation timeouts from failed operations.
+    const updateFailed = this.ctx.storage.sql.exec<{ failed: number }>('SELECT failed FROM package_update WHERE host=? AND execution=?', host, gate.executionId).toArray()[0]?.failed;
+    if (gate.held && !gate.holdCause && gate.completedAt !== undefined && local.plan?.phase !== 'failed' && !updateFailed) gate.holdCause = 'timeout';
+    const checked = local.snapshot?.healthy && now - local.snapshot.observedAt <= HEALTH_FRESH_MS ? inspection :
+      { ...inspection, error: '対象ホストの新しい健全性報告を確認できません。' };
+    const outcome = observeGate(gate, checked, now);
+    if (outcome === 'passed') {
+      if (gate.kind === 'update') this.ctx.storage.sql.exec('DELETE FROM package_update WHERE host=? AND execution=?', host, gate.executionId);
+      else if (local.plan?.phase === 'running' && local.plan.executionId === gate.executionId) {
+        this.queueCompletion(host, local.plan, now, true);
+        local.plan = undefined;
+        this.write(host, local);
+      }
+      state.gate = undefined;
+      this.healthNotice(host, `【環境確認完了】${host}\n監視の鮮度、作業停止対象のアラートがない状態の10分継続を確認しました。バックアップ鮮度の警告は別途対応を続け、次のPVE処理を許可します。`);
+    } else if (outcome === 'held' && !wasHeld) {
+      this.healthNotice(host, `【環境確認${gate.holdCause === 'timeout' ? 'の待機を継続' : 'で保留'}】${host}\n${gate.reason}\n` +
+        (gate.holdCause === 'timeout' ? '環境確認を毎分継続します。障害解消後10分間安定したら次へ進みます。承認済みの必要な再起動は20時以降に実行します。' :
+          '次のPVE更新・再起動は行いません。原因確認と復旧後に対象ホストで --recover を実行してください。'));
+    }
+    this.saveEnvironment(state);
+    await this.deliverCompletions(host);
+  }
+  private conflictingReboot(host: Host, target: number): { host: Host; target: number; label: string } | undefined {
+    for (const other of HOSTS) {
+      if (other === host) continue;
+      const state = this.read(other);
+      const plan = state.plan;
+      if (plan && !['held', 'failed'].includes(plan.phase) && Math.abs(plan.target - target) < REBOOT_GAP) {
+        return { host: other, target: plan.target, label: '予定' };
+      }
+      if (state.lastRebootStartedAt !== undefined && Math.abs(state.lastRebootStartedAt - target) < REBOOT_GAP) {
+        return { host: other, target: state.lastRebootStartedAt, label: '実行開始' };
+      }
+    }
+  }
+  private availableTarget(host: Host, target: number): number {
+    while (this.conflictingReboot(host, target)) {
+      target += REBOOT_GAP;
+      if (isPve(host) && Number(formatJst(target).slice(11, 13)) < 20) target = Date.parse(`${jstDate(target)}T20:00:00+09:00`);
+    }
+    return target;
+  }
+  private validateSeparation(host: Host, target: number): void {
+    const conflict = this.conflictingReboot(host, target);
+    if (conflict) throw new ScheduleInputError(`${conflict.host} の${conflict.label} ${formatJst(conflict.target)}（日本時間）から1時間以上空けてください。`);
+  }
+  private alignLegacySlot(host: Host, state: RecordState, now: number): boolean {
+    const plan = state.plan;
+    if (!plan || !isPve(host) || ['running', 'failed'].includes(plan.phase)) return false;
+    const daytime = Number(formatJst(plan.target).slice(11, 13)) < 20;
+    if (!daytime && plan.eveningWindow === true) return false;
+    if (daytime) {
+      plan.defaultSlot = true;
+      const sameDay = Date.parse(`${jstDate(plan.target)}T${host === 'pve-x570' ? '20' : '21'}:00:00+09:00`);
+      plan.target = this.availableTarget(host, sameDay >= now + 10 * 60_000 ? sameDay : nextMorning(now, host));
+    }
+    plan.eveningWindow = true;
+    if (plan.phase !== 'held') plan.phase = 'approval';
+    plan.revision = crypto.randomUUID();
+    plan.notifiedRevision = undefined;
+    plan.advanceNotice = undefined;
+    plan.reason = (plan.reason ? `${plan.reason}\n` : '') +
+      'PVEの再起動は20時以降、指定時刻から同日24時までの環境確認後に実行する方式へ変更しました。変更後の実行枠で承認してください。';
+    return true;
+  }
+  private carryApprovedReboot(host: Host, state: RecordState, now: number): boolean {
+    const plan = state.plan;
+    if (!isPve(host) || !plan || plan.phase !== 'scheduled' || !plan.eveningWindow || now < rebootWindowEnd(host, plan.target)) return false;
+    const earliest = Math.ceil((now + 10 * 60_000) / 60_000) * 60_000;
+    const evening = Date.parse(`${jstDate(earliest)}T20:00:00+09:00`);
+    plan.target = this.availableTarget(host, Math.max(earliest, evening));
+    plan.revision = crypto.randomUUID();
+    plan.notifiedRevision = undefined;
+    plan.advanceNotice = undefined;
+    plan.reason = '更新反映に必要な再起動が未完了のため、承認を維持して次の夜間実行枠へ持ち越しました。';
+    return true;
   }
   private async discord(path: string, method: string, payload: object): Promise<{ id: string }> {
     const response = await fetch(`https://discord.com/api/v10${path}`, {
@@ -51,7 +178,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     });
     return {
       content: `【${labels[plan.phase]}】${host}\n${formatJst(plan.target)}（日本時間）\n` +
-        (isPve(host) ? 'パッケージは自動更新します。OS再起動は指定日時での承認と事前確認が必要です。' : 'パッケージ更新に伴う再起動です。作業を保存してください。') +
+        (isPve(host) ? 'パッケージは自動更新します。更新反映に再起動が必要な場合だけ、承認後に20時〜24時の枠で実行します。環境確認で待った場合は承認を維持して次の夜間枠へ持ち越します。保留・日時変更で承認を解除できます。' : 'パッケージ更新に伴う再起動です。作業を保存してください。') +
         (plan.reason ? `\n${plan.reason}` : ''),
       allowed_mentions: { parse: [] },
       components: [{ type: 1, components: [
@@ -74,11 +201,11 @@ export class MaintenanceFleet extends DurableObject<Env> {
     current.plan.lastReminder = jstDate(Date.now());
     this.write(host, current);
   }
-  private queueCompletion(host: Host, plan: Plan, recoveredAt: number): void {
+  private queueCompletion(host: Host, plan: Plan, recoveredAt: number, environmentVerified = false): void {
     const content = `【再起動完了】${host}\n正常復帰確認: ${formatJst(recoveredAt)}（日本時間）\n` +
       (isPve(host) ? '起動IDの変更、両PVEノードのonline・quorum・管理サービス・dpkgの健全性を確認しました。' :
         '起動IDの変更とパッケージ管理の健全性を確認しました。') +
-      '\nVM・アプリケーション個別の正常性は、この確認には含みません。';
+      (environmentVerified ? '\nGrafanaの作業停止対象のアラートと監視欠測がなく、10分間安定したことも確認しました。バックアップ鮮度の警告は別途対応を継続します。' : '\nVM・アプリケーション個別の正常性は、この確認には含みません。');
     // Persist delivery separately from the plan so a Discord failure cannot lose it.
     const id = crypto.randomUUID().replaceAll('-', '').slice(0, 25);
     this.ctx.storage.sql.exec('INSERT INTO notifications VALUES (?,?,?,?)', id, host, null, content);
@@ -142,7 +269,9 @@ export class MaintenanceFleet extends DurableObject<Env> {
     state.snapshot = snapshot;
     const plan = state.plan;
     const recovered = plan?.phase === 'running' && plan.bootId !== snapshot.bootId && snapshot.healthy;
-    if (recovered) {
+    if (recovered && isPve(host) && this.environment().gate?.executionId === plan.executionId) {
+      this.finishEnvironmentStep(host, plan.executionId!);
+    } else if (recovered) {
       this.queueCompletion(host, plan!, snapshot.observedAt);
       state.plan = undefined;
       this.audit(host, 'reboot-recovered');
@@ -152,8 +281,11 @@ export class MaintenanceFleet extends DurableObject<Env> {
         this.audit(host, 'obsolete-plan-cleared');
       }
     }
+    const realigned = this.alignLegacySlot(host, state, snapshot.observedAt);
+    const carried = this.carryApprovedReboot(host, state, snapshot.observedAt);
     this.write(host, state);
     await this.deliverCompletions(host);
+    if (realigned || carried || (state.plan && !['running', 'failed'].includes(state.plan.phase) && state.plan.notifiedRevision !== state.plan.revision)) await this.publish(host);
     if (plan && !state.plan && !recovered && plan.messageId) {
       try {
         await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages/${plan.messageId}`, 'PATCH', {
@@ -170,23 +302,29 @@ export class MaintenanceFleet extends DurableObject<Env> {
       await this.deliverCompletions(host);
       const state = this.read(host);
       const snapshot = state.snapshot;
+      if (this.alignLegacySlot(host, state, now)) this.write(host, state);
       if (!state.plan && snapshot && now - snapshot.observedAt <= 10 * 60_000 &&
           snapshot.required) {
         state.plan = {
-          revision: crypto.randomUUID(), target: nextMorning(now),
+          revision: crypto.randomUUID(), target: this.availableTarget(host, nextMorning(now, host)), defaultSlot: true, eveningWindow: isPve(host),
           phase: isPve(host) ? 'approval' : 'scheduled', bootId: snapshot.bootId,
           fingerprint: snapshot.fingerprint,
         };
         this.write(host, state);
       }
       if (!state.plan || ['running', 'failed'].includes(state.plan.phase)) continue;
-      if (state.plan.phase === 'scheduled' && now >= state.plan.target + 5 * 60_000) {
-        state.plan.phase = isPve(host) ? 'approval' : 'scheduled';
-        state.plan.target = nextMorning(now);
-        state.plan.revision = crypto.randomUUID();
-        state.plan.notifiedRevision = undefined;
-        state.plan.reason = '実行枠を過ぎたため、次の候補日時へ持ち越しました。';
-        this.write(host, state);
+      if (state.plan.phase === 'scheduled' && now >= rebootWindowEnd(host, state.plan.target)) {
+        if (isPve(host) && this.carryApprovedReboot(host, state, now)) {
+          this.write(host, state);
+        } else {
+          state.plan.phase = isPve(host) ? 'approval' : 'scheduled';
+          state.plan.target = this.availableTarget(host, nextMorning(now, host));
+          state.plan.defaultSlot = true;
+          state.plan.revision = crypto.randomUUID();
+          state.plan.notifiedRevision = undefined;
+          state.plan.reason = '実行枠を過ぎたため、次の候補日時へ持ち越しました。';
+          this.write(host, state);
+        }
       }
       try {
         // Edit the prior message, and send a fresh reminder once daily for visibility.
@@ -205,24 +343,30 @@ export class MaintenanceFleet extends DurableObject<Env> {
   }
   async claim(host: Host): Promise<{ executionId: string; target: number; fingerprint: string } | null> {
     const state = this.read(host);
-    if (!due(host, state, Date.now())) return null;
-    if (isPve(host) && this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length) return null;
-    if (isPve(host) && HOSTS.some(other => isPve(other) && other !== host &&
-      ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
+    const now = Date.now();
+    if (!due(host, state, now)) return null;
+    if (isPve(host) && !this.environmentReady()) return null;
+    if (this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length) return null;
+    if (HOSTS.some(other => other !== host && (
+      ['running', 'failed'].includes(this.read(other).plan?.phase ?? '') ||
+      now - (this.read(other).lastRebootStartedAt ?? -Infinity) < REBOOT_GAP))) return null;
     const plan = state.plan!;
     plan.phase = 'running';
     plan.executionId = crypto.randomUUID();
+    state.lastRebootStartedAt = now;
     this.write(host, state);
+    if (isPve(host)) this.startEnvironmentCheck(host, plan.executionId, 'reboot');
     this.audit(host, 'execution-claimed');
     return { executionId: plan.executionId, target: plan.target, fingerprint: plan.fingerprint };
   }
   async claimUpdate(host: Host): Promise<{ executionId: string } | null> {
     const snapshot = this.read(host).snapshot;
-    if (!isPve(host) || !snapshot?.healthy || Date.now() - snapshot.observedAt > 120_000 ||
+    if (!isPve(host) || !snapshot?.healthy || Date.now() - snapshot.observedAt > 120_000 || !this.environmentReady() ||
         this.ctx.storage.sql.exec('SELECT id FROM package_update').toArray().length ||
-        HOSTS.some(other => isPve(other) && ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
+        HOSTS.some(other => ['running', 'failed'].includes(this.read(other).plan?.phase ?? ''))) return null;
     const executionId = crypto.randomUUID();
     this.ctx.storage.sql.exec('INSERT INTO package_update (id,host,execution) VALUES (1,?,?)', host, executionId);
+    this.startEnvironmentCheck(host, executionId, 'update');
     this.audit(host, 'automatic-update-claimed');
     return { executionId };
   }
@@ -232,9 +376,19 @@ export class MaintenanceFleet extends DurableObject<Env> {
     const lock = this.ctx.storage.sql.exec<{ host: string; execution: string }>('SELECT host,execution FROM package_update').toArray()[0];
     if (lock?.host !== host || lock.execution !== executionId) throw new Error('Update execution mismatch');
     if (outcome === 'failed') this.ctx.storage.sql.exec('UPDATE package_update SET failed=1 WHERE id=1');
+    else if (outcome === 'complete') this.finishEnvironmentStep(host, executionId);
     else this.ctx.storage.sql.exec('DELETE FROM package_update WHERE id=1');
+    if (outcome !== 'complete') {
+      const environment = this.environment();
+      if (environment.gate?.executionId === executionId) {
+        if (outcome === 'failed') { environment.gate.held = true; environment.gate.holdCause = 'operation'; environment.gate.reason = 'PVEのパッケージ更新に失敗しました。'; }
+        else environment.gate = undefined;
+        this.saveEnvironment(environment);
+      }
+    }
     this.ctx.storage.sql.exec('INSERT INTO events VALUES (?,?)', eventId, Date.now());
     this.audit(host, `automatic-update-${outcome}`);
+    await this.deliverCompletions(host);
     if (outcome !== 'complete') await this.discord(`/channels/${this.env.DISCORD_CHANNEL_ID}/messages`, 'POST', {
       content: `【PVEパッケージ更新${outcome === 'blocked' ? '見送り' : '失敗'}】${host}\nホストのjournalを確認してください。OS再起動は行っていません。` +
         (outcome === 'failed' ? '\n他のPVE処理も手動確認まで停止します。' : ''), allowed_mentions: { parse: [] },
@@ -245,6 +399,12 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', eventId).toArray().length) return;
     const state = this.read(host);
     if (state.plan?.phase !== 'running' || state.plan.executionId !== executionId) throw new Error('Execution mismatch');
+    const environment = this.environment();
+    if (environment.gate?.executionId === executionId) {
+      if (outcome === 'failed') { environment.gate.held = true; environment.gate.holdCause = 'operation'; environment.gate.reason = 'PVEの再起動処理に失敗しました。'; }
+      else environment.gate = undefined;
+      this.saveEnvironment(environment);
+    }
     if (outcome === 'complete') state.plan = undefined;
     else {
       state.plan.phase = outcome === 'blocked' ? 'held' : 'failed';
@@ -275,6 +435,12 @@ export class MaintenanceFleet extends DurableObject<Env> {
   async recover(host: Host): Promise<void> {
     const state = this.read(host);
     if (!state.snapshot?.healthy || Date.now() - state.snapshot.observedAt > 120_000) throw new Error('Fresh healthy report required');
+    const environment = this.environment();
+    if (environment.gate?.host === host) {
+      if (!environment.gate.held || healthProblems(environment.inspection, Date.now(), environment.gate.baseline).length) throw new Error('Environment recovery has not been verified');
+      environment.gate = undefined;
+      this.saveEnvironment(environment);
+    }
     this.ctx.storage.sql.exec('DELETE FROM package_update WHERE host=?', host);
     if (!state.plan) { this.audit(host, 'manual-update-recovery'); return; }
     state.plan.phase = 'held';
@@ -327,16 +493,21 @@ export class MaintenanceFleet extends DurableObject<Env> {
     if (this.ctx.storage.sql.exec('SELECT id FROM events WHERE id=?', input.id).toArray().length) return '処理済みです。';
     if (action === 'hold') plan.phase = 'held';
     else if (action === 'defer') {
-      plan.target = Math.max(plan.target, nextMorning(now) - 86400_000) + 86400_000;
+      const today = Date.parse(`${jstDate(now)}T${formatJst(plan.target).slice(11)}:00+09:00`);
+      plan.target = Math.max(plan.target, today) + 86400_000;
       plan.phase = isPve(name) ? 'approval' : 'scheduled';
     } else if (action === 'date-submit') {
       const text = input.data?.components?.flatMap(row => row.components).find(item => item.custom_id === 'target')?.value ?? '';
       plan.target = parseJst(text, now);
+      plan.defaultSlot = false;
       plan.phase = isPve(name) ? 'approval' : 'scheduled';
     } else if (action === 'approve' && isPve(name)) {
       validateLeadTime(plan.target, now);
       plan.phase = 'scheduled';
     } else throw new ScheduleInputError('不明な操作です。');
+    if (action !== 'hold') this.validateSeparation(name, plan.target);
+    if (action !== 'hold') validateRebootWindow(name, plan.target);
+    if (action !== 'hold') plan.eveningWindow = isPve(name);
     plan.revision = crypto.randomUUID();
     plan.notifiedRevision = undefined;
     plan.reason = undefined;
@@ -345,7 +516,7 @@ export class MaintenanceFleet extends DurableObject<Env> {
     this.write(name, state);
     this.audit(name, action, input.member?.user?.id);
     await this.publish(name);
-    if (action === 'approve') return `${name}: ${formatJst(plan.target)}（日本時間）のOS再起動を承認しました。事前確認を通った場合に実行します。`;
+    if (action === 'approve') return `${name}: ${formatJst(plan.target)}（日本時間）以降のOS再起動を承認しました。更新反映に必要な場合だけ20時〜24時に実行し、待機時は承認を次の夜間枠へ持ち越します。前のPVE処理の環境確認と事前確認を通った場合に実行します。`;
     return `${name}: ${plan.phase === 'held' ? '保留しました' : `${formatJst(plan.target)}（日本時間）へ変更しました`}。` +
       (plan.phase === 'approval' ? '\nまだ承認されていません。下の「この日時で承認」を押してください。' : '');
   }
@@ -416,6 +587,7 @@ export default {
       const tokens: Record<string, string> = JSON.parse(env.AGENT_TOKENS_JSON);
       if (!isHost(host) || !tokens[host] || !await authorized(request, tokens[host])) return new Response('Forbidden', { status: 403 });
       if (path === '/agent/auth-check') return Response.json({ ok: true, host });
+      if (path === '/agent/status') return Response.json(await fleet.status(host));
       try {
         const data = JSON.parse(await boundedText(request));
         if (path === '/agent/report') {
@@ -479,6 +651,7 @@ export default {
   },
   async scheduled(event, env): Promise<void> {
     const fleet = env.FLEET.getByName('home-pve');
+    await fleet.observeEnvironment(await inspectEnvironment(env));
     if (event.cron === '0 10 * * *') await fleet.tick();
     await fleet.remindUpcoming();
   },

@@ -13,6 +13,9 @@ spec.loader.exec_module(agent)
 
 class HandoffTests(unittest.TestCase):
     def setUp(self):
+        window = patch.object(agent, 'pve_reboot_window_open', return_value=True)
+        window.start()
+        self.addCleanup(window.stop)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
