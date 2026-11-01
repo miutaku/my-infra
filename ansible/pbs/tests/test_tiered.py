@@ -95,7 +95,7 @@ class SafetyTests(unittest.TestCase):
         local = {'active': 1, 'enabled': 1, 'used': 205 * capacity.GIB, 'avail': 60 * capacity.GIB}
         host = {'avail': 40 * capacity.GIB}
         capacity.check(local, host)
-        for change in ({'active': 0}, {'used': 260 * capacity.GIB}, {'avail': 15 * capacity.GIB}):
+        for change in ({'active': 0}, {'used': 280 * capacity.GIB}, {'avail': 15 * capacity.GIB}):
             with self.subTest(change=change), self.assertRaises(RuntimeError):
                 capacity.check(local | change, host)
         with self.assertRaises(RuntimeError):

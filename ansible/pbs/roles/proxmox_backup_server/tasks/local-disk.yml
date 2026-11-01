@@ -50,6 +50,13 @@
   changed_when: false
   check_mode: false
 
+- name: Grow the existing ext4 filesystem to the dedicated disk size
+  community.general.filesystem:
+    dev: "{{ pbs_local.device }}"
+    fstype: ext4
+    resizefs: true
+    force: false
+
 - name: Create the HDD datastore
   ansible.builtin.command:
     argv: [proxmox-backup-manager, datastore, create, "{{ pbs_local.datastore }}", "{{ pbs_local.path }}", --tuning, 'sync-level=filesystem']
