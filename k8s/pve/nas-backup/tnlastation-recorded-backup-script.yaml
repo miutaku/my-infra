@@ -8,19 +8,25 @@ data:
     #!/bin/sh
     set -eu
 
-    apk add --no-cache rclone curl jq >/dev/null
-
     STATUS=failure
     RESULT="initialization failed"
     notify() {
       webhook="${CRITICAL_WEBHOOK}"
       [ "${STATUS}" = success ] && webhook="${NOTIFY_WEBHOOK}"
       [ -n "${webhook}" ] || return 0
-      curl -fsS -X POST "${webhook}" \
+      curl -fsS --connect-timeout 10 --max-time 15 -X POST "${webhook}" \
         -H 'Content-Type: application/json' \
         -d "$(jq -nc --arg content "${RESULT}" '{content:$content}')" >/dev/null || true
     }
     trap notify EXIT
+
+    for tool in psql rclone curl jq; do
+      if ! command -v "${tool}" >/dev/null; then
+        RESULT="TNLAStation録画バックアップ失敗: 必須ツール ${tool} がありません"
+        exit 1
+      fi
+    done
+    export PGCONNECT_TIMEOUT=15
 
     # EPGStationと同じNFS exportを共有しているため、ディレクトリ全体は
     # バックアップしない。TNLAStationがDBに登録済みの完成ファイルだけを

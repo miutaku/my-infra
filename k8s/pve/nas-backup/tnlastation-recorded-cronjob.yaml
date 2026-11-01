@@ -14,6 +14,8 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      # 停止した処理がForbidで後続を塞ぎ続けないよう90分で終了する。
+      activeDeadlineSeconds: 5400
       ttlSecondsAfterFinished: 86400
       template:
         spec:
@@ -24,7 +26,8 @@ spec:
               type: RuntimeDefault
           containers:
             - name: backup
-              image: postgres:18-alpine
+              image: ghcr.io/miutaku/home-backup-tools:main
+              imagePullPolicy: Always
               command: ["/bin/sh", "/scripts/backup.sh"]
               envFrom:
                 - secretRef:
