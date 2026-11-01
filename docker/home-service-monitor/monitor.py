@@ -316,10 +316,11 @@ def pbs(target, metrics):
         metrics.add('home_pbs_local_available_bytes', status['avail'])
         archive, _ = read('/admin/datastore/' + target['archive_store'] + '/snapshots')
         jobs, _ = read('/admin/verify')
-        pbs_archive_values(archive, jobs, target, metrics)
+        sync_jobs, _ = read('/admin/sync') if target.get('archive_sync_job') else ([], None)
+        pbs_archive_values(archive, jobs, target, metrics, sync_jobs)
 
 
-def pbs_archive_values(snapshots, jobs, target, metrics):
+def pbs_archive_values(snapshots, jobs, target, metrics, sync_jobs=None):
     for vm in target['vms']:
         complete = [s['backup-time'] for s in snapshots if s['backup-type'] == 'vm'
                     and str(s['backup-id']) == str(vm)
@@ -332,6 +333,11 @@ def pbs_archive_values(snapshots, jobs, target, metrics):
     metrics.add('home_pbs_archive_verification_last_success_seconds',
                 job.get('last-run-endtime', 0) if state == 'OK' else 0)
     metrics.add('home_pbs_archive_verification_failed', bool(state and state != 'OK'))
+    if target.get('archive_sync_job'):
+        sync = next(j for j in (sync_jobs or []) if j['id'] == target['archive_sync_job']
+                    and j['store'] == target['archive_store'])
+        state = sync.get('last-run-state')
+        metrics.add('home_pbs_archive_sync_failed', bool(state and state != 'OK'))
 
 
 def database(target, metrics):

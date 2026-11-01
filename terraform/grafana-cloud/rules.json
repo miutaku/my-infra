@@ -1881,13 +1881,13 @@
   {
     "id": "pbs-archive-stale",
     "title": "PBS IDrive copy overdue",
-    "expression": "(time() - home_pbs_archive_last_success_seconds{job=\"home-service-monitor\"} > bool 129600) or vector(0)",
+    "expression": "((time() - home_pbs_archive_last_success_seconds{job=\"home-service-monitor\"} > bool 129600) or (home_pbs_archive_sync_failed{job=\"home-service-monitor\"} > bool 0)) or vector(0)",
     "duration": "10m",
     "severity": "critical",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "IDriveへの完了済みコピーが36時間以上更新されていません。日次ローカル検証・同期のサービス状態とログを確認してください。"
+    "description": "IDriveコピーが36時間以上更新されていないか、直近の同期ジョブに失敗しています。一部VMのコピーが新しくても、同期ジョブ全体の結果を確認してください。"
   },
   {
     "id": "pbs-archive-verification-stale",

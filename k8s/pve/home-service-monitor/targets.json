@@ -131,7 +131,8 @@
       "40000": "dev-application-server-01-docker-ubuntu-26-04-home-amd64"
     },
     "archive_store": "pbs-s3",
-    "archive_verify_job": "pbs-s3-verify"
+    "archive_verify_job": "pbs-s3-verify",
+    "archive_sync_job": "hdd-to-idrive"
   },
   {
     "name": "mariadb",

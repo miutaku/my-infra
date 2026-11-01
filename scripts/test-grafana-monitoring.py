@@ -252,6 +252,10 @@ def main():
         'home_pbs_archive_verification_last_success_seconds{job="home-service-monitor"}': "0+0x40",
         'home_pbs_archive_verification_failed{job="home-service-monitor"}': "0+0x40",
     }, {"pbs-archive-verification-stale": 1, "pbs-archive-verification-failed": 0}, at="40d", interval="1d")
+    case("a partial archive copy does not hide sync failure", {
+        'home_pbs_archive_last_success_seconds{job="home-service-monitor",vm="60000"}': "0+3600x48",
+        'home_pbs_archive_sync_failed{job="home-service-monitor"}': "1+0x48",
+    }, {"pbs-archive-stale": 1}, at="48h", interval="1h")
 
     with tempfile.TemporaryDirectory(prefix="my-infra-alerts-") as directory:
         folder = Path(directory)

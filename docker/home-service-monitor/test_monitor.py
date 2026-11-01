@@ -202,6 +202,18 @@ class TrueNASTests(unittest.TestCase):
 
 
 class BackupTests(unittest.TestCase):
+    def test_partial_copy_cannot_hide_a_failed_archive_job(self):
+        metrics = monitor.Metrics({'kind':'pbs','name':'pbs'})
+        monitor.pbs_archive_values([
+            {'backup-type':'vm','backup-id':'100','backup-time':200,
+             'files':[{'filename':'index.json.blob'}]},
+        ], [{'id':'monthly','store':'s3','last-run-state':'OK','last-run-endtime':100}],
+            {'vms':['100'],'archive_store':'s3','archive_verify_job':'monthly','archive_sync_job':'copy'},
+            metrics, [{'id':'copy','store':'s3','last-run-state':'one group failed'}])
+        values = {n:v for n,v,_ in metrics.samples}
+        self.assertEqual(values['home_pbs_archive_last_success_seconds'], 200)
+        self.assertEqual(values['home_pbs_archive_sync_failed'], 1)
+
     def test_source_verification_cannot_refresh_archive_verification(self):
         metrics = monitor.Metrics({'kind':'pbs','name':'pbs'})
         monitor.pbs_archive_values([
