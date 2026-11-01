@@ -1,7 +1,7 @@
 # ansible/pbs
 
 Proxmox Backup Server (PBS) 4.x を **Debian 13 (trixie) VM** 上に構築する Ansible playbook。
-バックアップ実体は **iDrive e2 (S3 互換オブジェクトストレージ)** の datastore に置く。
+バックアップはローカルHDDの `pbs-hdd` に取得し、日次検証後に **IDrive e2** の `pbs-s3` へ同期する。
 
 対象ホスト: `192.168.20.250` (PVE VM `pbs-01-debian-13-home-amd64`、`terraform/pve` の `module.pbs` で作成)
 到達目標: `https://192.168.20.250:8007` で PBS が稼働し、S3 datastore・admin@pbs ユーザ・
@@ -13,9 +13,9 @@ GC/prune ジョブが登録済みの状態。
   (テンプレートは `packer/debian-13` でビルド)。
 - PBS が自己署名証明書を生成する際の ASN.1 CN 長制限を避けるため、VM 名 / hostname は
   `pbs-01-debian-13-home-amd64` のように短めに保つ。
-- ディスク: `scsi0` = OS (20G)、`scsi1` = **S3 datastore ローカル永続キャッシュ** (64G, `/dev/sdb`)。
-- HA: HA マネージャは使わず、`scsi0` を pvesr で対向ノードへレプリケーション + 手動フェイルオーバ。
-  詳細は [terraform/pve/README.md](../../terraform/pve/README.md) の「PBS の HA」節。
+- ディスク: `scsi0` = OS (20G)、`scsi1` = S3キャッシュ (64G、SSD)、`scsi2` = 短期バックアップ (280GiB、HDD)。
+- HDDは `pve-x570` のローカルストレージ。PBSを別ノードへそのまま移動できない。
+  ホスト障害時は、IDriveの既存datastoreを単一の復旧用PBSへ引き継いで復元する。
 
 ## 前提条件
 
@@ -185,9 +185,9 @@ PVE Web UI → `Datacenter` → `Storage` → `Add` → `Proxmox Backup Server`
 
 | フィールド | 値 |
 |---|---|
-| ID | `pbs-home` |
+| ID | `pbs-local` |
 | Server | `192.168.20.250` |
-| Datastore | `pbs-s3` |
+| Datastore | `pbs-hdd` |
 | Username | `admin@pbs` |
 | Password | BSM に登録したパスワード |
 | Fingerprint | 上記コマンドで取得した値 |
@@ -195,7 +195,7 @@ PVE Web UI → `Datacenter` → `Storage` → `Add` → `Proxmox Backup Server`
 | Nodes | 空欄 (クラスタ全ノードで利用) |
 
 `Datacenter` 配下に追加するため、PVE クラスタ内の `pve-x570` / `pve-b550m` の両方から
-同じ storage ID `pbs-home` として使える。
+同じ storage ID `pbs-local` として使える。`pbs-home` はIDrive上の過去世代の復元用に残す。
 
 ### PVE バックアップジョブ作成
 
@@ -213,13 +213,11 @@ S3-backed datastore は、バックアップ開始直後に多数の chunk を S
 |---|---|---|---|---|
 | `pbs-home-x570` | ノード制限なし | 運用中13 VM/CT (`9001,9002`を除く) | `*/4:00` | `bwlimit=20480`, `performance=max-workers=1`, `zstd=1` |
 
-2026-10-21のAPI確認時点の構成。この作業では既存定期ジョブの対象・スケジュールは変更しない。
-
 PVE Web UI で作る場合の基本値:
 
 | フィールド | 値 |
 |---|---|
-| Storage | `pbs-home` |
+| Storage | `pbs-local` |
 | Mode | `Snapshot` |
 | Node | 対象ノードを指定 (`pve-x570` / `pve-b550m`) |
 | Schedule | ノード間でずらす (`*/2:05`, `*/2:35` など) |
@@ -232,19 +230,12 @@ PVE Web UI で作る場合の基本値:
 > PVE の `zstd` は圧縮レベルではなく **zstd スレッド数**。大きくすると圧縮率が上がる
 > という意味ではなく、バックアップ元ノードとPBSへの投入並列度が上がる。
 
-保持ポリシーは PBS 側の prune job (`pbs-s3-prune`) に寄せる。PVE の backup job は
-`prune-backups=keep-all=1` を明示し、storage 側の retention を上書きする。
-job の retention を単に削除すると、storage `pbs-home` の `keep-last=3` を継承するため、
-PBS 側への保持管理の統一にはならない。
+PVEでは `prune-backups=keep-all=1` を明示し、世代削除はPBS側で管理する。
+HDDは最新3世代に加え、検証・同期済みの復元用世代を保護して保持する。
+IDrive側は日曜03:00に直近3・日次7・週次4・月次6のポリシーでpruneする。
+ローカルの削除をIDriveへ伝播させる `remove-vanished` は無効にする。
 
-2026-10-19 に `pbs-home-x570` (全13VM、4時間ごと) の `keep-last=1` を
-`keep-all=1` に変更した。検証済み snapshot が次の backup 時に削除され、
-`PBS has no verified snapshot in 7 days` が再発していたため。
-この変更では backup の対象・時刻・有効状態は変えていない。
-PBS 側は日曜03:00に直近3・日次7・週次4・月次6の保持条件で prune し、
-verify は毎日06:00に実行する。PVE 側での即時削除がなくなる分、保持量は増える。
-
-PVE ジョブはこの Ansible playbook の管理対象外。現在の設定は次の読み取りで確認する:
+`pve-tiered.yml` は保存先と容量フックを管理する。既存ジョブの対象・4時間周期・負荷制限を確認する:
 
 ```bash
 pvesh get /cluster/backup/pbs-home-x570 --output-format json
@@ -257,7 +248,6 @@ verify 成功済みのものがあるか」を評価する。未検証の最新 
 
 Packer template VM (`9001`, `9002`) は4時間周期の定期ジョブには含めず、
 Packerによる再生成後に下記の方法でPBSへ取得し、verifyまで確認する。
-2026-10-21にユーザー承認で、再生成だけに依存する従来方針からPBSにも正常世代を保持する方針へ変更した。
 `qmpstatus=prelaunch`は停止VMのバックアップで使う通常の状態で、これだけではハングとは判断しない。
 
 追加後の確認:
@@ -395,16 +385,65 @@ sudo rm -f /etc/apt/sources.list.d/pbs-enterprise.sources
 sudo apt update
 ```
 
-## バックアップの検証
+## HDDとIDriveの二段構成
 
-`pbs-s3-verify`は毎日06:00（PBSのタイムゾーンAsia/Tokyo）に実行する。
-検証済みのバックアップはスキップし、7日経過後に再検証する。
-S3読み取りは1スレッド、検証は2スレッドで実行する。
+| 処理 | 保存先・頻度 |
+|---|---|
+| PVEバックアップ | `pbs-local` → `pbs-hdd`、4時間ごと |
+| HDD検証・同期 | 毎日06:00 JST。検証成功後、検証済み世代だけを `pbs-s3` へローカル同期 |
+| HDD保持整理 | 毎時45分。最新3世代と保護された同期済み世代を保持し、GCを実行 |
+| IDrive検証 | 毎月1日06:00 JST。保持中の全世代を一つのジョブで再検証 |
 
-verifyジョブだけの設定・更新:
+日次処理は `pbs-hdd-daily.service`、保持整理は `pbs-hdd-housekeeping.service` が行う。
+最初の同期を確認するまではHDD側のpruneとGCを行わない。同期後は各VM/CTについて
+最新の検証・同期済み世代を保護してから、以前この処理が保護した世代の保護を解除する。
+手動で保護した世代は解除しない。検証・同期・コピー存在確認の失敗時は既存の保護を維持する。
+通常のGCには24時間5分の猶予があり、snapshot削除直後に空きが増えるとは限らない。
+
+HDD使用量240GiBで警告し、260GiB以上または空き16GiB未満で、PVEフックが次のVM/CTの
+バックアップ開始を抑止する。PVEホストのHDD空き20GiB未満でも抑止する。
+容量が回復すれば次の定期ジョブで再試行する。HDDがマウントされていないときは
+日次処理・保持整理を拒否し、OSディスクへの書き込みを防ぐ。
+
+IDriveへの同期は1日1回のため、ローカル全損時の復旧点は通常最大約24時間前になる。
+検証や同期に失敗するとさらに古くなる。S3側の検証はキャッシュを回避して実データを取得するため、
+毎日の検証はHDDだけで行う。同期時の照合・監視はメタデータを読む。
+
+### 設定と初回切り替え
+
+`hdd` ストレージが `images` を許可していることを確認し、TerraformでPBSに280GiBの
+`scsi2` を追加する。既存ディスクはフォーマットしない。Ansibleはスロットの識別子、
+ディスクシリアル、既存ファイルシステムを照合し、空の専用ディスクだけを初期化する。
 
 ```bash
 cd ansible/pbs
-ansible-playbook -i hosts/prd verification.yml --check
-ansible-playbook -i hosts/prd verification.yml
+ansible-playbook -i hosts/prd tiered.yml --syntax-check
+ansible-playbook -i hosts/prd tiered.yml
+ansible-playbook -i hosts/prd pve-tiered.yml
 ```
+
+初回は定期ジョブを停止したまま、対象VM/CTを所属する各PVEノードから `pbs-local` へ
+新しくバックアップする。IDrive上の過去世代をローカルへ取り寄せない。
+全対象の初回バックアップ完了後、PBSで以下を実行する。
+
+```bash
+sudo systemctl start pbs-hdd-daily.service
+sudo systemctl status pbs-hdd-daily.service
+sudo journalctl -u pbs-hdd-daily.service --no-pager -n 30
+sudo cat /var/lib/pbs-tiered/state.json
+```
+
+検証成功、IDriveへの全対象コピー、復元用世代の保護を確認して定期バックアップを有効にする。
+
+```bash
+ansible-playbook -i hosts/prd pve-tiered.yml -e pbs_tiered_activate=true
+```
+
+`pbs-home` はIDriveの既存世代の復元に利用できる。ローカルHDDの故障・ホスト停止時には
+このコピーから復元する。HDD上のバックアップを別ノードにもレプリケーションする構成ではない。
+
+### 監視
+
+機能監視の `pbs` は `pbs-hdd` の4時間周期と日次検証を確認する。
+IDriveのコピーは36時間、実際のS3検証ジョブの成功は35日を超えると通知する。
+同期元の検証結果をS3側の検証成功として扱わない。

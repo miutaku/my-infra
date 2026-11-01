@@ -244,6 +244,15 @@ def main():
             'home_secret_refresh_interval_seconds{job="home-service-monitor",target="secrets",namespace="monitoring",name="test"}': f"{interval}+0x240",
         }, {"secret-refresh-stale": expected}, at="1h")
 
+    case("fresh local backups do not hide a stalled archive copy", {
+        'home_pbs_backup_last_success_seconds{job="home-service-monitor",vm="60000"}': "0+3600x48",
+        'home_pbs_archive_last_success_seconds{job="home-service-monitor",vm="60000"}': "0+0x48",
+    }, {"pbs-backup-age-critical": 0, "pbs-archive-stale": 1}, at="48h", interval="1h")
+    case("monthly S3 verification has its own deadline", {
+        'home_pbs_archive_verification_last_success_seconds{job="home-service-monitor"}': "0+0x40",
+        'home_pbs_archive_verification_failed{job="home-service-monitor"}': "0+0x40",
+    }, {"pbs-archive-verification-stale": 1, "pbs-archive-verification-failed": 0}, at="40d", interval="1d")
+
     with tempfile.TemporaryDirectory(prefix="my-infra-alerts-") as directory:
         folder = Path(directory)
         rulefile = folder / "rules.json"

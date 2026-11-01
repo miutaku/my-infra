@@ -16,7 +16,7 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 
 2026-10-24更新: Loockitの5分warn・10分criticalを追加し、現在の共通ルールは167件（必須系列と合わせて282件）。上記の実機件数は初回調査時点の記録。
 
-## 共通ルール（167件）
+## 共通ルール（171件）
 
 | rule_id | アラート名 / summary | severity → Discord | service / feature | description |
 | --- | --- | --- | --- | --- |
@@ -187,6 +187,10 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | internal-api-cert-pbs-critical | pbs internal API certificate expiry critical | critical → critical | connectivity / backup_integrity | Pinned internal API certificate approaches expiration. Renew it and update the reviewed public leaf certificate in the collector configuration. |
 | internal-api-cert-unifi-warn | unifi internal API certificate expiry warn | warn → warning | connectivity / network | Pinned internal API certificate approaches expiration. Renew it and update the reviewed public leaf certificate in the collector configuration. |
 | internal-api-cert-unifi-critical | unifi internal API certificate expiry critical | critical → critical | connectivity / network | Pinned internal API certificate approaches expiration. Renew it and update the reviewed public leaf certificate in the collector configuration. |
+| pbs-archive-stale | PBS IDrive copy overdue | critical → critical | backups / backup_integrity | IDriveへの完了済みコピーが36時間以上更新されていません。日次ローカル検証・同期のサービス状態とログを確認してください。 |
+| pbs-archive-verification-stale | PBS IDrive monthly verification overdue | warn → warning | backups / backup_integrity | IDrive側の検証が35日以内に成功していません。月次S3検証ジョブと転送量を確認してください。 |
+| pbs-archive-verification-failed | PBS IDrive verification failed | critical → critical | backups / backup_integrity | IDriveの直近の月次検証に失敗しました。S3検証タスクのログを確認してください。 |
+| pbs-hdd-capacity | PBS HDD capacity reserve low | warn → warning | backups / backup_integrity | HDD保存先の使用量が240GiBを超えています。260GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。 |
 
 ## 必須系列（115件）
 

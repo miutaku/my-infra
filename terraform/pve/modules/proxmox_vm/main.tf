@@ -112,6 +112,21 @@ resource "proxmox_vm_qemu" "vm" {
           }
         }
       }
+      dynamic "scsi2" {
+        for_each = var.backup_disk != null ? [var.backup_disk] : []
+        content {
+          disk {
+            backup     = false
+            replicate  = false
+            emulatessd = false
+            iothread   = true
+            format     = "raw"
+            storage    = scsi2.value.storage
+            size       = "${scsi2.value.size}G"
+            serial     = scsi2.value.serial
+          }
+        }
+      }
     }
     dynamic "ide" {
       for_each = var.cloudinit_storage != null ? [1] : []

@@ -1,0 +1,16 @@
+---
+- name: Configure HDD verification and IDrive archival
+  hosts: pbs
+  gather_facts: false
+  become: true
+  vars:
+    ansible_user: miutaku
+  tasks:
+    - name: Configure the HDD datastore
+      ansible.builtin.import_tasks: roles/proxmox_backup_server/tasks/local-disk.yml
+
+    - name: Configure monthly S3 verification
+      ansible.builtin.import_tasks: roles/proxmox_backup_server/tasks/verification.yml
+
+    - name: Configure the daily verification and archive pipeline
+      ansible.builtin.import_tasks: roles/proxmox_backup_server/tasks/tiered.yml

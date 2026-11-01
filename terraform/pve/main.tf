@@ -77,16 +77,14 @@ module "unifi_os_server" {
   cloudinit_storage = "local-zfs"
 }
 
-# Proxmox Backup Server — バックアップ実体は S3 互換オブジェクトストレージ (iDrive e2)
-# datastore に置くため VM はほぼステートレス。
-#   - scsi0 (OS, 20G): Debian + PBS + /etc/proxmox-backup の設定。レプリケーション対象。
+# Proxmox Backup Server — HDD の短期バックアップを検証し、iDrive e2 に長期保存する。
+#   - scsi0 (OS, 20G): Debian + PBS + /etc/proxmox-backup の設定。
 #   - scsi1 (cache, 64G): S3 datastore のローカル永続キャッシュ。S3 から再生成可能なため
 #     レプリケーション除外 (apply 後 `qm set 14001 --scsi1 <vol>,replicate=0`、README 参照)。
+#   - scsi2 (HDD, 280G): 検証前の世代と直近の同期済み世代。pve-x570 のローカルディスク。
 #
-# HA 方針: 2 ノードクラスタはクォーラム不足で HA マネージャ (fencing) を使えないため、
-# hastate は設定しない。代わりに pvesr で OS ディスクを対向ノードへ定期レプリケーションし、
-# ノード障害時は手動マイグレーションで対向ノードから起動する (数十秒のダウンタイム)。
-# レプリケーションジョブは telmate provider で表現できないため pve/README.md の手順で設定する。
+# HDD はホストローカルなので PBS は pve-x570 に固定する。
+# ホスト障害時は単一の復旧用 PBS で IDrive の既存 datastore を引き継ぐ。
 #
 # apply 後: PBS 本体の導入と S3 datastore 設定は ansible/pbs で行う。
 module "pbs" {
@@ -101,11 +99,15 @@ module "pbs" {
   cpu_cores         = 2
   memory            = 4 * 1024 # PBS 推奨要件 (4GiB + バックアップストレージ 1TiB毎に1GiB) を踏まえて調整。
   clone_template    = local.debian_template
-  proxmox_nodes     = ["pve-x570"] # 平常時の稼働ノード。障害時は手動で pve-b550m へ移行する
-  disk_size         = 20           # OS ディスク (lean)。datastore 実体は S3 なので小容量で足りる
+  proxmox_nodes     = ["pve-x570"] # HDD が接続されたホストに固定する
+  disk_size         = 20           # OS と PBS 設定。バックアップとキャッシュは別ディスク
   data_disk_size    = 64           # scsi1: S3 datastore ローカルキャッシュ (レプリ除外運用)
-  # Shared NVMe write contention delayed control-plane API responses >8s.
-  # Keep PBS cache writes at 8 MB/s; measured API timeouts fell to zero.
+  backup_disk = {
+    storage = "hdd"
+    size    = 280
+    serial  = "pbs-hdd-backup"
+  }
+  # Limit S3 cache writes to avoid contention with control-plane disks.
   data_disk_write_mbps = 8
   vlan_tag             = 20 # VLAN 20 (192.168.20.0/24, infra)。PVE から PBS:8007 へ到達させる
   cloudinit_storage    = "local-zfs"

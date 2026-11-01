@@ -1877,5 +1877,49 @@
     "group": "availability",
     "feature": "network",
     "description": "Pinned internal API certificate approaches expiration. Renew it and update the reviewed public leaf certificate in the collector configuration."
+  },
+  {
+    "id": "pbs-archive-stale",
+    "title": "PBS IDrive copy overdue",
+    "expression": "(time() - home_pbs_archive_last_success_seconds{job=\"home-service-monitor\"} > bool 129600) or vector(0)",
+    "duration": "10m",
+    "severity": "critical",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "IDriveへの完了済みコピーが36時間以上更新されていません。日次ローカル検証・同期のサービス状態とログを確認してください。"
+  },
+  {
+    "id": "pbs-archive-verification-stale",
+    "title": "PBS IDrive monthly verification overdue",
+    "expression": "(time() - home_pbs_archive_verification_last_success_seconds{job=\"home-service-monitor\"} > bool 3024000) or vector(0)",
+    "duration": "10m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "IDrive側の検証が35日以内に成功していません。月次S3検証ジョブと転送量を確認してください。"
+  },
+  {
+    "id": "pbs-archive-verification-failed",
+    "title": "PBS IDrive verification failed",
+    "expression": "(home_pbs_archive_verification_failed{job=\"home-service-monitor\"} > bool 0) or vector(0)",
+    "duration": "10m",
+    "severity": "critical",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "IDriveの直近の月次検証に失敗しました。S3検証タスクのログを確認してください。"
+  },
+  {
+    "id": "pbs-hdd-capacity",
+    "title": "PBS HDD capacity reserve low",
+    "expression": "(home_pbs_local_used_bytes{job=\"home-service-monitor\"} > bool 257698037760) or vector(0)",
+    "duration": "10m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "HDD保存先の使用量が240GiBを超えています。260GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。"
   }
 ]

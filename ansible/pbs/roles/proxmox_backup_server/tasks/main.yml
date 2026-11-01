@@ -326,3 +326,9 @@
 
 - name: Configure PBS verification
   ansible.builtin.import_tasks: verification.yml
+
+- name: Configure HDD backup storage
+  ansible.builtin.import_tasks: local-disk.yml
+
+- name: Configure verified HDD backups and S3 archival
+  ansible.builtin.import_tasks: tiered.yml

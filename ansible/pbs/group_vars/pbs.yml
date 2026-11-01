@@ -1,9 +1,9 @@
 ---
 # S3 datastore のローカル永続キャッシュ用ディスク (Terraform module.pbs の scsi1)。
-# クローン VM 上では 2 本目の virtio-scsi ディスク = /dev/sdb として現れる。
+# カーネルの検出順序に依存しない SCSI スロットの識別子を使う。
 # datastore 実体は S3 にあり、このキャッシュは S3 から再生成可能 (PVE 側でレプリ除外)。
 cache:
-  device: /dev/sdb
+  device: /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1
   fstype: ext4
   mountpoint: /mnt/datastore/s3-cache
   # ラベルで fstab マウントするので再起動でカーネル名がずれても安定する
@@ -34,11 +34,37 @@ pbs:
   keep_daily: 7
   keep_weekly: 4
   keep_monthly: 6
-  # Local time (Asia/Tokyo), after the nightly backups and pruning.
-  verify_schedule: "06:00"
-  verify_outdated_after: 7
+  # S3 verification reads object payloads even when they are cached locally.
+  verify_schedule: "*-*-01 06:00"
+  verify_ignore_verified: false
+  verify_outdated_after: 30
   verify_read_threads: 1
   verify_threads: 2
+
+pbs_local:
+  datastore: pbs-hdd
+  device: /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi2
+  serial: pbs-hdd-backup
+  label: pbs-hdd
+  mountpoint: /mnt/datastore/hdd
+  path: /mnt/datastore/hdd/pbs-hdd
+  sync_job: hdd-to-idrive
+  daily_schedule: "*-*-* 06:00:00"
+  keep_last: 3
+  groups:
+    - vm/60000
+    - vm/13201
+    - vm/40000
+    - vm/10001
+    - vm/10002
+    - ct/12902
+    - ct/12903
+    - vm/13005
+    - vm/13001
+    - vm/13002
+    - vm/13003
+    - vm/13004
+    - ct/12901
 
 # BSM シークレット ID (bws secret list で確認)
 bsm_pbs_admin_password_id: "970b08a7-62be-44de-a842-b46000bd0e9f"

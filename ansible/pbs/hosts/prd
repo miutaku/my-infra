@@ -1,2 +1,9 @@
 [pbs]
 192.168.20.250 hostname=pbs-01-debian-13-home-amd64
+
+[pbs_pve]
+192.168.0.115
+192.168.0.119
+
+[pbs_hdd_host]
+192.168.0.115

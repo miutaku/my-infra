@@ -117,7 +117,7 @@
     "name": "pbs",
     "kind": "pbs",
     "url": "https://pbs-01.miutaku.internal:8007",
-    "store": "pbs-s3",
+    "store": "pbs-hdd",
     "vms": [
       "13201",
       "60000",
@@ -129,7 +129,9 @@
       "13201": "unifi-os-01-server-ubuntu-26-04-home-amd64",
       "60000": "work-windows-home-amd64",
       "40000": "dev-application-server-01-docker-ubuntu-26-04-home-amd64"
-    }
+    },
+    "archive_store": "pbs-s3",
+    "archive_verify_job": "pbs-s3-verify"
   },
   {
     "name": "mariadb",

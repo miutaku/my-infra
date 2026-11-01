@@ -126,6 +126,16 @@ variable "data_disk_write_mbps" {
   }
 }
 
+variable "backup_disk" {
+  description = "Optional host-local HDD on scsi2, excluded from VM backups and replication."
+  type = object({
+    storage = string
+    size    = number
+    serial  = string
+  })
+  default = null
+}
+
 variable "vlan_tag" {
   description = "VLAN tag for the primary network interface. null = untagged."
   type        = number

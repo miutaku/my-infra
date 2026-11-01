@@ -1,0 +1,143 @@
+---
+- name: Grant monitoring access to the HDD datastore
+  ansible.builtin.command:
+    argv: [proxmox-backup-manager, acl, update, "/datastore/{{ pbs_local.datastore }}", DatastoreAudit, --auth-id, "{{ item }}"]
+  loop: ['grafana@pbs', 'grafana@pbs!monitoring']
+  changed_when: false
+
+- name: Install the tiered backup controller
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/files/pbs-tiered.py"
+    dest: /usr/local/sbin/pbs-tiered
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install tiered backup configuration
+  ansible.builtin.copy:
+    dest: /etc/proxmox-backup/tiered.json
+    owner: root
+    group: root
+    mode: '0600'
+    content: >-
+      {{ {'local': pbs_local.datastore, 'archive': pbs.datastore_name,
+          'mountpoint': pbs_local.mountpoint, 'label': pbs_local.label,
+          'sync_job': pbs_local.sync_job, 'prune_job': pbs_local.datastore ~ '-prune',
+          'groups': pbs_local.groups} | to_nice_json }}
+
+- name: Read sync jobs
+  ansible.builtin.command:
+    argv: [proxmox-backup-manager, sync-job, list, --output-format, json]
+  register: pbs_tiered_sync_jobs
+  changed_when: false
+  check_mode: false
+
+- name: Select the managed local-to-S3 sync job
+  ansible.builtin.set_fact:
+    pbs_tiered_sync: "{{ (pbs_tiered_sync_jobs.stdout | from_json | selectattr('id', 'eq', pbs_local.sync_job) | list | first) | default({}) }}"
+
+- name: Ensure verified-only local-to-S3 sync without deletion propagation
+  ansible.builtin.command:
+    argv:
+      - proxmox-backup-manager
+      - sync-job
+      - "{{ 'update' if pbs_tiered_sync else 'create' }}"
+      - "{{ pbs_local.sync_job }}"
+      - --store
+      - "{{ pbs.datastore_name }}"
+      - --remote-store
+      - "{{ pbs_local.datastore }}"
+      - --owner
+      - "{{ pbs.admin_user }}"
+      - --verified-only
+      - 'true'
+      - --remove-vanished
+      - 'false'
+  when: >-
+    pbs_tiered_sync.get('store') != pbs.datastore_name
+    or pbs_tiered_sync.get('remote-store') != pbs_local.datastore
+    or pbs_tiered_sync.get('owner') != pbs.admin_user
+    or not pbs_tiered_sync.get('verified-only', false)
+    or pbs_tiered_sync.get('remove-vanished', false)
+  changed_when: true
+
+- name: Read prune jobs
+  ansible.builtin.command:
+    argv: [proxmox-backup-manager, prune-job, list, --output-format, json]
+  register: pbs_tiered_prune_jobs
+  changed_when: false
+  check_mode: false
+
+- name: Select the managed HDD prune job
+  ansible.builtin.set_fact:
+    pbs_tiered_prune: "{{ (pbs_tiered_prune_jobs.stdout | from_json | selectattr('id', 'eq', pbs_local.datastore ~ '-prune') | list | first) | default({}) }}"
+
+- name: Keep the latest local generations in addition to protected recovery pins
+  ansible.builtin.command:
+    argv: [proxmox-backup-manager, prune-job, "{{ 'update' if pbs_tiered_prune else 'create' }}", "{{ pbs_local.datastore }}-prune", --store, "{{ pbs_local.datastore }}", --keep-last, "{{ pbs_local.keep_last | string }}", --schedule, '*:45', --disable, 'true']
+  when: pbs_tiered_prune.get('store') != pbs_local.datastore or pbs_tiered_prune.get('keep-last') != pbs_local.keep_last or not pbs_tiered_prune.get('disable', false)
+  changed_when: true
+
+- name: Install tiered backup services
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/pbs-hdd-{{ item }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=PBS HDD {{ item }}
+      RequiresMountsFor={{ pbs_local.mountpoint }}
+      After=proxmox-backup-proxy.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/pbs-tiered {{ item }}
+      TimeoutStartSec=infinity
+      Nice=10
+      IOSchedulingClass=best-effort
+      IOSchedulingPriority=7
+      UMask=0077
+  loop: [daily, housekeeping]
+
+- name: Install the daily verification and archival timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pbs-hdd-daily.timer
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Verify HDD backups and archive verified generations daily
+
+      [Timer]
+      OnCalendar={{ pbs_local.daily_schedule }}
+      Persistent=false
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Install hourly HDD housekeeping timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pbs-hdd-housekeeping.timer
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Prune HDD snapshots and collect unused chunks
+
+      [Timer]
+      OnCalendar=*-*-* *:45:00
+      Persistent=false
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Enable tiered backup timers
+  ansible.builtin.systemd_service:
+    name: "pbs-hdd-{{ item }}.timer"
+    daemon_reload: true
+    enabled: true
+    state: started
+  loop: [daily, housekeeping]

@@ -15,7 +15,7 @@
     pbs_verification_changed: >-
       {{ pbs_verification_job.get('store') != pbs.datastore_name
          or pbs_verification_job.get('schedule') != pbs.verify_schedule
-         or pbs_verification_job.get('ignore-verified', true) != true
+         or pbs_verification_job.get('ignore-verified', true) != pbs.verify_ignore_verified
          or pbs_verification_job.get('outdated-after') != pbs.verify_outdated_after
          or pbs_verification_job.get('read-threads', 1) != pbs.verify_read_threads
          or pbs_verification_job.get('verify-threads', 4) != pbs.verify_threads }}
@@ -38,7 +38,7 @@
       - --schedule
       - "{{ pbs.verify_schedule }}"
       - --ignore-verified
-      - 'true'
+      - "{{ pbs.verify_ignore_verified | string | lower }}"
       - --outdated-after
       - "{{ pbs.verify_outdated_after | string }}"
       - --read-threads

@@ -301,13 +301,37 @@ def pbs_values(snapshots, expected, metrics, vm_names=None):
 
 
 def pbs(target, metrics):
-    status, _, body, expires = request(target['url'] + '/api2/json/admin/datastore/' + target['store'] + '/snapshots',
-        {'Authorization': 'PBSAPIToken=' + secret('pbs-token-id') + ':' + secret('pbs-token-secret')}, target['ca'], True)
-    if status != 200:
-        raise ValueError('PBS API request failed')
+    def read(path):
+        status, _, body, expires = request(target['url'] + '/api2/json' + path,
+            {'Authorization': 'PBSAPIToken=' + secret('pbs-token-id') + ':' + secret('pbs-token-secret')}, target['ca'], True)
+        if status != 200:
+            raise ValueError('PBS API request failed')
+        return json.loads(body)['data'], expires
+    rows, expires = read('/admin/datastore/' + target['store'] + '/snapshots')
     metrics.add('home_api_tls_expiry_seconds', expires)
-    data = json.loads(body)
-    pbs_values(data['data'], target['vms'], metrics, target.get('vm_names'))
+    pbs_values(rows, target['vms'], metrics, target.get('vm_names'))
+    if target.get('archive_store'):
+        status, _ = read('/admin/datastore/' + target['store'] + '/status')
+        metrics.add('home_pbs_local_used_bytes', status['used'])
+        metrics.add('home_pbs_local_available_bytes', status['avail'])
+        archive, _ = read('/admin/datastore/' + target['archive_store'] + '/snapshots')
+        jobs, _ = read('/admin/verify')
+        pbs_archive_values(archive, jobs, target, metrics)
+
+
+def pbs_archive_values(snapshots, jobs, target, metrics):
+    for vm in target['vms']:
+        complete = [s['backup-time'] for s in snapshots if s['backup-type'] == 'vm'
+                    and str(s['backup-id']) == str(vm)
+                    and any(f.get('filename') == 'index.json.blob' for f in s.get('files', []))]
+        metrics.add('home_pbs_archive_last_success_seconds', max(complete or [0]), vm=str(vm))
+    job = next(j for j in jobs if j['id'] == target['archive_verify_job']
+               and j['store'] == target['archive_store'])
+    state = job.get('last-run-state')
+    # Use the actual S3 verification task, never a source snapshot's verification.
+    metrics.add('home_pbs_archive_verification_last_success_seconds',
+                job.get('last-run-endtime', 0) if state == 'OK' else 0)
+    metrics.add('home_pbs_archive_verification_failed', bool(state and state != 'OK'))
 
 
 def database(target, metrics):

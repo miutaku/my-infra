@@ -1,0 +1,88 @@
+---
+- name: Install capacity guards on the PVE backup nodes
+  hosts: pbs_pve
+  gather_facts: false
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Install the backup capacity hook
+      ansible.builtin.copy:
+        src: files/pbs-capacity-hook.py
+        dest: /usr/local/sbin/pbs-capacity-hook
+        owner: root
+        group: root
+        mode: '0755'
+
+- name: Configure the PVE HDD backup target
+  hosts: pbs_hdd_host
+  gather_facts: false
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Read the HDD storage definition
+      ansible.builtin.command:
+        argv: [pvesh, get, /storage/hdd, --output-format, json]
+      register: pve_hdd_storage
+      changed_when: false
+
+    - name: Allow VM disks on the HDD storage
+      ansible.builtin.command:
+        argv: [pvesh, set, /storage/hdd, --content, "{{ (pve_hdd_storage.stdout | from_json).content }},images"]
+      when: "'images' not in (pve_hdd_storage.stdout | from_json).content.split(',')"
+      changed_when: true
+
+    - name: Read the PBS storage definitions
+      ansible.builtin.command:
+        argv: [pvesh, get, /storage, --output-format, json]
+      register: pve_pbs_storages
+      changed_when: false
+
+    - name: Register the local PBS datastore with the existing PBS credentials
+      when: "'pbs-local' not in (pve_pbs_storages.stdout | from_json | map(attribute='storage') | list)"
+      block:
+        - name: Read existing PBS connection settings
+          ansible.builtin.command:
+            argv: [pvesh, get, /storage/pbs-home, --output-format, json]
+          register: pve_pbs_connection
+          changed_when: false
+
+        - name: Read the existing PBS storage credential
+          ansible.builtin.slurp:
+            src: /etc/pve/priv/storage/pbs-home.pw
+          register: pve_pbs_password
+          no_log: true
+
+        - name: Add the HDD-backed PBS storage
+          ansible.builtin.command:
+            argv:
+              - pvesm
+              - add
+              - pbs
+              - pbs-local
+              - --server
+              - "{{ (pve_pbs_connection.stdout | from_json).server }}"
+              - --datastore
+              - pbs-hdd
+              - --username
+              - "{{ (pve_pbs_connection.stdout | from_json).username }}"
+              - --fingerprint
+              - "{{ (pve_pbs_connection.stdout | from_json).fingerprint }}"
+              - --content
+              - backup
+              - --prune-backups
+              - keep-all=1
+              - --password
+              - "{{ pve_pbs_password.content | b64decode | trim }}"
+          no_log: true
+          changed_when: true
+
+    - name: Point the existing periodic backup job at the HDD with capacity protection
+      ansible.builtin.command:
+        argv: [pvesh, set, /cluster/backup/pbs-home-x570, --storage, pbs-local, --script, /usr/local/sbin/pbs-capacity-hook, --prune-backups, keep-all=1]
+      changed_when: false
+
+    - name: Enable periodic backups after the initial verified archive copy
+      ansible.builtin.command:
+        argv: [pvesh, set, /cluster/backup/pbs-home-x570, --enabled, '1']
+      when: pbs_tiered_activate | default(false) | bool
+      changed_when: false

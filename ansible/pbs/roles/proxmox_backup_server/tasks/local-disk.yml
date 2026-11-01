@@ -1,0 +1,57 @@
+---
+- name: Read the backup disk serial
+  ansible.builtin.command:
+    argv: [lsblk, --nodeps, --noheadings, --output, SERIAL, "{{ pbs_local.device }}"]
+  register: pbs_local_serial
+  changed_when: false
+  check_mode: false
+
+- name: Read the backup disk filesystem
+  ansible.builtin.command:
+    argv: [blkid, -o, export, "{{ pbs_local.device }}"]
+  register: pbs_local_filesystem
+  changed_when: false
+  failed_when: pbs_local_filesystem.rc not in [0, 2]
+  check_mode: false
+
+- name: Refuse to format a different or previously used disk
+  ansible.builtin.assert:
+    that:
+      - pbs_local_serial.stdout | trim == pbs_local.serial
+      - pbs_local_filesystem.rc == 2 or ('LABEL=' ~ pbs_local.label ~ '\n') in (pbs_local_filesystem.stdout ~ '\n')
+      - pbs_local_filesystem.rc == 2 or 'TYPE=ext4' in pbs_local_filesystem.stdout
+
+- name: Format the empty dedicated backup disk
+  community.general.filesystem:
+    dev: "{{ pbs_local.device }}"
+    fstype: ext4
+    opts: "-L {{ pbs_local.label }} -m 1"
+    force: false
+  when: pbs_local_filesystem.rc == 2
+
+- name: Create the HDD mountpoint
+  ansible.builtin.file:
+    path: "{{ pbs_local.mountpoint }}"
+    state: directory
+    mode: '0755'
+
+- name: Mount the HDD with access times required by PBS GC
+  ansible.posix.mount:
+    path: "{{ pbs_local.mountpoint }}"
+    src: "LABEL={{ pbs_local.label }}"
+    fstype: ext4
+    opts: defaults,relatime,nofail
+    state: mounted
+
+- name: Read PBS datastores
+  ansible.builtin.command:
+    argv: [proxmox-backup-manager, datastore, list, --output-format, json]
+  register: pbs_local_stores
+  changed_when: false
+  check_mode: false
+
+- name: Create the HDD datastore
+  ansible.builtin.command:
+    argv: [proxmox-backup-manager, datastore, create, "{{ pbs_local.datastore }}", "{{ pbs_local.path }}", --tuning, 'sync-level=filesystem']
+  when: pbs_local.datastore not in (pbs_local_stores.stdout | from_json | map(attribute='name') | list)
+  changed_when: true
