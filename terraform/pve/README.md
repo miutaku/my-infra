@@ -23,7 +23,7 @@ PBS VM は `template-debian-13-home-amd64` から clone して作成する。
 ## PBSの保存先とホスト障害時の復旧
 
 PBSは `pve-x570` に配置する。`scsi0` はOS、`scsi1` は再生成できるS3キャッシュ、
-`scsi2` は `hdd` ストレージ上の350GiBの短期バックアップである。
+`scsi2` は `hdd` ストレージ上の400GiBの短期バックアップである。
 HDDはVMバックアップとZFSレプリケーションから除外する。
 `hdd` ストレージは `images` を許可する必要がある。
 

@@ -81,7 +81,7 @@ module "unifi_os_server" {
 #   - scsi0 (OS, 20G): Debian + PBS + /etc/proxmox-backup の設定。
 #   - scsi1 (cache, 64G): S3 datastore のローカル永続キャッシュ。S3 から再生成可能なため
 #     レプリケーション除外 (apply 後 `qm set 14001 --scsi1 <vol>,replicate=0`、README 参照)。
-#   - scsi2 (HDD, 350G): 検証前の世代と直近の同期済み世代。pve-x570 のローカルディスク。
+#   - scsi2 (HDD, 400G): 検証前の世代と直近の同期済み世代。pve-x570 のローカルディスク。
 #
 # HDD はホストローカルなので PBS は pve-x570 に固定する。
 # ホスト障害時は単一の復旧用 PBS で IDrive の既存 datastore を引き継ぐ。
@@ -104,7 +104,7 @@ module "pbs" {
   data_disk_size    = 64           # scsi1: S3 datastore ローカルキャッシュ (レプリ除外運用)
   backup_disk = {
     storage = "hdd"
-    size    = 350
+    size    = 400
     serial  = "pbs-hdd-backup"
   }
   # Limit S3 cache writes to avoid contention with control-plane disks.

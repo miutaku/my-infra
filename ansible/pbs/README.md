@@ -13,7 +13,7 @@ GC/prune ジョブが登録済みの状態。
   (テンプレートは `packer/debian-13` でビルド)。
 - PBS が自己署名証明書を生成する際の ASN.1 CN 長制限を避けるため、VM 名 / hostname は
   `pbs-01-debian-13-home-amd64` のように短めに保つ。
-- ディスク: `scsi0` = OS (20G)、`scsi1` = S3キャッシュ (64G、SSD)、`scsi2` = 短期バックアップ (350GiB、HDD)。
+- ディスク: `scsi0` = OS (20G)、`scsi1` = S3キャッシュ (64G、SSD)、`scsi2` = 短期バックアップ (400GiB、HDD)。
 - HDDは `pve-x570` のローカルストレージ。PBSを別ノードへそのまま移動できない。
   ホスト障害時は、IDriveの既存datastoreを単一の復旧用PBSへ引き継いで復元する。
 
@@ -417,7 +417,7 @@ IDriveからのダウンロード量は、S3 datastoreのRRDにある `s3/downlo
 
 ### 設定と初回切り替え
 
-`hdd` ストレージが `images` を許可していることを確認し、TerraformでPBSに350GiBの
+`hdd` ストレージが `images` を許可していることを確認し、TerraformでPBSに400GiBの
 `scsi2` を追加する。既存ディスクはフォーマットしない。Ansibleはスロットの識別子、
 ディスクシリアル、既存ファイルシステムを照合し、空の専用ディスクだけを初期化する。
 
