@@ -190,7 +190,7 @@ group_by= grafana_folder/alertname/environment/service。group_interval=5m、war
 | pbs-archive-stale | PBS IDrive copy overdue | critical → critical | backups / backup_integrity | IDriveコピーが36時間以上更新されていないか、直近の同期ジョブに失敗しています。一部VMのコピーが新しくても、同期ジョブ全体の結果を確認してください。 |
 | pbs-archive-verification-stale | PBS IDrive monthly verification overdue | warn → warning | backups / backup_integrity | IDrive側の検証が35日以内に成功していません。月次S3検証ジョブと転送量を確認してください。 |
 | pbs-archive-verification-failed | PBS IDrive verification failed | critical → critical | backups / backup_integrity | IDriveの直近の月次検証に失敗しました。S3検証タスクのログを確認してください。 |
-| pbs-hdd-capacity | PBS HDD capacity reserve low | warn → warning | backups / backup_integrity | HDD保存先の使用量が260GiBを超えています。280GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。 |
+| pbs-hdd-capacity | PBS HDD capacity reserve low | warn → warning | backups / backup_integrity | HDD保存先の使用量が310GiBを超えています。330GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。 |
 
 ## 必須系列（115件）
 

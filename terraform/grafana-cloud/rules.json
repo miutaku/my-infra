@@ -1914,12 +1914,12 @@
   {
     "id": "pbs-hdd-capacity",
     "title": "PBS HDD capacity reserve low",
-    "expression": "(home_pbs_local_used_bytes{job=\"home-service-monitor\"} > bool 279172874240) or vector(0)",
+    "expression": "(home_pbs_local_used_bytes{job=\"home-service-monitor\"} > bool 332859965440) or vector(0)",
     "duration": "10m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "HDD保存先の使用量が260GiBを超えています。280GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。"
+    "description": "HDD保存先の使用量が310GiBを超えています。330GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。"
   }
 ]

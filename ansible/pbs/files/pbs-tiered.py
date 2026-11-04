@@ -80,10 +80,27 @@ def save_state(state):
     temporary.replace(STATE)
 
 
-def set_protected(store, key, protected):
-    api('set', f'/admin/datastore/{store}/protected',
-        '--backup-type', key[0], '--backup-id', key[1], '--backup-time', str(key[2]),
-        '--protected', str(protected).lower())
+def set_protected(store, key, protected, timeout=15 * 60):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            api('set', f'/admin/datastore/{store}/protected',
+                '--backup-type', key[0], '--backup-id', key[1], '--backup-time', str(key[2]),
+                '--protected', str(protected).lower())
+            return
+        except RuntimeError as error:
+            # PBS can report only this context when an incremental backup holds the base snapshot.
+            message = str(error).lower()
+            busy = any(text in message for text in (
+                'while updating the protection status of snapshot',
+                'unable to acquire lock', 'already locked', 'possibly running or in use',
+            ))
+            remaining = deadline - time.monotonic()
+            if not busy or remaining <= 0:
+                raise
+            print(f'Protection update for {store}/{key[0]}/{key[1]}/{key[2]} is busy; retrying',
+                  flush=True)
+            time.sleep(min(10, remaining))
 
 
 def update_pins(config, state, chosen, rows):

@@ -67,6 +67,42 @@ class SafetyTests(unittest.TestCase):
         self.assertEqual(protect.call_count, 1)
         self.assertEqual(state['pins'], [['vm', '100', 90]])
 
+    def test_snapshot_lock_conflict_is_retried_before_old_pin_is_released(self):
+        old, new = snapshot(90, protected=True), snapshot()
+        state = {'pins': [['vm', '100', 90]]}
+        conflict = RuntimeError('while updating the protection status of snapshot')
+        with patch.object(tiered, 'api', side_effect=[conflict, None, None]) as api, \
+                patch.object(tiered.time, 'sleep') as sleep, \
+                patch.object(tiered, 'save_state'):
+            tiered.update_pins(self.config, state, [new], [old, new])
+        self.assertEqual([call.args[-1] for call in api.call_args_list], ['true', 'true', 'false'])
+        self.assertEqual(state['pins'], [['vm', '100', 100]])
+        sleep.assert_called_once()
+
+    def test_protection_retry_expires_with_old_pin_and_sync_state_intact(self):
+        old, new = snapshot(90, protected=True), snapshot()
+        state = {'pins': [['vm', '100', 90]], 'last_sync': 95, 'synced': [['vm', '100', 90]]}
+        conflict = RuntimeError('while updating the protection status of snapshot')
+        with patch.object(tiered, 'api', side_effect=conflict) as api, \
+                patch.object(tiered.time, 'monotonic', side_effect=[0, 1, 900]), \
+                patch.object(tiered.time, 'sleep') as sleep, \
+                patch.object(tiered, 'save_state') as save:
+            with self.assertRaisesRegex(RuntimeError, 'protection status'):
+                tiered.update_pins(self.config, state, [new], [old, new])
+        self.assertEqual([call.args[-1] for call in api.call_args_list], ['true', 'true'])
+        self.assertEqual(state, {'pins': [['vm', '100', 90]], 'last_sync': 95,
+                                 'synced': [['vm', '100', 90]]})
+        sleep.assert_called_once_with(10)
+        save.assert_not_called()
+
+    def test_permission_error_is_not_retried(self):
+        with patch.object(tiered, 'api', side_effect=RuntimeError('permission denied')) as api, \
+                patch.object(tiered.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(RuntimeError, 'permission denied'):
+                tiered.set_protected('hdd', ('vm', '100', 100), True)
+        api.assert_called_once()
+        sleep.assert_not_called()
+
     def test_housekeeping_requires_confirmed_copy_and_intact_protection(self):
         with patch.object(tiered, 'manager') as manager:
             tiered.housekeeping(self.config, {})
@@ -95,7 +131,7 @@ class SafetyTests(unittest.TestCase):
         local = {'active': 1, 'enabled': 1, 'used': 205 * capacity.GIB, 'avail': 60 * capacity.GIB}
         host = {'avail': 40 * capacity.GIB}
         capacity.check(local, host)
-        for change in ({'active': 0}, {'used': 280 * capacity.GIB}, {'avail': 15 * capacity.GIB}):
+        for change in ({'active': 0}, {'used': 330 * capacity.GIB}, {'avail': 15 * capacity.GIB}):
             with self.subTest(change=change), self.assertRaises(RuntimeError):
                 capacity.check(local | change, host)
         with self.assertRaises(RuntimeError):

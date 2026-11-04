@@ -60,6 +60,11 @@ def main():
             'network_ups_tools_ups_status{job="nut",instance="ups-a",ups="ups-a",flag="OB"}': f"{ob}+0x40",
         }, {"ups-on-battery": warn, "ups-shutdown-near": critical})
 
+    for used, expected in [(265, 0), (310, 0), (311, 1)]:
+        case(f"PBS HDD used {used} GiB", {
+            'home_pbs_local_used_bytes{job="home-service-monitor"}': f"{used * 1024 ** 3}+0x40",
+        }, {"pbs-hdd-capacity": expected})
+
     for available, warn, critical in [(20, 0, 0), (10, 1, 0), (5, 1, 0), (4, 0, 1)]:
         case(f"memory {available}%", {
             'node_memory_MemAvailable_bytes{job="node_vm",instance="test"}': f"{available}+0x40",
