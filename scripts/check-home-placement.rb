@@ -6,7 +6,8 @@ ROOT = File.expand_path('..', __dir__)
 # These jobs can fit in RPi requests but require stronger per-core performance.
 HEAVY_RUNNERS = [
   'k8s/pve/argocd-apps/arc-runner-reventer.yaml',
-  'k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml'
+  'k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml',
+  'k8s/pve/argocd-apps/arc-runner-tnlastation-compose.yaml'
 ].freeze
 HOST_KEYS = ['kubernetes.io/hostname', 'topology.miutaku/proxmox-node', 'node.miutaku/platform'].freeze
 

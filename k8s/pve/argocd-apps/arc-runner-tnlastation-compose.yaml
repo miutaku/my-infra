@@ -29,7 +29,6 @@ spec:
             automountServiceAccountToken: false
             nodeSelector:
               kubernetes.io/os: linux
-              kubernetes.io/arch: amd64
               node.miutaku/platform: pve
               node.miutaku/role: agent
             initContainers:

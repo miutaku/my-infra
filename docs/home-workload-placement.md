@@ -1,6 +1,6 @@
 # home-k8sの配置方針
 
-2026-10-23更新。特定のPVE・RPi・platformを既定の配置先にしない。性能が必要な重いrunnerはPVE workerを使う。
+特定のPVE・RPi・platformを既定の配置先にしない。性能が必要な重いrunnerはPVE workerを使う。
 RPiの一律なNoSchedule taintを撤去し、リソース要求に合うworkerからKubernetesが選択する。
 既存Podを一斉に退避させる操作は行わない。再作成・スケール・既存deschedulerの対象だけが順次配置される。
 この方針はPodの配置に適用する。PVE上のVM・LXCの物理デバイスやディスクは移動しない。
@@ -20,6 +20,7 @@ RPiの一律なNoSchedule taintを撤去し、リソース要求に合うworker�
 | 対象 | 条件と理由 |
 | --- | --- |
 | Reventer汎用 / Codex実行用runner | CPU性能・メモリを要するためPVE workerに限定。片方のPVEを優先する指定はしない。 |
+| TNLAStation Composeテスト用runner | 複数サービスの起動、ビルド、ブラウザー・映像処理のテストを行うためPVE workerに限定。CPUアーキテクチャや特定ホストは指定しない。 |
 | MetalLB speaker / L2Advertisement | VLAN20に接続したnode。VLAN10からVLAN20のVIPをL2広告しない。 |
 | WoL | hostNetworkの既存LAN区間（VLAN20）を維持。特定PVEは指定しない。 |
 | home-vip-monitor | control-plane上のVIPを観測するDaemonSetなのでcontrol-planeを指定。 |
@@ -29,7 +30,7 @@ Kubernetesの配置判定は`requests`を使い、`limits`の値でノードを�
 [公式のリソース管理仕様](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#how-pods-with-resource-requests-are-scheduled)を参照。
 重いrunnerのrequestsは1 CPU / 1Gi（Codex runnerは補助container分を加算）、limitsは2 CPU / 4Giなので、
 RPi 4GBにも配置され得る。同じコア数でもRPiとPVEの処理性能の差は判定されないため、
-この2種類だけはPVE workerを明示する。軽量なreader・review・配備runnerは自由配置を維持する。
+これらとTNLAStation Composeテスト用runnerはPVE workerを明示する。軽量なreader・review・配備runnerは自由配置を維持する。
 
 TNLAStation backendは本番・stagingともメモリのrequestsを1Gi、limitsを2Giにする。
 予約は特定nodeを除外する値から決めず、確認できる使用量の最大値に20%を加え、64Mi単位で切り上げる。
