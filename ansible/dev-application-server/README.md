@@ -45,10 +45,25 @@ ansible-playbook codex.yml
 古いSnap版が残っている場合も`/usr/local/bin`を`/snap/bin`より優先する。
 `type -a codex`と`codex --version`で解決先を確認する。
 
-`~/.codex`内の認証情報、設定、会話履歴、ペアリング情報とRemote Controlの
-実行状態は個人の状態として保持する。このplaybookではサービスの起動・停止や
-VS Code拡張同梱版の差し替えは行わない。公式インストーラーが作成した旧パッケージ
-キャッシュも保持する。ユーザー領域のapp-server daemon用パッケージはCodexが管理し、
+`~/.codex`内の認証情報、設定、会話履歴、ペアリング情報は保持する。
+`codex-remote-control.service`を有効化し、OS起動時に`miutaku`ユーザーで
+`codex remote-control start`を実行する。ログインは不要。起動失敗時は30秒後に再試行する。
+認証とペアリングは事前に対象ユーザーで完了しておく。
+
+サービスは`Type=oneshot`と`RemainAfterExit=yes`を使い、daemonの実行・更新は
+Codex標準機能に任せる。`active (exited)`は起動コマンドの成功を示し、
+daemonの稼働状態は`codex app-server daemon version`で確認する。
+サービス停止ではdaemonを停止しない。手動停止には対象ユーザーで
+`codex remote-control stop`、再開には`sudo systemctl restart codex-remote-control`を使う。
+
+```bash
+systemctl status codex-remote-control.service
+journalctl -u codex-remote-control.service
+codex app-server daemon version
+```
+
+VS Code拡張同梱版や公式インストーラーの旧パッケージキャッシュは保持する。
+ユーザー領域のapp-server daemon用パッケージはCodexが管理し、
 このCLI本体のバージョン固定とは別になる。
 
 ## 自動更新と再起動

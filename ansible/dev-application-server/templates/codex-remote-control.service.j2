@@ -1,0 +1,22 @@
+[Unit]
+Description=Start Codex Remote Control
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+User={{ dev_user }}
+Group={{ dev_group }}
+WorkingDirectory={{ dev_home }}
+Environment=HOME={{ dev_home }}
+Environment=CODEX_HOME={{ dev_home }}/.codex
+Environment=PATH={{ dev_home }}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+ExecStart=/usr/local/bin/codex remote-control start
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=30s
+TimeoutStartSec=300s
+
+[Install]
+WantedBy=multi-user.target

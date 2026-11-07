@@ -77,3 +77,20 @@
   register: codex_installed_version
   failed_when: codex_installed_version.stdout != 'codex-cli ' ~ codex_version
   when: not ansible_check_mode
+
+- name: Install the Codex Remote Control boot service
+  ansible.builtin.template:
+    src: codex-remote-control.service.j2
+    dest: /etc/systemd/system/codex-remote-control.service
+    owner: root
+    group: root
+    mode: "0644"
+  register: codex_remote_control_unit
+
+- name: Enable and start Codex Remote Control
+  ansible.builtin.systemd_service:
+    name: codex-remote-control.service
+    daemon_reload: "{{ codex_remote_control_unit.changed }}"
+    enabled: true
+    state: started
+  when: not ansible_check_mode or not codex_remote_control_unit.changed
