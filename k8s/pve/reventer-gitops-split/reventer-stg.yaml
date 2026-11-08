@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reventer-stg
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-stg-image-deployed.discord: ''
+spec:
+  project: reventer-apps-stg
+  source:
+    repoURL: git@github.com:miutaku/reventer-infrastructure.git
+    targetRevision: staging
+    path: infrastructure/k8s/apps-stg
+    kustomize:
+      patches:
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: admin-tunnel
+          namespace: app-reventer-stg
+        patch: "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: admin-tunnel\n\
+          \  namespace: app-reventer-stg\nspec:\n  strategy:\n    type: RollingUpdate\n\
+          \    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0\n  template:\n\
+          \    spec:\n      nodeSelector:\n        reventer.io/capacity: base\n  \
+          \      node.info/compartment.id: aaaaaaaad2w76kjuhq54uhczukiz3qa3jdvhc6awmof73fi7jrlyrsjvgflq\n\
+          \      containers:\n      - name: cloudflared\n        image: docker.io/cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07\n\
+          \        readinessProbe:\n          httpGet:\n            path: /ready\n\
+          \            port: 2000\n          initialDelaySeconds: 10\n          periodSeconds:\
+          \ 5\n          timeoutSeconds: 2\n          failureThreshold: 6"
+  destination:
+    namespace: app-reventer-stg
+    name: oke-stg
+  syncPolicy:
+    automated:
+      enabled: false
+      prune: false
+      selfHeal: false
+    syncOptions:
+    - RespectIgnoreDifferences=true
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    name: backend
+    jsonPointers:
+    - /spec/replicas
+  - group: apps
+    kind: Deployment
+    name: frontend
+    jsonPointers:
+    - /spec/replicas
+  - group: apps
+    kind: Deployment
+    name: admin
+    jsonPointers:
+    - /spec/replicas
