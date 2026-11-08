@@ -6,6 +6,11 @@ Applicationの自動同期は無効で、Image Updaterは別の有効化rootに�
 
 ## 管理範囲
 
+my-infraは自宅インフラ基盤を管理する。ここで扱うのは、自宅のArgo CD・Image Updaterから
+Re:Venterを管理するための接続・同期・書き戻し設定である。
+Re:Venter固有のクラウド資格情報をmy-infraのBSM Projectへ集約しない。
+自宅基盤との関連がある資格情報は、用途と必要権限を個別に確認する。
+
 - アプリ: `reventer-infrastructure` の `staging` / `main`、各環境のアプリnamespaceだけを許可する。
 - 基盤: 同リポジトリの `main`。namespace、metrics-server、autoscalerを管理する。
 - Image Updater: アプリ別packageの `:stg` / `:prd` をdigestで追従する。
