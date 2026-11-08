@@ -1,0 +1,618 @@
+{
+  "base": "01ab5020ab425887681b0f4e487b07b5b75ba154",
+  "head": "044daef3feb856d25733cccb23821956bd506c0b",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [
+          {
+            "id": "consumers.reventer.definitions.r_422e80c29b4897",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-apps-stg",
+                "resourceType": "AppProject",
+                "sourceFile": "k8s/pve/reventer-gitops-split/projects.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/projects.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "AppProject / k8s/pve/reventer-gitops-split/projects.yaml / namespace argocd"
+              },
+              "title": "reventer-apps-stg",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_422e80c29b4897"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_5082024599daf8",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "reventer-prd",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_5082024599daf8",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-prd.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "definitionRepository": "my-infra",
+                "application": "reventer-prd",
+                "sourceFile": "k8s/pve/reventer-gitops-split/reventer-prd.yaml",
+                "namespace": "app-reventer-prd",
+                "scope": "prd"
+              }
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_51a846afa75289",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml:ImageUpdater:argocd:reventer-image-updater-stg",
+                "resourceType": "ImageUpdater",
+                "sourceFile": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ImageUpdater / k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml / namespace argocd"
+              },
+              "title": "reventer-image-updater-stg",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_51a846afa75289"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_78817573eeb4c4",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "reventer-foundation-stg",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_78817573eeb4c4",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-foundation-stg.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "definitionRepository": "my-infra",
+                "application": "reventer-foundation-stg",
+                "sourceFile": "k8s/pve/reventer-gitops-split/reventer-foundation-stg.yaml",
+                "namespace": "app-reventer-stg",
+                "scope": "stg"
+              }
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_8781aa1f5093ea",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "reventer-admin-prd",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_8781aa1f5093ea",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-admin-prd.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "definitionRepository": "my-infra",
+                "application": "reventer-admin-prd",
+                "sourceFile": "k8s/pve/reventer-gitops-split/reventer-admin-prd.yaml",
+                "namespace": "app-reventer-prd",
+                "scope": "prd"
+              }
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_9f7215eb20893d",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml:ImageUpdater:argocd:reventer-image-updater-prd",
+                "resourceType": "ImageUpdater",
+                "sourceFile": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ImageUpdater / k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml / namespace argocd"
+              },
+              "title": "reventer-image-updater-prd",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_9f7215eb20893d"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_a7071453e01a06",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-apps-prd",
+                "resourceType": "AppProject",
+                "sourceFile": "k8s/pve/reventer-gitops-split/projects.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/projects.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "AppProject / k8s/pve/reventer-gitops-split/projects.yaml / namespace argocd"
+              },
+              "title": "reventer-apps-prd",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_a7071453e01a06"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_aa6d698fef6135",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "reventer-stg",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_aa6d698fef6135",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-stg.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "definitionRepository": "my-infra",
+                "application": "reventer-stg",
+                "sourceFile": "k8s/pve/reventer-gitops-split/reventer-stg.yaml",
+                "namespace": "app-reventer-stg",
+                "scope": "stg"
+              }
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_bbabe19fc63dc3",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-foundation-prd",
+                "resourceType": "AppProject",
+                "sourceFile": "k8s/pve/reventer-gitops-split/projects.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/projects.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "AppProject / k8s/pve/reventer-gitops-split/projects.yaml / namespace argocd"
+              },
+              "title": "reventer-foundation-prd",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_bbabe19fc63dc3"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_d18f699a220001",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-foundation-stg",
+                "resourceType": "AppProject",
+                "sourceFile": "k8s/pve/reventer-gitops-split/projects.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/projects.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "AppProject / k8s/pve/reventer-gitops-split/projects.yaml / namespace argocd"
+              },
+              "title": "reventer-foundation-stg",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_d18f699a220001"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_fb5ad1c3610e2c",
+            "status": "added",
+            "after": {
+              "style": {
+                "color": "muted"
+              },
+              "title": "reventer-foundation-prd",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_fb5ad1c3610e2c",
+              "tags": null,
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-foundation-prd.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "definitionRepository": "my-infra",
+                "application": "reventer-foundation-prd",
+                "sourceFile": "k8s/pve/reventer-gitops-split/reventer-foundation-prd.yaml",
+                "namespace": "app-reventer-prd",
+                "scope": "prd"
+              }
+            }
+          },
+          {
+            "id": "deployment:prd.ns_app_reventer_prd.r_5082024599daf8",
+            "status": "added",
+            "after": {
+              "id": "prd.ns_app_reventer_prd.r_5082024599daf8",
+              "element": "consumers.reventer.definitions.r_5082024599daf8",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-prd.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "reventer-prd",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:prd.ns_app_reventer_prd.r_8781aa1f5093ea",
+            "status": "added",
+            "after": {
+              "id": "prd.ns_app_reventer_prd.r_8781aa1f5093ea",
+              "element": "consumers.reventer.definitions.r_8781aa1f5093ea",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-admin-prd.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "reventer-admin-prd",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:prd.ns_app_reventer_prd.r_fb5ad1c3610e2c",
+            "status": "added",
+            "after": {
+              "id": "prd.ns_app_reventer_prd.r_fb5ad1c3610e2c",
+              "element": "consumers.reventer.definitions.r_fb5ad1c3610e2c",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-foundation-prd.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "reventer-foundation-prd",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:stg.ns_app_reventer_stg.r_78817573eeb4c4",
+            "status": "added",
+            "after": {
+              "id": "stg.ns_app_reventer_stg.r_78817573eeb4c4",
+              "element": "consumers.reventer.definitions.r_78817573eeb4c4",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-foundation-stg.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "reventer-foundation-stg",
+              "style": {}
+            }
+          },
+          {
+            "id": "deployment:stg.ns_app_reventer_stg.r_aa6d698fef6135",
+            "status": "added",
+            "after": {
+              "id": "stg.ns_app_reventer_stg.r_aa6d698fef6135",
+              "element": "consumers.reventer.definitions.r_aa6d698fef6135",
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-gitops-split/reventer-stg.yaml",
+                  "title": "Application定義"
+                }
+              ],
+              "title": "reventer-stg",
+              "style": {}
+            }
+          }
+        ],
+        "relations": [],
+        "views": [],
+        "specification": [],
+        "inventory": [
+          {
+            "id": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml:ImageUpdater:argocd:reventer-image-updater-prd",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml:ImageUpdater:argocd:reventer-image-updater-prd",
+              "type": "ImageUpdater",
+              "name": "reventer-image-updater-prd",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-prd.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml:ImageUpdater:argocd:reventer-image-updater-stg",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml:ImageUpdater:argocd:reventer-image-updater-stg",
+              "type": "ImageUpdater",
+              "name": "reventer-image-updater-stg",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/activate-updater/image-updater-stg.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-apps-prd",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-apps-prd",
+              "type": "AppProject",
+              "name": "reventer-apps-prd",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/projects.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-apps-stg",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-apps-stg",
+              "type": "AppProject",
+              "name": "reventer-apps-stg",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/projects.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-foundation-prd",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-foundation-prd",
+              "type": "AppProject",
+              "name": "reventer-foundation-prd",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/projects.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-foundation-stg",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/projects.yaml:AppProject:argocd:reventer-foundation-stg",
+              "type": "AppProject",
+              "name": "reventer-foundation-stg",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/projects.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/reventer-admin-prd.yaml:Application:argocd:reventer-admin-prd",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/reventer-admin-prd.yaml:Application:argocd:reventer-admin-prd",
+              "type": "Application",
+              "name": "reventer-admin-prd",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/reventer-admin-prd.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/reventer-foundation-prd.yaml:Application:argocd:reventer-foundation-prd",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/reventer-foundation-prd.yaml:Application:argocd:reventer-foundation-prd",
+              "type": "Application",
+              "name": "reventer-foundation-prd",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/reventer-foundation-prd.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/reventer-foundation-stg.yaml:Application:argocd:reventer-foundation-stg",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/reventer-foundation-stg.yaml:Application:argocd:reventer-foundation-stg",
+              "type": "Application",
+              "name": "reventer-foundation-stg",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/reventer-foundation-stg.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/reventer-prd.yaml:Application:argocd:reventer-prd",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/reventer-prd.yaml:Application:argocd:reventer-prd",
+              "type": "Application",
+              "name": "reventer-prd",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/reventer-prd.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-gitops-split/reventer-stg.yaml:Application:argocd:reventer-stg",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-gitops-split/reventer-stg.yaml:Application:argocd:reventer-stg",
+              "type": "Application",
+              "name": "reventer-stg",
+              "namespace": "argocd",
+              "file": "k8s/pve/reventer-gitops-split/reventer-stg.yaml"
+            }
+          }
+        ]
+      },
+      "views": {
+        "access": {
+          "title": "入口・認証 / 原則Access・例外mTLS",
+          "before": true,
+          "after": true
+        },
+        "delivery": {
+          "title": "自宅基盤の変更・同期",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "home-k8sのサービスと接続",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "自宅インフラの全体",
+          "before": true,
+          "after": true
+        },
+        "loockit": {
+          "title": "Loockit / HAProxy → LXC → Bluetooth",
+          "before": true,
+          "after": true
+        },
+        "network": {
+          "title": "ネットワーク機器 / ルーター・SW・AP",
+          "before": true,
+          "after": true
+        },
+        "nextcloud": {
+          "title": "Nextcloud / DB・ロック・ファイル保存",
+          "before": true,
+          "after": true
+        },
+        "nfs": {
+          "title": "NFSの利用経路 / nas-01・nas-02",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "Proxmox VEクラスタ / 全VM・LXC",
+          "before": true,
+          "after": true
+        },
+        "platform": {
+          "title": "home-k8s / クラスタ基盤",
+          "before": true,
+          "after": true
+        },
+        "power": {
+          "title": "電源・安全停止 / UPS・NUTのcross-power",
+          "before": true,
+          "after": true
+        },
+        "recording": {
+          "title": "録画・配信 / PRD・STG",
+          "before": true,
+          "after": true
+        },
+        "recording_prd": {
+          "title": "TNLAStation PRD / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "recording_stg": {
+          "title": "TNLAStation STG / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        },
+        "storage": {
+          "title": "保存・バックアップ / 復元元の区別",
+          "before": true,
+          "after": true
+        },
+        "vlans": {
+          "title": "VLAN / native・タグ・経路",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}
