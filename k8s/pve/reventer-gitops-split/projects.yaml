@@ -1,0 +1,85 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: reventer-apps-stg
+  namespace: argocd
+spec:
+  description: Re:Venter stg apps
+  sourceRepos:
+  - git@github.com:miutaku/reventer-infrastructure.git
+  destinations:
+  - name: oke-stg
+    namespace: app-reventer-stg
+  clusterResourceWhitelist: []
+  namespaceResourceBlacklist:
+  - group: rbac.authorization.k8s.io
+    kind: '*'
+  - group: external-secrets.io
+    kind: SecretStore
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: reventer-foundation-stg
+  namespace: argocd
+spec:
+  description: Re:Venter stg foundation
+  sourceRepos:
+  - git@github.com:miutaku/reventer-infrastructure.git
+  destinations:
+  - name: oke-stg
+    namespace: app-reventer-stg
+  - name: oke-stg
+    namespace: kube-system
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRole
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+  - group: apiregistration.k8s.io
+    kind: APIService
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: reventer-apps-prd
+  namespace: argocd
+spec:
+  description: Re:Venter prd apps
+  sourceRepos:
+  - git@github.com:miutaku/reventer-infrastructure.git
+  destinations:
+  - name: oke-prd
+    namespace: app-reventer-prd
+  clusterResourceWhitelist: []
+  namespaceResourceBlacklist:
+  - group: rbac.authorization.k8s.io
+    kind: '*'
+  - group: external-secrets.io
+    kind: SecretStore
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: reventer-foundation-prd
+  namespace: argocd
+spec:
+  description: Re:Venter prd foundation
+  sourceRepos:
+  - git@github.com:miutaku/reventer-infrastructure.git
+  destinations:
+  - name: oke-prd
+    namespace: app-reventer-prd
+  - name: oke-prd
+    namespace: kube-system
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRole
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+  - group: apiregistration.k8s.io
+    kind: APIService

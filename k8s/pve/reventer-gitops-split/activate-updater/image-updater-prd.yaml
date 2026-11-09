@@ -1,0 +1,47 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: reventer-image-updater-prd
+  namespace: argocd
+spec:
+  commonUpdateSettings:
+    updateStrategy: digest
+    pullSecret: pullsecret:argocd/reventer-image-pull-prd
+  applicationRefs:
+  - namePattern: reventer-prd
+    writeBackConfig:
+      method: git:secret:argocd/reventer-image-writeback-prd
+      gitConfig:
+        repository: git@github.com:miutaku/reventer-infrastructure.git
+        branch: main
+        writeBackTarget: kustomization
+    images:
+    - alias: backend
+      imageName: ghcr.io/miutaku/reventer-release-backend:prd
+      manifestTargets:
+        kustomize:
+          name: ghcr.io/miutaku/reventer/backend-prd
+      commonUpdateSettings:
+        forceUpdate: true
+    - alias: frontend
+      imageName: ghcr.io/miutaku/reventer-release-frontend:prd
+      manifestTargets:
+        kustomize:
+          name: ghcr.io/miutaku/reventer/frontend-prd
+      commonUpdateSettings:
+        forceUpdate: true
+  - namePattern: reventer-admin-prd
+    writeBackConfig:
+      method: git:secret:argocd/reventer-image-writeback-prd
+      gitConfig:
+        repository: git@github.com:miutaku/reventer-infrastructure.git
+        branch: main
+        writeBackTarget: kustomization
+    images:
+    - alias: admin
+      imageName: ghcr.io/miutaku/reventer-release-admin:prd
+      manifestTargets:
+        kustomize:
+          name: ghcr.io/miutaku/reventer/admin-prd
+      commonUpdateSettings:
+        forceUpdate: true
