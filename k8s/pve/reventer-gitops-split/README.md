@@ -13,7 +13,7 @@ Re:Venter固有のクラウド資格情報をmy-infraのBSM Projectへ集約し�
 
 - アプリ: `reventer-infrastructure` の `staging` / `main`、各環境のアプリnamespaceだけを許可する。
 - 基盤: 同リポジトリの `main`。namespace、metrics-server、autoscalerを管理する。
-- Image Updater: アプリ別packageの `:stg` / `:prd` をdigestで追従する。
+- Image Updater: 管理側専用 `reventer-release-backend/frontend/admin` packageの `:stg` / `:prd` をdigestで追従する。
   書き戻し先はそれぞれ `staging` / `main`。旧イメージ名はKustomizeの変換元として保持する。
 
 ProjectはGit revisionを制限できない。アプリ用Projectを基盤Applicationに付け替えず、
@@ -29,6 +29,8 @@ ClusterSecretStoreのnamespace制限と環境別資格情報も前提であり�
    `reventer-image-pull-stg` / `-prd` は読み取り専用とする。広域runner PATを流用しない。
 3. 各環境のバックアップ保管、API検証、成果物公開ゲートを検証する。
    同じpackageのSTG/PRDタグに対する書き込み権限はGitHub側ではタグ単位に限定できないため、
+   公開用packageにアプリrepoのActions書込権限を付けず、管理側だけが更新する。
+   アプリのビルドjobにはレジストリ公開資格情報を渡さず、成功CIのartifactを管理側で検証する。
    本番用書き込み資格情報をSTG runnerへ渡さない。新追従タグを有効化条件の前に公開しない。
 4. 新しい基盤Applicationへnamespace・metrics-server・autoscalerの管理を移す。
    旧Applicationのpruneを無効にしてから所有権を移す。`FailOnSharedResource=true` が拒否する間は

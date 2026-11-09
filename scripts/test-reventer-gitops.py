@@ -60,7 +60,7 @@ class GitOpsCutover(unittest.TestCase):
                 self.assertEqual(config['method'], 'git:secret:argocd/reventer-image-writeback-' + env)
                 self.assertEqual(config['gitConfig']['branch'], 'staging' if env == 'stg' else 'main')
                 for image in ref['images']:
-                    self.assertEqual(image['imageName'], 'ghcr.io/miutaku/reventer-' + image['alias'] + ':' + env)
+                    self.assertEqual(image['imageName'], 'ghcr.io/miutaku/reventer-release-' + image['alias'] + ':' + env)
                     self.assertNotIn('*', image['imageName'])
                     self.assertIn('kustomize', image['manifestTargets'])
 

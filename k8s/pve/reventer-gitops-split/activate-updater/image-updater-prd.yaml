@@ -17,14 +17,14 @@ spec:
         writeBackTarget: kustomization
     images:
     - alias: backend
-      imageName: ghcr.io/miutaku/reventer-backend:prd
+      imageName: ghcr.io/miutaku/reventer-release-backend:prd
       manifestTargets:
         kustomize:
           name: ghcr.io/miutaku/reventer/backend-prd
       commonUpdateSettings:
         forceUpdate: true
     - alias: frontend
-      imageName: ghcr.io/miutaku/reventer-frontend:prd
+      imageName: ghcr.io/miutaku/reventer-release-frontend:prd
       manifestTargets:
         kustomize:
           name: ghcr.io/miutaku/reventer/frontend-prd
@@ -39,7 +39,7 @@ spec:
         writeBackTarget: kustomization
     images:
     - alias: admin
-      imageName: ghcr.io/miutaku/reventer-admin:prd
+      imageName: ghcr.io/miutaku/reventer-release-admin:prd
       manifestTargets:
         kustomize:
           name: ghcr.io/miutaku/reventer/admin-prd
