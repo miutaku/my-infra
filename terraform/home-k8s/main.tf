@@ -21,12 +21,12 @@ locals {
     worker_01 = {
       name        = "worker-01-talos-home-pve-amd64", node_name = "pve-x570", vm_id = 13004
       mac_address = "02:54:00:13:00:04", ipv4_address = "192.168.20.140"
-      cpu_cores   = 8, memory_mb = 8192
+      cpu_cores   = 16, memory_mb = 20480, disk_gb = 96
     }
     worker_02 = {
       name        = "worker-02-talos-home-pve-amd64", node_name = "pve-b550m", vm_id = 13005
       mac_address = "02:54:00:13:00:05", ipv4_address = "192.168.20.141"
-      cpu_cores   = 4, memory_mb = 8192
+      cpu_cores   = 8, memory_mb = 20480, disk_gb = 96
     }
   }
 }
@@ -87,7 +87,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
   disk {
     datastore_id = "local-zfs"
     interface    = "scsi0"
-    size         = 24
+    size         = lookup(each.value, "disk_gb", 24)
     discard      = "on"
     iothread     = true
     ssd          = true
