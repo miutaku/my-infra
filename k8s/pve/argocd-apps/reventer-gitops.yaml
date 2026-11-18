@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/miutaku/my-infra.git
+    repoURL: git@github.com:miutaku/reventer.git
     targetRevision: main
-    path: k8s/pve/reventer-gitops
+    path: infrastructure/gitops
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -20,3 +20,4 @@ spec:
       selfHeal: true
     syncOptions:
     - ServerSideApply=true
+    - PruneLast=true
