@@ -3,10 +3,9 @@ kind: Application
 metadata:
   name: oci-gateway-api-crds
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  finalizers: []
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: '1'
 spec:
   project: default
   source:

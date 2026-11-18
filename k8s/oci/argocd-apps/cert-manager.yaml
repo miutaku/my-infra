@@ -3,24 +3,23 @@ kind: Application
 metadata:
   name: oci-cert-manager
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  finalizers: []
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: '1'
 spec:
   project: default
   source:
     repoURL: https://charts.jetstack.io
     chart: cert-manager
-    targetRevision: "v1.20.1"
+    targetRevision: v1.20.1
     helm:
       releaseName: cert-manager
       valuesObject:
         crds:
           enabled: true
         extraArgs:
-          - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
-          - --dns01-recursive-nameservers-only
+        - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+        - --dns01-recursive-nameservers-only
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
@@ -29,4 +28,4 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
+    - CreateNamespace=true
