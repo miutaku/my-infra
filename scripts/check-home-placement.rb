@@ -46,10 +46,7 @@ end
 
 if $PROGRAM_NAME == __FILE__
   errors = []
-  files = Dir.glob(File.join(ROOT, 'k8s/pve/**/*.{yaml,yml}')).reject do |file|
-    # These Applications deploy to OCI clusters, not home-k8s.
-    file.include?('/k8s/pve/reventer-gitops/')
-  end
+  files = Dir.glob(File.join(ROOT, 'k8s/pve/**/*.{yaml,yml}'))
   files.each do |file|
     relative = file.delete_prefix(ROOT + '/')
     YAML.load_stream(File.read(file)).each { |document| check_placement(document, relative, errors) }

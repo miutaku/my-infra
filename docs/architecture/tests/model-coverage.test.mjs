@@ -80,16 +80,16 @@ test('dedicated resources belong to ReVenter and every curated view shows only i
  assert.ok(!model.views.delivery.nodes.some(node=>node.modelRef==='consumers.reventer'));
  const oci=coverage.records.filter(row=>row.file.startsWith('terraform/oci')||row.file.startsWith('k8s/oci'));
  assert.ok(oci.length>0);assert.ok(oci.every(row=>row.owner==='reventer'));
- const names=['reventer-tfc-agent','arc-runner-reventer','arc-runner-reventer-review','architecture-review','oci-prd-external-secrets'];
+ const names=['arc-runner-reventer','arc-runner-reventer-review','architecture-review'];
  for(const name of names)assert.equal(coverage.records.find(row=>row.type==='Application'&&row.name===name).owner,'reventer',name);
  for(const old of ['arc-runner-reventer-codex','arc-runner-my-infra-codex'])assert.ok(!coverage.records.some(row=>row.type==='Application'&&row.name===old));
  for(const name of ['arc-runner-architecture-automation','arc-runner-architecture-reader','architecture-automation-config'])assert.equal(coverage.records.find(row=>row.type==='Application'&&row.name===name).owner,'my-infra');
  const monitoring=coverage.records.filter(row=>row.file.startsWith('terraform/oci-observability'));
- assert.ok(monitoring.length>0);assert.ok(monitoring.every(row=>row.owner==='reventer'));
+ assert.equal(monitoring.length,0,'Re:Venter monitoring infrastructure is declared in its own repository');
  const cache=coverage.records.find(row=>row.file==='k8s/pve/arc-runners/reventer-cache-pvc.yaml');
  assert.equal(cache.owner,'my-infra');
  assert.equal(isReventerDedicated({file:cache.file,name:cache.name}),false);
- assert.equal(coverage.records.find(row=>row.type==='Application'&&row.name==='oci-external-secrets').owner,'reventer');
+ for(const name of ['reventer-tfc-agent','oci-external-secrets','oci-prd-external-secrets'])assert.ok(!coverage.records.some(row=>row.type==='Application'&&row.name===name),name+' belongs in the Re:Venter repository');
 });
 
 test('public access keeps authentication separate from traffic purpose and rejects unclassified routes',()=>{
