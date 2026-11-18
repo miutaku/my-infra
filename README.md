@@ -22,20 +22,19 @@
 | 対象 | 管理する場所 |
 | --- | --- |
 | 自宅VM/LXC・Talos・ネットワーク機器 | 本リポジトリの `terraform/`、`talos/`、`ansible/` |
-| STG OKE・共通Kubernetes基盤 | `terraform/oci/`、`k8s/oci/` |
-| PRD OKE・Re:Venterアプリ定義 | Re:Venterの `infrastructure/terraform/oci-prd/`、`infrastructure/k8s/` |
-| OCI監視VM | `terraform/oci-observability-stg/`、`terraform/oci-observability/` |
-| ArgoCDのアプリ登録・Image Updater | `k8s/pve/argocd-apps/`、`k8s/pve/reventer-gitops/` |
+| STG／PRD OKE・アプリ・証明書・Secrets・NGINX・監視VM | [Re:Venterのinfrastructure/](https://github.com/miutaku/reventer/tree/main/infrastructure) |
+| Re:VenterのApplication・AppProject・Image Updater・通知 | [Re:Venterのinfrastructure/gitops/](https://github.com/miutaku/reventer/tree/main/infrastructure/gitops) |
+| 自宅Argo CD・汎用runner・Re:Venterの起点Application | `k8s/pve/argocd/`、`k8s/pve/argocd-apps/` |
 | 自宅向けCloudflare設定 | `terraform/cloudflare/` |
 
-自宅ArgoCDはhome-k8sとRe:VenterのSTG・PRDを管理する。STG OKEの `argocd` は共通インフラを管理する。Re:VenterのGitOps管理は自宅ArgoCDへ集約している。
+自宅Argo CDはRe:VenterのSTG／PRDを環境別AppProjectで管理する。本リポジトリはRe:Venterの起点登録だけを持ち、各環境の構成とバージョンはRe:Venterで管理する。STG OKEのArgo CDはSTG内の汎用基盤のみを管理し、PRDの登録資格情報を保持しない。
 
 ## 運用上の前提
 
 - OKEは通常worker 1台。burstはCluster Autoscalerで増減する。Podの複数レプリカだけでは常設ノード故障への冗長化にならない。
 - OKEのAutoscalerはOKE内で稼働する。自宅の停止時もOKE上のアプリは稼働を続け、HPA・workerの自動スケールは自宅ArgoCDに依存しない。自宅ArgoCDが管理する変更の同期は停止する。
 - home-k8sのcontrol plane 3台はProxmox 2ホスト上に配置される。VMの台数と物理ホスト障害への耐性は区別する。
-- OKEのKubernetes APIは自宅固定IPv4とSTG NAT IPv4に限定。公開LBはCloudflare経由のHTTPSを許可し、自宅との拠点間VPNは使用しない。
+- OKEのKubernetes APIは許可された管理元IPv4に限定。公開LBはCloudflare経由のHTTPSを許可し、自宅との拠点間VPNは使用しない。
 - OCI管理は両環境のDefaultドメインを使用し、MFA必須。Oracleが保護する生成資源には環境間の差分が残る。
 - 秘密情報はBitwarden Secrets Managerで管理。KubernetesへはExternal Secrets Operator経由で注入し、Gitに保存しない。
 
@@ -66,10 +65,10 @@ PRD OKEのkubeconfigはOCIのPRDプロファイルで取得し、認証のexec�
 | 詳細 | 参照先 |
 | --- | --- |
 | Talos・VM定義 | [talos/home-k8s/](talos/home-k8s/)、[terraform/home-k8s/](terraform/home-k8s/) |
-| OKE定義 | [terraform/oci/](terraform/oci/)、[k8s/oci/](k8s/oci/) |
-| ArgoCD定義 | [k8s/pve/argocd/](k8s/pve/argocd/)、[k8s/pve/reventer-gitops/](k8s/pve/reventer-gitops/) |
+| OKE定義 | [Re:Venterのinfrastructure/](https://github.com/miutaku/reventer/tree/main/infrastructure) |
+| ArgoCD定義 | [k8s/pve/argocd/](k8s/pve/argocd/)、[Re:VenterのGitOps定義](https://github.com/miutaku/reventer/tree/main/infrastructure/gitops) |
 | ネットワーク | [ansible/ix2215/](ansible/ix2215/)、[terraform/cloudflare/](terraform/cloudflare/) |
-| 監視 | [Grafana Cloud / Terraform](terraform/grafana-cloud/)、[k8s/pve/vmagent/](k8s/pve/vmagent/)、[terraform/oci-observability/](terraform/oci-observability/)、[terraform/oci-observability-stg/](terraform/oci-observability-stg/) |
+| 監視 | [Grafana Cloud / Terraform](terraform/grafana-cloud/)、[k8s/pve/vmagent/](k8s/pve/vmagent/)、[Re:Venterの監視定義](https://github.com/miutaku/reventer/tree/main/infrastructure/observability) |
 | UPS・ストレージ | [UPSシャットダウン](docs/ups-shutdown.md)、[TrueNAS NFS](docs/truenas-nfs-setup.md) |
 | 管理端末セットアップ | [scripts/setup-k8s-tools](scripts/setup-k8s-tools)、[scripts/setup-kubeconfig](scripts/setup-kubeconfig) |
 
