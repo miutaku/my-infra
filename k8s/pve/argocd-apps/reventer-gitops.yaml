@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:miutaku/reventer.git
+    repoURL: git@github.com:miutaku/reventer-infrastructure.git
     targetRevision: main
     path: infrastructure/gitops
   destination:
@@ -16,8 +16,9 @@ spec:
     namespace: argocd
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      enabled: false
+      prune: false
+      selfHeal: false
     syncOptions:
     - ServerSideApply=true
     - PruneLast=true
