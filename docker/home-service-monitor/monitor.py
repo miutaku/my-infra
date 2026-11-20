@@ -226,8 +226,13 @@ def recorder(target, metrics):
 
 def truenas(target, metrics):
     import websocket
+    server_name = target.get('tls_server_name')
+    ssl_options = (
+        {'server_hostname': server_name, 'cert_reqs': ssl.CERT_REQUIRED, 'check_hostname': True}
+        if server_name else {'ca_certs': target['ca'], 'check_hostname': False}
+    )
     connection = websocket.create_connection(target['url'], timeout=TIMEOUT,
-        sslopt={'ca_certs': target['ca'], 'check_hostname': False}, suppress_origin=True, redirect_limit=0)
+        sslopt=ssl_options, suppress_origin=True, redirect_limit=0)
     deadline = time.monotonic() + 40
     index = 0
     legacy = target.get('protocol') == 'ddp'
@@ -248,7 +253,8 @@ def truenas(target, metrics):
         raise TimeoutError('TrueNAS request deadline')
 
     try:
-        verify_leaf(connection.sock, target['ca'])
+        if not server_name:
+            verify_leaf(connection.sock, target['ca'])
         if connection.handshake_response.status != 101:
             raise ValueError('TrueNAS endpoint did not upgrade to WebSocket')
         metrics.add('home_api_tls_expiry_seconds', ssl.cert_time_to_seconds(connection.sock.getpeercert()['notAfter']))

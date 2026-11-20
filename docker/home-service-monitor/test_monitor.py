@@ -169,9 +169,19 @@ class TrueNASTests(unittest.TestCase):
                 connection.recv.side_effect = [json.dumps(r) for r in replies]
                 websocket = SimpleNamespace(create_connection=MagicMock(return_value=connection))
                 target = self.target(protocol)
+                if protocol == 'ddp':
+                    del target['ca']
+                    target['tls_server_name'] = 'nas.example.org'
                 metrics = monitor.Metrics(target)
-                with patch.dict('sys.modules', {'websocket':websocket}), patch.object(monitor,'verify_leaf'), patch.object(monitor,'secret',return_value='test-key'):
+                with patch.dict('sys.modules', {'websocket':websocket}), patch.object(monitor,'verify_leaf') as verify_leaf, patch.object(monitor,'secret',return_value='test-key'):
                     monitor.truenas(target,metrics)
+                if protocol == 'ddp':
+                    self.assertEqual(websocket.create_connection.call_args.kwargs['sslopt'], {
+                        'server_hostname': 'nas.example.org',
+                        'cert_reqs': ssl.CERT_REQUIRED,
+                        'check_hostname': True,
+                    })
+                    verify_leaf.assert_not_called()
                 messages = [json.loads(c.args[0]) for c in connection.send.call_args_list]
                 self.assertEqual([m['method'] for m in messages if 'method' in m],
                                  ['auth.login_with_api_key','pool.query','alert.list'])
