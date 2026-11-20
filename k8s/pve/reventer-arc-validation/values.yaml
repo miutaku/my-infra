@@ -19,7 +19,6 @@ listenerTemplate:
           type: RuntimeDefault
 template:
   spec:
-    hostUsers: false
     automountServiceAccountToken: false
     nodeSelector:
       kubernetes.io/os: linux
