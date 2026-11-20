@@ -46,13 +46,13 @@
   {
     "id": "disk-warn",
     "title": "Persistent filesystem capacity warn",
-    "expression": "((100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 80) and (100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) <= 90)) or vector(0)",
+    "expression": "((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",mountpoint=\"/mnt/pve/hdd\"}) < bool 53687091200 and ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",mountpoint=\"/mnt/pve/hdd\"}) >= 32212254720)) or ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",machine_type=\"raspberry-pi\",mountpoint=\"/\"}) < bool 536870912 and ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",machine_type=\"raspberry-pi\",mountpoint=\"/\"}) >= 214748365)) or ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",machine_type!=\"raspberry-pi\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*|/mnt/pve/hdd|/mnt/datastore/hdd|/etc/pve|/boot.*\"}) < bool 5368709120 and ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",machine_type!=\"raspberry-pi\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*|/mnt/pve/hdd|/mnt/datastore/hdd|/etc/pve|/boot.*\"}) >= 2147483648)) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "永続ファイルシステムの容量使用率が80%超90%以下です。書き込み余力を確認し、対象mountpointの使用量・増加元を調べてください。"
+    "description": "ファイルシステムの空き容量が用途別の警告しきい値を下回っています。"
   },
   {
     "id": "inode-warn",
@@ -68,13 +68,13 @@
   {
     "id": "disk-critical",
     "title": "Persistent filesystem capacity critical",
-    "expression": "((100 * (1 - node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} / node_filesystem_size_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) > bool 90)) or vector(0)",
+    "expression": "((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",mountpoint=\"/mnt/pve/hdd\"}) < bool 32212254720) or ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",machine_type=\"raspberry-pi\",mountpoint=\"/\"}) < bool 214748365) or ((node_filesystem_avail_bytes{job=~\"node_vm|node_kubernetes\",fstype!~\"tmpfs|devtmpfs|overlay|squashfs|nsfs|ramfs|rootfs|fuse.*\",machine_type!=\"raspberry-pi\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*|/mnt/pve/hdd|/mnt/datastore/hdd|/etc/pve|/boot.*\"}) < bool 2147483648) or vector(0)",
     "duration": "5m",
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "永続ファイルシステムの容量使用率が90%超です。書き込み余力を確認し、対象mountpointの使用量・増加元を調べてください。"
+    "description": "ファイルシステムの空き容量が用途別の緊急しきい値を下回っています。"
   },
   {
     "id": "inode-critical",
@@ -652,24 +652,24 @@
   {
     "id": "nas-capacity-warn",
     "title": "NAS dataset capacity warn",
-    "expression": "((100 * hrStorageUsed{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/.*\"} / hrStorageSize{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/.*\"} > bool 75) and (100 * hrStorageUsed{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/.*\"} / hrStorageSize{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/.*\"} <= 85)) or vector(0)",
+    "expression": "(((hrStorageSize{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"} - hrStorageUsed{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"}) * hrStorageAllocationUnits{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"}) < bool 26843545600 and (((hrStorageSize{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"} - hrStorageUsed{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"}) * hrStorageAllocationUnits{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"}) >= 10737418240)) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "SNMP mounted dataset use. Pool physical allocation and health require the TrueNAS API; snapshot pressure may not be visible here."
+    "description": "NASプールの空き容量が10GiB以上25GiB未満です。"
   },
   {
     "id": "nas-capacity-critical",
     "title": "NAS dataset capacity critical",
-    "expression": "((100 * hrStorageUsed{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/.*\"} / hrStorageSize{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/.*\"} > bool 85)) or vector(0)",
+    "expression": "(((hrStorageSize{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"} - hrStorageUsed{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"}) * hrStorageAllocationUnits{job=\"snmp_truenas\",hrStorageDescr=~\"/mnt/[^/]+\"}) < bool 10737418240) or vector(0)",
     "duration": "5m",
     "severity": "critical",
     "service": "storage",
     "group": "capacity",
     "feature": "",
-    "description": "SNMP mounted dataset use. Pool physical allocation and health require the TrueNAS API; snapshot pressure may not be visible here."
+    "description": "NASプールの空き容量が10GiB未満です。"
   },
   {
     "id": "router-cpu",
@@ -1346,13 +1346,13 @@
     "id": "pbs-backup-age-warn",
     "maintenance_gate": "advisory",
     "title": "PBS VM backup age warn",
-    "expression": "((time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 18000) and (time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} <= 28800)) or vector(0)",
+    "expression": "((time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 21600) and (time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} <= 36000)) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBSの最新完了snapshotの作成から5時間超8時間以下です。4時間周期の実行・処理・収集に1時間の猶予を設けています。対象VMのbackup Job結果と保存先を確認してください。",
+    "description": "PBSの最新完了スナップショットの作成から6時間超10時間以下です。対象VMのバックアップジョブと保存先を確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
       "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",
@@ -1365,13 +1365,13 @@
     "id": "pbs-backup-age-critical",
     "maintenance_gate": "advisory",
     "title": "PBS VM backup age critical",
-    "expression": "(time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 28800) or vector(0)",
+    "expression": "(time() - home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"} > bool 36000) or vector(0)",
     "duration": "15m",
     "severity": "critical",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "PBS backupの最終成功から8時間超です。対象backupのスケジュール、Job結果と保存先を確認してください。",
+    "description": "PBSの最新完了スナップショットの作成から10時間超です。対象VMのバックアップジョブと保存先を確認してください。",
     "context_queries": {
       "C": "home_pbs_backup_last_success_seconds{job=\"home-service-monitor\"}",
       "D": "home_pbs_last_verified_backup_seconds{job=\"home-service-monitor\"}",
@@ -1683,57 +1683,57 @@
   {
     "id": "backup-restore-stale-nas",
     "title": "nas restore validation overdue",
-    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"nas\"}[45d])) or vector(0)) > bool 2419200) or vector(0)",
+    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"nas\"}[45d]))) > bool 1209600) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "No successful restore validation in 28 days. NAS and DB isolated tests run weekly. PBS VM recovery is performed separately and its actual result is reported explicitly; backup or verify success does not substitute."
+    "description": "前回のリストア検証成功から14日を超えています。週次の隔離リストアジョブを確認してください。"
   },
   {
     "id": "backup-restore-stale-database",
     "title": "database restore validation overdue",
-    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"database\"}[45d])) or vector(0)) > bool 2419200) or vector(0)",
+    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"database\"}[45d]))) > bool 1209600) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "No successful restore validation in 28 days. NAS and DB isolated tests run weekly. PBS VM recovery is performed separately and its actual result is reported explicitly; backup or verify success does not substitute."
+    "description": "前回のリストア検証成功から14日を超えています。週次の隔離リストアジョブを確認してください。"
   },
   {
     "id": "backup-restore-stale-pbs-vm-13201",
-    "title": "pbs-vm-13201 restore validation overdue",
-    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-13201\"}[45d])) or vector(0)) > bool 2419200) or vector(0)",
+    "title": "pbs-vm-13201 restore test overdue",
+    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-13201\"}[120d]))) > bool 8640000) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "No successful restore validation in 28 days. NAS and DB isolated tests run weekly. PBS VM recovery is performed separately and its actual result is reported explicitly; backup or verify success does not substitute."
+    "description": "前回のリストア検証成功から100日を超えています。一時ノードなど隔離環境へ復元し、起動と必要なデータを確認してください。"
   },
   {
     "id": "backup-restore-stale-pbs-vm-60000",
-    "title": "pbs-vm-60000 restore validation overdue",
-    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-60000\"}[45d])) or vector(0)) > bool 2419200) or vector(0)",
+    "title": "pbs-vm-60000 restore test overdue",
+    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-60000\"}[120d]))) > bool 8640000) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "No successful restore validation in 28 days. NAS and DB isolated tests run weekly. PBS VM recovery is performed separately and its actual result is reported explicitly; backup or verify success does not substitute."
+    "description": "前回のリストア検証成功から100日を超えています。一時ノードなど隔離環境へ復元し、起動と必要なデータを確認してください。"
   },
   {
     "id": "backup-restore-stale-pbs-vm-40000",
-    "title": "pbs-vm-40000 restore validation overdue",
-    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-40000\"}[45d])) or vector(0)) > bool 2419200) or vector(0)",
+    "title": "pbs-vm-40000 restore test overdue",
+    "expression": "(time() - (max(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-40000\"}[120d]))) > bool 8640000) or vector(0)",
     "duration": "15m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "No successful restore validation in 28 days. NAS and DB isolated tests run weekly. PBS VM recovery is performed separately and its actual result is reported explicitly; backup or verify success does not substitute."
+    "description": "前回のリストア検証成功から100日を超えています。一時ノードなど隔離環境へ復元し、起動と必要なデータを確認してください。"
   },
   {
     "id": "node-certificate-request-denied",
@@ -1914,12 +1914,78 @@
   {
     "id": "pbs-hdd-capacity",
     "title": "PBS HDD capacity reserve low",
-    "expression": "(home_pbs_local_used_bytes{job=\"home-service-monitor\"} > bool 332859965440) or vector(0)",
+    "expression": "(home_pbs_local_available_bytes{job=\"home-service-monitor\"} < bool 53687091200 and home_pbs_local_available_bytes{job=\"home-service-monitor\"} >= 32212254720) or vector(0)",
     "duration": "10m",
     "severity": "warn",
     "service": "backups",
     "group": "backups",
     "feature": "backup_integrity",
-    "description": "HDD保存先の使用量が310GiBを超えています。330GiBまたは空き16GiBで新規バックアップを抑止します。同期済みの保護世代、prune、GCを確認してください。"
+    "description": "PBS HDDの空き容量が30GiB以上50GiB未満です。"
+  },
+  {
+    "id": "pbs-hdd-capacity-critical",
+    "title": "PBS HDD capacity reserve critical",
+    "expression": "(home_pbs_local_available_bytes{job=\"home-service-monitor\"} < bool 32212254720) or vector(0)",
+    "duration": "10m",
+    "severity": "critical",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "PBS HDDの空き容量が30GiB未満です。"
+  },
+  {
+    "id": "backup-restore-missing-nas",
+    "title": "nas restore test result missing",
+    "expression": "absent(max_over_time(home_backup_restore_timestamp_seconds{backup=\"nas\"}[45d]) > 0) or vector(0)",
+    "duration": "15m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "リストア検証の成功記録を確認できません。試験の実施状況と結果の収集を確認してください。"
+  },
+  {
+    "id": "backup-restore-missing-database",
+    "title": "database restore test result missing",
+    "expression": "absent(max_over_time(home_backup_restore_timestamp_seconds{backup=\"database\"}[45d]) > 0) or vector(0)",
+    "duration": "15m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "リストア検証の成功記録を確認できません。試験の実施状況と結果の収集を確認してください。"
+  },
+  {
+    "id": "backup-restore-missing-pbs-vm-13201",
+    "title": "pbs-vm-13201 restore test result missing",
+    "expression": "absent(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-13201\"}[120d]) > 0) or vector(0)",
+    "duration": "15m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "リストア検証の成功記録を確認できません。試験の実施状況と結果の収集を確認してください。"
+  },
+  {
+    "id": "backup-restore-missing-pbs-vm-60000",
+    "title": "pbs-vm-60000 restore test result missing",
+    "expression": "absent(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-60000\"}[120d]) > 0) or vector(0)",
+    "duration": "15m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "リストア検証の成功記録を確認できません。試験の実施状況と結果の収集を確認してください。"
+  },
+  {
+    "id": "backup-restore-missing-pbs-vm-40000",
+    "title": "pbs-vm-40000 restore test result missing",
+    "expression": "absent(max_over_time(home_backup_restore_timestamp_seconds{backup=\"pbs-vm-40000\"}[120d]) > 0) or vector(0)",
+    "duration": "15m",
+    "severity": "warn",
+    "service": "backups",
+    "group": "backups",
+    "feature": "backup_integrity",
+    "description": "リストア検証の成功記録を確認できません。試験の実施状況と結果の収集を確認してください。"
   }
 ]

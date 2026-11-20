@@ -10,12 +10,12 @@ GIB = 1024 ** 3
 def check(local, host):
     if not local.get('active') or not local.get('enabled'):
         raise RuntimeError('PBS HDD storage is unavailable')
-    if local['used'] >= 330 * GIB or local['avail'] < 16 * GIB:
+    if local['avail'] < 16 * GIB:
         raise RuntimeError('PBS HDD capacity reserve reached; backup stopped before guest start')
     if host['avail'] < 20 * GIB:
         raise RuntimeError('PVE HDD free-space reserve reached; backup stopped before guest start')
-    if local['used'] >= 310 * GIB:
-        print('WARNING: PBS HDD usage exceeds 310 GiB', file=sys.stderr)
+    if local['avail'] < 50 * GIB:
+        print('WARNING: PBS HDD free space is below 50 GiB', file=sys.stderr)
 
 
 def status(storage):

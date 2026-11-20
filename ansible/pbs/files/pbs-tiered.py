@@ -48,14 +48,16 @@ def complete(snapshot):
 
 def select_verified(rows, groups, now):
     chosen = []
+    missing = []
     for name in groups:
         candidates = [s for s in rows if group(s) == name and complete(s)
                       and (s.get('verification') or {}).get('state') == 'ok']
         latest = max(candidates, key=lambda s: s['backup-time'], default=None)
         if latest is None or now - latest['backup-time'] > 26 * 3600:
-            raise RuntimeError(f'No recent verified backup for {name}; retaining local snapshots')
+            missing.append(name)
+            continue
         chosen.append(latest)
-    return chosen
+    return chosen, missing
 
 
 def require_copies(chosen, archive):
@@ -103,12 +105,13 @@ def set_protected(store, key, protected, timeout=15 * 60):
             time.sleep(min(10, remaining))
 
 
-def update_pins(config, state, chosen, rows):
+def update_pins(config, state, chosen, rows, missing):
     desired = {tuple(identity(s)) for s in chosen}
     existing = {tuple(identity(s)): s for s in rows}
     owned = {tuple(key) for key in state.get('pins', [])}
+    desired.update(key for key in owned if f'{key[0]}/{key[1]}' in missing)
     # Never take ownership of snapshots protected separately by an operator.
-    for key in sorted(desired):
+    for key in sorted(tuple(identity(s)) for s in chosen):
         if not existing[key].get('protected'):
             set_protected(config['local'], key, True)
             owned.add(key)
@@ -154,16 +157,22 @@ def daily(config, state):
     manager('verify', config['local'], '--ignore-verified', 'true', '--outdated-after', '7',
             '--read-threads', '1', '--verify-threads', '2')
     rows = snapshots(config['local'])
-    chosen = select_verified(rows, config['groups'], time.time())
+    chosen, missing = select_verified(rows, config['groups'], time.time())
+    if not chosen:
+        raise RuntimeError('No recent verified backups; retaining local snapshots')
     print('Synchronizing verified HDD snapshots to IDrive', flush=True)
     manager('sync-job', 'run', config['sync_job'])
     require_copies(chosen, snapshots(config['archive']))
-    update_pins(config, state, chosen, snapshots(config['local']))
+    update_pins(config, state, chosen, snapshots(config['local']), missing)
     state['last_sync'] = int(time.time())
-    state['synced'] = [identity(s) for s in chosen]
+    state['synced'] = [identity(s) for s in chosen] + [
+        key for key in state.get('synced', []) if f'{key[0]}/{key[1]}' in missing
+    ]
     save_state(state)
     print(f'Confirmed {len(chosen)} recent archive copies; recovery pins updated', flush=True)
     housekeeping(config, state)
+    if missing:
+        raise RuntimeError('No recent verified backup for: ' + ', '.join(missing))
 
 
 def main():

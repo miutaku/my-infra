@@ -60,10 +60,10 @@ def main():
             'network_ups_tools_ups_status{job="nut",instance="ups-a",ups="ups-a",flag="OB"}': f"{ob}+0x40",
         }, {"ups-on-battery": warn, "ups-shutdown-near": critical})
 
-    for used, expected in [(265, 0), (310, 0), (311, 1)]:
-        case(f"PBS HDD used {used} GiB", {
-            'home_pbs_local_used_bytes{job="home-service-monitor"}': f"{used * 1024 ** 3}+0x40",
-        }, {"pbs-hdd-capacity": expected})
+    for free, warn, critical in [(50, 0, 0), (30, 1, 0), (29, 0, 1)]:
+        case(f"PBS HDD free {free} GiB", {
+            'home_pbs_local_available_bytes{job="home-service-monitor"}': f"{free * 1024 ** 3}+0x40",
+        }, {"pbs-hdd-capacity": warn, "pbs-hdd-capacity-critical": critical})
 
     for available, warn, critical in [(20, 0, 0), (10, 1, 0), (5, 1, 0), (4, 0, 1)]:
         case(f"memory {available}%", {
@@ -71,10 +71,11 @@ def main():
             'node_memory_MemTotal_bytes{job="node_vm",instance="test"}': "100+0x40",
         }, {"memory-warn": warn, "memory-critical": critical})
 
-    for used, warn, critical in [(75, 0, 0), (80, 1, 0), (85, 1, 0), (86, 0, 1)]:
-        case(f"NAS capacity {used}%", {
+    for used, warn, critical in [(75, 0, 0), (76, 1, 0), (90, 1, 0), (91, 0, 1)]:
+        case(f"NAS free {100 - used} GiB", {
             'hrStorageUsed{job="snmp_truenas",instance="nas-02",hrStorageDescr="/mnt/data",hrStorageIndex="1"}': f"{used}+0x40",
             'hrStorageSize{job="snmp_truenas",instance="nas-02",hrStorageDescr="/mnt/data",hrStorageIndex="1"}': "100+0x40",
+            'hrStorageAllocationUnits{job="snmp_truenas",instance="nas-02",hrStorageDescr="/mnt/data",hrStorageIndex="1"}': f"{1024 ** 3}+0x40",
         }, {"nas-capacity-warn": warn, "nas-capacity-critical": critical})
 
     case("desired zero is normal", {
@@ -234,12 +235,12 @@ def main():
     case("absent etcd is never treated as healthy", {}, {"etcd-quorum-lost": 1})
     case("recent NAS restore cannot hide an untested PBS VM", {
         'home_backup_restore_timestamp_seconds{backup="nas"}': "2764799+0x32",
-    }, {"backup-restore-stale-nas": 0, "backup-restore-stale-pbs-vm-13201": 1}, at="32d", interval="1d")
+    }, {"backup-restore-stale-nas": 0, "backup-restore-missing-pbs-vm-13201": 1}, at="32d", interval="1d")
     case("batch content verification remains visible after instant lookback expires", {
         'home_backup_verified_timestamp_seconds{backup="database"}': "1 stale",
     }, {"backup-verified-database": 0})
-    for age, warning, critical in [(15613, 0, 0), (18000, 0, 0), (18001, 1, 0),
-                                   (28800, 1, 0), (28801, 0, 1)]:
+    for age, warning, critical in [(15613, 0, 0), (21600, 0, 0), (21601, 1, 0),
+                                   (36000, 1, 0), (36001, 0, 1)]:
         case(f"PBS backup age {age}s", {
             'home_pbs_backup_last_success_seconds{job="home-service-monitor",vm="60000"}': f"{36000-age}+0x10",
         }, {"pbs-backup-age-warn": warning, "pbs-backup-age-critical": critical}, at="10h", interval="1h")
@@ -333,15 +334,15 @@ def main():
         backup_tests = folder / "pbs-tests.json"
         backup_tests.write_text(json.dumps({"rule_files": [str(backupfile)], "evaluation_interval": "1m", "tests": [
             {"interval": "1m", "input_series": [
-                {"series": 'home_pbs_backup_last_success_seconds{job="home-service-monitor",vm="60000"}', "values": "0+0x500"}
+                {"series": 'home_pbs_backup_last_success_seconds{job="home-service-monitor",vm="60000"}', "values": "0+0x650"}
             ], "alert_rule_test": [
                 {"eval_time": at, "alertname": rid, "exp_alerts": [
                     {"exp_labels": {"job": "home-service-monitor", "vm": "60000"}}
                 ] if firing else []}
-                for at, rid, firing in [("5h15m", "pbs-backup-age-warn", False),
-                                        ("5h16m", "pbs-backup-age-warn", True),
-                                        ("8h15m", "pbs-backup-age-critical", False),
-                                        ("8h16m", "pbs-backup-age-critical", True)]
+                for at, rid, firing in [("6h15m", "pbs-backup-age-warn", False),
+                                        ("6h16m", "pbs-backup-age-warn", True),
+                                        ("10h15m", "pbs-backup-age-critical", False),
+                                        ("10h16m", "pbs-backup-age-critical", True)]
             ]}
         ]}))
         subprocess.run([args.promtool, "test", "rules", str(backup_tests)], check=True)

@@ -12,7 +12,7 @@
 `maintenance_gate`はPVEメンテナンスの進行判定用annotationで、通知のseverityとは独立する。
 省略・`blocking`は停止対象、`advisory`は通知を継続するが更新反映のための再起動を止めない。
 PBSのbackup ageの2ルールだけを`advisory`とする。バックアップ中は正常停止して再起動後に再開し、
-鮮度警告の解消を待ち続けて更新反映が遅れないようにする。検証失敗・監視不能・保存先障害は停止対象のままにする。
+バックアップ間隔の警告の解消を待ち続けて更新反映が遅れないようにする。検証失敗・監視不能・保存先障害は停止対象のままにする。
 
 | 対象 | warn | critical |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ UPSは[既存の80%停止](../../docs/ups-shutdown.md)に先行して通知す�
 | TrueNAS | pool物理使用率80%超、最終成功scrubから35日超 | pool物理使用率85%超、pool異常、disk/SMARTの重大alert、scrubエラー、最終成功から60日超 |
 | DB | 接続数80%超5分、lock待ち5分、60秒超queryが10分継続 | SELECT 1/統計取得失敗2分、接続数95%超5分 |
 | 録画 | 24時間内の予約競合、EPG更新24時間超、encode待ち10件超・録画終了から1日超 | 録画開始遅延/途中停止/完了後video欠落、tuner異常、EPG更新48時間超/未準備30分、encode待ち30件超・3日超 |
-| PBS | VM別backup鮮度5時間超、7日以内のverify済みsnapshotなし | backup鮮度8時間超、保持snapshotのverify失敗 |
+| PBS | VM別の最終バックアップから6時間超、7日以内のverify済みsnapshotなし | 最終バックアップから10時間超、保持snapshotのverify失敗 |
 | S3/restic・復元 | NAS repository実object容量14 GB超、復元成功が28日以上なし | 17 GB超、DB read-back/NAS repository/録画保存先の確認が期限超過、復元Job失敗 |
 | 制御系 | etcd片系取得不可、CSR滞留10分超 | leaderを認識するetcdが2台未満、leader数が1以外、API VIP所有数が1以外、CSR拒否/失敗、API/kubelet証明書残り3日未満 |
 | switch/AP | 必須port台帳未設定 | US-8-60W/FS APの死活、必須portリンク断2分 |
@@ -186,7 +186,7 @@ VM追加・改名時はこの補助台帳も更新する。名前が得られな
 `pbs-unverified`は7日以内のverify成功世代がないことを示し、最新backup自体がないとは限らない。
 verify失敗ルールの最新/検証成功パスは参考情報であり、失敗世代の特定にはPBSのverifyログを使う。
 保持ポリシーは[PBS運用手順](../../ansible/pbs/README.md)を参照する。
-4時間周期の処理・収集待ちを考慮し、backup鮮度のwarningは5時間超・15分継続とする。
+4時間周期の処理・収集待ちを考慮し、最終バックアップから6時間超でWarning・15分継続とする。
 criticalは8時間超・15分継続を維持する。経緯と実測は[バックアップアラート調査](BACKUP_ALERT_REVIEW.md)を参照。
 
 `http-service`はHTTPコードも表示し、0は「HTTP応答なし」と区別する。
