@@ -1,0 +1,67 @@
+githubConfigSecret: reventer-arc-registration
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-systems-gha-rs-controller
+minRunners: 0
+maxRunners: 1
+listenerTemplate:
+  spec:
+    containers:
+    - name: listener
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+        seccompProfile:
+          type: RuntimeDefault
+template:
+  spec:
+    hostUsers: false
+    automountServiceAccountToken: false
+    nodeSelector:
+      kubernetes.io/os: linux
+      kubernetes.io/arch: amd64
+      node.miutaku/platform: pve
+      node.miutaku/role: agent
+    securityContext:
+      fsGroup: 1001
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      seccompProfile:
+        type: RuntimeDefault
+    containers:
+    - name: runner
+      image: ghcr.io/actions/actions-runner@sha256:6d0b2d80d80f143f77dcb676e50920100bbb547e39e883454d57f45ab8c31300
+      command: [/home/runner/run.sh]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      env:
+      - name: RUNNER_TOOL_CACHE
+        value: /opt/hostedtoolcache
+      resources:
+        requests:
+          cpu: '500m'
+          memory: 1Gi
+          ephemeral-storage: 2Gi
+        limits:
+          cpu: '2'
+          memory: 4Gi
+          ephemeral-storage: 10Gi
+      volumeMounts:
+      - name: work
+        mountPath: /home/runner/_work
+      - name: toolcache
+        mountPath: /opt/hostedtoolcache
+    volumes:
+    - name: work
+      emptyDir:
+        sizeLimit: 6Gi
+    - name: toolcache
+      emptyDir:
+        sizeLimit: 3Gi
