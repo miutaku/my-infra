@@ -33,7 +33,37 @@ template:
     containers:
     - name: runner
       image: ghcr.io/actions/actions-runner@sha256:6d0b2d80d80f143f77dcb676e50920100bbb547e39e883454d57f45ab8c31300
-      command: [/home/runner/run.sh]
+      command:
+      - /bin/bash
+      - -ec
+      - |
+        set -o pipefail
+        # Node 26 toolcache binaries need Ubuntu's libatomic runtime.
+        case "$(dpkg --print-architecture)" in
+          amd64)
+            repository=https://archive.ubuntu.com/ubuntu
+            libdir=x86_64-linux-gnu
+            checksum=f496d80626e1512456273965d44f47b281edf53fa26d0d8bd0defc5be7e4601c
+            ;;
+          arm64)
+            repository=https://ports.ubuntu.com/ubuntu-ports
+            libdir=aarch64-linux-gnu
+            checksum=017fa4bd88e8ff1cbaf75a26765b8c1255a5cd91d6ce838273bcb64190f15e37
+            ;;
+          *)
+            echo 'Unsupported ARC runner architecture' >&2
+            exit 1
+            ;;
+        esac
+        runtime=$(mktemp -d)
+        package="$runtime/libatomic.deb"
+        filename="libatomic1_14-20240412-0ubuntu1_$(dpkg --print-architecture).deb"
+        curl --proto '=https' --fail --silent --show-error --retry 2 --max-time 30 \
+          "$repository/pool/main/g/gcc-14/$filename" -o "$package"
+        printf '%s  %s\n' "$checksum" "$package" | sha256sum --check --status
+        dpkg-deb --extract "$package" "$runtime"
+        export LD_LIBRARY_PATH="$runtime/usr/lib/$libdir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        exec /home/runner/run.sh
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:

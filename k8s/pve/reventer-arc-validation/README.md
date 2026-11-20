@@ -6,6 +6,8 @@
 
 各scale setは `arc-reventer-<component>-verify`、最大同時実行はリポジトリごとに1とする。
 ランナーは対応するLinux workerで非root・権限昇格なしで動作し、ワーク領域とツールキャッシュをPod内のemptyDirに置く。
+Node 26の実行に必要なUbuntuのlibatomicは、同じUbuntuリリースの配布パッケージをSHA-256で照合し、
+使い捨てランナー内へ非rootで展開する。
 GitHubの登録資格情報はcontrollerからだけ参照できるよう管理する。
 ジョブにはKubernetes API token、ホストパス、Docker socket、共有PVC、デプロイ資格情報を渡さない。
 自宅クラスタにはFlannelを使用するため、namespaceの分離をネットワーク隔離の保証として扱わない。
