@@ -4,7 +4,7 @@ locals {
   iso_url       = "https://factory.talos.dev/image/${local.schematic_id}/${local.talos_version}/metal-amd64.iso"
   iso_file_name = "home-k8s-${local.talos_version}-${substr(local.schematic_id, 0, 12)}-metal-amd64.iso"
 
-  nodes = {
+  existing_nodes = {
     controlplane_01 = {
       name        = "controlplane-01-talos-home-pve-amd64", node_name = "pve-x570", vm_id = 13001
       mac_address = "02:54:00:13:00:01", ipv4_address = "192.168.20.137"
@@ -31,6 +31,21 @@ locals {
       cpu_cores   = 8, memory_mb = 20480, disk_gb = 96
     }
   }
+
+  nodes = merge(local.existing_nodes, {
+    worker_05 = {
+      name          = "worker-05-talos-home-pve-amd64"
+      node_name     = "pve-b550m"
+      vm_id         = 13006
+      mac_address   = "02:54:00:13:00:06"
+      ipv4_address  = "192.168.20.143"
+      cpu_cores     = 4
+      memory_mb     = 6144
+      disk_gb       = 96
+      started       = false
+      boot_from_iso = true
+    }
+  })
 
   iso_hosts = toset([for node in values(local.nodes) : node.node_name])
 }
@@ -64,8 +79,8 @@ resource "proxmox_virtual_environment_vm" "talos" {
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
 
-  started                              = true
-  on_boot                              = true
+  started                              = lookup(each.value, "started", true)
+  on_boot                              = lookup(each.value, "started", true)
   protection                           = true
   stop_on_destroy                      = true
   reboot_after_update                  = false
@@ -73,7 +88,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
 
   bios          = "ovmf"
   machine       = "q35"
-  boot_order    = ["scsi0", "ide2"]
+  boot_order    = lookup(each.value, "boot_from_iso", false) ? ["ide2", "scsi0"] : ["scsi0", "ide2"]
   scsi_hardware = "virtio-scsi-single"
 
   agent {

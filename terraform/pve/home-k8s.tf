@@ -4,9 +4,9 @@ module "home_k8s" {
 }
 
 import {
-  for_each = module.home_k8s.nodes
+  for_each = module.home_k8s.existing_vm_import_ids
   to       = module.home_k8s.proxmox_virtual_environment_vm.talos[each.key]
-  id       = "${each.value.node_name}/${each.value.vm_id}"
+  id       = each.value
 }
 
 import {

@@ -7,7 +7,7 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 
 | モジュール | 台数 | 役割 | ノード配置 |
 |---|---|---|---|
-| `home_k8s` | 5 | Talos control plane と汎用 worker | 両ノード分散 |
+| `home_k8s` | 6 | Talos control plane、汎用 worker、ビルド用 worker | 両ノード分散 |
 | `load_balancer` | 2 | 汎用HAProxy + Keepalived LB | 両ノード分散 |
 | `prd_rec_server` | 1 | 録画サーバー (pve-x570, PCI passthrough) | pve-x570 固定 |
 | `dev_rec_server` | 1 | 開発用録画サーバー (USB passthrough) | pve-b550m 固定 |

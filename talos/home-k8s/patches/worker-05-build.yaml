@@ -1,0 +1,20 @@
+machine:
+  nodeLabels:
+    node.miutaku/platform: pve
+    node.miutaku/role: build
+    network.miutaku/l2: vlan20
+    topology.miutaku/proxmox-node: pve-b550m
+    topology.miutaku/failure-domain: pve-b550m
+    workload.miutaku/reventer-build: "true"
+  nodeTaints:
+    workload.miutaku/reventer-build: "true:NoSchedule"
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: worker-05-talos-home-pve-amd64
+---
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+  user.max_user_namespaces: "1024"
