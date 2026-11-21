@@ -4,13 +4,13 @@ deployment {
     cluster pve 'Proxmox VEクラスタ（2ノード構成）' {
       description 'pve-x570（192.168.0.115）・pve-b550m（192.168.0.119）。VM14台・LXC4台。'
       cluster controlplanes 'home-k8s コントロールプレーン' {
-        vm cp1 'コントロールプレーン01 / VM13001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13001" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
-        vm cp2 'コントロールプレーン02 / VM13002 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13002" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
-        vm cp3 'コントロールプレーン03 / VM13003 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13003" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
+        vm cp1 'コントロールプレーン01 / VM13001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/pve/modules/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13001" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
+        vm cp2 'コントロールプレーン02 / VM13002 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/pve/modules/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13002" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
+        vm cp3 'コントロールプレーン03 / VM13003 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/pve/modules/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13003" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.controlplane } }
       }
       cluster workers 'home-k8s ワーカー' {
-        vm worker1 'home-k8s worker01 / VM13004 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13004" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.worker } }
-        vm worker2 'home-k8s worker02 / VM13005 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13005" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.worker } }
+        vm worker1 'home-k8s worker01 / VM13004 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/pve/modules/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13004" vlan "20" host "pve-x570" } os talos 'Talos Linux' { instanceOf premises.home.platform.worker } }
+        vm worker2 'home-k8s worker02 / VM13005 / VLAN20' { description 'pve-b550m' metadata { sourceFile "terraform/pve/modules/home-k8s/main.tf" resourceRef "proxmox_virtual_environment_vm.talos" vmId "13005" vlan "20" host "pve-b550m" } os talos 'Talos Linux' { instanceOf premises.home.platform.worker } }
       }
       cluster loadbalancers 'ロードバランサー' {
         vm lb1 'HAProxy / Keepalived VM10001 / VLAN20' { description 'pve-x570' metadata { sourceFile "terraform/pve/main.tf" resourceRef "module.load_balancer" vmId "10001" vlan "20" bridge "vmbr0" host "pve-x570" } instanceOf premises.pve.lb }

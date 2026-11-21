@@ -1,6 +1,8 @@
 locals {
-  iso_url       = "https://factory.talos.dev/image/${var.schematic_id}/${var.talos_version}/metal-amd64.iso"
-  iso_file_name = "home-k8s-${var.talos_version}-${substr(var.schematic_id, 0, 12)}-metal-amd64.iso"
+  talos_version = "v1.14.1"
+  schematic_id  = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+  iso_url       = "https://factory.talos.dev/image/${local.schematic_id}/${local.talos_version}/metal-amd64.iso"
+  iso_file_name = "home-k8s-${local.talos_version}-${substr(local.schematic_id, 0, 12)}-metal-amd64.iso"
 
   nodes = {
     controlplane_01 = {
@@ -29,10 +31,13 @@ locals {
       cpu_cores   = 8, memory_mb = 20480, disk_gb = 96
     }
   }
+
+  iso_hosts = toset([for node in values(local.nodes) : node.node_name])
 }
 
 resource "proxmox_download_file" "talos_iso" {
-  for_each = toset([for node in values(local.nodes) : node.node_name])
+  provider = bpg
+  for_each = local.iso_hosts
 
   content_type        = "iso"
   datastore_id        = "local"
@@ -41,9 +46,16 @@ resource "proxmox_download_file" "talos_iso" {
   url                 = local.iso_url
   overwrite           = false
   overwrite_unmanaged = false
+
+  lifecycle {
+    prevent_destroy = true
+    # Import exposes the pinned volume ID, but no download settings.
+    ignore_changes = [url]
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "talos" {
+  provider = bpg
   for_each = local.nodes
 
   name        = each.value.name
@@ -52,16 +64,16 @@ resource "proxmox_virtual_environment_vm" "talos" {
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
 
-  started                              = var.start_vms
+  started                              = true
   on_boot                              = true
-  protection                           = var.protect_vms
+  protection                           = true
   stop_on_destroy                      = true
   reboot_after_update                  = false
   delete_unreferenced_disks_on_destroy = true
 
   bios          = "ovmf"
   machine       = "q35"
-  boot_order    = var.boot_from_iso ? ["ide2", "scsi0"] : ["scsi0", "ide2"]
+  boot_order    = ["scsi0", "ide2"]
   scsi_hardware = "virtio-scsi-single"
 
   agent {
@@ -108,4 +120,11 @@ resource "proxmox_virtual_environment_vm" "talos" {
   operating_system { type = "l26" }
   serial_device { device = "socket" }
   vga { type = "serial0" }
+
+  lifecycle {
+    prevent_destroy = true
+    # The importer checks ide3 and cannot read an existing ide2 ISO. The other
+    # two settings are provider-only and are not stored by Proxmox.
+    ignore_changes = [cdrom, reboot_after_update, stop_on_destroy]
+  }
 }

@@ -9,7 +9,7 @@ Image Factory registryから新digestを再取得する。
 
 1. `scripts/preflight-reservations`を実行する。
 2. IX2215の固定DHCP 5件を反映する。
-3. `terraform/home-k8s`を停止状態で作成する。
+3. `terraform/pve` の home_k8s モジュールで、新規VMを停止状態で作成する。
 4. `cluster.env`のversionとdigestを確認し、同versionの`talosctl`で
    `scripts/generate-configs`を実行する。
 5. 各nodeがmaintenance APIへ応答した後、control plane 3台へ`controlplane.yaml`、worker 2台へ

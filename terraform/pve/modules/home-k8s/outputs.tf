@@ -7,5 +7,6 @@ output "nodes" {
   }
 }
 
-output "kubernetes_api_vip" { value = "192.168.20.228" }
-output "talos_iso_url" { value = local.iso_url }
+output "iso_import_ids" {
+  value = { for host in local.iso_hosts : host => "${host}/local:iso/${local.iso_file_name}" }
+}

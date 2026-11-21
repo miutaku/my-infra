@@ -56,7 +56,7 @@ export function generateCatalog(root){
   const dedicated=isReventerDedicated(row)||app?.owner==='reventer';
   let parent=dedicated?'consumers.reventer':app?.ref;
   if(!parent){
-   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/home-k8s/')?'premises.hardware':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.pve.nas01':'premises.pve.nas02'):'definitions';
+   parent=row.file.startsWith('terraform/cloudflare/')?'external.edge':row.file.startsWith('terraform/pve/')||row.file.includes('-lxc/')?'premises.hardware':row.type==='TrueNAS dataset'?(row.file.includes('nas-01')?'premises.pve.nas01':'premises.pve.nas02'):'definitions';
   }
   const ref=dedicated?`consumers.reventer.definitions.${id(row.id)}`:`${parent}.resources.${id(row.id)}`;
   if(dedicated)parent='consumers.reventer.definitions';

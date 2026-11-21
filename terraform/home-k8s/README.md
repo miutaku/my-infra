@@ -1,21 +1,18 @@
-# Talos home-k8s production infrastructure
+# home-k8s の Proxmox VM 管理
 
-home-k8s本番クラスタ専用rootであり、`terraform/pve`とstateを共有しない。
-VM ID `13001`–`13005`、各VMのdisk、両Proxmox nodeの専用ISOだけを管理する。
+VM・ディスク・インストールISOは、[terraform/pve](../pve/) の `home_k8s` モジュールで管理する。
+Terraform state は HCP Terraform の `miutaku/pve-home` に保管する。
 
-PVE workerは常駐workloadと最大10台のRe:Venter Actions runnerを収容する。
-worker-01は16 vCPU / 20GiB、worker-02は8 vCPU / 20GiBとし、両workerのdiskは
-並列Docker buildの一時layer用に96GiBを確保する。control planeのdiskは24GiBとする。
-CPU・memoryの変更はVMを1台ずつ正常停止・起動して反映し、各nodeのReady復帰と
-Node Allocatableを確認してから次のVMを変更する。Proxmox上のpending設定だけでは
-稼働中のTalos・Kubernetesの容量は増えない。
+VM ID、MACアドレス、DHCP予約は次のコマンドで確認できる。
 
-初回は`start_vms=false`、`boot_from_iso=true`のままlive planを確認する。BSMの
-`PACKER_PROXMOX_TOKEN_ID`と`PACKER_PROXMOX_TOKEN_SECRET`から、値を表示せず
-`TF_VAR_proxmox_api_token='<id>=<secret>'`を設定する。作成前にIX2215のDHCP予約と
-VM ID、MAC address、IP addressが`main.tf`と一致することを確認する。
+```bash
+terraform -chdir=terraform/pve output -json home_k8s_nodes
+```
 
-初回install後は`boot_from_iso=false`、クラスタ合格後は`start_vms=true`をGit外の
-`terraform.tfvars`へ記録し、bootstrap後は`protect_vms=true`で削除保護する。VM ID `12900`、
-PCI/USB mapping、Cloudflare、
-TrueNAS datasetはこのrootの管理対象外である。
+稼働中のTalosのCPU・メモリを変更する場合は、VMを1台ずつ正常停止・起動し、Nodeが
+Readyに戻り、KubernetesのNode Allocatableへ反映されたことを確認してから次のVMへ進む。
+Talosの構築と設定は [talos/home-k8s](../../talos/home-k8s/) を参照。
+
+既存VMの `ide2` にあるインストールISOは Proxmox 側で確認する。BPG provider は
+インポート時に `ide3` を参照するため、既存VMのCD-ROM構成は差分適用の対象に含めない。
+ISOを更新する場合は新しいファイルとして追加し、必要なVMのマウント先を切り替える。
