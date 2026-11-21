@@ -50,10 +50,21 @@ DBの実結合テストは `arc-reventer-backend-database` で実行する。
 TiDBイメージのdigestはBackendのDB権限テストと合わせる。
 専用リスナーのReady確認後に、Backendの `REVENTER_ARC_DATABASE_ENABLED` を設定する。
 
+## BackendのSTG OIDC
+
+`arc-reventer-backend-oidc` をBackendリポジトリへ登録する。共通の `values.yaml` に
+`backend-oidc.values.yaml` を重ね、`https://github.com/miutaku/reventer-backend` を指定する。
+専用Talos buildノードで非特権・ユーザー名前空間付きのランナーを動かす。
+コンテナビルド用のsidecarやストレージは持たせない。
+
+管理側が `AutoscalingRunnerSet` のUIDとノードを取得し、Re:VenterのSTG認証サービスに許可対象として設定する。
+署名鍵とTLS秘密鍵はRe:Venterの管理側で保管する。登録の再作成でUIDが変わった場合は再照合する。
+PRとプローブが署名付きの配置権限を得ないことを含め、Re:Venter側のSTG有効化手順で確認する。
+
 ## 実行範囲と復旧
 
-このscale setは指定されたPrivateリポジトリ内のpushおよび同一repoをheadとするPRの
-Docker不要の検証専用とする。fork由来の変更はこのscale setへ割り当てない。
+基本検証用のscale setは対応するPrivateリポジトリ内のpushと同一repoをheadとするPRに使う。
+fork由来の変更はこれらのscale setへ割り当てない。
 Dockerを使うintegration、コンテナ候補生成、配置を認可するOIDCは
 それぞれの実行条件を満たすrunnerで引き続き検証する。
 GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
