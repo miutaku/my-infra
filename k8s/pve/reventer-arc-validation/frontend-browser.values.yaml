@@ -1,0 +1,74 @@
+template:
+  spec:
+    initContainers:
+    - name: install-runner
+      image: ghcr.io/actions/actions-runner@sha256:6d0b2d80d80f143f77dcb676e50920100bbb547e39e883454d57f45ab8c31300
+      command:
+      - /bin/bash
+      - -ec
+      - |
+        mkdir /runner-data/home
+        cp -a /home/runner/. /runner-data/home/
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: '200m'
+          memory: 128Mi
+          ephemeral-storage: 1Gi
+        limits:
+          cpu: '1'
+          memory: 512Mi
+          ephemeral-storage: 2Gi
+      volumeMounts:
+      - name: runner-data
+        mountPath: /runner-data
+    containers:
+    - name: runner
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
+      command: [/home/runner/run.sh]
+      workingDir: /home/runner
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      env:
+      - name: HOME
+        value: /home/runner
+      - name: RUNNER_TOOL_CACHE
+        value: /opt/hostedtoolcache
+      resources:
+        requests:
+          cpu: '500m'
+          memory: 1Gi
+          ephemeral-storage: 2Gi
+        limits:
+          cpu: '2'
+          memory: 4Gi
+          ephemeral-storage: 10Gi
+      volumeMounts:
+      - name: runner-data
+        mountPath: /home/runner
+        subPath: home
+      - name: work
+        mountPath: /home/runner/_work
+      - name: toolcache
+        mountPath: /opt/hostedtoolcache
+      - name: shm
+        mountPath: /dev/shm
+    volumes:
+    - name: runner-data
+      emptyDir:
+        sizeLimit: 1536Mi
+    - name: work
+      emptyDir:
+        sizeLimit: 6Gi
+    - name: toolcache
+      emptyDir:
+        sizeLimit: 3Gi
+    - name: shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 256Mi

@@ -1,0 +1,11 @@
+template:
+  spec:
+    hostUsers: false
+    nodeSelector:
+      node.miutaku/role: build
+      workload.miutaku/reventer-build: "true"
+    tolerations:
+      - key: workload.miutaku/reventer-build
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
