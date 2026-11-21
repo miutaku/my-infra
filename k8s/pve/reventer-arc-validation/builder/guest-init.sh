@@ -41,7 +41,11 @@ for attempt in $(seq 1 15); do
     if buildctl --addr "$address" debug workers >/dev/null 2>&1; then break; fi
     sleep 1
 done
-if ! buildctl --addr "$address" build --frontend dockerfile.v0 \
+set --
+if [ -d /context/binaries ]; then
+    set -- --local builder=/context/binaries --opt context:builder=local:builder
+fi
+if ! buildctl --addr "$address" build --frontend dockerfile.v0 "$@" \
     --local context=/data/source --local dockerfile=/data/source \
     --opt platform=linux/amd64,linux/arm64 --opt "build-arg:SOURCE_SHA=$source_sha" \
     --opt "build-arg:HTTPS_PROXY=$proxy" --opt "build-arg:HTTP_PROXY=$proxy" \

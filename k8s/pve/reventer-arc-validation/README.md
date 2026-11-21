@@ -78,7 +78,8 @@ GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
 3. リスナーのReadyを確認し、Backendリポジトリで `REVENTER_ARC_CANDIDATE_PROBE_ENABLED`
    を有効にする。対象featureブランチのpushで `qemu-candidate-probe` を実行する。
 4. ジョブはワーク領域の `qemu-inbox/input/` に対象コミットのGitアーカイブ
-   `source.tar` と `source.sha` を作り、`qemu-inbox/start` でビルドを開始する。
+   `source.tar` と `source.sha`、Dockerfileと同じGoバージョンで作った
+   amd64・arm64向け実行ファイルを配置し、`qemu-inbox/start` でビルドを開始する。
    完了時は `qemu-inbox/complete` と `output/candidate.sha256` を照合し、
    検証artifact `backend-qemu-probe` を保存する。失敗の詳細はPodの
    `builder` コンテナのログで確認する。
