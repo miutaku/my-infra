@@ -75,7 +75,10 @@ GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
    ConfigMapへ登録する。
 2. 共通の `values.yaml` に `backend-candidate.values.yaml` を重ね、
    登録先に `https://github.com/miutaku/reventer-backend` を指定する。
-3. ランナーのワーク領域の `qemu-inbox/input/` に対象コミットのGitアーカイブ
+3. リスナーのReadyを確認し、Backendリポジトリで `REVENTER_ARC_CANDIDATE_PROBE_ENABLED`
+   を有効にする。対象featureブランチのpushで `qemu-candidate-probe` を実行する。
+4. ジョブはワーク領域の `qemu-inbox/input/` に対象コミットのGitアーカイブ
    `source.tar` と `source.sha` を作り、`qemu-inbox/start` でビルドを開始する。
-   完了時は `qemu-inbox/complete` と `output/candidate.sha256` を確認する。
-   失敗時の詳細はPodの `builder` コンテナのログに出力する。
+   完了時は `qemu-inbox/complete` と `output/candidate.sha256` を照合し、
+   検証artifact `backend-qemu-probe` を保存する。失敗の詳細はPodの
+   `builder` コンテナのログで確認する。
