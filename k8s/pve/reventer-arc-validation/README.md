@@ -31,9 +31,21 @@ helm template arc-reventer-workers-verify \
   --set-string githubConfigUrl=https://github.com/miutaku/reventer-workers
 ```
 
+## Frontendのブラウザー検証
+
+Cookie分離テストは `arc-reventer-frontend-browser` で実行する。
+同じ `values.yaml` に `frontend-browser.values.yaml` を重ね、
+登録先を `https://github.com/miutaku/reventer-frontend` に指定する。
+固定Playwrightイメージにランナーを非rootで配置し、共有メモリはPod内に割り当てる。
+配置後に専用リスナーのReadyを確認し、Frontendの `REVENTER_ARC_BROWSER_ENABLED` を設定する。
+ランナーイメージを更新するときは共通設定とブラウザー用init containerのdigestを合わせ、
+Playwrightイメージの版とdigestはFrontendのCIと合わせる。
+
+## 実行範囲と復旧
+
 このscale setは指定されたPrivateリポジトリ内のpushおよび同一repoをheadとするPRの
 Docker不要の検証専用とする。fork由来の変更はこのscale setへ割り当てない。
-Dockerを使うintegration、ブラウザcontainer、コンテナ候補生成、配置を認可するOIDCは
+Dockerを使うintegration、コンテナ候補生成、配置を認可するOIDCは
 それぞれの実行条件を満たすrunnerで引き続き検証する。
 GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
 
