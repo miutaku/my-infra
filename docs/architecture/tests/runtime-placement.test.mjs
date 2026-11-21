@@ -9,7 +9,15 @@ const pve=JSON.parse(readFileSync('evidence/pve-runtime.json','utf8'));
 test('recorded live Applications and workload controllers are accounted for including bootstrap',()=>{
  assert.equal(runtime.missingApplicationDefinitions.length,0);
  assert.equal(runtime.unmapped.length,0);
- for(const row of [...runtime.applications,...runtime.workloads])assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
+ const externalDefinitions=Object.values(model.elements).filter(({metadata})=>
+  metadata?.referenceOnly==='true'&&metadata.definitionRepository&&metadata.definitionRepository!=='my-infra');
+ for(const row of [...runtime.applications,...runtime.workloads]){
+  if(model.elements[row.modelRef])continue;
+  const matching=externalDefinitions.filter(({metadata})=>
+   metadata.namespace===row.namespace&&metadata.application===(row.application??row.name)&&
+   (!row.kind||metadata.workload===`${row.kind}/${row.name}`));
+  assert.equal(matching.length,1,`${row.namespace}/${row.name}: ${row.modelRef}`);
+ }
  for(const ref of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver']){
   const id=`premises.home.platform.${ref}`;
   assert.ok(runtime.workloads.some(w=>w.modelRef===id));
