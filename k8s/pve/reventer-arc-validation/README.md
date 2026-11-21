@@ -41,6 +41,15 @@ Cookie分離テストは `arc-reventer-frontend-browser` で実行する。
 ランナーイメージを更新するときは共通設定とブラウザー用init containerのdigestを合わせ、
 Playwrightイメージの版とdigestはFrontendのCIと合わせる。
 
+## BackendのDB権限検証
+
+DBの実結合テストは `arc-reventer-backend-database` で実行する。
+共通の `values.yaml` に `backend-database.values.yaml` を重ね、
+登録先を `https://github.com/miutaku/reventer-backend` に指定する。
+固定TiDBのSQLポートはPod内の `127.0.0.1:14000` に限定し、データはPodの終了時に破棄する。
+TiDBイメージのdigestはBackendのDB権限テストと合わせる。
+専用リスナーのReady確認後に、Backendの `REVENTER_ARC_DATABASE_ENABLED` を設定する。
+
 ## 実行範囲と復旧
 
 このscale setは指定されたPrivateリポジトリ内のpushおよび同一repoをheadとするPRの
