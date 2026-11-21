@@ -34,16 +34,14 @@ locals {
 
   nodes = merge(local.existing_nodes, {
     worker_05 = {
-      name          = "worker-05-talos-home-pve-amd64"
-      node_name     = "pve-b550m"
-      vm_id         = 13006
-      mac_address   = "02:54:00:13:00:06"
-      ipv4_address  = "192.168.20.143"
-      cpu_cores     = 4
-      memory_mb     = 6144
-      disk_gb       = 96
-      started       = true
-      boot_from_iso = true
+      name         = "worker-05-talos-home-pve-amd64"
+      node_name    = "pve-b550m"
+      vm_id        = 13006
+      mac_address  = "02:54:00:13:00:06"
+      ipv4_address = "192.168.20.143"
+      cpu_cores    = 4
+      memory_mb    = 6144
+      disk_gb      = 96
     }
   })
 
@@ -79,8 +77,8 @@ resource "proxmox_virtual_environment_vm" "talos" {
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
 
-  started                              = lookup(each.value, "started", true)
-  on_boot                              = lookup(each.value, "started", true)
+  started                              = true
+  on_boot                              = true
   protection                           = true
   stop_on_destroy                      = true
   reboot_after_update                  = false
@@ -88,7 +86,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
 
   bios          = "ovmf"
   machine       = "q35"
-  boot_order    = lookup(each.value, "boot_from_iso", false) ? ["ide2", "scsi0"] : ["scsi0", "ide2"]
+  boot_order    = ["scsi0", "ide2"]
   scsi_hardware = "virtio-scsi-single"
 
   agent {

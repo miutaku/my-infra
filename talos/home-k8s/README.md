@@ -1,8 +1,8 @@
 # Talos home-k8s production
 
 home-k8sの本番クラスタ。API endpointはTalos内蔵L2 VIP
-`https://192.168.20.228:6443`。VLAN 20にVM 5台（`.137`–`.141`）、VLAN 10にRaspberry Pi 4
-worker 2台（`.107`、`.109`）を置く。machine config、PKI、kubeconfigは
+`https://192.168.20.228:6443`。VLAN 20にコントロールプレーン3台（`.137`–`.139`）、汎用worker 2台（`.140`、`.141`）、
+ビルド用worker 1台（`.143`）を置く。VLAN 10にはRaspberry Pi 4 worker 2台（`.107`、`.109`）を置く。machine config、PKI、kubeconfigは
 `.generated`だけへ生成し、GitやBSMへ平文保存しない。
 installerはv1.14.1 amd64 manifestのdigestを`cluster.env`で固定し、version更新時は
 Image Factory registryから新digestを再取得する。
@@ -77,6 +77,8 @@ kexecだけでなく一度QEMU VMを完全停止・起動する必要がある�
 DHCP 予約 `192.168.20.143` を使用する。VMは停止状態で作成し、DHCP予約を反映してから
 ISOで起動する。すでに稼働しているcluster用の `.generated/worker.yaml` へ
 `patches/worker-05-build.yaml` を適用し、
+`machine.install.image` を `cluster.env` に従って
+`factory.talos.dev/metal-installer/${SCHEMATIC_ID}@${INSTALLER_DIGEST}` に設定する。
 生成先を権限0600の一時ファイルにして、対象VMのmaintenance APIでworkerとして設定する。
 インストール後は起動順をディスク優先へ戻す。
 
