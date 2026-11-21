@@ -42,7 +42,7 @@ locals {
       cpu_cores     = 4
       memory_mb     = 6144
       disk_gb       = 96
-      started       = false
+      started       = true
       boot_from_iso = true
     }
   })
