@@ -87,10 +87,13 @@ GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
 2. 共通の `values.yaml` に `backend-candidate.values.yaml` を重ね、
    登録先に `https://github.com/miutaku/reventer-backend` を指定する。
 3. リスナーのReadyを確認し、Backendリポジトリで `REVENTER_ARC_CANDIDATE_PROBE_ENABLED`
-   を有効にする。対象featureブランチのpushで `qemu-candidate-probe` を実行する。
+   を有効にする。対象featureブランチのpushで、通常の `candidate-image` ジョブが
+   このARCへ割り当てられることを確認する。
 4. ジョブはワーク領域の `qemu-inbox/input/` に対象コミットのGitアーカイブ
    `source.tar` と `source.sha`、Dockerfileと同じGoバージョンで作った
    amd64・arm64向け実行ファイルを配置し、`qemu-inbox/start` でビルドを開始する。
    完了時は `qemu-inbox/complete` と `output/candidate.sha256` を照合し、
-   検証artifact `backend-qemu-probe` を保存する。失敗の詳細はPodの
-   `builder` コンテナのログで確認する。
+   両アーキテクチャでネットワークなしの起動検証とOCI内の実行ファイルの検査を通し、
+   `backend-candidate` を保存する。失敗の詳細はPodの `builder` コンテナのログで確認する。
+5. 同じ検証をSTGで使う場合はBackendの `REVENTER_STG_ARC_CANDIDATE_ENABLED` を設定する。
+   候補ビルドは検証artifactだけを作り、環境へのリリースは通常のリリースワークフローが制御する。
