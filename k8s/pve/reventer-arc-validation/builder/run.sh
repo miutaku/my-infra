@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+set -o pipefail
 umask 007
 
 tools=/etc/reventer-qemu-build
@@ -9,6 +10,7 @@ case "${REVENTER_BUILD_SCALE_SET:-arc-reventer-backend-candidate}" in
     arc-reventer-backend-candidate) component=backend ;;
     arc-reventer-frontend-candidate) component=frontend ;;
     arc-reventer-admin-candidate) component=admin ;;
+    arc-reventer-infrastructure-admission) component=admission ;;
     *) echo 'Unsupported build runner' >&2; exit 1 ;;
 esac
 export REVENTER_BUILD_COMPONENT=$component
@@ -39,24 +41,38 @@ export PATH="$scratch/host/usr/bin:$PATH"
 export LD_LIBRARY_PATH="$scratch/host/lib:$scratch/host/usr/lib"
 export PYTHONHOME="$scratch/host/usr"
 
-buildkit=buildkit-v0.35.1.linux-amd64.tar.gz
-wget -q -O "$buildkit" "https://github.com/moby/buildkit/releases/download/v0.35.1/$buildkit"
-printf '%s  %s\n' b248c2b91698aafef11818fe8b681dc5e341581f7d5676709ff45ca1f29b0408 "$buildkit" | sha256sum -c
-tar --no-same-owner -xzf "$buildkit" -C guest \
-    bin/buildkitd bin/buildctl bin/buildkit-runc bin/buildkit-qemu-aarch64
+if [ "$component" = admission ]; then
+    mkdir guest-apks
+    apk --cache-dir "$scratch/cache" fetch --recursive --output "$scratch/guest-apks" \
+        alpine-base docker python3 py3-yaml
+    for package in guest-apks/*.apk; do
+        tar --no-same-owner -xzf "$package" -C guest
+    done
+    rm -f guest/bin/bbsuid
+    cp "$tools/guest-admission.sh" guest/guest-init
+else
+    buildkit=buildkit-v0.35.1.linux-amd64.tar.gz
+    wget -q -O "$buildkit" "https://github.com/moby/buildkit/releases/download/v0.35.1/$buildkit"
+    printf '%s  %s\n' b248c2b91698aafef11818fe8b681dc5e341581f7d5676709ff45ca1f29b0408 "$buildkit" | sha256sum -c
+    tar --no-same-owner -xzf "$buildkit" -C guest \
+        bin/buildkitd bin/buildctl bin/buildkit-runc bin/buildkit-qemu-aarch64
+    cp "$tools/guest-init.sh" guest/guest-init
+fi
 cp host/boot/vmlinuz-virt kernel
 cp -a host/lib/modules guest/lib/
 cp host/bin/busybox.static guest/bin/busybox
-ln -s busybox guest/bin/sh
+ln -sf busybox guest/bin/sh
 cp /etc/ssl/certs/ca-certificates.crt guest/etc/ssl/certs/
 printf '%s\n' "$component" > guest/etc/reventer-build-component
-cp "$tools/guest-init.sh" guest/guest-init
 
 cat > guest/init <<'INIT'
 #!/bin/sh
 set -eu
 /bin/busybox mount -t tmpfs -o size=650m tmpfs /rootfs
 /bin/busybox cp -a /bin /lib /etc /guest-init /rootfs/
+for directory in /sbin /usr /var; do
+    if [ -d "$directory" ]; then /bin/busybox cp -a "$directory" /rootfs/; fi
+done
 /bin/busybox mkdir -p /rootfs/proc /rootfs/sys /rootfs/dev /rootfs/tmp /rootfs/data /rootfs/run /rootfs/context /rootfs/out
 exec /bin/busybox switch_root /rootfs /guest-init
 INIT
@@ -94,6 +110,11 @@ if ! qemu-system-x86_64 -machine q35,accel=tcg -cpu max -smp 2 -m 3600 \
     exit 1
 fi
 tail -80 guest.log
-grep -q '^GUEST_BUILD_VERIFIED' guest.log
-(cd "$bridge/output" && sha256sum candidate.oci.tar > candidate.sha256)
+case "$component" in
+    admission) grep -q '^GUEST_ADMISSION_VERIFIED' guest.log ;;
+    *)
+        grep -q '^GUEST_BUILD_VERIFIED' guest.log
+        (cd "$bridge/output" && sha256sum candidate.oci.tar > candidate.sha256)
+        ;;
+esac
 touch "$bridge/complete"

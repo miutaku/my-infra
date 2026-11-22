@@ -91,7 +91,7 @@ FrontendとAdminのスナップショットはゲスト内のext4上でOverlayFS
 接続先はゲストのHTTPSプロキシが許可する公開依存先に限定する。
 ゲストとビルドにはレジストリ認証、GitHubトークン、Kubernetes APIトークンを渡さない。
 
-1. `builder/` の3ファイルを `arc-reventer-validation/reventer-qemu-build-scripts`
+1. `builder/` のファイルを `arc-reventer-validation/reventer-qemu-build-scripts`
    ConfigMapへ登録する。ゲストの起動スクリプトは各ジョブのゲスト起動時に取り込む。
 2. 共通の `values.yaml` に `candidate.values.yaml` を重ね、
    scale set名に対応するリポジトリURLを指定する。
@@ -109,3 +109,14 @@ FrontendとAdminのスナップショットはゲスト内のext4上でOverlayFS
 6. BackendでSTGのビルドを切り替える場合は `REVENTER_STG_ARC_CANDIDATE_ENABLED`
    を設定する。FrontendとAdminのTalos経路は移行用featureに適用する。
    実際の配置はリリースワークフローの認可と検証が揃った場合だけ進む。
+
+## InfrastructureのAdmission検証
+
+`arc-reventer-infrastructure-admission` をInfrastructureリポジトリに登録し、共通の
+`values.yaml` に `candidate.values.yaml` を重ねる。ゲスト内だけでDockerとkindを動かし、
+構成の検証と一時クラスタの削除を行う。ホスト上のDocker、クラスタの資格情報、
+GitHubトークンはゲストに渡さない。固定入力の取得はランナー側、Dockerの公開イメージ取得は
+ゲストの許可済みHTTPSプロキシ経由で行う。
+
+専用リスナーのReady確認後、移行用featureだけに適用される
+`REVENTER_ARC_ADMISSION_ENABLED` を設定する。
