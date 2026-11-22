@@ -54,6 +54,8 @@ template:
         volumeMounts:
           - name: tikv-data
             mountPath: /test-tikv
+          - name: tikv-raft
+            mountPath: /test-raft
           - name: tikv-configuration
             mountPath: /fixture
             readOnly: true
@@ -98,6 +100,10 @@ template:
       - name: tikv-data
         emptyDir:
           sizeLimit: 1536Mi
+      - name: tikv-raft
+        emptyDir:
+          medium: Memory
+          sizeLimit: 64Mi
       - name: tidb-data
         emptyDir:
           sizeLimit: 1536Mi

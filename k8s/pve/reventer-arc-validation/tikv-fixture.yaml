@@ -9,3 +9,5 @@ data:
     reserve-space = "0MB"
     [storage.block-cache]
     capacity = "128MB"
+    [raft-engine]
+    dir = "/test-raft"
