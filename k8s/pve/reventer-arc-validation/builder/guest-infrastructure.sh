@@ -58,10 +58,11 @@ case "$component" in
         ;;
     integration)
         log=/out/verify-docker.log
-        mkdir /data/go /data/gomod /data/gocache
-        tar -xzf /context/go.tar.gz -C /data/go
-        tar -xzf /context/go-modules.tar.gz -C /data/gomod
-        chown -R 1001:1001 /data/source /data/gomod /data/gocache
+        mkdir /data/bin
+        for binary in db-backup-fixture db-backup-fixture.test metadata-server-fixture; do
+            install -m 755 "/context/bin/$binary" "/data/bin/$binary"
+        done
+        chown -R 1001:1001 /data/source
         if ! su reventer-test -s /bin/sh -c 'cd /data/source && exec sh scripts/verify-docker-guest.sh' >"$log" 2>&1; then
             cat "$log"
             exit 1

@@ -53,7 +53,7 @@ if [ "$component" = admission ] || [ "$component" = integration ]; then
     mkdir guest-apks
     set -- alpine-base docker kmod python3 py3-yaml
     if [ "$component" = integration ]; then
-        set -- "$@" bash openssl docker-cli-buildx docker-cli-compose
+        set -- "$@" bash coreutils git gnupg openssl docker-cli-buildx docker-cli-compose
     fi
     apk --cache-dir "$scratch/cache" fetch --recursive --output "$scratch/guest-apks" "$@"
     for package in guest-apks/*.apk; do

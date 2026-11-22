@@ -132,8 +132,8 @@ sidecarで起動し、CIが置いたコミットのアーカイブを一時領�
 ## InfrastructureのDocker統合検証
 
 `arc-reventer-infrastructure-docker` には共通の `values.yaml` と
-`candidate.values.yaml` を適用する。ゲストへの入力はGitアーカイブ、Goツールチェーン、
-ロック済み依存に限る。Docker APIはゲストのUnix socketで受け付ける。
+`candidate.values.yaml` を適用する。ゲストにはGitアーカイブ、固定kubectl、ランナーで
+同じソースからビルドしたGoの試験バイナリを渡す。Docker APIはゲストのUnix socketで受け付ける。
 公開イメージとPython wheelにはゲストのHTTPSプロキシを使う。
 
 専用リスナーのReady確認後、移行用featureで `REVENTER_ARC_DOCKER_ENABLED` を設定する。
