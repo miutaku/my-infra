@@ -66,9 +66,14 @@ case "$component" in
             *) echo 'Invalid candidate environment' >&2; exit 1 ;;
         esac
         set -- --opt "build-arg:NEXT_PUBLIC_APP_ENV=$environment" --opt "build-arg:NEXT_PUBLIC_API_URL=$api"
-        if [ -d /context/npm-cache/_cacache ]; then
-            set -- "$@" --local npmcache=/context/npm-cache --opt context:npm-cache=local:npmcache \
-                --opt "build-arg:PREFETCHED_NPM_CACHE=1"
+        if [ -f /context/web-bundle.tar.gz ]; then
+            checksum=$(cut -d ' ' -f 1 /context/web-bundle.sha256)
+            printf '%s\n' "$checksum" | grep -Eq '^[0-9a-f]{64}$'
+            printf '%s  %s\n' "$checksum" /context/web-bundle.tar.gz | sha256sum -c -
+            mkdir /data/web-bundle
+            tar -xzf /context/web-bundle.tar.gz -C /data/web-bundle
+            set -- "$@" --local webbundle=/data/web-bundle --opt context:web-bundle=local:webbundle \
+                --opt "build-arg:APP_BUILD_STAGE=prebuilt"
         fi
         if [ "$component" = frontend ]; then
             portal=$(cat /context/stripe.portal)

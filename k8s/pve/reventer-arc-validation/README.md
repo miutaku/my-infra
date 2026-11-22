@@ -100,9 +100,10 @@ FrontendとAdminのスナップショットはゲスト内のext4上でOverlayFS
    `REVENTER_ARC_CANDIDATE_ENABLED` を設定する。
 4. ジョブは `qemu-inbox/input/` に対象コミットのGitアーカイブとSHAを置く。
    BackendはDockerfileと同じGo版で作ったamd64・arm64実行ファイルを置く。
-   FrontendとAdminは候補の対象環境と、ロックファイルから事前取得した両CPU向けのnpmキャッシュを渡す。
-   ゲストの依存解決はnpmのofflineモードで行う。Frontendは対応する公開Stripeの設定も渡す。
-   ゲストは対応するAPI設定をビルドに固定し、両アーキテクチャでネットワークなしの起動検証を行う。
+   FrontendとAdminは対象環境でNext.jsをネイティブにビルドし、standalone出力と、
+   ロックファイルが指定する両CPU用のSharpライブラリを分けて渡す。
+   ゲストではアーカイブのハッシュを確認し、各イメージに対象アーキテクチャのライブラリを選ぶ。
+   Frontendは対応する公開Stripeの設定も渡す。両イメージのUIDとSharpの読み込みをネットワークなしで検証する。
 5. `qemu-inbox/complete` と `output/candidate.sha256` を照合して
    対応するCI artifactを保存する。失敗の詳細はPodの `builder` コンテナのログで確認する。
 6. BackendでSTGのビルドを切り替える場合は `REVENTER_STG_ARC_CANDIDATE_ENABLED`
