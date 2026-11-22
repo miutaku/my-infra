@@ -55,7 +55,7 @@ TiDBイメージのdigestはBackendのDB権限テストと合わせる。
 `arc-reventer-infrastructure-tikv` をInfrastructureリポジトリに登録する。
 `tikv-fixture.yaml` を同じnamespaceへ適用し、`values.yaml` に `infrastructure-tikv.values.yaml` を重ねる。
 固定digestのPD・TiKV・TiDBをamd64の非特権Podにまとめ、通信は同じPodのloopbackに閉じる。
-DBのデータはローカルのemptyDirに置き、Podの終了時に破棄する。
+PDのWALとメタデータはメモリ上のemptyDirに置く。TiKVとTiDBのデータもPodの終了時に破棄する。
 CIは専用ランナーで実GCを待ち、保持したスナップショットの読み取りと、解放後に失効することを確認する。
 
 ## BackendのSTG OIDC

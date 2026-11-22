@@ -22,7 +22,7 @@ template:
         resources:
           requests:
             cpu: 200m
-            memory: 256Mi
+            memory: 384Mi
           limits:
             cpu: "1"
             memory: 512Mi
@@ -93,7 +93,8 @@ template:
           sizeLimit: 3Gi
       - name: pd-data
         emptyDir:
-          sizeLimit: 512Mi
+          medium: Memory
+          sizeLimit: 256Mi
       - name: tikv-data
         emptyDir:
           sizeLimit: 1536Mi
