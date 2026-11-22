@@ -21,6 +21,8 @@ if os.environ.get("REVENTER_BUILD_COMPONENT") in ("frontend", "admin"):
     ALLOWED_HOSTS.add("registry.npmjs.org")
 if os.environ.get("REVENTER_BUILD_COMPONENT") == "admin":
     ALLOWED_HOSTS.update(("fonts.googleapis.com", "fonts.gstatic.com"))
+if os.environ.get("REVENTER_BUILD_COMPONENT") == "integration":
+    ALLOWED_HOSTS.update(("quay.io", "cdn01.quay.io", "gcr.io", "pypi.org", "files.pythonhosted.org"))
 
 
 def connect_public(host):

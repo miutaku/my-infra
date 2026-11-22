@@ -128,3 +128,12 @@ GitHubトークンはゲストに渡さない。固定入力の取得はラン�
 sidecarで起動し、CIが置いたコミットのアーカイブを一時領域で検証する。
 管理資格情報は不要で、ランナーとsidecarの間ではアーカイブと試験ログを渡す。
 リスナーのReady確認後、移行用featureで `REVENTER_ARC_MANAGEMENT_ENABLED` を設定する。
+
+## InfrastructureのDocker統合検証
+
+`arc-reventer-infrastructure-docker` には共通の `values.yaml` と
+`candidate.values.yaml` を適用する。ゲストへの入力はGitアーカイブ、Goツールチェーン、
+ロック済み依存に限る。Docker APIはゲストのUnix socketで受け付ける。
+公開イメージとPython wheelにはゲストのHTTPSプロキシを使う。
+
+専用リスナーのReady確認後、移行用featureで `REVENTER_ARC_DOCKER_ENABLED` を設定する。

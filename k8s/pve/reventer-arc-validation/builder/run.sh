@@ -11,6 +11,7 @@ case "${REVENTER_BUILD_SCALE_SET:-arc-reventer-backend-candidate}" in
     arc-reventer-frontend-candidate) component=frontend ;;
     arc-reventer-admin-candidate) component=admin ;;
     arc-reventer-infrastructure-admission) component=admission ;;
+    arc-reventer-infrastructure-docker) component=integration ;;
     *) echo 'Unsupported build runner' >&2; exit 1 ;;
 esac
 export REVENTER_BUILD_COMPONENT=$component
@@ -22,6 +23,13 @@ hold_for_runner() {
         kill "$proxy_pid" 2>/dev/null || true
     fi
     if [ "$status" -ne 0 ]; then
+        case "$component" in
+            admission|integration)
+                if [ -f "$scratch/guest.log" ]; then
+                    tail -80 "$scratch/guest.log" > "$bridge/output/guest-boot.log"
+                fi
+                ;;
+        esac
         touch "$bridge/failed"
     fi
     exec sleep infinity
@@ -41,15 +49,18 @@ export PATH="$scratch/host/usr/bin:$PATH"
 export LD_LIBRARY_PATH="$scratch/host/lib:$scratch/host/usr/lib"
 export PYTHONHOME="$scratch/host/usr"
 
-if [ "$component" = admission ]; then
+if [ "$component" = admission ] || [ "$component" = integration ]; then
     mkdir guest-apks
-    apk --cache-dir "$scratch/cache" fetch --recursive --output "$scratch/guest-apks" \
-        alpine-base docker python3 py3-yaml
+    set -- alpine-base docker kmod python3 py3-yaml
+    if [ "$component" = integration ]; then
+        set -- "$@" bash openssl docker-cli-buildx docker-cli-compose
+    fi
+    apk --cache-dir "$scratch/cache" fetch --recursive --output "$scratch/guest-apks" "$@"
     for package in guest-apks/*.apk; do
         tar --no-same-owner -xzf "$package" -C guest
     done
     rm -f guest/bin/bbsuid
-    cp "$tools/guest-admission.sh" guest/guest-init
+    cp "$tools/guest-infrastructure.sh" guest/guest-init
 else
     buildkit=buildkit-v0.35.1.linux-amd64.tar.gz
     wget -q -O "$buildkit" "https://github.com/moby/buildkit/releases/download/v0.35.1/$buildkit"
@@ -111,7 +122,7 @@ if ! qemu-system-x86_64 -machine q35,accel=tcg -cpu max -smp 2 -m 3600 \
 fi
 tail -80 guest.log
 case "$component" in
-    admission) grep -q '^GUEST_ADMISSION_VERIFIED' guest.log ;;
+    admission|integration) grep -q '^GUEST_INFRASTRUCTURE_VERIFIED' guest.log ;;
     *)
         grep -q '^GUEST_BUILD_VERIFIED' guest.log
         (cd "$bridge/output" && sha256sum candidate.oci.tar > candidate.sha256)
