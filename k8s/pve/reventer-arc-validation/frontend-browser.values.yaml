@@ -39,6 +39,8 @@ template:
         value: /home/runner
       - name: RUNNER_TOOL_CACHE
         value: /opt/hostedtoolcache
+      - name: NPM_CONFIG_CACHE
+        value: /home/runner/_work/.npm-cache
       resources:
         requests:
           cpu: '500m'
