@@ -35,12 +35,18 @@ test('recorded running Proxmox guests are represented inside one cluster with ac
  }
 });
 test('one PVE view contains every VM and LXC, with Talos nested in each VM and no cluster-membership arrows',()=>{
- const members=['cp1','worker1','cp2','cp3','worker2'];
- for(const vm of members){
-  const parent=vm.startsWith('cp')?'homeSite.pve.controlplanes':'homeSite.pve.workers';
-  const ref=`${parent}.${vm}.talos`;
+ const definition='terraform/pve/modules/home-k8s/main.tf';
+ const source=readFileSync(new URL(`../../../${definition}`,import.meta.url),'utf8');
+ const declaredVMs=Array.from(source.matchAll(/\bvm_id\s*=\s*(\d+)\b/g),([,id])=>id).sort();
+ const instances=Object.values(model.deployments.elements)
+  .filter(node=>node.kind==='vm'&&node.metadata?.sourceFile===definition);
+ assert.ok(declaredVMs.length>0);
+ assert.deepEqual(instances.map(node=>node.metadata.vmId).sort(),declaredVMs);
+ for(const vm of instances){
+  assert.match(vm.id,/^homeSite\.pve\.(controlplanes|workers)\./);
+  const ref=`${vm.id}.talos`;
   assert.equal(model.deployments.elements[ref].kind,'os');
-  assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===`${parent}.${vm}`));
+  assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===vm.id));
  }
  for(const kind of ['vm','container']){
   const guests=Object.values(model.deployments.elements).filter(n=>n.kind===kind);
