@@ -33,15 +33,22 @@ printf '%s\n' "$source_sha" | grep -Eq '^[0-9a-f]{40}$'
 
 proxy=http://10.0.2.100:3128
 export HTTPS_PROXY=$proxy HTTP_PROXY=$proxy https_proxy=$proxy http_proxy=$proxy
+component=$(cat /etc/reventer-build-component)
+snapshotter=native
+case "$component" in
+    frontend|admin)
+        modprobe overlay
+        snapshotter=overlayfs
+        ;;
+esac
 address=unix:///run/buildkit.sock
-buildkitd --addr "$address" --root /data/cache --oci-worker-snapshotter native \
+buildkitd --addr "$address" --root /data/cache --oci-worker-snapshotter "$snapshotter" \
     --containerd-worker=false >/data/buildkit.log 2>&1 &
 
 for attempt in $(seq 1 15); do
     if buildctl --addr "$address" debug workers >/dev/null 2>&1; then break; fi
     sleep 1
 done
-component=$(cat /etc/reventer-build-component)
 set --
 case "$component" in
     backend)

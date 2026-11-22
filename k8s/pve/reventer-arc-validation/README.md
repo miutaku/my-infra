@@ -87,11 +87,12 @@ GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
 `arc-reventer-{backend,frontend,admin}-candidate` は専用TalosノードでQEMUの
 ソフトウェア仮想化を使い、ゲスト内のBuildKitでamd64・arm64のOCIアーカイブを作る。
 ゲストは読み取り専用の入力ディレクトリと専用の成果物ディレクトリをマウントする。
+FrontendとAdminのスナップショットはゲスト内のext4上でOverlayFSを使う。
 接続先はゲストのHTTPSプロキシが許可する公開依存先に限定する。
 ゲストとビルドにはレジストリ認証、GitHubトークン、Kubernetes APIトークンを渡さない。
 
 1. `builder/` の3ファイルを `arc-reventer-validation/reventer-qemu-build-scripts`
-   ConfigMapへ登録する。更新時は対象runner Podを排出してから変更する。
+   ConfigMapへ登録する。ゲストの起動スクリプトは各ジョブのゲスト起動時に取り込む。
 2. 共通の `values.yaml` に `candidate.values.yaml` を重ね、
    scale set名に対応するリポジトリURLを指定する。
 3. リスナーのReadyを確認し、移行用featureブランチではBackendに
