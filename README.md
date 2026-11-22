@@ -64,7 +64,7 @@ PRD OKEのkubeconfigはOCIのPRDプロファイルで取得し、認証のexec�
 
 | 詳細 | 参照先 |
 | --- | --- |
-| Talos・VM定義 | [talos/home-k8s/](talos/home-k8s/)、[terraform/home-k8s/](terraform/home-k8s/) |
+| Talos・VM定義 | [talos/home-k8s/](talos/home-k8s/)、[terraform/pve/modules/home-k8s/](terraform/pve/modules/home-k8s/) |
 | OKE定義 | [Re:Venterのinfrastructure/](https://github.com/miutaku/reventer/tree/main/infrastructure) |
 | ArgoCD定義 | [k8s/pve/argocd/](k8s/pve/argocd/)、[Re:VenterのGitOps定義](https://github.com/miutaku/reventer/tree/main/infrastructure/gitops) |
 | ネットワーク | [ansible/ix2215/](ansible/ix2215/)、[terraform/cloudflare/](terraform/cloudflare/) |

@@ -4,6 +4,10 @@ terraform {
       source  = "telmate/proxmox"
       version = "3.0.2-rc05"
     }
+    bpg = {
+      source  = "bpg/proxmox"
+      version = "0.111.1"
+    }
   }
 }
 provider "proxmox" {
@@ -12,4 +16,10 @@ provider "proxmox" {
   pm_api_token_id     = var.pm_api_token_id     # https://registry.terraform.io/providers/Telmate/proxmox/latest/docs#creating-the-connection-via-username-and-api-token
   pm_api_token_secret = var.pm_api_token_secret # https://registry.terraform.io/providers/Telmate/proxmox/latest/docs#creating-the-connection-via-username-and-api-token
   pm_tls_insecure     = true                    # default Proxmox Virtual Environment uses self-signed certificates.
+}
+
+provider "bpg" {
+  endpoint  = "https://192.168.0.115:8006/"
+  api_token = "${var.pm_api_token_id}=${var.pm_api_token_secret}"
+  insecure  = true
 }

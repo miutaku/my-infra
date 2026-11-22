@@ -7,6 +7,7 @@ TFC workspace: `pve-home` (organization: `miutaku`)
 
 | モジュール | 台数 | 役割 | ノード配置 |
 |---|---|---|---|
+| `home_k8s` | 6 | Talos control plane、汎用 worker、ビルド用 worker | 両ノード分散 |
 | `load_balancer` | 2 | 汎用HAProxy + Keepalived LB | 両ノード分散 |
 | `prd_rec_server` | 1 | 録画サーバー (pve-x570, PCI passthrough) | pve-x570 固定 |
 | `dev_rec_server` | 1 | 開発用録画サーバー (USB passthrough) | pve-b550m 固定 |
@@ -55,7 +56,7 @@ flowchart LR
   Apply --> Output --> IX --> Reboot
 ```
 
-home-k8s VMのIP/MACは`terraform/home-k8s`で管理する。LB 2台はKubernetes専用ではない
+home-k8s VMのIP/MACはこの workspace の `home_k8s_nodes` output で確認する。LB 2台はKubernetes専用ではない
 汎用インフラとして`load_balancer` moduleで管理する。
 
 ## Ansible inventory
@@ -108,7 +109,7 @@ flowchart LR
   Terraform[terraform init / plan / apply]
   Outputs[terraform output<br/>MAC確認]
   IX[ansible/ix2215<br/>DHCP静的リース]
-  HomeK8s[terraform/home-k8s + talos/home-k8s<br/>home-k8s構成]
+  HomeK8s[terraform/pve + talos/home-k8s<br/>home-k8s構成]
   UOS[ansible/uos<br/>UniFi OS Server構成]
 
   Packer --> Vars --> Terraform --> Outputs --> IX

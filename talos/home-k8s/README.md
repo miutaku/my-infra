@@ -1,15 +1,15 @@
 # Talos home-k8s production
 
 home-k8sの本番クラスタ。API endpointはTalos内蔵L2 VIP
-`https://192.168.20.228:6443`。VLAN 20にVM 5台（`.137`–`.141`）、VLAN 10にRaspberry Pi 4
-worker 2台（`.107`、`.109`）を置く。machine config、PKI、kubeconfigは
+`https://192.168.20.228:6443`。VLAN 20にコントロールプレーン3台（`.137`–`.139`）、汎用worker 2台（`.140`、`.141`）、
+ビルド用worker 1台（`.143`）を置く。VLAN 10にはRaspberry Pi 4 worker 2台（`.107`、`.109`）を置く。machine config、PKI、kubeconfigは
 `.generated`だけへ生成し、GitやBSMへ平文保存しない。
 installerはv1.14.1 amd64 manifestのdigestを`cluster.env`で固定し、version更新時は
 Image Factory registryから新digestを再取得する。
 
-1. `scripts/preflight-reservations`を実行する。
+1. ProxmoxのVM ID、IX2215の固定IP、MACアドレスの重複がないことを確認する。
 2. IX2215の固定DHCP 5件を反映する。
-3. `terraform/home-k8s`を停止状態で作成する。
+3. `terraform/pve` の home_k8s モジュールで、新規VMを停止状態で作成する。
 4. `cluster.env`のversionとdigestを確認し、同versionの`talosctl`で
    `scripts/generate-configs`を実行する。
 5. 各nodeがmaintenance APIへ応答した後、control plane 3台へ`controlplane.yaml`、worker 2台へ
@@ -70,3 +70,18 @@ kexecだけでなく一度QEMU VMを完全停止・起動する必要がある�
 
 各node固有hostnameは`patches/*-hostname.yaml`で管理する。worker-01のKubernetes Node名も正規名とし、
 状態データは共有NFSへ置き、Nodeの`kubernetes.io/hostname`はTalosの正式hostnameと一致させる。
+
+## Re:Venter のビルド用 worker
+
+`worker-05-talos-home-pve-amd64` は `pve-home` workspace の VM `13006` で、VLAN 20 の
+DHCP 予約 `192.168.20.143` を使用する。VMは停止状態で作成し、DHCP予約を反映してから
+ISOで起動する。すでに稼働しているcluster用の `.generated/worker.yaml` へ
+`patches/worker-05-build.yaml` を適用し、
+`machine.install.image` を `cluster.env` に従って
+`factory.talos.dev/metal-installer/${SCHEMATIC_ID}@${INSTALLER_DIGEST}` に設定する。
+生成先を権限0600の一時ファイルにして、対象VMのmaintenance APIでworkerとして設定する。
+インストール後は起動順をディスク優先へ戻す。
+
+`user.max_user_namespaces` の変更はこのVMに適用する。対象のCI Podは
+`workload.miutaku/reventer-build=true` のラベルを選択し、同じキーと値の
+`NoSchedule` taintを許容する。
