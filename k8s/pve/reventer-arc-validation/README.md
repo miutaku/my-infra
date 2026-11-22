@@ -74,26 +74,27 @@ GitHub Actionsのworkflowには各jobのrunnerの条件を明示する。
 
 [ARC scale set の構成](https://docs.github.com/en/actions/how-tos/manage-runners/use-actions-runner-controller/deploy-runner-scale-sets)
 
-## Backendのコンテナビルド検証
+## コンテナ候補のビルド
 
-`arc-reventer-backend-candidate` は、専用TalosノードでQEMUのソフトウェア仮想化を使い、
-ゲスト内のBuildKitでamd64・arm64のOCIアーカイブを作る。
+`arc-reventer-{backend,frontend,admin}-candidate` は専用TalosノードでQEMUの
+ソフトウェア仮想化を使い、ゲスト内のBuildKitでamd64・arm64のOCIアーカイブを作る。
 ゲストは読み取り専用の入力ディレクトリと専用の成果物ディレクトリをマウントする。
-外部への接続はPod内のHTTPSプロキシが許可する公開依存先に限定する。
+接続先はゲストのHTTPSプロキシが許可する公開依存先に限定する。
 ゲストとビルドにはレジストリ認証、GitHubトークン、Kubernetes APIトークンを渡さない。
 
 1. `builder/` の3ファイルを `arc-reventer-validation/reventer-qemu-build-scripts`
-   ConfigMapへ登録する。
-2. 共通の `values.yaml` に `backend-candidate.values.yaml` を重ね、
-   登録先に `https://github.com/miutaku/reventer-backend` を指定する。
-3. リスナーのReadyを確認し、Backendリポジトリで `REVENTER_ARC_CANDIDATE_PROBE_ENABLED`
-   を有効にする。対象featureブランチのpushで、通常の `candidate-image` ジョブが
-   このARCへ割り当てられることを確認する。
-4. ジョブはワーク領域の `qemu-inbox/input/` に対象コミットのGitアーカイブ
-   `source.tar` と `source.sha`、Dockerfileと同じGoバージョンで作った
-   amd64・arm64向け実行ファイルを配置し、`qemu-inbox/start` でビルドを開始する。
-   完了時は `qemu-inbox/complete` と `output/candidate.sha256` を照合し、
-   両アーキテクチャでネットワークなしの起動検証とOCI内の実行ファイルの検査を通し、
-   `backend-candidate` を保存する。失敗の詳細はPodの `builder` コンテナのログで確認する。
-5. 同じ検証をSTGで使う場合はBackendの `REVENTER_STG_ARC_CANDIDATE_ENABLED` を設定する。
-   候補ビルドは検証artifactだけを作り、環境へのリリースは通常のリリースワークフローが制御する。
+   ConfigMapへ登録する。更新時は対象runner Podを排出してから変更する。
+2. 共通の `values.yaml` に `candidate.values.yaml` を重ね、
+   scale set名に対応するリポジトリURLを指定する。
+3. リスナーのReadyを確認し、移行用featureブランチではBackendに
+   `REVENTER_ARC_CANDIDATE_PROBE_ENABLED`、FrontendとAdminに
+   `REVENTER_ARC_CANDIDATE_ENABLED` を設定する。
+4. ジョブは `qemu-inbox/input/` に対象コミットのGitアーカイブとSHAを置く。
+   BackendはDockerfileと同じGo版で作ったamd64・arm64実行ファイルを置く。
+   FrontendとAdminは候補の対象環境を渡す。Frontendは対応する公開Stripeの設定も渡す。
+   ゲストは対応するAPI設定をビルドに固定し、両アーキテクチャでネットワークなしの起動検証を行う。
+5. `qemu-inbox/complete` と `output/candidate.sha256` を照合して
+   対応するCI artifactを保存する。失敗の詳細はPodの `builder` コンテナのログで確認する。
+6. BackendでSTGのビルドを切り替える場合は `REVENTER_STG_ARC_CANDIDATE_ENABLED`
+   を設定する。FrontendとAdminのTalos経路は移行用featureに適用する。
+   実際の配置はリリースワークフローの認可と検証が揃った場合だけ進む。

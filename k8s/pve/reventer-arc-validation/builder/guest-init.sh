@@ -41,10 +41,42 @@ for attempt in $(seq 1 15); do
     if buildctl --addr "$address" debug workers >/dev/null 2>&1; then break; fi
     sleep 1
 done
+component=$(cat /etc/reventer-build-component)
 set --
-if [ -d /context/binaries ]; then
-    set -- --local builder=/context/binaries --opt context:builder=local:builder
-fi
+case "$component" in
+    backend)
+        test ! -e /context/environment
+        if [ -d /context/binaries ]; then
+            set -- --local builder=/context/binaries --opt context:builder=local:builder
+        fi
+        ;;
+    frontend|admin)
+        test ! -e /context/binaries
+        environment=$(cat /context/environment)
+        case "$environment" in
+            stg) api=https://api-stg.re-venter.com ;;
+            prd) api=https://api.re-venter.com ;;
+            *) echo 'Invalid candidate environment' >&2; exit 1 ;;
+        esac
+        set -- --opt "build-arg:NEXT_PUBLIC_APP_ENV=$environment" --opt "build-arg:NEXT_PUBLIC_API_URL=$api"
+        if [ "$component" = frontend ]; then
+            portal=$(cat /context/stripe.portal)
+            portal_id=${portal#https://billing.stripe.com/p/login/}
+            if [ "$portal_id" = "$portal" ] || [ "${#portal}" -gt 256 ]; then exit 1; fi
+            case "$portal_id" in ''|*[!A-Za-z0-9_]*) exit 1 ;; esac
+            case "$environment:$portal" in
+                stg:https://billing.stripe.com/p/login/test_?*) ;;
+                prd:https://billing.stripe.com/p/login/test_*) exit 1 ;;
+                prd:https://billing.stripe.com/p/login/?*) ;;
+                *) exit 1 ;;
+            esac
+            set -- "$@" --opt "build-arg:NEXT_PUBLIC_STRIPE_PORTAL_LOGIN_URL=$portal" \
+                --opt "build-arg:NEXT_PUBLIC_CALENDAR_BASE_URL=$api" \
+                --opt "build-arg:SERVER_API_URL=http://backend.app-reventer-$environment.svc.cluster.local:8080"
+        fi
+        ;;
+    *) echo 'Invalid candidate component' >&2; exit 1 ;;
+esac
 if ! buildctl --addr "$address" build --frontend dockerfile.v0 "$@" \
     --local context=/data/source --local dockerfile=/data/source \
     --opt platform=linux/amd64,linux/arm64 --opt "build-arg:SOURCE_SHA=$source_sha" \

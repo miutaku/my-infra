@@ -5,6 +5,13 @@ umask 007
 tools=/etc/reventer-qemu-build
 bridge=/bridge
 scratch=/scratch
+case "${REVENTER_BUILD_SCALE_SET:-arc-reventer-backend-candidate}" in
+    arc-reventer-backend-candidate) component=backend ;;
+    arc-reventer-frontend-candidate) component=frontend ;;
+    arc-reventer-admin-candidate) component=admin ;;
+    *) echo 'Unsupported build runner' >&2; exit 1 ;;
+esac
+export REVENTER_BUILD_COMPONENT=$component
 
 hold_for_runner() {
     status=$?
@@ -42,6 +49,7 @@ cp -a host/lib/modules guest/lib/
 cp host/bin/busybox.static guest/bin/busybox
 ln -s busybox guest/bin/sh
 cp /etc/ssl/certs/ca-certificates.crt guest/etc/ssl/certs/
+printf '%s\n' "$component" > guest/etc/reventer-build-component
 cp "$tools/guest-init.sh" guest/guest-init
 
 cat > guest/init <<'INIT'

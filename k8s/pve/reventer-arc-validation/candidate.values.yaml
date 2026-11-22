@@ -19,6 +19,10 @@ template:
         value: /scratch
       - name: TMPDIR
         value: /scratch
+      - name: REVENTER_BUILD_SCALE_SET
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['actions.github.com/scale-set-name']
       startupProbe:
         exec:
           command: [/bin/sh, -c, test -f /bridge/ready]

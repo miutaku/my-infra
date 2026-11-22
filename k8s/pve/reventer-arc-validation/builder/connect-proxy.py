@@ -1,4 +1,5 @@
 import ipaddress
+import os
 import re
 import select
 import socket
@@ -15,6 +16,12 @@ ALLOWED_HOSTS = {
     "storage.googleapis.com",
     "registry-1.docker.io",
 }
+
+if os.environ.get("REVENTER_BUILD_COMPONENT") in ("frontend", "admin"):
+    ALLOWED_HOSTS.add("registry.npmjs.org")
+if os.environ.get("REVENTER_BUILD_COMPONENT") == "admin":
+    ALLOWED_HOSTS.update(("fonts.googleapis.com", "fonts.gstatic.com"))
+
 
 def connect_public(host):
     for family, kind, protocol, _, address in socket.getaddrinfo(host, 443, socket.AF_INET, socket.SOCK_STREAM):
