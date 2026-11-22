@@ -66,6 +66,10 @@ case "$component" in
             *) echo 'Invalid candidate environment' >&2; exit 1 ;;
         esac
         set -- --opt "build-arg:NEXT_PUBLIC_APP_ENV=$environment" --opt "build-arg:NEXT_PUBLIC_API_URL=$api"
+        if [ -d /context/npm-cache/_cacache ]; then
+            set -- "$@" --local npmcache=/context/npm-cache --opt context:npm-cache=local:npmcache \
+                --opt "build-arg:PREFETCHED_NPM_CACHE=1"
+        fi
         if [ "$component" = frontend ]; then
             portal=$(cat /context/stripe.portal)
             portal_id=${portal#https://billing.stripe.com/p/login/}
