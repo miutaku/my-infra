@@ -1,0 +1,1 @@
+import{t as e}from"./main-bOuj9U1V.js";var t={"my-infra":async()=>await e(()=>import(`./drawio-y33Iz6PA.js`),[],import.meta.url)};async function n(e){let n=t[e];if(!n){let n=Object.keys(t);throw console.error(`Unknown projectId: `+e+` (available: `+n+`)`),Error(`Project does not enable drawio export: `+e)}return await n()}export{n as loadDrawioSources};

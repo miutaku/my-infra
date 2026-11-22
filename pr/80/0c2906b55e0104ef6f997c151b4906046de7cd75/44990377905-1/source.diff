@@ -1,0 +1,46 @@
+diff --git a/docs/architecture/details.c4 b/docs/architecture/details.c4
+index 313862b..0300ea8 100644
+--- a/docs/architecture/details.c4
++++ b/docs/architecture/details.c4
+@@ -139,6 +139,20 @@ model {
+   extend consumers.reventer { component definitions '専用定義の参照 / 詳細はreventer側' { metadata { owner "reventer" referenceOnly "true" } description 'my-infraにある専用リソースの名前・参照元だけを自動抽出。構成図・通信トポロジーは重複して作らない。' link https://reventer-architecture.pages.dev/ 'Re:Venterの構成図' } }
+ 
+ 
++  extend consumers.reventer.definitions {
++    component terraform_agent 'Re:VenterのTerraform Cloud Agent' {
++      link https://github.com/miutaku/reventer/tree/main/infrastructure/k8s/management/tfc-agent 'Argo CD同期元'
++      metadata {
++        owner "reventer"
++        referenceOnly "true"
++        definitionRepository "reventer"
++        application "reventer-tfc-agent"
++        workload "Deployment/reventer-tfc-agent"
++        namespace "reventer-tfc-agent"
++      }
++    }
++  }
++
+   premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
+   client .runtime external.edge.mtls 'クライアント証明書'
+   external.edge.mtls .authenticate external.edge.loockit_tunnel 'mTLS検証済みのAPIリクエスト'
+diff --git a/docs/architecture/tests/runtime-placement.test.mjs b/docs/architecture/tests/runtime-placement.test.mjs
+index 45779b7..a103767 100644
+--- a/docs/architecture/tests/runtime-placement.test.mjs
++++ b/docs/architecture/tests/runtime-placement.test.mjs
+@@ -9,7 +9,15 @@ const pve=JSON.parse(readFileSync('evidence/pve-runtime.json','utf8'));
+ test('recorded live Applications and workload controllers are accounted for including bootstrap',()=>{
+  assert.equal(runtime.missingApplicationDefinitions.length,0);
+  assert.equal(runtime.unmapped.length,0);
+- for(const row of [...runtime.applications,...runtime.workloads])assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
++ const externalDefinitions=Object.values(model.elements).filter(({metadata})=>
++  metadata?.referenceOnly==='true'&&metadata.definitionRepository&&metadata.definitionRepository!=='my-infra');
++ for(const row of [...runtime.applications,...runtime.workloads]){
++  if(model.elements[row.modelRef])continue;
++  const matching=externalDefinitions.filter(({metadata})=>
++   metadata.namespace===row.namespace&&metadata.application===(row.application??row.name)&&
++   (!row.kind||metadata.workload===`${row.kind}/${row.name}`));
++  assert.equal(matching.length,1,`${row.namespace}/${row.name}: ${row.modelRef}`);
++ }
+  for(const ref of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver']){
+   const id=`premises.home.platform.${ref}`;
+   assert.ok(runtime.workloads.some(w=>w.modelRef===id));
