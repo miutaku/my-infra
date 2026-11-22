@@ -1,0 +1,82 @@
+diff --git a/docs/architecture/details.c4 b/docs/architecture/details.c4
+index 313862b8..0300ea87 100644
+--- a/docs/architecture/details.c4
++++ b/docs/architecture/details.c4
+@@ -139,6 +139,20 @@ model {
+   extend consumers.reventer { component definitions '専用定義の参照 / 詳細はreventer側' { metadata { owner "reventer" referenceOnly "true" } description 'my-infraにある専用リソースの名前・参照元だけを自動抽出。構成図・通信トポロジーは重複して作らない。' link https://reventer-architecture.pages.dev/ 'Re:Venterの構成図' } }
+ 
+ 
++  extend consumers.reventer.definitions {
++    component terraform_agent 'Re:VenterのTerraform Cloud Agent' {
++      link https://github.com/miutaku/reventer/tree/main/infrastructure/k8s/management/tfc-agent 'Argo CD同期元'
++      metadata {
++        owner "reventer"
++        referenceOnly "true"
++        definitionRepository "reventer"
++        application "reventer-tfc-agent"
++        workload "Deployment/reventer-tfc-agent"
++        namespace "reventer-tfc-agent"
++      }
++    }
++  }
++
+   premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
+   client .runtime external.edge.mtls 'クライアント証明書'
+   external.edge.mtls .authenticate external.edge.loockit_tunnel 'mTLS検証済みのAPIリクエスト'
+diff --git a/docs/architecture/tests/model-coverage.test.mjs b/docs/architecture/tests/model-coverage.test.mjs
+index 1f898b63..f365a19e 100644
+--- a/docs/architecture/tests/model-coverage.test.mjs
++++ b/docs/architecture/tests/model-coverage.test.mjs
+@@ -28,7 +28,6 @@ test('manual details preserve independent media workers, LXC, DB, NUT and correc
+  assert.ok(!relations.some(r=>r.source.model==='premises.home.agent'&&r.target.model==='monitoring.vms'));
+  const physical=Object.values(model.deployments.elements);
+  assert.equal(physical.filter(r=>r.kind==='container').length,4);
+- assert.equal(physical.filter(r=>r.kind==='vm').length,14);
+  for(const element of Object.values(model.elements))for(const link of element.links??[]){
+   const prefix='https://github.com/miutaku/my-infra/';if(!link.url.startsWith(prefix))continue;
+   const path=link.url.replace(/^https:\/\/github.com\/miutaku\/my-infra\/(blob|tree)\/main\//,'');
+diff --git a/docs/architecture/tests/runtime-placement.test.mjs b/docs/architecture/tests/runtime-placement.test.mjs
+index 45779b7f..21680dec 100644
+--- a/docs/architecture/tests/runtime-placement.test.mjs
++++ b/docs/architecture/tests/runtime-placement.test.mjs
+@@ -9,7 +9,15 @@ const pve=JSON.parse(readFileSync('evidence/pve-runtime.json','utf8'));
+ test('recorded live Applications and workload controllers are accounted for including bootstrap',()=>{
+  assert.equal(runtime.missingApplicationDefinitions.length,0);
+  assert.equal(runtime.unmapped.length,0);
+- for(const row of [...runtime.applications,...runtime.workloads])assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
++ const externalDefinitions=Object.values(model.elements).filter(({metadata})=>
++  metadata?.referenceOnly==='true'&&metadata.definitionRepository&&metadata.definitionRepository!=='my-infra');
++ for(const row of [...runtime.applications,...runtime.workloads]){
++  if(model.elements[row.modelRef])continue;
++  const matching=externalDefinitions.filter(({metadata})=>
++   metadata.namespace===row.namespace&&metadata.application===(row.application??row.name)&&
++   (!row.kind||metadata.workload===`${row.kind}/${row.name}`));
++  assert.equal(matching.length,1,`${row.namespace}/${row.name}: ${row.modelRef}`);
++ }
+  for(const ref of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver']){
+   const id=`premises.home.platform.${ref}`;
+   assert.ok(runtime.workloads.some(w=>w.modelRef===id));
+@@ -27,12 +35,18 @@ test('recorded running Proxmox guests are represented inside one cluster with ac
+  }
+ });
+ test('one PVE view contains every VM and LXC, with Talos nested in each VM and no cluster-membership arrows',()=>{
+- const members=['cp1','worker1','cp2','cp3','worker2'];
+- for(const vm of members){
+-  const parent=vm.startsWith('cp')?'homeSite.pve.controlplanes':'homeSite.pve.workers';
+-  const ref=`${parent}.${vm}.talos`;
++ const definition='terraform/pve/modules/home-k8s/main.tf';
++ const source=readFileSync(new URL(`../../../${definition}`,import.meta.url),'utf8');
++ const declaredVMs=Array.from(source.matchAll(/\bvm_id\s*=\s*(\d+)\b/g),([,id])=>id).sort();
++ const instances=Object.values(model.deployments.elements)
++  .filter(node=>node.kind==='vm'&&node.metadata?.sourceFile===definition);
++ assert.ok(declaredVMs.length>0);
++ assert.deepEqual(instances.map(node=>node.metadata.vmId).sort(),declaredVMs);
++ for(const vm of instances){
++  assert.match(vm.id,/^homeSite\.pve\.(controlplanes|workers)\./);
++  const ref=`${vm.id}.talos`;
+   assert.equal(model.deployments.elements[ref].kind,'os');
+-  assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===`${parent}.${vm}`));
++  assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===vm.id));
+  }
+  for(const kind of ['vm','container']){
+   const guests=Object.values(model.deployments.elements).filter(n=>n.kind===kind);
