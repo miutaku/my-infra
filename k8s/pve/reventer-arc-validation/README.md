@@ -50,6 +50,14 @@ DBの実結合テストは `arc-reventer-backend-database` で実行する。
 TiDBイメージのdigestはBackendのDB権限テストと合わせる。
 専用リスナーのReady確認後に、Backendの `REVENTER_ARC_DATABASE_ENABLED` を設定する。
 
+## Infrastructureの実TiKV検証
+
+`arc-reventer-infrastructure-tikv` をInfrastructureリポジトリに登録する。
+`tikv-fixture.yaml` を同じnamespaceへ適用し、`values.yaml` に `infrastructure-tikv.values.yaml` を重ねる。
+固定digestのPD・TiKV・TiDBをamd64の非特権Podにまとめ、通信は同じPodのloopbackに閉じる。
+DBのデータはローカルのemptyDirに置き、Podの終了時に破棄する。
+CIは専用ランナーで実GCを待ち、保持したスナップショットの読み取りと、解放後に失効することを確認する。
+
 ## BackendのSTG OIDC
 
 `arc-reventer-backend-oidc` をBackendリポジトリへ登録する。共通の `values.yaml` に
