@@ -120,3 +120,11 @@ GitHubトークンはゲストに渡さない。固定入力の取得はラン�
 
 専用リスナーのReady確認後、移行用featureだけに適用される
 `REVENTER_ARC_ADMISSION_ENABLED` を設定する。
+
+## Infrastructureの管理ランタイム検証
+
+`arc-reventer-infrastructure-management` には共通の `values.yaml` と
+`infrastructure-management.values.yaml` を適用する。Pythonの固定OCIを同じPodの非特権
+sidecarで起動し、CIが置いたコミットのアーカイブを一時領域で検証する。
+管理資格情報は不要で、ランナーとsidecarの間ではアーカイブと試験ログを渡す。
+リスナーのReady確認後、移行用featureで `REVENTER_ARC_MANAGEMENT_ENABLED` を設定する。

@@ -9,7 +9,10 @@ HEAVY_RUNNERS = [
   'k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml',
   'k8s/pve/argocd-apps/arc-runner-tnlastation-compose.yaml'
 ].freeze
-AMD64_WORKLOADS = ['k8s/pve/reventer-arc-validation/infrastructure-tikv.values.yaml'].freeze
+AMD64_WORKLOADS = [
+  'k8s/pve/reventer-arc-validation/infrastructure-tikv.values.yaml',
+  'k8s/pve/reventer-arc-validation/infrastructure-management.values.yaml'
+].freeze
 HOST_KEYS = ['kubernetes.io/hostname', 'topology.miutaku/proxmox-node', 'node.miutaku/platform'].freeze
 
 def check_placement(value, file, errors, trail = [])
