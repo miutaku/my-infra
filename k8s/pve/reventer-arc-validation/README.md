@@ -75,6 +75,10 @@ PRとプローブが署名付きの配置権限を得ないことを含め、Re:
 
 ## 実行範囲と復旧
 
+FrontendとAdminのSTG API検証には、それぞれ `arc-reventer-frontend-contract` と
+`arc-reventer-admin-contract` を共通の `values.yaml` で対応するGitHubリポジトリへ登録する。
+登録UIDと許可する通常workerのノード名はRe:Venter側の認証サービスで固定する。
+
 基本検証用のscale setは対応するPrivateリポジトリ内のpushと同一repoをheadとするPRに使う。
 fork由来の変更はこれらのscale setへ割り当てない。
 Dockerを使うintegration、コンテナ候補生成、配置を認可するOIDCは
