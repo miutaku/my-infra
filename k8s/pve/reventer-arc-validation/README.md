@@ -136,7 +136,11 @@ sidecarで起動し、CIが置いたコミットのアーカイブを一時領�
 ## InfrastructureのDocker統合検証
 
 `arc-reventer-infrastructure-docker` には共通の `values.yaml` と
-`candidate.values.yaml` を適用する。ゲストにはGitアーカイブ、固定kubectl、ランナーで
+`candidate.values.yaml` を適用し、Docker統合用builderのmemory requestを4600Mi、
+limitを5500Miに設定する。Helmでは `candidate.values.yaml` を読み込んだ上で
+`--set-string 'template.spec.initContainers[0].resources.requests.memory=4600Mi'` と
+`--set-string 'template.spec.initContainers[0].resources.limits.memory=5500Mi'` を指定する。
+ゲストにはGitアーカイブ、固定kubectl、ランナーで
 同じソースからビルドしたGoの試験バイナリを渡す。Docker APIはゲストのUnix socketで受け付ける。
 公開イメージとPython wheelにはゲストのHTTPSプロキシを使う。
 
