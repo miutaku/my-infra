@@ -117,7 +117,8 @@ FrontendとAdminのスナップショットはゲスト内のext4上でOverlayFS
 ## InfrastructureのAdmission検証
 
 `arc-reventer-infrastructure-admission` をInfrastructureリポジトリに登録し、共通の
-`values.yaml` に `candidate.values.yaml` を重ねる。ゲスト内だけでDockerとkindを動かし、
+`values.yaml` に `candidate.values.yaml` を重ねる。builderのmemoryはDocker統合と同じ
+request 4600Mi、limit 5500Miを指定する。ゲスト内だけでDockerとkindを動かし、
 構成の検証と一時クラスタの削除を行う。ホスト上のDocker、クラスタの資格情報、
 GitHubトークンはゲストに渡さない。固定入力の取得はランナー側、Dockerの公開イメージ取得は
 ゲストの許可済みHTTPSプロキシ経由で行う。
