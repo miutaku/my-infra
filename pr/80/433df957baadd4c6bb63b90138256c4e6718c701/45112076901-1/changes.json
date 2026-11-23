@@ -1,0 +1,279 @@
+{
+  "base": "83496855ad31a124ca0aaaa397b05b76a8a4176e",
+  "head": "433df957baadd4c6bb63b90138256c4e6718c701",
+  "environments": {
+    "infra": {
+      "changes": {
+        "elements": [
+          {
+            "id": "consumers.reventer.definitions.r_414a5caa212c28",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-arc-validation/tikv-fixture.yaml:ConfigMap:arc-reventer-validation:reventer-tikv-fixture",
+                "resourceType": "ConfigMap",
+                "sourceFile": "k8s/pve/reventer-arc-validation/tikv-fixture.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-arc-validation/tikv-fixture.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "ConfigMap / k8s/pve/reventer-arc-validation/tikv-fixture.yaml / namespace arc-reventer-validation"
+              },
+              "title": "reventer-tikv-fixture",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_414a5caa212c28"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.r_ac9a93f883631a",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "resourceId": "k8s/pve/reventer-arc-validation/namespace.yaml:Namespace::arc-reventer-validation",
+                "resourceType": "Namespace",
+                "sourceFile": "k8s/pve/reventer-arc-validation/namespace.yaml"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/my-infra/blob/main/k8s/pve/reventer-arc-validation/namespace.yaml",
+                  "title": "定義"
+                }
+              ],
+              "description": {
+                "txt": "Namespace / k8s/pve/reventer-arc-validation/namespace.yaml"
+              },
+              "title": "arc-reventer-validation",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.r_ac9a93f883631a"
+            }
+          },
+          {
+            "id": "consumers.reventer.definitions.terraform_agent",
+            "status": "added",
+            "after": {
+              "metadata": {
+                "owner": "reventer",
+                "referenceOnly": "true",
+                "definitionRepository": "reventer",
+                "application": "reventer-tfc-agent",
+                "workload": "Deployment/reventer-tfc-agent",
+                "namespace": "reventer-tfc-agent"
+              },
+              "style": {
+                "color": "muted"
+              },
+              "links": [
+                {
+                  "url": "https://github.com/miutaku/reventer/tree/main/infrastructure/k8s/management/tfc-agent",
+                  "title": "Argo CD同期元"
+                }
+              ],
+              "title": "Re:VenterのTerraform Cloud Agent",
+              "kind": "component",
+              "id": "consumers.reventer.definitions.terraform_agent"
+            }
+          }
+        ],
+        "relations": [],
+        "views": [],
+        "specification": [
+          {
+            "id": "metadataKeys",
+            "status": "changed",
+            "before": [
+              "accessMode",
+              "addresses",
+              "application",
+              "bridge",
+              "canonicalRef",
+              "definitionRepository",
+              "dhcpRange",
+              "dhcpReservations",
+              "drillDown",
+              "gateway",
+              "guestCount",
+              "host",
+              "hosts",
+              "lbSource",
+              "managedBy",
+              "namespace",
+              "owner",
+              "placementRefs",
+              "referenceOnly",
+              "resourceId",
+              "resourceRef",
+              "resourceType",
+              "routeInterface",
+              "scope",
+              "sourceFile",
+              "trafficKind",
+              "vlan",
+              "vmId"
+            ],
+            "after": [
+              "accessMode",
+              "addresses",
+              "application",
+              "bridge",
+              "canonicalRef",
+              "definitionRepository",
+              "dhcpRange",
+              "dhcpReservations",
+              "drillDown",
+              "gateway",
+              "guestCount",
+              "host",
+              "hosts",
+              "lbSource",
+              "managedBy",
+              "namespace",
+              "owner",
+              "placementRefs",
+              "referenceOnly",
+              "resourceId",
+              "resourceRef",
+              "resourceType",
+              "routeInterface",
+              "scope",
+              "sourceFile",
+              "trafficKind",
+              "vlan",
+              "vmId",
+              "workload"
+            ]
+          }
+        ],
+        "inventory": [
+          {
+            "id": "k8s/pve/reventer-arc-validation/namespace.yaml:Namespace::arc-reventer-validation",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-arc-validation/namespace.yaml:Namespace::arc-reventer-validation",
+              "type": "Namespace",
+              "name": "arc-reventer-validation",
+              "namespace": "",
+              "file": "k8s/pve/reventer-arc-validation/namespace.yaml"
+            }
+          },
+          {
+            "id": "k8s/pve/reventer-arc-validation/tikv-fixture.yaml:ConfigMap:arc-reventer-validation:reventer-tikv-fixture",
+            "status": "added",
+            "after": {
+              "id": "k8s/pve/reventer-arc-validation/tikv-fixture.yaml:ConfigMap:arc-reventer-validation:reventer-tikv-fixture",
+              "type": "ConfigMap",
+              "name": "reventer-tikv-fixture",
+              "namespace": "arc-reventer-validation",
+              "file": "k8s/pve/reventer-arc-validation/tikv-fixture.yaml"
+            }
+          }
+        ]
+      },
+      "views": {
+        "access": {
+          "title": "入口・認証 / 原則Access・例外mTLS",
+          "before": true,
+          "after": true
+        },
+        "delivery": {
+          "title": "自宅基盤の変更・同期",
+          "before": true,
+          "after": true
+        },
+        "home_apps": {
+          "title": "home-k8sのサービスと接続",
+          "before": true,
+          "after": true
+        },
+        "index": {
+          "title": "自宅インフラの全体",
+          "before": true,
+          "after": true
+        },
+        "loockit": {
+          "title": "Loockit / HAProxy → LXC → Bluetooth",
+          "before": true,
+          "after": true
+        },
+        "network": {
+          "title": "ネットワーク機器 / ルーター・SW・AP",
+          "before": true,
+          "after": true
+        },
+        "nextcloud": {
+          "title": "Nextcloud / DB・ロック・ファイル保存",
+          "before": true,
+          "after": true
+        },
+        "nfs": {
+          "title": "NFSの利用経路 / nas-01・nas-02",
+          "before": true,
+          "after": true
+        },
+        "observability": {
+          "title": "監視の収集・保存・照会",
+          "before": true,
+          "after": true
+        },
+        "placement": {
+          "title": "Proxmox VEクラスタ / 全VM・LXC",
+          "before": true,
+          "after": true
+        },
+        "platform": {
+          "title": "home-k8s / クラスタ基盤",
+          "before": true,
+          "after": true
+        },
+        "power": {
+          "title": "電源・安全停止 / UPS・NUTのcross-power",
+          "before": true,
+          "after": true
+        },
+        "recording": {
+          "title": "録画・配信 / PRD・STG",
+          "before": true,
+          "after": true
+        },
+        "recording_prd": {
+          "title": "TNLAStation PRD / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "recording_stg": {
+          "title": "TNLAStation STG / 制御・エンコード・配信",
+          "before": true,
+          "after": true
+        },
+        "secrets": {
+          "title": "秘密情報の管理・注入",
+          "before": true,
+          "after": true
+        },
+        "storage": {
+          "title": "保存・バックアップ / 復元元の区別",
+          "before": true,
+          "after": true
+        },
+        "vlans": {
+          "title": "VLAN / native・タグ・経路",
+          "before": true,
+          "after": true
+        }
+      }
+    }
+  }
+}
