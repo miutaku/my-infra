@@ -4,6 +4,7 @@ metadata:
   name: argocd-cm
   namespace: argocd
 data:
+  resource.respectRBAC: strict
   # EndpointSlice is intentionally not excluded: the selectorless Services for
   # Mirakurun and Loockit use declarative EndpointSlices managed by Argo CD.
   resource.exclusions: |
