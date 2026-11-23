@@ -39,8 +39,8 @@ locals {
       vm_id        = 13006
       mac_address  = "02:54:00:13:00:06"
       ipv4_address = "192.168.20.143"
-      cpu_cores    = 4
-      memory_mb    = 6144
+      cpu_cores    = 6
+      memory_mb    = 12288
       disk_gb      = 96
     }
   })
