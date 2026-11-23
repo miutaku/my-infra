@@ -4,7 +4,7 @@
 対象は `reventer-infrastructure`、`reventer-backend`、`reventer-frontend`、`reventer-admin`、`reventer-workers`。
 元リポジトリのscale setは自身のリポジトリ登録を維持する。
 
-各scale setは `arc-reventer-<component>-verify`、最大同時実行はリポジトリごとに1とする。
+各scale setは `arc-reventer-<component>-verify` とする。最大同時実行はInfrastructureの基本検証が2、共通設定は1。
 ランナーは対応するLinux workerで非root・権限昇格なしで動作し、ワーク領域とツールキャッシュをPod内のemptyDirに置く。
 Node 26の実行に必要なUbuntuのlibatomicは、同じUbuntuリリースの配布パッケージをSHA-256で照合し、
 使い捨てランナー内へ非rootで展開する。
@@ -30,6 +30,10 @@ helm template arc-reventer-workers-verify \
   --values k8s/pve/reventer-arc-validation/values.yaml \
   --set-string githubConfigUrl=https://github.com/miutaku/reventer-workers
 ```
+
+Infrastructureの基本検証には `values.yaml` に `infrastructure-verify.values.yaml` を重ねる。
+既存の `arc-reventer-infrastructure-verify` をHelmで更新するときは、登録先とscale set名を維持し、
+`--reuse-values` で上書き用valuesを適用する。同時実行を1へ戻す場合は同じreleaseの `maxRunners` を1に設定する。
 
 ## Frontendのブラウザー検証
 
