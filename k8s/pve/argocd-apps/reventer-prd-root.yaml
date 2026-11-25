@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: reventer-prd-root
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  description: Re:Venter PRD GitOps bootstrap
+  sourceRepos:
+  - git@github.com:miutaku/reventer-infrastructure.git
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: argocd
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+  - group: argoproj.io
+    kind: Application
+  - group: argoproj.io
+    kind: AppProject
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reventer-prd-root
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  project: reventer-prd-root
+  source:
+    repoURL: git@github.com:miutaku/reventer-infrastructure.git
+    targetRevision: main
+    path: infrastructure/gitops/apps/prd
+    kustomize:
+      patches:
+      - target:
+          group: argoproj.io
+          version: v1alpha1
+          kind: Application
+          name: reventer-prd
+          namespace: argocd
+        patch: |-
+          - op: add
+            path: /metadata/annotations/argocd.argoproj.io~1sync-options
+            value: Prune=false,Delete=false
+      - target:
+          group: argoproj.io
+          version: v1alpha1
+          kind: Application
+          name: reventer-admin-prd
+          namespace: argocd
+        patch: |-
+          - op: add
+            path: /metadata/annotations/argocd.argoproj.io~1sync-options
+            value: Prune=false,Delete=false
+      - target:
+          group: argoproj.io
+          version: v1alpha1
+          kind: AppProject
+          name: reventer-apps-prd
+          namespace: argocd
+        patch: |-
+          - op: add
+            path: /metadata/annotations
+            value:
+              argocd.argoproj.io/sync-options: Prune=false,Delete=false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      enabled: false
+      prune: false
+      selfHeal: false
+    syncOptions:
+    - ServerSideApply=true
