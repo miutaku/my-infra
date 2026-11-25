@@ -66,111 +66,6 @@
     "file": "ansible/truenas/host_vars/nas-02.yml"
   },
   {
-    "id": "k8s/observability/alloy/base/credentials.yaml:ExternalSecret:monitoring:grafana-cloud-credentials",
-    "type": "ExternalSecret",
-    "name": "grafana-cloud-credentials",
-    "namespace": "monitoring",
-    "file": "k8s/observability/alloy/base/credentials.yaml"
-  },
-  {
-    "id": "k8s/observability/alloy/base/namespace.yaml:Namespace::monitoring",
-    "type": "Namespace",
-    "name": "monitoring",
-    "namespace": "",
-    "file": "k8s/observability/alloy/base/namespace.yaml"
-  },
-  {
-    "id": "k8s/observability/alloy/base/rbac.yaml:ClusterRole::grafana-alloy",
-    "type": "ClusterRole",
-    "name": "grafana-alloy",
-    "namespace": "",
-    "file": "k8s/observability/alloy/base/rbac.yaml"
-  },
-  {
-    "id": "k8s/observability/alloy/base/rbac.yaml:ClusterRoleBinding::grafana-alloy",
-    "type": "ClusterRoleBinding",
-    "name": "grafana-alloy",
-    "namespace": "",
-    "file": "k8s/observability/alloy/base/rbac.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/cert-manager-config.yaml:Application:argocd:oci-prd-cert-manager-config",
-    "type": "Application",
-    "name": "oci-prd-cert-manager-config",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/cert-manager-config.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/cert-manager.yaml:Application:argocd:oci-prd-cert-manager",
-    "type": "Application",
-    "name": "oci-prd-cert-manager",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/cert-manager.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/external-secrets-config.yaml:Application:argocd:oci-prd-external-secrets-config",
-    "type": "Application",
-    "name": "oci-prd-external-secrets-config",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/external-secrets-config.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/external-secrets.yaml:Application:argocd:oci-prd-external-secrets",
-    "type": "Application",
-    "name": "oci-prd-external-secrets",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/external-secrets.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/gateway-api-crds.yaml:Application:argocd:oci-prd-gateway-api-crds",
-    "type": "Application",
-    "name": "oci-prd-gateway-api-crds",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/gateway-api-crds.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/grafana-alloy.yaml:Application:argocd:oci-prd-grafana-alloy",
-    "type": "Application",
-    "name": "oci-prd-grafana-alloy",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/grafana-alloy.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/argocd-apps/nginx-gateway-fabric.yaml:Application:argocd:oci-prd-nginx-gateway-fabric",
-    "type": "Application",
-    "name": "oci-prd-nginx-gateway-fabric",
-    "namespace": "argocd",
-    "file": "k8s/oci-prd/argocd-apps/nginx-gateway-fabric.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml:ExternalSecret:cert-manager:cloudflare-api-token",
-    "type": "ExternalSecret",
-    "name": "cloudflare-api-token",
-    "namespace": "cert-manager",
-    "file": "k8s/oci-prd/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/infrastructure/cert-manager-config/cluster-issuer.yaml:ClusterIssuer::letsencrypt-prod",
-    "type": "ClusterIssuer",
-    "name": "letsencrypt-prod",
-    "namespace": "",
-    "file": "k8s/oci-prd/infrastructure/cert-manager-config/cluster-issuer.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml:ClusterSecretStore::bitwarden-reventer-prd",
-    "type": "ClusterSecretStore",
-    "name": "bitwarden-reventer-prd",
-    "namespace": "",
-    "file": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml"
-  },
-  {
-    "id": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store.yaml:ClusterSecretStore::bitwarden",
-    "type": "ClusterSecretStore",
-    "name": "bitwarden",
-    "namespace": "",
-    "file": "k8s/oci-prd/infrastructure/external-secrets-config/cluster-secret-store.yaml"
-  },
-  {
     "id": "k8s/oci/apps/cloudflared/availability.yaml:PodDisruptionBudget:cloudflared:cloudflared",
     "type": "PodDisruptionBudget",
     "name": "cloudflared",
@@ -255,67 +150,11 @@
     "file": "k8s/oci/argocd-apps/arc-runners-config.yaml"
   },
   {
-    "id": "k8s/oci/argocd-apps/cert-manager-config.yaml:Application:argocd:oci-cert-manager-config",
-    "type": "Application",
-    "name": "oci-cert-manager-config",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/cert-manager-config.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/cert-manager.yaml:Application:argocd:oci-cert-manager",
-    "type": "Application",
-    "name": "oci-cert-manager",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/cert-manager.yaml"
-  },
-  {
     "id": "k8s/oci/argocd-apps/cloudflared.yaml:Application:argocd:oci-cloudflared",
     "type": "Application",
     "name": "oci-cloudflared",
     "namespace": "argocd",
     "file": "k8s/oci/argocd-apps/cloudflared.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/external-secrets-config.yaml:Application:argocd:oci-external-secrets-config",
-    "type": "Application",
-    "name": "oci-external-secrets-config",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/external-secrets-config.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/external-secrets.yaml:Application:argocd:oci-external-secrets",
-    "type": "Application",
-    "name": "oci-external-secrets",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/external-secrets.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/gateway-api-crds.yaml:Application:argocd:oci-gateway-api-crds",
-    "type": "Application",
-    "name": "oci-gateway-api-crds",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/gateway-api-crds.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/grafana-alloy.yaml:Application:argocd:oci-grafana-alloy",
-    "type": "Application",
-    "name": "oci-grafana-alloy",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/grafana-alloy.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/nginx-gateway-fabric.yaml:Application:argocd:oci-nginx-gateway-fabric",
-    "type": "Application",
-    "name": "oci-nginx-gateway-fabric",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/nginx-gateway-fabric.yaml"
-  },
-  {
-    "id": "k8s/oci/argocd-apps/oci-prd-apps.yaml:Application:argocd:oci-prd-apps",
-    "type": "Application",
-    "name": "oci-prd-apps",
-    "namespace": "argocd",
-    "file": "k8s/oci/argocd-apps/oci-prd-apps.yaml"
   },
   {
     "id": "k8s/oci/argocd-apps/pve-tfc-agent.yaml:Application:argocd:oci-pve-tfc-agent",
@@ -337,62 +176,6 @@
     "name": "root-app",
     "namespace": "argocd",
     "file": "k8s/oci/argocd/root-app.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml:ExternalSecret:cert-manager:cloudflare-api-token",
-    "type": "ExternalSecret",
-    "name": "cloudflare-api-token",
-    "namespace": "cert-manager",
-    "file": "k8s/oci/infrastructure/cert-manager-config/cloudflare-api-token-secret.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/cert-manager-config/cluster-issuer.yaml:ClusterIssuer::letsencrypt-prod",
-    "type": "ClusterIssuer",
-    "name": "letsencrypt-prod",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/cert-manager-config/cluster-issuer.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/cert-manager/namespace.yaml:Namespace::cert-manager",
-    "type": "Namespace",
-    "name": "cert-manager",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/cert-manager/namespace.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml:ClusterSecretStore::bitwarden-reventer-prd",
-    "type": "ClusterSecretStore",
-    "name": "bitwarden-reventer-prd",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-prd.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-stg.yaml:ClusterSecretStore::bitwarden-reventer-stg",
-    "type": "ClusterSecretStore",
-    "name": "bitwarden-reventer-stg",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store-reventer-stg.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store.yaml:ClusterSecretStore::bitwarden",
-    "type": "ClusterSecretStore",
-    "name": "bitwarden",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/external-secrets-config/cluster-secret-store.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/external-secrets/namespace.yaml:Namespace::external-secrets",
-    "type": "Namespace",
-    "name": "external-secrets",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/external-secrets/namespace.yaml"
-  },
-  {
-    "id": "k8s/oci/infrastructure/ingress-nginx/namespace.yaml:Namespace::ingress-nginx",
-    "type": "Namespace",
-    "name": "ingress-nginx",
-    "namespace": "",
-    "file": "k8s/oci/infrastructure/ingress-nginx/namespace.yaml"
   },
   {
     "id": "k8s/pve/annict-rec-sync-tnlastation-staging/cronjob-patch.yaml:CronJob:app-annict-rec-sync-tnlastation:annict-rec-sync-tnlastation",
@@ -871,11 +654,32 @@
     "file": "k8s/pve/argocd-apps/reventer-gitops.yaml"
   },
   {
-    "id": "k8s/pve/argocd-apps/reventer-tfc-agent.yaml:Application:argocd:reventer-tfc-agent",
+    "id": "k8s/pve/argocd-apps/reventer-prd-root.yaml:Application:argocd:reventer-prd-root",
     "type": "Application",
-    "name": "reventer-tfc-agent",
+    "name": "reventer-prd-root",
     "namespace": "argocd",
-    "file": "k8s/pve/argocd-apps/reventer-tfc-agent.yaml"
+    "file": "k8s/pve/argocd-apps/reventer-prd-root.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/reventer-prd-root.yaml:AppProject:argocd:reventer-prd-root",
+    "type": "AppProject",
+    "name": "reventer-prd-root",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/reventer-prd-root.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/reventer-stg-root.yaml:Application:argocd:reventer-stg-root",
+    "type": "Application",
+    "name": "reventer-stg-root",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/reventer-stg-root.yaml"
+  },
+  {
+    "id": "k8s/pve/argocd-apps/reventer-stg-root.yaml:AppProject:argocd:reventer-stg-root",
+    "type": "AppProject",
+    "name": "reventer-stg-root",
+    "namespace": "argocd",
+    "file": "k8s/pve/argocd-apps/reventer-stg-root.yaml"
   },
   {
     "id": "k8s/pve/argocd-apps/shared-state-storage.yaml:Application:argocd:shared-state-storage",
@@ -1872,132 +1676,6 @@
     "file": "k8s/pve/pve-exporter/secret.yaml"
   },
   {
-    "id": "k8s/pve/reventer-gitops/argo-rollouts-prd.yaml:Application:argocd:argo-rollouts-prd",
-    "type": "Application",
-    "name": "argo-rollouts-prd",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/argo-rollouts-prd.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/external-secret-image-updater-ghcr.yaml:ExternalSecret:argocd:ghcr-image-updater-secret",
-    "type": "ExternalSecret",
-    "name": "ghcr-image-updater-secret",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/external-secret-image-updater-ghcr.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/external-secret-notifications-discord.yaml:ExternalSecret:argocd:notifications-discord-webhook",
-    "type": "ExternalSecret",
-    "name": "notifications-discord-webhook",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/external-secret-notifications-discord.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/image-updater.yaml:ImageUpdater:argocd:reventer-image-updater",
-    "type": "ImageUpdater",
-    "name": "reventer-image-updater",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/image-updater.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/notifications.yaml:ConfigMap:argocd:argocd-notifications-cm",
-    "type": "ConfigMap",
-    "name": "argocd-notifications-cm",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/notifications.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/observability-canary-prd.yaml:Application:argocd:reventer-observability-canary-prd",
-    "type": "Application",
-    "name": "reventer-observability-canary-prd",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/observability-canary-prd.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/observability-canary-stg.yaml:Application:argocd:reventer-observability-canary-stg",
-    "type": "Application",
-    "name": "reventer-observability-canary-stg",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/observability-canary-stg.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/project.yaml:AppProject:argocd:reventer",
-    "type": "AppProject",
-    "name": "reventer",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/project.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/reventer-admin-prd.yaml:Application:argocd:reventer-admin-prd",
-    "type": "Application",
-    "name": "reventer-admin-prd",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/reventer-admin-prd.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/reventer-monitoring-prd.yaml:Application:argocd:reventer-monitoring-prd",
-    "type": "Application",
-    "name": "reventer-monitoring-prd",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/reventer-monitoring-prd.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/reventer-monitoring.yaml:Application:argocd:reventer-monitoring",
-    "type": "Application",
-    "name": "reventer-monitoring",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/reventer-monitoring.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/reventer-prd.yaml:Application:argocd:reventer-prd",
-    "type": "Application",
-    "name": "reventer-prd",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/reventer-prd.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/reventer-stg.yaml:Application:argocd:reventer-stg",
-    "type": "Application",
-    "name": "reventer-stg",
-    "namespace": "argocd",
-    "file": "k8s/pve/reventer-gitops/reventer-stg.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-gitops/secret-store.yaml:ClusterSecretStore::bitwarden-reventer-stg",
-    "type": "ClusterSecretStore",
-    "name": "bitwarden-reventer-stg",
-    "namespace": "",
-    "file": "k8s/pve/reventer-gitops/secret-store.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-observability-canary/base/deployment.yaml:Deployment::observability-canary",
-    "type": "Deployment",
-    "name": "observability-canary",
-    "namespace": "",
-    "file": "k8s/pve/reventer-observability-canary/base/deployment.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-tfc-agent/deployment.yaml:Deployment:reventer-tfc-agent:reventer-tfc-agent",
-    "type": "Deployment",
-    "name": "reventer-tfc-agent",
-    "namespace": "reventer-tfc-agent",
-    "file": "k8s/pve/reventer-tfc-agent/deployment.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-tfc-agent/namespace.yaml:Namespace::reventer-tfc-agent",
-    "type": "Namespace",
-    "name": "reventer-tfc-agent",
-    "namespace": "",
-    "file": "k8s/pve/reventer-tfc-agent/namespace.yaml"
-  },
-  {
-    "id": "k8s/pve/reventer-tfc-agent/tfc-agent-secret.yaml:ExternalSecret:reventer-tfc-agent:reventer-tfc-agent-credentials",
-    "type": "ExternalSecret",
-    "name": "reventer-tfc-agent-credentials",
-    "namespace": "reventer-tfc-agent",
-    "file": "k8s/pve/reventer-tfc-agent/tfc-agent-secret.yaml"
-  },
-  {
     "id": "k8s/pve/shared-state-storage/volumes.yaml:PersistentVolume::home-k8s-mariadb-nfs",
     "type": "PersistentVolume",
     "name": "home-k8s-mariadb-nfs",
@@ -2654,18 +2332,6 @@
     "file": "terraform/grafana-cloud/notifications.tf"
   },
   {
-    "id": "terraform/home-k8s/main.tf:resource:proxmox_download_file:talos_iso",
-    "type": "proxmox_download_file",
-    "name": "talos_iso",
-    "file": "terraform/home-k8s/main.tf"
-  },
-  {
-    "id": "terraform/home-k8s/main.tf:resource:proxmox_virtual_environment_vm:talos",
-    "type": "proxmox_virtual_environment_vm",
-    "name": "talos",
-    "file": "terraform/home-k8s/main.tf"
-  },
-  {
     "id": "terraform/loockit-lxc/main.tf:resource:proxmox_virtual_environment_container:loockit",
     "type": "proxmox_virtual_environment_container",
     "name": "loockit",
@@ -2684,304 +2350,10 @@
     "file": "terraform/mirakurun-staging-lxc/main.tf"
   },
   {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_instance:monitoring",
-    "type": "oci_core_instance",
-    "name": "monitoring",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group_security_rule:ingest",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "ingest",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group_security_rule:ingest_peer",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "ingest_peer",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group_security_rule:ssh",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "ssh",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_network_security_group:monitoring",
-    "type": "oci_core_network_security_group",
-    "name": "monitoring",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_security_list:monitoring",
-    "type": "oci_core_security_list",
-    "name": "monitoring",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/main.tf:resource:oci_core_subnet:monitoring",
-    "type": "oci_core_subnet",
-    "name": "monitoring",
-    "file": "terraform/oci-observability-stg/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_core_network_security_group_security_rule:os_update_peer",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "os_update_peer",
-    "file": "terraform/oci-observability-stg/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_compartment:os_recovery",
-    "type": "oci_identity_compartment",
-    "name": "os_recovery",
-    "file": "terraform/oci-observability-stg/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_dynamic_group:os_update",
-    "type": "oci_identity_dynamic_group",
-    "name": "os_update",
-    "file": "terraform/oci-observability-stg/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_policy:os_update",
-    "type": "oci_identity_policy",
-    "name": "os_update",
-    "file": "terraform/oci-observability-stg/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_tag_namespace:os_update",
-    "type": "oci_identity_tag_namespace",
-    "name": "os_update",
-    "file": "terraform/oci-observability-stg/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability-stg/os-update.tf:resource:oci_identity_tag:os_update_role",
-    "type": "oci_identity_tag",
-    "name": "os_update_role",
-    "file": "terraform/oci-observability-stg/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_instance:monitoring",
-    "type": "oci_core_instance",
-    "name": "monitoring",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group_security_rule:ingest",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "ingest",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group_security_rule:ingest_peer",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "ingest_peer",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group_security_rule:ssh",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "ssh",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_network_security_group:monitoring",
-    "type": "oci_core_network_security_group",
-    "name": "monitoring",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_security_list:monitoring",
-    "type": "oci_core_security_list",
-    "name": "monitoring",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/main.tf:resource:oci_core_subnet:monitoring",
-    "type": "oci_core_subnet",
-    "name": "monitoring",
-    "file": "terraform/oci-observability/main.tf"
-  },
-  {
-    "id": "terraform/oci-observability/os-update.tf:resource:oci_core_network_security_group_security_rule:os_update_peer",
-    "type": "oci_core_network_security_group_security_rule",
-    "name": "os_update_peer",
-    "file": "terraform/oci-observability/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_compartment:os_recovery",
-    "type": "oci_identity_compartment",
-    "name": "os_recovery",
-    "file": "terraform/oci-observability/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_dynamic_group:os_update",
-    "type": "oci_identity_dynamic_group",
-    "name": "os_update",
-    "file": "terraform/oci-observability/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_policy:os_update",
-    "type": "oci_identity_policy",
-    "name": "os_update",
-    "file": "terraform/oci-observability/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_tag_namespace:os_update",
-    "type": "oci_identity_tag_namespace",
-    "name": "os_update",
-    "file": "terraform/oci-observability/os-update.tf"
-  },
-  {
-    "id": "terraform/oci-observability/os-update.tf:resource:oci_identity_tag:os_update_role",
-    "type": "oci_identity_tag",
-    "name": "os_update_role",
-    "file": "terraform/oci-observability/os-update.tf"
-  },
-  {
-    "id": "terraform/oci/autoscaler.tf:resource:oci_identity_tag_namespace:oke",
-    "type": "oci_identity_tag_namespace",
-    "name": "oke",
-    "file": "terraform/oci/autoscaler.tf"
-  },
-  {
-    "id": "terraform/oci/autoscaler.tf:resource:oci_identity_tag:autoscaler",
-    "type": "oci_identity_tag",
-    "name": "autoscaler",
-    "file": "terraform/oci/autoscaler.tf"
-  },
-  {
-    "id": "terraform/oci/budget.tf:resource:oci_budget_alert_rule:one_percent_alert",
-    "type": "oci_budget_alert_rule",
-    "name": "one_percent_alert",
-    "file": "terraform/oci/budget.tf"
-  },
-  {
-    "id": "terraform/oci/budget.tf:resource:oci_budget_budget:always_free_budget",
-    "type": "oci_budget_budget",
-    "name": "always_free_budget",
-    "file": "terraform/oci/budget.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_containerengine_node_pool:autoscaled",
-    "type": "oci_containerengine_node_pool",
-    "name": "autoscaled",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_containerengine_node_pool:workers",
-    "type": "oci_containerengine_node_pool",
-    "name": "workers",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_dhcp_options:workers",
-    "type": "oci_core_dhcp_options",
-    "name": "workers",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_route_table:workers",
-    "type": "oci_core_route_table",
-    "name": "workers",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_security_list:workers",
-    "type": "oci_core_security_list",
-    "name": "workers",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_core_subnet:workers",
-    "type": "oci_core_subnet",
-    "name": "workers",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_compartment:burst",
-    "type": "oci_identity_compartment",
-    "name": "burst",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_compartment:workers",
-    "type": "oci_identity_compartment",
-    "name": "workers",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_dynamic_group:autoscaler",
-    "type": "oci_identity_dynamic_group",
-    "name": "autoscaler",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/modules/oke-worker-compartment/main.tf:resource:oci_identity_policy:autoscaler",
-    "type": "oci_identity_policy",
-    "name": "autoscaler",
-    "file": "terraform/oci/modules/oke-worker-compartment/main.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_internet_gateway:oke_igw",
-    "type": "oci_core_internet_gateway",
-    "name": "oke_igw",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_nat_gateway:oke_ngw",
-    "type": "oci_core_nat_gateway",
-    "name": "oke_ngw",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_public_ip:nat_ip",
-    "type": "oci_core_public_ip",
-    "name": "nat_ip",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_route_table:public_rt",
-    "type": "oci_core_route_table",
-    "name": "public_rt",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_security_list:lb_sl",
-    "type": "oci_core_security_list",
-    "name": "lb_sl",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_subnet:oke_lb_subnet",
-    "type": "oci_core_subnet",
-    "name": "oke_lb_subnet",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/network.tf:resource:oci_core_vcn:oke_vcn",
-    "type": "oci_core_vcn",
-    "name": "oke_vcn",
-    "file": "terraform/oci/network.tf"
-  },
-  {
-    "id": "terraform/oci/oke.tf:resource:oci_containerengine_cluster:oke_cluster",
-    "type": "oci_containerengine_cluster",
-    "name": "oke_cluster",
-    "file": "terraform/oci/oke.tf"
-  },
-  {
-    "id": "terraform/oci/worker-compartment.tf:module:oke_workers_v2:",
+    "id": "terraform/pve/home-k8s.tf:module:home_k8s:",
     "type": "Terraform module",
-    "name": "oke_workers_v2",
-    "file": "terraform/oci/worker-compartment.tf"
-  },
-  {
-    "id": "terraform/oci/worker-compartment.tf:resource:oci_core_service_gateway:oke_sgw",
-    "type": "oci_core_service_gateway",
-    "name": "oke_sgw",
-    "file": "terraform/oci/worker-compartment.tf"
+    "name": "home_k8s",
+    "file": "terraform/pve/home-k8s.tf"
   },
   {
     "id": "terraform/pve/main.tf:module:dev_application_server:",
@@ -3018,6 +2390,18 @@
     "type": "Terraform module",
     "name": "unifi_os_server",
     "file": "terraform/pve/main.tf"
+  },
+  {
+    "id": "terraform/pve/modules/home-k8s/main.tf:resource:proxmox_download_file:talos_iso",
+    "type": "proxmox_download_file",
+    "name": "talos_iso",
+    "file": "terraform/pve/modules/home-k8s/main.tf"
+  },
+  {
+    "id": "terraform/pve/modules/home-k8s/main.tf:resource:proxmox_virtual_environment_vm:talos",
+    "type": "proxmox_virtual_environment_vm",
+    "name": "talos",
+    "file": "terraform/pve/modules/home-k8s/main.tf"
   },
   {
     "id": "terraform/pve/modules/proxmox_vm/main.tf:resource:proxmox_vm_qemu:vm",

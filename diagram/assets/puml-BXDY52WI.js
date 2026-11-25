@@ -38,6 +38,11 @@ skinparam rectangle<<HomeSitePveWorkersWorker2>>{
   FontColor #f8fafc
   BorderColor #475569
 }
+skinparam rectangle<<HomeSitePveWorkersWorker5>>{
+  BackgroundColor #64748b
+  FontColor #f8fafc
+  BorderColor #475569
+}
 skinparam database<<HomeSitePveStorageNas1>>{
   BackgroundColor #64748b
   FontColor #f8fafc
@@ -93,6 +98,7 @@ rectangle "自宅" <<HomeSite>> as HomeSite {
     rectangle "==コントロールプレーン02 / VM13002 / VLAN20\\n\\npve-b550m" <<HomeSitePveControlplanesCp2>> as HomeSitePveControlplanesCp2
     rectangle "==コントロールプレーン03 / VM13003 / VLAN20\\n\\npve-b550m" <<HomeSitePveControlplanesCp3>> as HomeSitePveControlplanesCp3
     rectangle "==home-k8s worker02 / VM13005 / VLAN20\\n\\npve-b550m" <<HomeSitePveWorkersWorker2>> as HomeSitePveWorkersWorker2
+    rectangle "==home-k8s ビルド worker05 / VM13006 / VLAN20\\n\\npve-b550m" <<HomeSitePveWorkersWorker5>> as HomeSitePveWorkersWorker5
     database "==nas-01 / TrueNAS VM69001 / VLAN20\\n\\nrunner cache用NFS / pve-x570" <<HomeSitePveStorageNas1>> as HomeSitePveStorageNas1
     database "==nas-02 / TrueNAS VM69002 / VLAN20\\n\\nアプリ・DB・録画データ用NFS / pve-b550m" <<HomeSitePveStorageNas2>> as HomeSitePveStorageNas2
     database "==PBS VM14001 / VLAN20\\n\\npve-x570" <<HomeSitePveStoragePbs>> as HomeSitePveStoragePbs
@@ -864,6 +870,11 @@ skinparam rectangle<<HomeSitePveWorkersWorker2Talos>>{
   FontColor #eff6ff
   BorderColor #2563eb
 }
+skinparam rectangle<<HomeSitePveWorkersWorker5Talos>>{
+  BackgroundColor #3b82f6
+  FontColor #eff6ff
+  BorderColor #2563eb
+}
 skinparam rectangle<<HomeSitePveSmartlocksLoockit1App>>{
   BackgroundColor #64748b
   FontColor #f8fafc
@@ -939,6 +950,13 @@ rectangle "Proxmox VEクラスタ（2ノード構成）" <<HomeSitePve>> as Home
       skinparam RectangleBorderStyle<<HomeSitePveWorkersWorker2>> dashed
 
       rectangle "==Talos Linux\\n\\nTalos Linux上のkubelet・containerd。2 VMと2 RPi。" <<HomeSitePveWorkersWorker2Talos>> as HomeSitePveWorkersWorker2Talos
+    }
+    rectangle "home-k8s ビルド worker05 / VM13006 / VLAN20" <<HomeSitePveWorkersWorker5>> as HomeSitePveWorkersWorker5 {
+      skinparam RectangleBorderColor<<HomeSitePveWorkersWorker5>> #64748b
+      skinparam RectangleFontColor<<HomeSitePveWorkersWorker5>> #64748b
+      skinparam RectangleBorderStyle<<HomeSitePveWorkersWorker5>> dashed
+
+      rectangle "==Talos Linux\\n\\nTalos Linux上のkubelet・containerd。2 VMと2 RPi。" <<HomeSitePveWorkersWorker5Talos>> as HomeSitePveWorkersWorker5Talos
     }
   }
   rectangle "ロードバランサー" <<HomeSitePveLoadbalancers>> as HomeSitePveLoadbalancers {

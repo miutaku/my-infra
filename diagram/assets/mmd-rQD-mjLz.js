@@ -9,6 +9,7 @@ graph LR
       HomeSite.Pve.ControlplanesCp2@{ shape: rectangle, label: "コントロールプレーン02 / VM13002 / VLAN20" }
       HomeSite.Pve.ControlplanesCp3@{ shape: rectangle, label: "コントロールプレーン03 / VM13003 / VLAN20" }
       HomeSite.Pve.WorkersWorker2@{ shape: rectangle, label: "home-k8s worker02 / VM13005 / VLAN20" }
+      HomeSite.Pve.WorkersWorker5@{ shape: rectangle, label: "home-k8s ビルド worker05 / VM13006 / VLAN20" }
       HomeSite.Pve.StorageNas1@{ shape: disk, label: "nas-01 / TrueNAS VM69001 / VLAN20" }
       HomeSite.Pve.StorageNas2@{ shape: disk, label: "nas-02 / TrueNAS VM69002 / VLAN20" }
       HomeSite.Pve.StoragePbs@{ shape: disk, label: "PBS VM14001 / VLAN20" }
@@ -224,6 +225,9 @@ graph TB
       end
       subgraph HomeSitePve.Workers.Worker2["\`home-k8s worker02 / VM13005 / VLAN20\`"]
         HomeSitePve.Workers.Worker2.Talos@{ shape: rectangle, label: "Talos Linux" }
+      end
+      subgraph HomeSitePve.Workers.Worker5["\`home-k8s ビルド worker05 / VM13006 / VLAN20\`"]
+        HomeSitePve.Workers.Worker5.Talos@{ shape: rectangle, label: "Talos Linux" }
       end
     end
     subgraph HomeSitePve.Loadbalancers["\`ロードバランサー\`"]

@@ -21,6 +21,9 @@ HomeSite: {
     WorkersWorker2: {
       label: "home-k8s worker02 / VM13005 / VLAN20"
     }
+    WorkersWorker5: {
+      label: "home-k8s ビルド worker05 / VM13006 / VLAN20"
+    }
     StorageNas1: {
       label: "nas-01 / TrueNAS VM69001 / VLAN20"
       shape: stored_data
@@ -450,6 +453,13 @@ HomeSitePve: {
     }
     Worker2: {
       label: "home-k8s worker02 / VM13005 / VLAN20"
+
+      Talos: {
+        label: "Talos Linux"
+      }
+    }
+    Worker5: {
+      label: "home-k8s ビルド worker05 / VM13006 / VLAN20"
 
       Talos: {
         label: "Talos Linux"
