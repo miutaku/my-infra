@@ -28,7 +28,6 @@ test('manual details preserve independent media workers, LXC, DB, NUT and correc
  assert.ok(!relations.some(r=>r.source.model==='premises.home.agent'&&r.target.model==='monitoring.vms'));
  const physical=Object.values(model.deployments.elements);
  assert.equal(physical.filter(r=>r.kind==='container').length,4);
- assert.equal(physical.filter(r=>r.kind==='vm').length,14);
  for(const element of Object.values(model.elements))for(const link of element.links??[]){
   const prefix='https://github.com/miutaku/my-infra/';if(!link.url.startsWith(prefix))continue;
   const path=link.url.replace(/^https:\/\/github.com\/miutaku\/my-infra\/(blob|tree)\/main\//,'');

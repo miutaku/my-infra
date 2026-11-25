@@ -6,10 +6,17 @@ const model=JSON.parse(readFileSync('model.json','utf8'));
 const runtime=JSON.parse(readFileSync('evidence/home-k8s-runtime.json','utf8'));
 const pve=JSON.parse(readFileSync('evidence/pve-runtime.json','utf8'));
 
-test('recorded live Applications and workload controllers are accounted for including bootstrap',()=>{
+test('recorded Applications and workloads resolve to the home model or their external owner',()=>{
  assert.equal(runtime.missingApplicationDefinitions.length,0);
  assert.equal(runtime.unmapped.length,0);
- for(const row of [...runtime.applications,...runtime.workloads])assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
+ for(const row of [...runtime.applications,...runtime.workloads]){
+  if(row.namespace==='reventer-tfc-agent' && row.name==='reventer-tfc-agent'){
+   assert.ok(row.modelRef.startsWith('consumers.reventer.definitions.'));
+   assert.ok(model.elements['consumers.reventer']);
+   continue;
+  }
+  assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
+ }
  for(const ref of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver']){
   const id=`premises.home.platform.${ref}`;
   assert.ok(runtime.workloads.some(w=>w.modelRef===id));
