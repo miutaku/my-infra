@@ -36,6 +36,13 @@ class HomePlacementTest < Minitest::Test
     refute_empty violations({'nodeSelector' => {'kubernetes.io/arch' => 'amd64'}}, file)
   end
 
+  def test_tikv_fixture_requires_the_only_architecture_of_its_pinned_images
+    file = 'k8s/pve/reventer-arc-validation/infrastructure-tikv.values.yaml'
+    assert_empty violations({'nodeSelector' => {'kubernetes.io/arch' => 'amd64'}}, file)
+    refute_empty violations({'nodeSelector' => {'kubernetes.io/arch' => 'arm64'}}, file)
+    refute_empty violations({'nodeSelector' => {'kubernetes.io/hostname' => 'worker-01'}}, file)
+  end
+
   def test_heavy_runner_can_use_either_pve_worker_but_not_a_specific_host
     HEAVY_RUNNERS.each do |file|
       assert_empty violations({'nodeSelector' => {'node.miutaku/platform' => 'pve', 'node.miutaku/role' => 'agent'}}, file)

@@ -9,6 +9,10 @@ HEAVY_RUNNERS = [
   'k8s/pve/argocd-apps/arc-runner-architecture-automation.yaml',
   'k8s/pve/argocd-apps/arc-runner-tnlastation-compose.yaml'
 ].freeze
+AMD64_WORKLOADS = [
+  'k8s/pve/reventer-arc-validation/infrastructure-tikv.values.yaml',
+  'k8s/pve/reventer-arc-validation/infrastructure-management.values.yaml'
+].freeze
 HOST_KEYS = ['kubernetes.io/hostname', 'topology.miutaku/proxmox-node', 'node.miutaku/platform'].freeze
 
 def check_placement(value, file, errors, trail = [])
@@ -20,8 +24,10 @@ def check_placement(value, file, errors, trail = [])
         child.each do |label, selected|
           heavy_worker = label == 'node.miutaku/platform' && selected == 'pve' &&
                          child['node.miutaku/role'] == 'agent' && HEAVY_RUNNERS.include?(file)
+          supported_architecture = label == 'kubernetes.io/arch' && selected == 'amd64' &&
+                                   AMD64_WORKLOADS.include?(file)
           bad = (HOST_KEYS.include?(label) && !heavy_worker) ||
-                label == 'kubernetes.io/arch' ||
+                (label == 'kubernetes.io/arch' && !supported_architecture) ||
                 (label == 'node-role.kubernetes.io/control-plane' && file != 'k8s/pve/home-service-monitor/vip.yaml')
           errors << "#{file}: #{at}: unnecessary #{label}=#{selected}" if bad
         end

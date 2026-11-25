@@ -1,0 +1,67 @@
+template:
+  spec:
+    nodeSelector:
+      kubernetes.io/arch: amd64
+    initContainers:
+    - name: management-test
+      restartPolicy: Always
+      image: docker.io/library/python:3.10-slim-bookworm@sha256:5be5aaecb962a41567bc8041f1e9e3432cb085b037fe057f9a562630b2e4b370
+      command:
+      - /bin/sh
+      - -ec
+      - |
+        umask 022
+        finish() {
+          status=$?
+          trap - EXIT
+          printf '%s\n' "$status" > /bridge/result.tmp
+          mv /bridge/result.tmp /bridge/result
+          exec sleep infinity
+        }
+        trap finish EXIT
+        touch /bridge/ready
+        while [ ! -f /bridge/start ]; do sleep 2; done
+        mkdir /tmp/source
+        tar -xf /bridge/source.tar -C /tmp/source
+        cd /tmp/source
+        sh scripts/verify-management-tools.sh > /bridge/test.log 2>&1
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      startupProbe:
+        exec:
+          command: [/bin/sh, -c, test -f /bridge/ready]
+        periodSeconds: 2
+        failureThreshold: 15
+      resources:
+        requests:
+          cpu: 250m
+          memory: 256Mi
+        limits:
+          cpu: '1'
+          memory: 1Gi
+      env:
+      - name: HOME
+        value: /tmp
+      - name: PIP_DISABLE_PIP_VERSION_CHECK
+        value: '1'
+      - name: PIP_NO_CACHE_DIR
+        value: '1'
+      volumeMounts:
+      - name: work
+        mountPath: /bridge
+        subPath: management-ci
+      - name: management-scratch
+        mountPath: /tmp
+    volumes:
+    - name: work
+      emptyDir:
+        sizeLimit: 6Gi
+    - name: toolcache
+      emptyDir:
+        sizeLimit: 3Gi
+    - name: management-scratch
+      emptyDir:
+        sizeLimit: 1Gi

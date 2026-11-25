@@ -21,6 +21,7 @@ RPiの一律なNoSchedule taintを撤去し、リソース要求に合うworker�
 | --- | --- |
 | Reventer汎用 / Codex実行用runner | CPU性能・メモリを要するためPVE workerに限定。片方のPVEを優先する指定はしない。 |
 | TNLAStation Composeテスト用runner | 複数サービスの起動、ビルド、ブラウザー・映像処理のテストを行うためPVE workerに限定。CPUアーキテクチャや特定ホストは指定しない。 |
+| Re:Venterの実TiKV試験用runner | 固定したPD・TiKVイメージがamd64に対応するため、amd64 workerを使う。ホストは固定しない。 |
 | MetalLB speaker / L2Advertisement | VLAN20に接続したnode。VLAN10からVLAN20のVIPをL2広告しない。 |
 | WoL | hostNetworkの既存LAN区間（VLAN20）を維持。特定PVEは指定しない。 |
 | home-vip-monitor | control-plane上のVIPを観測するDaemonSetなのでcontrol-planeを指定。 |

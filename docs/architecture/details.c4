@@ -139,6 +139,20 @@ model {
   extend consumers.reventer { component definitions '専用定義の参照 / 詳細はreventer側' { metadata { owner "reventer" referenceOnly "true" } description 'my-infraにある専用リソースの名前・参照元だけを自動抽出。構成図・通信トポロジーは重複して作らない。' link https://reventer-architecture.pages.dev/ 'Re:Venterの構成図' } }
 
 
+  extend consumers.reventer.definitions {
+    component terraform_agent 'Re:VenterのTerraform Cloud Agent' {
+      link https://github.com/miutaku/reventer/tree/main/infrastructure/k8s/management/tfc-agent 'Argo CD同期元'
+      metadata {
+        owner "reventer"
+        referenceOnly "true"
+        definitionRepository "reventer"
+        application "reventer-tfc-agent"
+        workload "Deployment/reventer-tfc-agent"
+        namespace "reventer-tfc-agent"
+      }
+    }
+  }
+
   premises.home.nextcloud.web .runtime premises.home.nextcloud.redis 'Redis :6379 / locking・cache'
   client .runtime external.edge.mtls 'クライアント証明書'
   external.edge.mtls .authenticate external.edge.loockit_tunnel 'mTLS検証済みのAPIリクエスト'

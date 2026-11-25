@@ -1,0 +1,40 @@
+template:
+  spec:
+    initContainers:
+    - name: tidb
+      restartPolicy: Always
+      image: pingcap/tidb@sha256:00f015520ce91734c3fbec720f23448e790e691655c7e181544a620872a00c61
+      workingDir: /test-db
+      args:
+      - --host=127.0.0.1
+      - --advertise-address=127.0.0.1
+      - -P=14000
+      - --report-status=false
+      - --status-host=127.0.0.1
+      - --store=unistore
+      - --path=/test-db/tidb
+      - --temp-dir=/test-db/temp
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: '250m'
+          memory: 512Mi
+        limits:
+          cpu: '1'
+          memory: 1536Mi
+      volumeMounts:
+      - name: tidb-data
+        mountPath: /test-db
+    volumes:
+    - name: work
+      emptyDir:
+        sizeLimit: 6Gi
+    - name: toolcache
+      emptyDir:
+        sizeLimit: 3Gi
+    - name: tidb-data
+      emptyDir:
+        sizeLimit: 1536Mi

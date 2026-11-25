@@ -9,7 +9,15 @@ const pve=JSON.parse(readFileSync('evidence/pve-runtime.json','utf8'));
 test('recorded live Applications and workload controllers are accounted for including bootstrap',()=>{
  assert.equal(runtime.missingApplicationDefinitions.length,0);
  assert.equal(runtime.unmapped.length,0);
- for(const row of [...runtime.applications,...runtime.workloads])assert.ok(model.elements[row.modelRef],`${row.namespace}/${row.name}: ${row.modelRef}`);
+ const externalDefinitions=Object.values(model.elements).filter(({metadata})=>
+  metadata?.referenceOnly==='true'&&metadata.definitionRepository&&metadata.definitionRepository!=='my-infra');
+ for(const row of [...runtime.applications,...runtime.workloads]){
+  if(model.elements[row.modelRef])continue;
+  const matching=externalDefinitions.filter(({metadata})=>
+   metadata.namespace===row.namespace&&metadata.application===(row.application??row.name)&&
+   (!row.kind||metadata.workload===`${row.kind}/${row.name}`));
+  assert.equal(matching.length,1,`${row.namespace}/${row.name}: ${row.modelRef}`);
+ }
  for(const ref of ['flannel','kube_proxy','cluster_dns','metrics_server','cert_approver']){
   const id=`premises.home.platform.${ref}`;
   assert.ok(runtime.workloads.some(w=>w.modelRef===id));
@@ -27,12 +35,18 @@ test('recorded running Proxmox guests are represented inside one cluster with ac
  }
 });
 test('one PVE view contains every VM and LXC, with Talos nested in each VM and no cluster-membership arrows',()=>{
- const members=['cp1','worker1','cp2','cp3','worker2'];
- for(const vm of members){
-  const parent=vm.startsWith('cp')?'homeSite.pve.controlplanes':'homeSite.pve.workers';
-  const ref=`${parent}.${vm}.talos`;
+ const definition='terraform/pve/modules/home-k8s/main.tf';
+ const source=readFileSync(new URL(`../../../${definition}`,import.meta.url),'utf8');
+ const declaredVMs=Array.from(source.matchAll(/\bvm_id\s*=\s*(\d+)\b/g),([,id])=>id).sort();
+ const instances=Object.values(model.deployments.elements)
+  .filter(node=>node.kind==='vm'&&node.metadata?.sourceFile===definition);
+ assert.ok(declaredVMs.length>0);
+ assert.deepEqual(instances.map(node=>node.metadata.vmId).sort(),declaredVMs);
+ for(const vm of instances){
+  assert.match(vm.id,/^homeSite\.pve\.(controlplanes|workers)\./);
+  const ref=`${vm.id}.talos`;
   assert.equal(model.deployments.elements[ref].kind,'os');
-  assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===`${parent}.${vm}`));
+  assert.ok(model.views.placement.nodes.some(n=>n.id===ref&&n.parent===vm.id));
  }
  for(const kind of ['vm','container']){
   const guests=Object.values(model.deployments.elements).filter(n=>n.kind===kind);

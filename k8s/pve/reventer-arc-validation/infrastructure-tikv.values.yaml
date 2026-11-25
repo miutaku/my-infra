@@ -1,0 +1,112 @@
+template:
+  spec:
+    nodeSelector:
+      kubernetes.io/arch: amd64
+    initContainers:
+      - name: pd
+        restartPolicy: Always
+        image: pingcap/pd@sha256:b32c69d8b9cc08cead83649d54c58942c441492b459c4cf190cd8c4747bf85f3
+        workingDir: /test-pd
+        args:
+          - --name=pd
+          - --data-dir=/test-pd
+          - --client-urls=http://127.0.0.1:12379
+          - --advertise-client-urls=http://127.0.0.1:12379
+          - --peer-urls=http://127.0.0.1:12380
+          - --advertise-peer-urls=http://127.0.0.1:12380
+          - --initial-cluster=pd=http://127.0.0.1:12380
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        resources:
+          requests:
+            cpu: 200m
+            memory: 384Mi
+          limits:
+            cpu: "1"
+            memory: 512Mi
+        volumeMounts:
+          - name: pd-data
+            mountPath: /test-pd
+      - name: tikv
+        restartPolicy: Always
+        image: pingcap/tikv@sha256:b88a0400113812aca789f31bfb793b7ce748710372f49ad13e68a59df19bc35e
+        workingDir: /test-tikv
+        args:
+          - --addr=127.0.0.1:20160
+          - --advertise-addr=127.0.0.1:20160
+          - --status-addr=127.0.0.1:20260
+          - --data-dir=/test-tikv
+          - --config=/fixture/tikv.toml
+          - --pd=127.0.0.1:12379
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        resources:
+          requests:
+            cpu: 750m
+            memory: 1Gi
+          limits:
+            cpu: "2"
+            memory: 2Gi
+        volumeMounts:
+          - name: tikv-data
+            mountPath: /test-tikv
+          - name: tikv-raft
+            mountPath: /test-raft
+          - name: tikv-configuration
+            mountPath: /fixture
+            readOnly: true
+      - name: tidb
+        restartPolicy: Always
+        image: pingcap/tidb@sha256:00f015520ce91734c3fbec720f23448e790e691655c7e181544a620872a00c61
+        workingDir: /test-tidb
+        args:
+          - --host=127.0.0.1
+          - --advertise-address=127.0.0.1
+          - -P=14000
+          - --report-status=false
+          - --status-host=127.0.0.1
+          - --store=tikv
+          - --path=127.0.0.1:12379
+          - --temp-dir=/test-tidb/temp
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        resources:
+          requests:
+            cpu: 500m
+            memory: 768Mi
+          limits:
+            cpu: "2"
+            memory: 1536Mi
+        volumeMounts:
+          - name: tidb-data
+            mountPath: /test-tidb
+    volumes:
+      - name: work
+        emptyDir:
+          sizeLimit: 6Gi
+      - name: toolcache
+        emptyDir:
+          sizeLimit: 3Gi
+      - name: pd-data
+        emptyDir:
+          medium: Memory
+          sizeLimit: 256Mi
+      - name: tikv-data
+        emptyDir:
+          sizeLimit: 1536Mi
+      - name: tikv-raft
+        emptyDir:
+          medium: Memory
+          sizeLimit: 64Mi
+      - name: tidb-data
+        emptyDir:
+          sizeLimit: 1536Mi
+      - name: tikv-configuration
+        configMap:
+          name: reventer-tikv-fixture

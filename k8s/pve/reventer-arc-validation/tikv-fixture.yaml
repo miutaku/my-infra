@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reventer-tikv-fixture
+  namespace: arc-reventer-validation
+data:
+  tikv.toml: |
+    [storage]
+    reserve-space = "0MB"
+    [storage.block-cache]
+    capacity = "128MB"
+    [raft-engine]
+    dir = "/test-raft"

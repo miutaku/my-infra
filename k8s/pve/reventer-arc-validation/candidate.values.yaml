@@ -1,0 +1,66 @@
+template:
+  spec:
+    hostUsers: false
+    nodeSelector:
+      node.miutaku/role: build
+      workload.miutaku/reventer-build: "true"
+    tolerations:
+    - key: workload.miutaku/reventer-build
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+    initContainers:
+    - name: builder
+      restartPolicy: Always
+      image: docker.io/library/alpine:3.23@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2
+      command: [/bin/sh, /etc/reventer-qemu-build/run.sh]
+      env:
+      - name: HOME
+        value: /scratch
+      - name: TMPDIR
+        value: /scratch
+      - name: REVENTER_BUILD_SCALE_SET
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['actions.github.com/scale-set-name']
+      startupProbe:
+        exec:
+          command: [/bin/sh, -c, test -f /bridge/ready]
+        periodSeconds: 2
+        failureThreshold: 15
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: "2"
+          memory: 4000Mi
+          ephemeral-storage: 10Gi
+        limits:
+          cpu: "3"
+          memory: 4600Mi
+          ephemeral-storage: 24Gi
+      volumeMounts:
+      - name: work
+        mountPath: /bridge
+        subPath: qemu-inbox
+      - name: builder-scratch
+        mountPath: /scratch
+      - name: builder-scripts
+        mountPath: /etc/reventer-qemu-build
+        readOnly: true
+    volumes:
+    - name: work
+      emptyDir:
+        sizeLimit: 6Gi
+    - name: toolcache
+      emptyDir:
+        sizeLimit: 3Gi
+    - name: builder-scratch
+      emptyDir:
+        sizeLimit: 22Gi
+    - name: builder-scripts
+      configMap:
+        name: reventer-qemu-build-scripts
